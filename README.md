@@ -1,0 +1,2 @@
+# snet-cli
+SingularityNET CLI
