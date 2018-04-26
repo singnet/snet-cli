@@ -1,0 +1,9 @@
+venv/
+.idea/
+snet_cli.egg-info/
+blockchain/node_modules/
+__pycache__/
+snet_cli/resources/contracts/*.json
+build/
+dist/
+

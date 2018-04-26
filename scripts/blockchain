@@ -1,0 +1,37 @@
+#!/usr/bin/env python3
+
+import os
+import pathlib
+import shutil
+import subprocess
+import sys
+
+
+def main():
+    assert len(sys.argv) > 1, "please select a target from 'install', 'uninstall'"
+    target = sys.argv[1]
+    blockchain_path = pathlib.Path(__file__).absolute().parent.parent.joinpath("blockchain")
+    blockchain_node_path = blockchain_path.joinpath("node_modules")
+    blockchain_json_src_path = blockchain_node_path.joinpath("singularitynet-alpha-blockchain")
+    token_json_src_path = blockchain_node_path.joinpath("singularitynet-token-contracts", "SingularityNetToken.json")
+    blockchain_json_dest_path = pathlib.Path(__file__).absolute().parent.parent.joinpath("snet_cli", "resources", "contracts")
+    contracts = ["Agent", "AgentFactory", "Job", "Registry"]
+
+    if target == "install":
+        subprocess.call(["npm", "install"], cwd=blockchain_path)
+        for contract in contracts:
+            shutil.copy(blockchain_json_src_path.joinpath("{}.json".format(contract)),
+                        blockchain_json_dest_path.joinpath("{}.json".format(contract)))
+        shutil.copy(token_json_src_path, blockchain_json_dest_path.joinpath("SingularityNetToken.json"))
+    elif target == "uninstall":
+        try:
+            shutil.rmtree(blockchain_node_path)
+            for contract in contracts:
+                os.remove(blockchain_json_dest_path.joinpath("{}.json".format(contract)))
+            os.remove(blockchain_json_dest_path.joinpath("SingularityNetToken.json"))
+        except FileNotFoundError:
+            pass
+
+
+if __name__ == "__main__":
+    main()
