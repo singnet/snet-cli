@@ -1,5 +1,5 @@
-include snet_cli/resources/Agent.json
-include snet_cli/resources/AgentFactory.json
-include snet_cli/resources/Job.json
-include snet_cli/resources/Registry.json
-include snet_cli/resources/SingularityNetToken.json
+include snet_cli/resources/contracts/Agent.json
+include snet_cli/resources/contracts/AgentFactory.json
+include snet_cli/resources/contracts/Job.json
+include snet_cli/resources/contracts/Registry.json
+include snet_cli/resources/contracts/SingularityNetToken.json

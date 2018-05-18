@@ -17,6 +17,28 @@ These instructions are intended to facilitate the development and use of the Sin
 ```bash
 $ pip install snet-cli
 ```
+
+#### If you get "ImportError: cannot import name 'scrypt'" when first running snet-cli
+
+Until ledgerblue replaces their dependency on pycrypto (deprecated) with pycryotodome (a drop-in
+replacement), the presence of both on the system may cause errors when importing various crypto
+dependencies. Removing both libraries and installing them in the following order should resolve
+this issue should it happen to you.
+
+* Uninstall pycrypto and pycryptodome
+```bash
+$ pip uninstall pycrypto pycryptodome
+```
+
+* Reinstall pycrypto
+```bash
+$ pip install pycrypto
+```
+
+* Reinstall pycryptodome
+```bash
+$ pip install pycryptodome
+```
   
 ### Installing (For Development)
   
