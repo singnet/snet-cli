@@ -62,19 +62,23 @@ class Command(object):
 
     def _getstring(self, name):
         return (self.session.identity.getstring(name) or getattr(self.args, name, None) or
-                self.session.getstring("default_{}".format(name)))
+                (self.session.getstring("default_{}".format(name)) or
+                 self.session.getstring("current_{}".format(name))))
 
     def _getint(self, name):
         return (self.session.identity.getint(name) or getattr(self.args, name, None) or
-                self.session.getint("default_{}".format(name)))
+                (self.session.getint("default_{}".format(name)) or
+                 self.session.getint("current_{}".format(name))))
 
     def _getfloat(self, name):
         return (self.session.identity.getfloat(name) or getattr(self.args, name, None) or
-                self.session.getfloat("default_{}".format(name)))
+                (self.session.getfloat("default_{}".format(name)) or
+                 self.session.getfloat("current_{}".format(name))))
 
     def _getboolean(self, name):
         return (self.session.identity.getboolean(name) or getattr(self.args, name, None) or
-                self.session.getboolean("default_{}".format(name)))
+                (self.session.getboolean("default_{}".format(name)) or
+                 self.session.getboolean("current_{}".format(name))))
 
     def _set_key(self, key, value, config=None, out_f=None, err_f=None):
         SessionCommand(config or self.config, DefaultAttributeObject(key=key, value=value), out_f or self.out_f,
@@ -260,7 +264,7 @@ class AgentCommand(BlockchainCommand):
         self._ensure(self.args.at is not None, "--at is required to specify agent contract address")
         price = ContractCommand(self.config, self.get_contract_argser(
             self.args.at, "currentPrice", self.args.contract_json)(), None, None, self.w3, self.ident).call()
-        self._set_key("default_agent_at", self.args.at, out_f=self.err_f)
+        self._set_key("current_agent_at", self.args.at, out_f=self.err_f)
         token_address = ContractCommand(self.config, self.get_contract_argser(
             self.args.at, "token", self.args.contract_json)(), None, None, self.w3, self.ident).call()
         proceed = (price <= self.args.max_price or
@@ -282,7 +286,7 @@ class AgentCommand(BlockchainCommand):
                     break
                 job_address = events[0].args.job
                 job["job_address"] = job_address
-                self._set_key("default_job_at", job_address, out_f=self.err_f)
+                self._set_key("current_job_at", job_address, out_f=self.err_f)
                 self.session = from_config(self.config)
                 if self.args.funded:
                     cmd = ContractCommand(self.config, self.get_contract_argser(
@@ -313,9 +317,9 @@ class AgentFactoryCommand(BlockchainCommand):
         cmd = ContractCommand(self.config, self.args, self.out_f, self.err_f, self.w3, self.ident)
         self._printerr("Creating transaction to create agent...\n")
         _, events = cmd.transact()
-        self._set_key("default_agent_at", events[0].args.agent, out_f=self.err_f)
+        self._set_key("current_agent_at", events[0].args.agent, out_f=self.err_f)
         if self.args.at is not None:
-            self._set_key("default_agent_factory_at", self.args.at, out_f=self.err_f)
+            self._set_key("current_agent_factory_at", self.args.at, out_f=self.err_f)
 
 
 class ClientCommand(BlockchainCommand):
@@ -350,7 +354,7 @@ class ClientCommand(BlockchainCommand):
             job = cmd.create_jobs()[0]
             job_address, price = job["job_address"], job["job_price"]
 
-        self._set_key("default_job_at", job_address, out_f=self.err_f)
+        self._set_key("current_job_at", job_address, out_f=self.err_f)
 
         token_address = ContractCommand(self.config, self.get_contract_argser(
             job_address, "token", job_contract_json)(), None, None, self.w3, self.ident).call()
@@ -394,7 +398,7 @@ class RegistryCommand(BlockchainCommand):
         self._printerr("Creating transaction to create record...\n")
         cmd.transact()
         if self.args.at is not None:
-            self._set_key("default_registry_at", self.args.at, out_f=self.err_f)
+            self._set_key("current_registry_at", self.args.at, out_f=self.err_f)
 
     def update_record(self):
         self.args.at = self._getstring("registry_at")
@@ -402,7 +406,7 @@ class RegistryCommand(BlockchainCommand):
         self._printerr("Creating transaction to update record...\n")
         cmd.transact()
         if self.args.at is not None:
-            self._set_key("default_registry_at", self.args.at, out_f=self.err_f)
+            self._set_key("current_registry_at", self.args.at, out_f=self.err_f)
 
     def deprecate_record(self):
         self.args.at = self._getstring("registry_at")
@@ -410,7 +414,7 @@ class RegistryCommand(BlockchainCommand):
         self._printerr("Creating transaction to deprecate record...\n")
         cmd.transact()
         if self.args.at is not None:
-            self._set_key("default_registry_at", self.args.at, out_f=self.err_f)
+            self._set_key("current_registry_at", self.args.at, out_f=self.err_f)
 
     def list_records(self):
         self.args.at = self._getstring("registry_at")
@@ -418,7 +422,7 @@ class RegistryCommand(BlockchainCommand):
         names = list(map(lambda n: n.partition(b"\0")[0].decode("utf-8"), names))
         self._pprint({"records": [{"name": names[i], "address": addresses[i]} for i in range(len(names))]})
         if self.args.at is not None:
-            self._set_key("default_registry_at", self.args.at, out_f=self.err_f)
+            self._set_key("current_registry_at", self.args.at, out_f=self.err_f)
 
     def query(self):
         self.args.at = self._getstring("registry_at")
@@ -429,9 +433,9 @@ class RegistryCommand(BlockchainCommand):
             self.args.at, "agentRecords", self.args.contract_json)(index), None, None, self.w3, self.ident).call()
         self._pprint({"record": {"agent": record[0], "name": record[1].partition(b"\0")[0].decode("utf-8"),
                      "state": record[2]}})
-        self._set_key("default_agent_at", record[0], out_f=self.err_f)
+        self._set_key("current_agent_at", record[0], out_f=self.err_f)
         if self.args.at is not None:
-            self._set_key("default_registry_at", self.args.at, out_f=self.err_f)
+            self._set_key("current_registry_at", self.args.at, out_f=self.err_f)
 
 
 class ContractCommand(BlockchainCommand):

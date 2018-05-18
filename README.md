@@ -117,13 +117,13 @@ snet set KEY VALUE
 
 * Set session key
 * `KEY`: target session key:
-  * `default_agent_at`: default Agent contract address
-  * `default_agent_factory_at`: default AgentFactory contract address
+  * `current_agent_at`: current Agent contract address
+  * `current_agent_factory_at`: current AgentFactory contract address
   * `default_gas_price`: default gas price for transactions
   * `default_eth_rpc_endpoint`: default Ethereum JSON-RPC endpoint
   * `default_wallet_index`: default index of account within a given wallet
-  * `default_job_at`: default Job contract address
-  * `default_registry_at`: default Registry contract address
+  * `current_job_at`: current Job contract address
+  * `current_registry_at`: current Registry contract address
   * `identity_name`: name of identity to use for signing
 * `VALUE`: desired value
 
@@ -134,13 +134,13 @@ snet unset KEY
 ```
 
 * Unset session key:
-  * `default_agent_at`: default Agent contract address
-  * `default_agent_factory_at`: default AgentFactory contract address
+  * `current_agent_at`: current Agent contract address
+  * `current_agent_factory_at`: current AgentFactory contract address
   * `default_gas_price`: default gas price for transactions
   * `default_eth_rpc_endpoint`: default Ethereum JSON-RPC endpoint
   * `default_wallet_index`: default index of account within a given wallet
-  * `default_job_at`: default Job contract address
-  * `default_registry_at`: default Registry contract address
+  * `current_job_at`: current Job contract address
+  * `current_registry_at`: current Registry contract address
   * `identity_name`: name of identity to use for signing
 
 ---
@@ -157,9 +157,9 @@ snet agent [--at AT] create-jobs [--number NUMBER]
                                  [--verbose | --quiet]
 ```
 
-* Create jobs associated with an agent and output their information; overwrites session `default_job_at` to the last
+* Create jobs associated with an agent and output their information; overwrites session `current_job_at` to the last
 created Job contract's address
-* `AT`: address of target Agent contract; overwrites session `default_agent_at`
+* `AT`: address of target Agent contract; overwrites session `current_agent_at`
 * `NUMBER`: number of jobs to create
 * `MAX_PRICE`: skip interactive confirmation of job price if below this value
 * `--funded`: fund created jobs
@@ -181,8 +181,8 @@ snet agent-factory [--at AT] create-agent PRICE ENDPOINT [--gas-price GAS_PRICE]
                                                          [--verbose | --quiet]
 ```
 
-* Create an agent; overwrites session `default_agent_at` to created Agent contract's address
-* `AT`: address of target AgentFactory contract; overwrites session `default_agent_factory_at` (not required for
+* Create an agent; overwrites session `current_agent_at` to created Agent contract's address
+* `AT`: address of target AgentFactory contract; overwrites session `current_agent_factory_at` (not required for
 networks on which AgentFactory has been deployed by SingularityNET Foundation)
 * `PRICE`: initial job price for created agent
 * `ENDPOINT`: endpoint on which daemon for the new agent will listen for requests
@@ -210,9 +210,9 @@ snet client call METHOD PARAMS [--max-price MAX_PRICE]
 * `METHOD`: service's target JSON-RPC method name
 * `PARAMS`: serialized JSON object containing target JSON-RPC method's parameters and call arguments
 * `MAX_PRICE`: skip interactive confirmation of job price if below this value
-* `AGENT_AT`: address of Agent contract associated with service; overwrites session `default_agent_at`
+* `AGENT_AT`: address of Agent contract associated with service; overwrites session `current_agent_at`
 * `JOB_AT`: address of Job contract instance; continue existing job from current state or create a new job if not
-provided or in COMPLETED state; overwrites session `default_job_at`
+provided or in COMPLETED state; overwrites session `current_job_at`
 * `GAS_PRICE`: override session `default_gas_price`
 * `ETH_RPC_ENDPOINT`: override session `default_eth_rpc_endpoint`
 * `WALLET_INDEX`: override session `default_wallet_index`
@@ -231,7 +231,7 @@ snet registry [--at AT] create-record NAME AGENT_ADDRESS [--gas-price GAS_PRICE]
 ```
 
 * Create a registry record
-* `AT`: address of target Registry contract; overwrites session `default_registry_at` (not required for networks on
+* `AT`: address of target Registry contract; overwrites session `current_registry_at` (not required for networks on
 which Registry has been deployed by SingularityNET Foundation)
 * `NAME`: desired name; must be unique within registry
 * `AGENT_ADDRESS`: address of agent to which record refers
@@ -253,7 +253,7 @@ snet registry [--at AT] update-record NAME AGENT_ADDRESS [--gas-price GAS_PRICE]
 ```
 
 * Update a registry record
-* `AT`: address of target Registry contract; overwrites session `default_registry_at` (not required for networks on
+* `AT`: address of target Registry contract; overwrites session `current_registry_at` (not required for networks on
 which Registry has been deployed by SingularityNET Foundation)
 * `NAME`: existing record name
 * `AGENT_ADDRESS`: replacement address of agent to which record refers
@@ -275,7 +275,7 @@ snet registry [--at AT] deprecate-record NAME [--gas-price GAS_PRICE]
 ```
 
 * Deprecate a registry record
-* `AT`: address of target Registry contract; overwrites session `default_registry_at` (not required for networks on
+* `AT`: address of target Registry contract; overwrites session `current_registry_at` (not required for networks on
 which Registry has been deployed by SingularityNET Foundation)
 * `NAME`: existing record name
 * `GAS_PRICE`: override session `default_gas_price`
@@ -296,7 +296,7 @@ snet registry [--at AT] list-records [--gas-price GAS_PRICE]
 ```
 
 * List registry records
-* `AT`: address of target Registry contract; overwrites session `default_registry_at` (not required for networks on
+* `AT`: address of target Registry contract; overwrites session `current_registry_at` (not required for networks on
 which Registry has been deployed by SingularityNET Foundation)
 * `GAS_PRICE`: override session `default_gas_price`
 * `ETH_RPC_ENDPOINT`: override session `default_eth_rpc_endpoint`
@@ -315,9 +315,9 @@ snet registry [--at AT] query NAME [--gas-price GAS_PRICE]
                                    [--verbose | --quiet]
 ```
 
-* Query registry records for a given name; overwrites session `default_agent_at` to the Agent contract address
+* Query registry records for a given name; overwrites session `current_agent_at` to the Agent contract address
 associated with the given name
-* `AT`: address of target Registry contract; overwrites session `default_registry_at` (not required for networks on
+* `AT`: address of target Registry contract; overwrites session `current_registry_at` (not required for networks on
 which Registry has been deployed by SingularityNET Foundation)
 * `NAME`: existing record name
 * `GAS_PRICE`: override session `default_gas_price`

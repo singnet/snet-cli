@@ -26,17 +26,17 @@ def from_config(config):
         identity = None
     return Session(
         identity=identity,
-        default_agent_at=config.get("session", "default_agent_at", fallback=None),
-        default_agent_factory_at=config.get("session", "default_agent_factory_at", fallback=None),
+        current_agent_at=config.get("session", "current_agent_at", fallback=None),
+        current_agent_factory_at=config.get("session", "current_agent_factory_at", fallback=None),
         default_gas_price=config.get("session", "default_gas_price", fallback=None),
         default_eth_rpc_endpoint=config.get("session", "default_eth_rpc_endpoint", fallback=None),
         default_wallet_index=config.get("session", "default_wallet_index", fallback=None),
-        default_job_at=config.get("session", "default_job_at", fallback=None),
-        default_registry_at=config.get("session", "default_registry_at", fallback=None),
-        default_singularity_net_token_at=config.get("session", "default_singularity_net_token_at", fallback=None)
+        current_job_at=config.get("session", "current_job_at", fallback=None),
+        current_registry_at=config.get("session", "current_registry_at", fallback=None),
+        current_singularity_net_token_at=config.get("session", "current_singularity_net_token_at", fallback=None)
     )
 
 
 def get_session_keys():
-    return ["default_agent_at", "default_agent_factory_at", "default_gas_price", "default_eth_rpc_endpoint",
-            "default_wallet_index", "default_job_at", "default_registry_at", "identity_name"]
+    return ["current_agent_at", "current_agent_factory_at", "default_gas_price", "default_eth_rpc_endpoint",
+            "default_wallet_index", "current_job_at", "current_registry_at", "identity_name"]
