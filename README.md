@@ -4,15 +4,21 @@ SingularityNET CLI
   
 ## Getting Started  
   
-These instructions are intended to facilitate the development of the SingularityNET CLI. Users
-interested in normal use of the CLI should install it as [published](#release).
+These instructions are intended to facilitate the development and use of the SingularityNET CLI.
   
 ### Prerequisites  
   
 * [Python 3.6.5](https://www.python.org/downloads/release/python-365/)  
 * [Node 8+ w/npm](https://nodejs.org/en/download/)  
+
+### Installing (For Use)
+
+* Install using pip
+```bash
+$ pip install snet-cli
+```
   
-### Installing  
+### Installing (For Development)
   
 * Clone the git repository  
 ```bash  
