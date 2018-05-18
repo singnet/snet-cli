@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='snet-cli',
-    version='0.1.0',
+    version='0.1.1',
     packages=['snet_cli'],
     scripts=['bin/snet'],
     url='https://github.com/singnet/snet-cli',
