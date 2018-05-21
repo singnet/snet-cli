@@ -9,8 +9,8 @@ import time
 from eth_account.internal.transactions import serializable_unsigned_transaction_from_dict, encode_transaction, \
     UnsignedTransaction
 from eth_account.messages import defunct_hash_message
-from ledgerblue.comm import getDongle
-from ledgerblue.commException import CommException
+from snet_cli._vendor.ledgerblue.comm import getDongle
+from snet_cli._vendor.ledgerblue.commException import CommException
 from mnemonic import Mnemonic
 from trezorlib.client import TrezorClient
 from trezorlib.transport_hid import HidTransport

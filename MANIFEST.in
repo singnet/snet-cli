@@ -1,5 +1,2 @@
-include snet_cli/resources/contracts/Agent.json
-include snet_cli/resources/contracts/AgentFactory.json
-include snet_cli/resources/contracts/Job.json
-include snet_cli/resources/contracts/Registry.json
-include snet_cli/resources/contracts/SingularityNetToken.json
+include snet_cli/resources/contracts/*
+include snet_cli/_vendor/*
