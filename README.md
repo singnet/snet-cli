@@ -70,20 +70,20 @@ snet network
 ---
 
 ```
-snet network NETWORK_NAME
+snet network NETWORK
 ```
 
 * Switch networks
-* `NETWORK_NAME`: name of network to use (either `mainnet`, `kovan`, `ropsten`, or `rinkeby`)
+* `NETWORK`: name of network to use (either `mainnet`, `kovan`, `ropsten`, or `rinkeby`)
 
 ---
 
 ```
-snet network endpoint ENDPOINT
+snet network eth-rpc-endpoint ETH_RPC_ENDPOINT
 ```
 
 * Switch networks using a target Ethereum JSON-RPC endpoint
-* `ENDPOINT`: Ethereum JSON-RPC endpoint (network determined by endpoint)
+* `ETH_RPC_ENDPOINT`: Ethereum JSON-RPC endpoint (network determined by endpoint)
 
 ---
 
@@ -158,11 +158,11 @@ created Job contract's address
 ---
 
 ```
-snet agent-factory [--at AT] create-agent PRICE ENDPOINT [--gas-price GAS_PRICE]
-                                                         [--eth-rpc-endpoint ETH_RPC_ENDPOINT]
-                                                         [--wallet-index WALLET_INDEX]
-                                                         [--no-confirm]
-                                                         [--verbose | --quiet]
+snet agent-factory [--at AT] create-agent PRICE ENDPOINT [METADATA_URI] [--gas-price GAS_PRICE]
+                                                                        [--eth-rpc-endpoint ETH_RPC_ENDPOINT]
+                                                                        [--wallet-index WALLET_INDEX]
+                                                                        [--no-confirm]
+                                                                        [--verbose | --quiet]
 ```
 
 * Create an agent; overwrites session `current_agent_at` to created Agent contract's address
@@ -170,6 +170,7 @@ snet agent-factory [--at AT] create-agent PRICE ENDPOINT [--gas-price GAS_PRICE]
 networks on which AgentFactory has been deployed by SingularityNET Foundation)
 * `PRICE`: initial job price for created agent
 * `ENDPOINT`: endpoint on which daemon for the new agent will listen for requests
+* `METADATA_URI`: uri where service metadata is stored
 * `GAS_PRICE`: override session `default_gas_price`
 * `ETH_RPC_ENDPOINT`: override session `default_eth_rpc_endpoint`
 * `WALLET_INDEX`: override session `default_wallet_index`
@@ -335,6 +336,93 @@ snet contract <ContractName> [--at AT] <functionName> PARAM1, PARAM2, ... [--tra
 * `--no-confirm`: skip interactive confirmation of transaction payloads
 * `--verbose`: print all transaction details
 * `--quiet`: print minimal transaction details
+
+---
+
+```
+snet service init [--name NAME]
+                  [--model MODEL]
+                  [--organization ORGANIZATION]
+                  [--price PRICE]
+                  [--endpoint ENDPOINT]
+                  [--tags TAGS [TAG1, TAG2, ...]]
+                  [--description DESCRIPTION]
+                  [-y]
+```
+
+* Create a service.json file in the current directory either interactively or by passing command line arguments
+* `NAME`: name of the service to be stored in the registry
+* `MODEL`: local filesystem path to the service model directory
+* `ORGANIZATION`: the organization to which you want to register the service
+* `PRICE`: initial price for interacting with the service
+* `ENDPOINT`: initial endpoint to call the service's API 
+* `TAGS`: tags to describe the service
+* `DESCRIPTION`: human-readable description of the service 
+* `-y`: accept defaults for any argument that is not provided
+
+---
+
+```
+snet service publish [NETWORK] [--no-register]
+                               [--config CONFIG]
+                                                                          
+                                                                          
+                                                                          
+```
+
+* Publish the service's Agent contract; optionally specify a network
+* `NETWORK`: name of network to use (either `mainnet`, `kovan`, `ropsten`, `rinkeby` or `eth-rpc-endpoint`)
+* `--no-register`: does not register the published service
+* `CONFIG`: specify a custom service.json file path
+
+---
+
+```
+snet service publish eth-rpc-endpoint ETH_RPC_ENDPOINT [--no-register]
+                                                       [--config CONFIG]
+                                                                          
+                                                                          
+                                                                          
+```
+
+* Publish the service's Agent contract using a target Ethereum JSON-RPC endpoint
+* `ETH_RPC_ENDPOINT`: Ethereum JSON-RPC endpoint (network determined by endpoint)
+* `--no-register`: does not register the published service
+* `CONFIG`: specify a custom service.json file path
+
+---
+
+```
+snet service update [NETWORK] [--new-price NEW_PRICE]
+                              [--new-endpoint NEW_ENDPOINT]
+                              [--new-description NEW_DESCRIPTION]
+                              [--config CONFIG]
+                                                                          
+```
+
+* Update individual fields in a service's contracts; optionally specify a network
+* `NETWORK`: name of network to use (either `mainnet`, `kovan`, `ropsten`, `rinkeby` or `eth-rpc-endpoint`)
+* `NEW_PRICE`: new price to call the service
+* `NEW_ENDPOINT`: new endpoint to call the service's API
+* `NEW_DESCRIPTION`: new description for the service
+* `CONFIG`: specify a custom service.json file path
+
+---
+
+```
+snet service update eth-rpc-endpoint ETH_RPC_ENDPOINT [--new-price NEW_PRICE]
+                                                      [--new-endpoint NEW_ENDPOINT]
+                                                      [--new-description NEW_DESCRIPTION]
+                                                      [--config CONFIG]
+                                                                          
+```
+
+* Update individual fields in a service's contracts using a target Ethereum JSON-RPC endpoint
+* `ETH_RPC_ENDPOINT`: Ethereum JSON-RPC endpoint (network determined by endpoint)
+* `NEW_PRICE`: new price to call the service
+* `NEW_ENDPOINT`: new endpoint to call the service's API
+* `NEW_DESCRIPTION`: new description for the service
+* `CONFIG`: specify a custom service.json file path
 
 ---
 

@@ -1,3 +1,5 @@
+import os
+from pathlib import Path
 
 import web3
 
@@ -46,14 +48,14 @@ def get_identity(w3, session, args):
     if session.identity is None:
         pass
     if session.identity.identity_type == "rpc":
-        return RpcIdentityProvider(w3, args.wallet_index or session.getint("default_wallet_index"))
+        return RpcIdentityProvider(w3, getattr(args, "wallet_index", None) or session.getint("default_wallet_index"))
     if session.identity.identity_type == "mnemonic":
         return MnemonicIdentityProvider(w3, session.identity.mnemonic,
-                                        args.wallet_index or session.getint("default_wallet_index"))
+                                        getattr(args, "wallet_index", None) or session.getint("default_wallet_index"))
     if session.identity.identity_type == "trezor":
-        return TrezorIdentityProvider(w3, args.wallet_index or session.getint("default_wallet_index"))
+        return TrezorIdentityProvider(w3, getattr(args, "wallet_index", None) or session.getint("default_wallet_index"))
     if session.identity.identity_type == "ledger":
-        return LedgerIdentityProvider(w3, args.wallet_index or session.getint("default_wallet_index"))
+        return LedgerIdentityProvider(w3, getattr(args, "wallet_index", None) or session.getint("default_wallet_index"))
     if session.identity.identity_type == "key":
         return KeyIdentityProvider(w3, session.identity.private_key)
 
@@ -83,3 +85,45 @@ def type_converter(t):
         return web3.Web3.toChecksumAddress
     else:
         return str
+
+
+def _validate_path(path, entry_path):
+    return entry_path.parent in path.parents
+
+
+def _add_next_paths(path, entry_path_parents, seen_paths, next_paths):
+    with open(path) as f:
+        for line in f:
+            if line.strip().startswith("import"):
+                import_statement = "".join(line.split('"')[1::2])
+                if not import_statement.startswith("google/protobuf"):
+                    import_statement_path = Path(path.parent.joinpath(import_statement)).resolve()
+                    if _validate_path(import_statement_path, entry_path_parents):
+                        if import_statement_path not in seen_paths:
+                            seen_paths.add(import_statement_path)
+                            next_paths.append(import_statement_path)
+                    else:
+                        raise ValueError("Path must not be a parent of entry path")
+
+
+def walk_imports(entry_path):
+    seen_paths = set()
+    next_paths = []
+    for file_path in os.listdir(entry_path):
+        if file_path.endswith(".proto"):
+            file_path = entry_path.joinpath(file_path)
+            seen_paths.add(file_path)
+            next_paths.append(file_path)
+    while next_paths:
+        path = next_paths.pop()
+        if os.path.isfile(path):
+            _add_next_paths(path, entry_path, seen_paths, next_paths)
+        else:
+            raise IOError("Import path must be a valid file: {}".format(path))
+    return seen_paths
+
+
+def read_temp_tar(f):
+    f.flush()
+    f.seek(0)
+    return f
