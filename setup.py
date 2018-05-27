@@ -1,10 +1,9 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 
 setup(
     name='snet-cli',
     version='0.1.2',
-    packages=['snet_cli'],
-    scripts=['bin/snet'],
+    packages=find_packages(),
     url='https://github.com/singnet/snet-cli',
     license='MIT',
     author='SingularityNET Foundation',
@@ -27,5 +26,10 @@ setup(
         'pillow>=3.4.0',  # _vendor/ledgerblue
         'python-u2flib-host>=3.0.2'  # _vendor/ledgerblue
     ],
-    include_package_data=True
+    include_package_data=True,
+    entry_points={
+        'console_scripts': [
+            'snet = snet_cli:main',
+        ],
+    }
 )

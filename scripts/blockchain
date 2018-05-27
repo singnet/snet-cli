@@ -18,7 +18,7 @@ def main():
     contracts = ["Agent", "AgentFactory", "Job", "Registry"]
 
     if target == "install":
-        subprocess.call(["npm", "install"], cwd=blockchain_path)
+        subprocess.call([shutil.which('npm'), "install"], cwd=blockchain_path)
         for contract in contracts:
             shutil.copy(blockchain_json_src_path.joinpath("{}.json".format(contract)),
                         blockchain_json_dest_path.joinpath("{}.json".format(contract)))
