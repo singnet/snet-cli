@@ -5,6 +5,7 @@ from textwrap import indent
 
 import jsonrpcclient
 import yaml
+import getpass
 
 from snet_cli.contract import Contract
 from snet_cli.identity import get_kws_for_identity_type, get_identity_types
@@ -140,8 +141,12 @@ class InitCommand(Command):
         self._ensure(identity_type in get_identity_types(),
                      "identity type {} not in {}".format(identity_type, get_identity_types()))
         create_identity_kwargs["identity_type"] = identity_type
-        for kw in get_kws_for_identity_type(identity_type):
-            value = input("{}: \n".format(" ".join(kw.capitalize().split("_")))) or None
+        for kw, is_secret in get_kws_for_identity_type(identity_type):
+            kw_prompt = "{}: \n".format(" ".join(kw.capitalize().split("_")))
+            if is_secret:
+                value = getpass.getpass(kw_prompt) or None
+            else:
+                value = input(kw_prompt) or None
             self._ensure(value is not None, "{} is required".format(kw.split("_")))
             create_identity_kwargs[kw] = value
         IdentityCommand(self.config, DefaultAttributeObject(**create_identity_kwargs), self.err_f, self.err_f).create()
@@ -159,8 +164,11 @@ class IdentityCommand(Command):
         identity_type = self.args.identity_type
         identity["identity_type"] = identity_type
 
-        for kw in get_kws_for_identity_type(identity_type):
+        for kw, is_secret in get_kws_for_identity_type(identity_type):
             value = getattr(self.args, kw)
+            if value is None and is_secret:
+                kw_prompt = "{}: ".format(" ".join(kw.capitalize().split("_")))
+                value = getpass.getpass(kw_prompt) or None
             self._ensure(value is not None, "--{} is required for identity_type {}".format(kw, identity_type))
             identity[kw] = value
 
@@ -170,8 +178,17 @@ class IdentityCommand(Command):
     def list(self):
         for identity_section in filter(lambda x: x.startswith("identity."), self.config.sections()):
             identity = self.config[identity_section]
-            self._pprint({identity_section[len("identity."):]: {k: v for k, v in identity.items()
-                                                                if k not in ["private_key", "mnemonic"]}})
+            key_is_secret_lookup = {}
+
+            identity_type = self.config.get(identity_section, 'identity_type')
+            for kw, is_secret in get_kws_for_identity_type(identity_type):
+                key_is_secret_lookup[kw] = is_secret
+
+            self._pprint({
+                identity_section[len("identity."):]: {
+                    k: (v if not key_is_secret_lookup.get(k, False) else "xxxxxx") for k, v in identity.items()
+                }
+            })
 
     def delete(self):
         identity_name = self.args.identity_name
