@@ -183,7 +183,9 @@ def add_client_options(parser):
     call_p = subparsers.add_parser("call", help="Call a service")
     call_p.set_defaults(fn="call")
     call_p.add_argument("method", help="target service's method name to call", metavar="METHOD")
-    call_p.add_argument("params", nargs='?', help="json-serialized parameters to pass to method", metavar="PARAMS")
+    call_p.add_argument("params", nargs='?', help="json-serialized parameters object or path containing "
+                                                  "json-serialized parameters object (leave emtpy to read from stdin)",
+                        metavar="PARAMS")
     call_p.add_argument("--max-price", type=int, default=0,
                         help="skip interactive confirmation of job price if below max price (defaults to 0)")
     add_contract_identity_arguments(call_p, [("agent", "agent_at"), ("job", "job_at")])
