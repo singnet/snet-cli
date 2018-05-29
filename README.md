@@ -5,35 +5,12 @@ SingularityNET CLI
 ## Getting Started  
   
 These instructions are intended to facilitate the development and use of the SingularityNET CLI.
-  
-### Prerequisites  
-  
-* [Python 3.6.5](https://www.python.org/downloads/release/python-365/)  
-* [Node 8+ w/npm](https://nodejs.org/en/download/)  
 
 ### Installing (For Use)
 
 * Install using pip
 ```bash
 $ pip install snet-cli
-```
-  
-### Installing (For Development)
-  
-* Clone the git repository  
-```bash  
-$ git clone git@github.com:singnet/snet-cli.git
-$ cd snet-cli
-```  
-  
-* Install development/test blockchain dependencies  
-```bash  
-$ ./scripts/blockchain install
-```
-  
-* Install the package in development/editable mode  
-```bash  
-$ pip install -e .
 ```
 
 ### Commands
@@ -215,7 +192,8 @@ snet client call METHOD PARAMS [--max-price MAX_PRICE]
 
 * Call a SingularityNET service
 * `METHOD`: service's target JSON-RPC method name
-* `PARAMS`: serialized JSON object containing target JSON-RPC method's parameters and call arguments
+* `PARAMS`: serialized JSON object containing target JSON-RPC method's parameters and call arguments (also accepts path
+of file containing serialized JSON parameters object; leave empty to read from stdin)
 * `MAX_PRICE`: skip interactive confirmation of job price if below this value
 * `AGENT_AT`: address of Agent contract associated with service; overwrites session `current_agent_at`
 * `JOB_AT`: address of Job contract instance; continue existing job from current state or create a new job if not
@@ -360,11 +338,38 @@ snet contract <ContractName> [--at AT] <functionName> PARAM1, PARAM2, ... [--tra
 
 ---
 
-## Release  
+## Development
+
+### Installing
+
+#### Prerequisites  
+  
+* [Python 3.6.5](https://www.python.org/downloads/release/python-365/)  
+* [Node 8+ w/npm](https://nodejs.org/en/download/)
+
+---
+
+* Clone the git repository  
+```bash  
+$ git clone git@github.com:singnet/snet-cli.git
+$ cd snet-cli
+```  
+  
+* Install development/test blockchain dependencies  
+```bash  
+$ ./scripts/blockchain install
+```
+  
+* Install the package in development/editable mode  
+```bash  
+$ pip install -e .
+```
+
+### Release  
   
 This project is published to [PyPI](https://pypi.org/project/snet-cli/).  
   
-## Versioning  
+### Versioning  
   
 We use [SemVer](http://semver.org/) for versioning. For the versions available, see the
 [tags on this repository](https://github.com/singnet/snet-cli/tags).   
