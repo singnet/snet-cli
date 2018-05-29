@@ -340,6 +340,28 @@ class AgentFactoryCommand(BlockchainCommand):
 
 
 class ClientCommand(BlockchainCommand):
+
+    def _get_call_params(self, args):
+        # Don't use _get_string because it doesn't make sense to store this with session/identity.
+        # We also want to fall back to stdin or a file
+        params_string = getattr(args, "params", None)
+
+        if params_string is None or params_string == "-":
+            params_source = "stdin"
+            self._printerr("Waiting for call params on stdin...\n")
+            params_string = sys.stdin.read()
+        elif Path(params_string).is_file():
+            params_source = "file"
+            fn = params_string
+            with open(fn, 'rb') as f:
+                params_string = f.read()
+        else:
+            params_source = "cmdline"
+
+        params = json.loads(params_string)
+
+        return params_source, params
+
     def call(self):
         agent_address = self._getstring("agent_at")
         self._ensure(agent_address is not None, "--agent-at is required to specify agent address")
@@ -398,7 +420,9 @@ class ClientCommand(BlockchainCommand):
         endpoint = ContractCommand(self.config, self.get_contract_argser(
             agent_address, "endpoint", agent_contract_json)(), None, None, self.w3, self.ident).call()
 
-        params = json.loads(self._getstring("params"))
+        params_source, params = self._get_call_params(self.args)
+
+        self._printerr("Read call params from {}...\n".format(params_source))
 
         self._printerr("Calling service...\n")
 
