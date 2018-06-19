@@ -461,7 +461,11 @@ class RegistryCommand(BlockchainCommand):
         self.args.at = self._getstring("registry_at")
         [names, addresses] = ContractCommand(self.config, self.args, None, None, self.w3, self.ident).call()
         names = list(map(lambda n: n.partition(b"\0")[0].decode("utf-8"), names))
-        self._pprint({"records": [{"name": names[i], "address": addresses[i]} for i in range(len(names))]})
+        records = [{"name": names[i], "address": addresses[i]} for i 
+            in range(len(names)) 
+            if names[i] != ""
+                and addresses[i] != "0x0000000000000000000000000000000000000000"]
+        self._pprint({"records": records})
         if self.args.at is not None:
             self._set_key("current_registry_at", self.args.at, out_f=self.err_f)
 
