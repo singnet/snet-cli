@@ -125,10 +125,6 @@ class InitCommand(Command):
                        "    - 'ledger' (yields to a required ledger nano s device for signing using a given wallet\n"
                        "          index)\n"
                        "    - 'trezor' (yields to a required trezor device for signing using a given wallet index)\n"
-                       "          Note that trezor devices currently implement a message signing scheme that is at\n"
-                       "          odds with all other available tools. As such, trezor-based identities are currently\n"
-                       "          only partially-functional with the snet cli (they cannot be used to call services\n"
-                       "          using 'snet client')."
                        "\n"
                        "Create additional identities by running 'snet identity create', and switch identities by \n"
                        "running 'snet identity <identity_name>'.\n")
