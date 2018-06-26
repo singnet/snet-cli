@@ -12,7 +12,7 @@ from eth_account.messages import defunct_hash_message
 from snet_cli._vendor.ledgerblue.comm import getDongle
 from snet_cli._vendor.ledgerblue.commException import CommException
 from mnemonic import Mnemonic
-from trezorlib.client import TrezorClient
+from trezorlib.client import TrezorClient, proto
 from trezorlib.transport_hid import HidTransport
 
 
@@ -173,17 +173,14 @@ class TrezorIdentityProvider(IdentityProvider):
 
         return receipt
 
-    # Currently broken (see https://github.com/ethereum/go-ethereum/issues/14794)
     def sign_message(self, message, out_f):
-        # n = self.client._convert_prime([44 + bip32utils.BIP32_HARDEN,
-        #                                 60 + bip32utils.BIP32_HARDEN,
-        #                                 bip32utils.BIP32_HARDEN,
-        #                                 0,
-        #                                 self.index])
-        # print("Sending message to trezor for signature...\n", file=out_f)
-        # return self.client.call(proto.EthereumSignMessage(address_n=n, message=web3.Web3.sha3(hexstr=message)))
-        raise RuntimeError("Trezor's dogmatic developers have chosen to break message signing compatibility with no "
-                           "security benefit to end users. Buy a ledger wallet here: https://www.ledgerwallet.com/")
+        n = self.client._convert_prime([44 + bip32utils.BIP32_HARDEN,
+                                        60 + bip32utils.BIP32_HARDEN,
+                                        bip32utils.BIP32_HARDEN,
+                                        0,
+                                        self.index])
+        print("Sending message to trezor for signature...\n", file=out_f)
+        return self.client.call(proto.EthereumSignMessage(address_n=n, message=self.w3.sha3(hexstr=message))).signature
 
 
 def parse_bip32_path(path):
