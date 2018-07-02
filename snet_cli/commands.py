@@ -22,7 +22,7 @@ class Command(object):
         self.err_f = err_f
         if self.config.getboolean("session", "init", fallback=False):
             del self.config["session"]["init"]
-            InitCommand(self.config, None, self.out_f, self.err_f).init()
+            InitCommand(self.config, self.args, self.out_f, self.err_f).init()
             self.session = from_config(self.config)
             if (self.args.cmd.__name__ == "IdentityCommand" and self.args.fn == "create" and
                     self.args.identity_name == self.config["session"]["identity_name"]):
@@ -129,20 +129,20 @@ class InitCommand(Command):
                        "Create additional identities by running 'snet identity create', and switch identities by \n"
                        "running 'snet identity <identity_name>'.\n")
         create_identity_kwargs = {}
-        identity_name = input("Choose a name for your first identity: \n") or None
+        identity_name = getattr(self.args, "identity_name", None) or input("Choose a name for your first identity: \n") or None
         self._ensure(identity_name is not None, "identity name is required")
         create_identity_kwargs["identity_name"] = identity_name
-        identity_type = input("Select an identity type for your first identity (choose from {}): \n".format(
-            get_identity_types())) or None
+        identity_type = getattr(self.args, "identity_type", None) or input("Select an identity type for your first"
+                                                  " identity (choose from {}): \n".format(get_identity_types())) or None
         self._ensure(identity_type in get_identity_types(),
                      "identity type {} not in {}".format(identity_type, get_identity_types()))
         create_identity_kwargs["identity_type"] = identity_type
         for kw, is_secret in get_kws_for_identity_type(identity_type):
             kw_prompt = "{}: \n".format(" ".join(kw.capitalize().split("_")))
             if is_secret:
-                value = getpass.getpass(kw_prompt) or None
+                value = getattr(self.args, kw, None) or getpass.getpass(kw_prompt) or None
             else:
-                value = input(kw_prompt) or None
+                value = getattr(self.args, kw, None) or input(kw_prompt) or None
             self._ensure(value is not None, "{} is required".format(kw.split("_")))
             create_identity_kwargs[kw] = value
         IdentityCommand(self.config, DefaultAttributeObject(**create_identity_kwargs), self.err_f, self.err_f).create()
