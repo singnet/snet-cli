@@ -130,20 +130,20 @@ snet unset KEY
 ---
 
 ```
-snet agent [--at AT] create-jobs [--number NUMBER]
-                                 [--max-price MAX_PRICE]
-                                 [--funded]
-                                 [--signed]
-                                 [--gas-price GAS_PRICE]
-                                 [--eth-rpc-endpoint ETH_RPC_ENDPOINT]
-                                 [--wallet-index WALLET_INDEX]
-                                 [--no-confirm]
-                                 [--verbose | --quiet]
+snet agent [--at ADDRESS] create-jobs [--number NUMBER]
+                                      [--max-price MAX_PRICE]
+                                      [--funded]
+                                      [--signed]
+                                      [--gas-price GAS_PRICE]
+                                      [--eth-rpc-endpoint ETH_RPC_ENDPOINT]
+                                      [--wallet-index WALLET_INDEX]
+                                      [--no-confirm]
+                                      [--verbose | --quiet]
 ```
 
 * Create jobs associated with an agent and output their information; overwrites session `current_job_at` to the last
 created Job contract's address
-* `AT`: address of target Agent contract; overwrites session `current_agent_at`
+* `ADDRESS`: address of target Agent contract; overwrites session `current_agent_at`
 * `NUMBER`: number of jobs to create
 * `MAX_PRICE`: skip interactive confirmation of job price if below this value
 * `--funded`: fund created jobs
@@ -158,15 +158,15 @@ created Job contract's address
 ---
 
 ```
-snet agent-factory [--at AT] create-agent PRICE ENDPOINT [METADATA_URI] [--gas-price GAS_PRICE]
-                                                                        [--eth-rpc-endpoint ETH_RPC_ENDPOINT]
-                                                                        [--wallet-index WALLET_INDEX]
-                                                                        [--no-confirm]
-                                                                        [--verbose | --quiet]
+snet agent-factory [--at ADDRESS] create-agent PRICE ENDPOINT [METADATA_URI] [--gas-price GAS_PRICE]
+                                                                             [--eth-rpc-endpoint ETH_RPC_ENDPOINT]
+                                                                             [--wallet-index WALLET_INDEX]
+                                                                             [--no-confirm]
+                                                                             [--verbose | --quiet]
 ```
 
 * Create an agent; overwrites session `current_agent_at` to created Agent contract's address
-* `AT`: address of target AgentFactory contract; overwrites session `current_agent_factory_at` (not required for
+* `ADDRESS`: address of target AgentFactory contract; overwrites session `current_agent_factory_at` (not required for
 networks on which AgentFactory has been deployed by SingularityNET Foundation)
 * `PRICE`: initial job price for created agent
 * `ENDPOINT`: endpoint on which daemon for the new agent will listen for requests
@@ -182,8 +182,8 @@ networks on which AgentFactory has been deployed by SingularityNET Foundation)
 
 ```
 snet client call METHOD PARAMS [--max-price MAX_PRICE]
-                               [--agent-at AGENT_AT]
-                               [--job-at JOB_AT]
+                               [--agent-at AGENT_ADDRESS]
+                               [--job-at JOB_ADDRESS]
                                [--gas-price GAS_PRICE]
                                [--eth-rpc-endpoint ETH_RPC_ENDPOINT]
                                [--wallet-index WALLET_INDEX]
@@ -196,8 +196,8 @@ snet client call METHOD PARAMS [--max-price MAX_PRICE]
 * `PARAMS`: serialized JSON object containing target JSON-RPC method's parameters and call arguments (also accepts path
 of file containing serialized JSON parameters object; leave empty to read from stdin)
 * `MAX_PRICE`: skip interactive confirmation of job price if below this value
-* `AGENT_AT`: address of Agent contract associated with service; overwrites session `current_agent_at`
-* `JOB_AT`: address of Job contract instance; continue existing job from current state or create a new job if not
+* `AGENT_ADDRESS`: address of Agent contract associated with service; overwrites session `current_agent_at`
+* `JOB_ADDRESS`: address of Job contract instance; continue existing job from current state or create a new job if not
 provided or in COMPLETED state; overwrites session `current_job_at`
 * `GAS_PRICE`: override session `default_gas_price`
 * `ETH_RPC_ENDPOINT`: override session `default_eth_rpc_endpoint`
@@ -209,15 +209,15 @@ provided or in COMPLETED state; overwrites session `current_job_at`
 ---
 
 ```
-snet registry [--at AT] create-record NAME AGENT_ADDRESS [--gas-price GAS_PRICE]
-                                                         [--eth-rpc-endpoint ETH_RPC_ENDPOINT]
-                                                         [--wallet-index WALLET_INDEX]
-                                                         [--no-confirm]
-                                                         [--verbose | --quiet]
+snet registry [--at ADDRESS] create-record NAME AGENT_ADDRESS [--gas-price GAS_PRICE]
+                                                              [--eth-rpc-endpoint ETH_RPC_ENDPOINT]
+                                                              [--wallet-index WALLET_INDEX]
+                                                              [--no-confirm]
+                                                              [--verbose | --quiet]
 ```
 
 * Create a registry record
-* `AT`: address of target Registry contract; overwrites session `current_registry_at` (not required for networks on
+* `ADDRESS`: address of target Registry contract; overwrites session `current_registry_at` (not required for networks on
 which Registry has been deployed by SingularityNET Foundation)
 * `NAME`: desired name; must be unique within registry
 * `AGENT_ADDRESS`: address of agent to which record refers
@@ -231,15 +231,15 @@ which Registry has been deployed by SingularityNET Foundation)
 ---
 
 ```
-snet registry [--at AT] update-record NAME AGENT_ADDRESS [--gas-price GAS_PRICE]
-                                                         [--eth-rpc-endpoint ETH_RPC_ENDPOINT]
-                                                         [--wallet-index WALLET_INDEX]
-                                                         [--no-confirm]
-                                                         [--verbose | --quiet]
+snet registry [--at ADDRESS] update-record NAME AGENT_ADDRESS [--gas-price GAS_PRICE]
+                                                              [--eth-rpc-endpoint ETH_RPC_ENDPOINT]
+                                                              [--wallet-index WALLET_INDEX]
+                                                              [--no-confirm]
+                                                              [--verbose | --quiet]
 ```
 
 * Update a registry record
-* `AT`: address of target Registry contract; overwrites session `current_registry_at` (not required for networks on
+* `ADDRESS`: address of target Registry contract; overwrites session `current_registry_at` (not required for networks on
 which Registry has been deployed by SingularityNET Foundation)
 * `NAME`: existing record name
 * `AGENT_ADDRESS`: replacement address of agent to which record refers
@@ -253,15 +253,15 @@ which Registry has been deployed by SingularityNET Foundation)
 ---
 
 ```
-snet registry [--at AT] deprecate-record NAME [--gas-price GAS_PRICE]
-                                              [--eth-rpc-endpoint ETH_RPC_ENDPOINT]
-                                              [--wallet-index WALLET_INDEX]
-                                              [--no-confirm]
-                                              [--verbose | --quiet]
+snet registry [--at ADDRESS] deprecate-record NAME [--gas-price GAS_PRICE]
+                                                   [--eth-rpc-endpoint ETH_RPC_ENDPOINT]
+                                                   [--wallet-index WALLET_INDEX]
+                                                   [--no-confirm]
+                                                   [--verbose | --quiet]
 ```
 
 * Deprecate a registry record
-* `AT`: address of target Registry contract; overwrites session `current_registry_at` (not required for networks on
+* `ADDRESS`: address of target Registry contract; overwrites session `current_registry_at` (not required for networks on
 which Registry has been deployed by SingularityNET Foundation)
 * `NAME`: existing record name
 * `GAS_PRICE`: override session `default_gas_price`
@@ -274,15 +274,15 @@ which Registry has been deployed by SingularityNET Foundation)
 ---
 
 ```
-snet registry [--at AT] list-records [--gas-price GAS_PRICE]
-                                     [--eth-rpc-endpoint ETH_RPC_ENDPOINT]
-                                     [--wallet-index WALLET_INDEX]
-                                     [--no-confirm]
-                                     [--verbose | --quiet]
+snet registry [--at ADDRESS] list-records [--gas-price GAS_PRICE]
+                                          [--eth-rpc-endpoint ETH_RPC_ENDPOINT]
+                                          [--wallet-index WALLET_INDEX]
+                                          [--no-confirm]
+                                          [--verbose | --quiet]
 ```
 
 * List registry records
-* `AT`: address of target Registry contract; overwrites session `current_registry_at` (not required for networks on
+* `ADDRESS`: address of target Registry contract; overwrites session `current_registry_at` (not required for networks on
 which Registry has been deployed by SingularityNET Foundation)
 * `GAS_PRICE`: override session `default_gas_price`
 * `ETH_RPC_ENDPOINT`: override session `default_eth_rpc_endpoint`
@@ -294,16 +294,16 @@ which Registry has been deployed by SingularityNET Foundation)
 ---
 
 ```
-snet registry [--at AT] query NAME [--gas-price GAS_PRICE]
-                                   [--eth-rpc-endpoint ETH_RPC_ENDPOINT]
-                                   [--wallet-index WALLET_INDEX]
-                                   [--no-confirm]
-                                   [--verbose | --quiet]
+snet registry [--at ADDRESS] query NAME [--gas-price GAS_PRICE]
+                                        [--eth-rpc-endpoint ETH_RPC_ENDPOINT]
+                                        [--wallet-index WALLET_INDEX]
+                                        [--no-confirm]
+                                        [--verbose | --quiet]
 ```
 
 * Query registry records for a given name; overwrites session `current_agent_at` to the Agent contract address
 associated with the given name
-* `AT`: address of target Registry contract; overwrites session `current_registry_at` (not required for networks on
+* `ADDRESS`: address of target Registry contract; overwrites session `current_registry_at` (not required for networks on
 which Registry has been deployed by SingularityNET Foundation)
 * `NAME`: existing record name
 * `GAS_PRICE`: override session `default_gas_price`
@@ -316,17 +316,17 @@ which Registry has been deployed by SingularityNET Foundation)
 ---
 
 ```
-snet contract <ContractName> [--at AT] <functionName> PARAM1, PARAM2, ... [--transact]
-                                                                          [--gas-price GAS_PRICE]
-                                                                          [--eth-rpc-endpoint ETH_RPC_ENDPOINT]
-                                                                          [--wallet-index WALLET_INDEX]
-                                                                          [--no-confirm]
-                                                                          [--verbose | --quiet]
+snet contract <ContractName> [--at ADDRESS] <functionName> PARAM1, PARAM2, ... [--transact]
+                                                                               [--gas-price GAS_PRICE]
+                                                                               [--eth-rpc-endpoint ETH_RPC_ENDPOINT]
+                                                                               [--wallet-index WALLET_INDEX]
+                                                                               [--no-confirm]
+                                                                               [--verbose | --quiet]
 ```
 
 * Interact with a contract
 * `<ContractName>`: name of contract (either `Agent`, `AgentFactory`, `Job`, `Registry`, or `SingularityNetToken`)
-* `AT`: address of target contract
+* `ADDRESS`: address of target contract
 * `<functionName>`: name of contract's target function
 * `PARAM1, PARAM2, ...`: arguments to pass to given function
 * `--transact`: conduct interaction as a transaction rather than a call
@@ -365,6 +365,8 @@ snet service init [--name NAME]
 ```
 snet service publish [NETWORK] [--no-register]
                                [--config CONFIG]
+                               [--agent-factory-at AGENT_FACTORY_ADDRESS]
+                               [--registry-at REGISTRY_ADDRESS]
                                                                           
                                                                           
                                                                           
@@ -374,12 +376,18 @@ snet service publish [NETWORK] [--no-register]
 * `NETWORK`: name of network to use (either `mainnet`, `kovan`, `ropsten`, `rinkeby` or `eth-rpc-endpoint`)
 * `--no-register`: does not register the published service
 * `CONFIG`: specify a custom service.json file path
+* `AGENT_FACTORY_ADDRESS`: address of AgentFactory contract (not required for networks on which AgentFactory has been
+deployed by SingularityNET Foundation)
+* `REGISTRY_ADDRESS`: address of Registry contract (not required for networks on which Registry has been deployed by
+SingularityNET Foundation)
 
 ---
 
 ```
 snet service publish eth-rpc-endpoint ETH_RPC_ENDPOINT [--no-register]
                                                        [--config CONFIG]
+                                                       [--agent-factory-at AGENT_FACTORY_ADDRESS]
+                                                       [--registry-at REGISTRY_ADDRESS]
                                                                           
                                                                           
                                                                           
@@ -389,6 +397,10 @@ snet service publish eth-rpc-endpoint ETH_RPC_ENDPOINT [--no-register]
 * `ETH_RPC_ENDPOINT`: Ethereum JSON-RPC endpoint (network determined by endpoint)
 * `--no-register`: does not register the published service
 * `CONFIG`: specify a custom service.json file path
+* `AGENT_FACTORY_ADDRESS`: address of AgentFactory contract (not required for networks on which AgentFactory has been
+deployed by SingularityNET Foundation)
+* `REGISTRY_ADDRESS`: address of Registry contract (not required for networks on which Registry has been deployed by
+SingularityNET Foundation)
 
 ---
 
@@ -397,6 +409,8 @@ snet service update [NETWORK] [--new-price NEW_PRICE]
                               [--new-endpoint NEW_ENDPOINT]
                               [--new-description NEW_DESCRIPTION]
                               [--config CONFIG]
+                              [--agent-factory-at AGENT_FACTORY_ADDRESS]
+                              [--registry-at REGISTRY_ADDRESS]
                                                                           
 ```
 
@@ -406,6 +420,8 @@ snet service update [NETWORK] [--new-price NEW_PRICE]
 * `NEW_ENDPOINT`: new endpoint to call the service's API
 * `NEW_DESCRIPTION`: new description for the service
 * `CONFIG`: specify a custom service.json file path
+* `REGISTRY_ADDRESS`: address of Registry contract (not required for networks on which Registry has been deployed by
+SingularityNET Foundation)
 
 ---
 
@@ -414,6 +430,8 @@ snet service update eth-rpc-endpoint ETH_RPC_ENDPOINT [--new-price NEW_PRICE]
                                                       [--new-endpoint NEW_ENDPOINT]
                                                       [--new-description NEW_DESCRIPTION]
                                                       [--config CONFIG]
+                                                      [--agent-factory-at AGENT_FACTORY_ADDRESS]
+                                                      [--registry-at REGISTRY_ADDRESS]
                                                                           
 ```
 
@@ -423,6 +441,8 @@ snet service update eth-rpc-endpoint ETH_RPC_ENDPOINT [--new-price NEW_PRICE]
 * `NEW_ENDPOINT`: new endpoint to call the service's API
 * `NEW_DESCRIPTION`: new description for the service
 * `CONFIG`: specify a custom service.json file path
+* `REGISTRY_ADDRESS`: address of Registry contract (not required for networks on which Registry has been deployed by
+SingularityNET Foundation)
 
 ---
 
