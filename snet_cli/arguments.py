@@ -277,6 +277,7 @@ def _add_service_publish_arguments(parser):
     parser.add_argument("--no-register", action="store_true", help="does not register the published service")
     parser.add_argument("--config", help="specify a custom service.json file path")
     add_transaction_arguments(parser)
+    add_contract_identity_arguments(parser, [("registry", "registry_at"), ("agent-factory", "agent_factory_at")])
 
 
 def _add_service_update_arguments(parser):
@@ -286,6 +287,7 @@ def _add_service_update_arguments(parser):
     parser.add_argument("--new-description", help="new description for the service")
     parser.add_argument("--config", help="specify a custom service.json file path")
     add_transaction_arguments(parser)
+    add_contract_identity_arguments(parser, [("registry", "registry_at")])
 
 
 def add_service_options(parser, config):
@@ -383,13 +385,13 @@ def add_contract_identity_arguments(parser, names_and_destinations=(("", "at"),)
     for (name, destination) in names_and_destinations:
         if name != "":
             arg_name = "{}-".format(name)
-            metavar_name = "{}_".format(name)
+            metavar_name = "{}_".format(name.replace("-", "_"))
         else:
             arg_name = name
             metavar_name = name
         h = "{} contract address".format(name)
         if destination != "at":
-            h += " (defaults to session.default_{})".format(destination)
+            h += " (defaults to session.current_{})".format(destination)
         identity_g.add_argument("--{}at".format(arg_name), dest=destination,
                                 metavar="{}ADDRESS".format(metavar_name.upper()),
                                 help=h)
