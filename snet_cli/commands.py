@@ -624,7 +624,7 @@ class ServiceCommand(BlockchainCommand):
         elif not accept_all_defaults:
             tags_user_input = input("Input a list of tags for your service: (default: {})\n".format(init_args["tags"])) or init_args["tags"]
             if tags_user_input and " " in tags_user_input and "," in tags_user_input:
-                raise ValueError("Please provide a list separated either by comma or space, not both")
+                self._error("Please provide a list separated either by comma or space, not both")
             elif tags_user_input and "," in tags_user_input:
                 init_args["tags"] = tags_user_input.split(",")
             elif tags_user_input and " " in tags_user_input:
@@ -654,7 +654,7 @@ class ServiceCommand(BlockchainCommand):
             service_json = json.load(f)
 
         if service_json.get('networks', {}).get(self.w3.version.network, {}).get('agentAddress', {}):
-            raise ValueError("Service has already been deployed to network with id {}".format(network))
+            self._error("Service has already been deployed to network with id {}".format(network))
 
         # Get list of model files
         import_paths = None
@@ -665,7 +665,7 @@ class ServiceCommand(BlockchainCommand):
             else:
                 entry_path = model_path.resolve()
             if not os.path.isdir(entry_path):
-                raise IOError("Model path must resolve to a valid directory: {}".format(model_path))
+                self._error("Model path must resolve to a valid directory: {}".format(model_path))
             import_paths = walk_imports(entry_path)
 
         # Create model tar and upload it to IPFS
@@ -743,7 +743,7 @@ class ServiceCommand(BlockchainCommand):
             agent_contract_json = json.load(f)
 
         if not service_json.get('networks', {}).get(self.w3.version.network, {}).get('agentAddress', {}):
-            raise ValueError("Service hasn't been deployed to network with id {}".format(network))
+            self._error("Service hasn't been deployed to network with id {}".format(network))
 
         if self.args.new_price:
             cmd = ContractCommand(self.config, self.get_contract_argser(
