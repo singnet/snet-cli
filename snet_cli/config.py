@@ -19,6 +19,7 @@ except FileNotFoundError:
     conf["network.mainnet"] = {"default_eth_rpc_endpoint": "https://mainnet.infura.io"}
     conf["network.ropsten"] = {"default_eth_rpc_endpoint": "https://ropsten.infura.io"}
     conf["network.rinkeby"] = {"default_eth_rpc_endpoint": "https://rinkeby.infura.io"}
+    conf["ipfs"] = {"default_ipfs_endpoint": "http://ipfs.singularitynet.io:80"}
     conf["session"] = {
         "init": "1",
         "default_gas_price": "1000000000",
