@@ -1,4 +1,5 @@
 import os
+import json
 from pathlib import Path
 
 import web3
@@ -77,14 +78,17 @@ def serializable(o):
 
 
 def type_converter(t):
-    if "int" in t:
-        return lambda x: web3.Web3.toInt(text=x)
-    elif "byte" in t:
-        return lambda x: web3.Web3.toBytes(text=x) if not x.startswith("0x") else web3.Web3.toBytes(hexstr=x)
-    elif "address" in t:
-        return web3.Web3.toChecksumAddress
+    if t.endswith("[]"):
+        return lambda x: list(map(type_converter(t.replace("[]", "")), json.loads(x)))
     else:
-        return str
+        if "int" in t:
+            return lambda x: web3.Web3.toInt(text=x)
+        elif "byte" in t:
+            return lambda x: web3.Web3.toBytes(text=x) if not x.startswith("0x") else web3.Web3.toBytes(hexstr=x)
+        elif "address" in t:
+            return web3.Web3.toChecksumAddress
+        else:
+            return str
 
 
 def _validate_path(path, entry_path):
