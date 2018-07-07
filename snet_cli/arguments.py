@@ -225,6 +225,7 @@ def add_registry_options(parser):
     subparsers = parser.add_subparsers(title="registry commands", metavar="COMMAND")
     subparsers.required = True
 
+    # Warning: none of these commands work with the new Registry
     create_record_p = subparsers.add_parser("create-record", help="Create a new record")
     create_record_p.set_defaults(fn="create_record")
     create_record_p.set_defaults(contract_function="createRecord")
@@ -284,6 +285,8 @@ def _add_service_update_arguments(parser):
     parser.set_defaults(fn="update")
     parser.add_argument("--new-price", help="new price to call the service", type=type_converter("uint256"))
     parser.add_argument("--new-endpoint", help="new endpoint to call the service's API")
+    parser.add_argument("--add-tags", nargs="+", type=type_converter("bytes32"),
+                        metavar=("TAGS", "TAG1, TAG2,"), help="tags you want to add to the service registration")
     parser.add_argument("--new-description", help="new description for the service")
     parser.add_argument("--config", help="specify a custom service.json file path")
     add_transaction_arguments(parser)
@@ -301,6 +304,7 @@ def add_service_options(parser, config):
     init_p.add_argument("--name", help='name of the service to be stored in the registry (default: <current working directory>)')
     init_p.add_argument("--model", help='local filesystem path to the service model directory (default: "model/")')
     init_p.add_argument("--organization", help='the organization to which you want to register the service (default: "")')
+    init_p.add_argument("--path", help='the path under which you want to register the service in the organization (default: "")')
     init_p.add_argument("--price", help='initial price for interacting with the service (default: 0)')
     init_p.add_argument("--endpoint", help="initial endpoint to call the service's API (default: \"\")")
     init_p.add_argument("--tags", nargs="+", metavar=("TAGS", "TAG1, TAG2,"), help="tags to describe the service (default: [])")

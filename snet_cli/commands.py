@@ -435,6 +435,7 @@ class ClientCommand(BlockchainCommand):
 
 
 class RegistryCommand(BlockchainCommand):
+    # Warning: none of these commands work with the new Registry
     def create_record(self):
         self.args.at = self._getstring("registry_at")
         cmd = ContractCommand(self.config, self.args, self.out_f, self.err_f, self.w3, self.ident)
@@ -583,6 +584,7 @@ class ServiceCommand(BlockchainCommand):
             "name": os.path.basename(os.getcwd()),
             "model": "model/",
             "organization": "",
+            "path": "",
             "price": 0,
             "endpoint": "",
             "tags": [],
@@ -608,6 +610,11 @@ class ServiceCommand(BlockchainCommand):
             init_args["organization"] = self.args.organization
         elif not accept_all_defaults:
             init_args["organization"] = input('Choose an organization to register your service under: (default: "{}")\n'.format(init_args["organization"])) or init_args["organization"]
+
+        if self.args.path:
+            init_args["path"] = self.args.path
+        elif not accept_all_defaults:
+            init_args["path"] = input('Choose the path under which your Service registration will be created: (default: "{}")\n'.format(init_args["path"])) or init_args["path"]
 
         if self.args.price:
             init_args["price"] = self.args.price
@@ -722,8 +729,12 @@ class ServiceCommand(BlockchainCommand):
                 registry_json = json.load(f)
             self.args.at = self._getstring("registry_at")
             cmd = ContractCommand(self.config, self.get_contract_argser(
-                self.args.at, "createRecord", registry_json)(
-                    type_converter('bytes32')(service_json['name']), type_converter('address')(agent_address)
+                self.args.at, "createServiceRegistration", registry_json)(
+                    type_converter('bytes32')(service_json['organization']),
+                    type_converter('bytes32')(service_json['name']),
+                    type_converter('bytes32')(service_json['path']),
+                    type_converter('address')(agent_address),
+                    list(map(type_converter('bytes32'), service_json['tags']))
                 ), self.out_f, self.err_f, self.w3, self.ident)
             self._printerr("Creating transaction to create record...\n")
             cmd.transact()
@@ -750,6 +761,7 @@ class ServiceCommand(BlockchainCommand):
                 service_json['networks'][self.w3.version.network]['agentAddress'], "setPrice", agent_contract_json)(
                 self.args.new_price
             ), self.out_f, self.err_f, self.w3, self.ident)
+            self._printerr("Creating transaction to update price...\n")
             cmd.transact()
 
         if self.args.new_endpoint:
@@ -757,6 +769,7 @@ class ServiceCommand(BlockchainCommand):
                 service_json['networks'][self.w3.version.network]['agentAddress'], "setEndpoint", agent_contract_json)(
                 self.args.new_endpoint
             ), self.out_f, self.err_f, self.w3, self.ident)
+            self._printerr("Creating transaction to update endpoint...\n")
             cmd.transact()
 
         if self.args.new_description:
@@ -788,5 +801,18 @@ class ServiceCommand(BlockchainCommand):
             metadata_ipfs_uri = uri_reference(metadata_ipfs_path).copy_with(scheme='ipfs').unsplit()
             cmd = ContractCommand(self.config, self.get_contract_argser(
                 service_json['networks'][self.w3.version.network]["agentAddress"], "setMetadataURI", agent_contract_json)(metadata_ipfs_uri), self.out_f, self.err_f, self.w3, self.ident)
+            self._printerr("Creating transaction to update metadataURI...\n")
             cmd.transact()
-            self._printout("metadataURI updated: {}".format(metadata_ipfs_uri))
+
+        if self.args.add_tags:
+            with open(Path(__file__).absolute().parent.joinpath("resources", "contracts", "Registry.json")) as f:
+                registry_json = json.load(f)
+            cmd = ContractCommand(self.config, self.get_contract_argser(
+                registry_json['networks'][self.w3.version.network]['address'], "addTagsToServiceRegistration", registry_json
+            )(
+                type_converter('bytes32')(service_json['organization']),
+                type_converter('bytes32')(service_json['name']),
+                self.args.add_tags
+            ), self.out_f, self.err_f, self.w3, self.ident)
+            self._printerr("Creating transaction to add tags...\n")
+            cmd.transact()

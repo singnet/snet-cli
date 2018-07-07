@@ -343,6 +343,7 @@ snet contract <ContractName> [--at ADDRESS] <functionName> PARAM1, PARAM2, ... [
 snet service init [--name NAME]
                   [--model MODEL]
                   [--organization ORGANIZATION]
+                  [--path PATH]
                   [--price PRICE]
                   [--endpoint ENDPOINT]
                   [--tags TAGS [TAG1, TAG2, ...]]
@@ -354,6 +355,7 @@ snet service init [--name NAME]
 * `NAME`: name of the service to be stored in the registry
 * `MODEL`: local filesystem path to the service model directory
 * `ORGANIZATION`: the organization to which you want to register the service
+* `PATH`: the path under which you want to register the service in the organization
 * `PRICE`: initial price for interacting with the service
 * `ENDPOINT`: initial endpoint to call the service's API 
 * `TAGS`: tags to describe the service
@@ -407,6 +409,7 @@ SingularityNET Foundation)
 ```
 snet service update [NETWORK] [--new-price NEW_PRICE]
                               [--new-endpoint NEW_ENDPOINT]
+                              [--add-tags TAGS [TAG1, TAG2, ...]]
                               [--new-description NEW_DESCRIPTION]
                               [--config CONFIG]
                               [--agent-factory-at AGENT_FACTORY_ADDRESS]
@@ -418,6 +421,7 @@ snet service update [NETWORK] [--new-price NEW_PRICE]
 * `NETWORK`: name of network to use (either `mainnet`, `kovan`, `ropsten`, `rinkeby` or `eth-rpc-endpoint`)
 * `NEW_PRICE`: new price to call the service
 * `NEW_ENDPOINT`: new endpoint to call the service's API
+* `TAGS`: tags you want to add to the service registration
 * `NEW_DESCRIPTION`: new description for the service
 * `CONFIG`: specify a custom service.json file path
 * `REGISTRY_ADDRESS`: address of Registry contract (not required for networks on which Registry has been deployed by
@@ -428,6 +432,7 @@ SingularityNET Foundation)
 ```
 snet service update eth-rpc-endpoint ETH_RPC_ENDPOINT [--new-price NEW_PRICE]
                                                       [--new-endpoint NEW_ENDPOINT]
+                                                      [--add-tags TAGS [TAG1, TAG2, ...]]
                                                       [--new-description NEW_DESCRIPTION]
                                                       [--config CONFIG]
                                                       [--agent-factory-at AGENT_FACTORY_ADDRESS]
@@ -439,6 +444,7 @@ snet service update eth-rpc-endpoint ETH_RPC_ENDPOINT [--new-price NEW_PRICE]
 * `ETH_RPC_ENDPOINT`: Ethereum JSON-RPC endpoint (network determined by endpoint)
 * `NEW_PRICE`: new price to call the service
 * `NEW_ENDPOINT`: new endpoint to call the service's API
+* `TAGS`: tags you want to add to the service registration
 * `NEW_DESCRIPTION`: new description for the service
 * `CONFIG`: specify a custom service.json file path
 * `REGISTRY_ADDRESS`: address of Registry contract (not required for networks on which Registry has been deployed by
