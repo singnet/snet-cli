@@ -1,6 +1,7 @@
 import json
 import sys
 import os
+import shlex
 import tarfile
 import tempfile
 from pathlib import Path
@@ -629,15 +630,7 @@ class ServiceCommand(BlockchainCommand):
         if self.args.tags:
             init_args["tags"] = self.args.tags
         elif not accept_all_defaults:
-            tags_user_input = input("Input a list of tags for your service: (default: {})\n".format(init_args["tags"])) or init_args["tags"]
-            if tags_user_input and " " in tags_user_input and "," in tags_user_input:
-                self._error("Please provide a list separated either by comma or space, not both")
-            elif tags_user_input and "," in tags_user_input:
-                init_args["tags"] = tags_user_input.split(",")
-            elif tags_user_input and " " in tags_user_input:
-                init_args["tags"] = tags_user_input.split()
-            for idx, tag in enumerate(init_args["tags"]):
-                init_args["tags"][idx] = tag.strip()
+            init_args["tags"] = shlex.split(input("Input a list of tags for your service: (default: {})\n".format(init_args["tags"])) or init_args["tags"])
 
         if self.args.description:
             init_args["metadata"]["description"] = self.args.description
