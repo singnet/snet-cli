@@ -127,6 +127,16 @@ def walk_imports(entry_path):
     return seen_paths
 
 
+def get_contract_dict(contract_path, contract_name):
+    contract_dict = {}
+    with open(Path(__file__).absolute().parent.joinpath(contract_path, "abi", "{}.json".format(contract_name))) as f:
+        contract_dict["abi"] = json.load(f)
+    if os.path.isfile(Path(__file__).absolute().parent.joinpath(contract_path, "networks", "{}.json".format(contract_name))):
+        with open(Path(__file__).absolute().parent.joinpath(contract_path, "networks", "{}.json".format(contract_name))) as f:
+            contract_dict["networks"] = json.load(f)
+    return contract_dict
+
+
 def read_temp_tar(f):
     f.flush()
     f.seek(0)

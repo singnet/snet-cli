@@ -9,7 +9,7 @@ from snet_cli.commands import IdentityCommand, SessionCommand, NetworkCommand, C
     AgentFactoryCommand, RegistryCommand, AgentCommand, ClientCommand, ServiceCommand
 from snet_cli.identity import get_identity_types
 from snet_cli.session import get_session_keys
-from snet_cli.utils import type_converter
+from snet_cli.utils import type_converter, get_contract_dict
 
 
 class CustomParser(argparse.ArgumentParser):
@@ -152,9 +152,8 @@ def add_unset_options(parser):
 
 def add_agent_options(parser):
     parser.set_defaults(cmd=AgentCommand)
-    with open(Path(__file__).absolute().parent.joinpath("resources", "contracts", "Agent.json")) as f:
-        contract_json = json.load(f)
-        parser.set_defaults(contract_json=contract_json)
+    contract_dict = get_contract_dict(Path(__file__).absolute().parent.joinpath("resources", "contracts"), "Agent")
+    parser.set_defaults(contract_dict=contract_dict)
 
     add_contract_identity_arguments(parser, [("", "agent_at")])
 
@@ -175,9 +174,8 @@ def add_agent_options(parser):
 
 def add_agent_factory_options(parser):
     parser.set_defaults(cmd=AgentFactoryCommand)
-    with open(Path(__file__).absolute().parent.joinpath("resources", "contracts", "AgentFactory.json")) as f:
-        contract_json = json.load(f)
-        parser.set_defaults(contract_json=contract_json)
+    contract_dict = get_contract_dict(Path(__file__).absolute().parent.joinpath("resources", "contracts"), "AgentFactory")
+    parser.set_defaults(contract_dict=contract_dict)
 
     add_contract_identity_arguments(parser, [("", "agent_factory_at")])
 
@@ -216,9 +214,8 @@ def add_client_options(parser):
 
 def add_registry_options(parser):
     parser.set_defaults(cmd=RegistryCommand)
-    with open(Path(__file__).absolute().parent.joinpath("resources", "contracts", "Registry.json")) as f:
-        contract_json = json.load(f)
-        parser.set_defaults(contract_json=contract_json)
+    contract_dict = get_contract_dict(Path(__file__).absolute().parent.joinpath("resources", "contracts"), "AlphaRegistry")
+    parser.set_defaults(contract_dict=contract_dict)
 
     add_contract_identity_arguments(parser, [("", "registry_at")])
 
@@ -268,7 +265,7 @@ def add_contract_options(parser):
     subparsers = parser.add_subparsers(title="contracts", metavar="CONTRACT")
     subparsers.required = True
 
-    for path in Path(__file__).absolute().parent.joinpath("resources", "contracts").glob("*json"):
+    for path in Path(__file__).absolute().parent.joinpath("resources", "contracts", "abi").glob("*json"):
         contract_name = re.search(r"([^.]*)\.json", os.path.basename(path)).group(1)
         contract_p = subparsers.add_parser(contract_name, help="{} contract".format(contract_name))
         add_contract_function_options(contract_p, contract_name)
@@ -353,13 +350,11 @@ def add_service_options(parser, config):
 def add_contract_function_options(parser, contract_name):
     add_contract_identity_arguments(parser)
 
-    with open(Path(__file__).absolute().parent.joinpath("resources", "contracts",
-                                                        "{}.json".format(contract_name))) as f:
-        contract_json = json.load(f)
-        parser.set_defaults(contract_json=contract_json)
+    contract_dict = get_contract_dict(Path(__file__).absolute().parent.joinpath("resources", "contracts"), contract_name)
+    parser.set_defaults(contract_dict=contract_dict)
 
     fns = []
-    for fn in filter(lambda e: e["type"] == "function", contract_json["abi"]):
+    for fn in filter(lambda e: e["type"] == "function", contract_dict["abi"]):
         fns.append({
             "name": fn["name"],
             "named_inputs": [(i["name"], i["type"]) for i in fn["inputs"] if i["name"] != ""],
