@@ -292,8 +292,8 @@ class AgentCommand(BlockchainCommand):
                    input("Accept job price {:.8f} AGI? (y/n): ".format(float(price) * 10 ** -8)) == "y")
         if proceed:
             jobs = []
-            token_contract_dict = get_contract_dict(Path(__file__).absolute().parent.joinpath("resources", "contracts"), "SingularityNetToken")
-            job_contract_dict = get_contract_dict(Path(__file__).absolute().parent.joinpath("resources", "contracts"), "Job")
+            token_contract_dict = get_contract_dict("SingularityNetToken")
+            job_contract_dict = get_contract_dict("Job")
             for _ in range(self.args.number):
                 job = {"job_price": price}
                 cmd = ContractCommand(self.config, self.args, self.err_f, self.err_f, self.w3, self.ident)
@@ -367,9 +367,9 @@ class ClientCommand(BlockchainCommand):
         agent_address = self._getstring("agent_at")
         self._ensure(agent_address is not None, "--agent-at is required to specify agent address")
 
-        job_contract_dict = get_contract_dict(Path(__file__).absolute().parent.joinpath("resources", "contracts"), "Job")
-        agent_contract_dict = get_contract_dict(Path(__file__).absolute().parent.joinpath("resources", "contracts"), "Agent")
-        token_contract_dict = get_contract_dict(Path(__file__).absolute().parent.joinpath("resources", "contracts"), "SingularityNetToken")
+        job_contract_dict = get_contract_dict("Job")
+        agent_contract_dict = get_contract_dict("Agent")
+        token_contract_dict = get_contract_dict("SingularityNetToken")
 
         job_address = self._getstring("job_at")
 
@@ -689,7 +689,7 @@ class ServiceCommand(BlockchainCommand):
         metadata_ipfs_uri = uri_reference(metadata_ipfs_path).copy_with(scheme='ipfs').unsplit()
 
         # Create Agent
-        agent_factory_dict = get_contract_dict(Path(__file__).absolute().parent.joinpath("resources", "contracts"), "AgentFactory")
+        agent_factory_dict = get_contract_dict("AgentFactory")
         self.args.at = self._getstring("agent_factory_at")
         cmd = ContractCommand(self.config, self.get_contract_argser(
             self.args.at, "createAgent", agent_factory_dict)(
@@ -711,7 +711,7 @@ class ServiceCommand(BlockchainCommand):
 
         # Register Agent
         if not self.args.no_register:
-            registry_dict = get_contract_dict(Path(__file__).absolute().parent.joinpath("resources", "contracts"), "Registry")
+            registry_dict = get_contract_dict("Registry")
             self.args.at = self._getstring("registry_at")
             cmd = ContractCommand(self.config, self.get_contract_argser(
                 self.args.at, "createServiceRegistration", registry_dict)(
@@ -735,7 +735,7 @@ class ServiceCommand(BlockchainCommand):
         with open(service_json_path) as f:
             service_json = json.load(f)
 
-        agent_contract_dict = get_contract_dict(Path(__file__).absolute().parent.joinpath("resources", "contracts"), "Agent")
+        agent_contract_dict = get_contract_dict("Agent")
 
         if not service_json.get('networks', {}).get(self.w3.version.network, {}).get('agentAddress', {}):
             self._error("Service hasn't been deployed to network with id {}".format(network))
@@ -789,7 +789,7 @@ class ServiceCommand(BlockchainCommand):
             cmd.transact()
 
         if self.args.add_tags:
-            registry_contract_dict = get_contract_dict(Path(__file__).absolute().parent.joinpath("resources", "contracts"), "Registry")
+            registry_contract_dict = get_contract_dict("Registry")
             cmd = ContractCommand(self.config, self.get_contract_argser(
                 registry_contract_dict['networks'][self.w3.version.network]['address'], "addTagsToServiceRegistration", registry_contract_dict
             )(

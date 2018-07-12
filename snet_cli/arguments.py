@@ -152,7 +152,7 @@ def add_unset_options(parser):
 
 def add_agent_options(parser):
     parser.set_defaults(cmd=AgentCommand)
-    contract_dict = get_contract_dict(Path(__file__).absolute().parent.joinpath("resources", "contracts"), "Agent")
+    contract_dict = get_contract_dict("Agent")
     parser.set_defaults(contract_dict=contract_dict)
 
     add_contract_identity_arguments(parser, [("", "agent_at")])
@@ -174,7 +174,7 @@ def add_agent_options(parser):
 
 def add_agent_factory_options(parser):
     parser.set_defaults(cmd=AgentFactoryCommand)
-    contract_dict = get_contract_dict(Path(__file__).absolute().parent.joinpath("resources", "contracts"), "AgentFactory")
+    contract_dict = get_contract_dict("AgentFactory")
     parser.set_defaults(contract_dict=contract_dict)
 
     add_contract_identity_arguments(parser, [("", "agent_factory_at")])
@@ -214,7 +214,7 @@ def add_client_options(parser):
 
 def add_registry_options(parser):
     parser.set_defaults(cmd=RegistryCommand)
-    contract_dict = get_contract_dict(Path(__file__).absolute().parent.joinpath("resources", "contracts"), "AlphaRegistry")
+    contract_dict = get_contract_dict("AlphaRegistry")
     parser.set_defaults(contract_dict=contract_dict)
 
     add_contract_identity_arguments(parser, [("", "registry_at")])
@@ -350,7 +350,7 @@ def add_service_options(parser, config):
 def add_contract_function_options(parser, contract_name):
     add_contract_identity_arguments(parser)
 
-    contract_dict = get_contract_dict(Path(__file__).absolute().parent.joinpath("resources", "contracts"), contract_name)
+    contract_dict = get_contract_dict(contract_name)
     parser.set_defaults(contract_dict=contract_dict)
 
     fns = []
