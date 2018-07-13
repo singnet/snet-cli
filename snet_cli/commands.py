@@ -1,16 +1,24 @@
 import json
 import sys
+import os
+import shlex
+import tarfile
+import tempfile
 from pathlib import Path
 from textwrap import indent
+from urllib.parse import urljoin, urlparse
+from rfc3986 import urlparse, uri_reference
 
 import jsonrpcclient
 import yaml
 import getpass
+import ipfsapi
 
 from snet_cli.contract import Contract
 from snet_cli.identity import get_kws_for_identity_type, get_identity_types
 from snet_cli.session import from_config, get_session_keys
-from snet_cli.utils import DefaultAttributeObject, get_web3, get_identity, serializable
+from snet_cli.utils import DefaultAttributeObject, get_web3, get_identity, serializable, walk_imports, \
+                           read_temp_tar, type_converter, get_contract_dict
 
 
 class Command(object):
@@ -95,13 +103,13 @@ class BlockchainCommand(Command):
         self.w3 = w3 or get_web3(self._getstring("eth_rpc_endpoint"))
         self.ident = ident or get_identity(self.w3, self.session, self.args)
 
-    def get_contract_argser(self, at, contract_function, contract_json, **kwargs):
+    def get_contract_argser(self, at, contract_function, contract_dict, **kwargs):
         def f(*positional_inputs, **named_inputs):
             args_dict = self.args.__dict__.copy()
             args_dict.update(dict(
                 at=at,
                 contract_function=contract_function,
-                contract_json=contract_json,
+                contract_dict=contract_dict,
                 contract_positional_inputs=positional_inputs,
                 **kwargs
             ))
@@ -211,14 +219,14 @@ class NetworkCommand(Command):
 
     def set(self):
         network_name = self.args.network_name
-        self._ensure(self.config.has_section("network.{}".format(network_name)) or network_name == "endpoint",
+        self._ensure(self.config.has_section("network.{}".format(network_name)) or network_name == "eth_rpc_endpoint",
                      "network_name {} does not exist".format(network_name))
-        if network_name != "endpoint":
+        if network_name != "eth_rpc_endpoint":
             for k, v in self.config["network.{}".format(network_name)].items():
                 self._set_key(k, v)
         else:
-            self._ensure(self.args.endpoint.startswith("http"), "endpoint must start with http")
-            self._set_key("default_eth_rpc_endpoint", self.args.endpoint)
+            self._ensure(self.args.eth_rpc_endpoint.startswith("http"), "eth rpc endpoint must start with http")
+            self._set_key("default_eth_rpc_endpoint", self.args.eth_rpc_endpoint)
 
 
 class SessionCommand(Command):
@@ -276,19 +284,16 @@ class AgentCommand(BlockchainCommand):
         self.args.at = self._getstring("agent_at")
         self._ensure(self.args.at is not None, "--at is required to specify agent contract address")
         price = ContractCommand(self.config, self.get_contract_argser(
-            self.args.at, "currentPrice", self.args.contract_json)(), None, None, self.w3, self.ident).call()
+            self.args.at, "currentPrice", self.args.contract_dict)(), None, None, self.w3, self.ident).call()
         self._set_key("current_agent_at", self.args.at, out_f=self.err_f)
         token_address = ContractCommand(self.config, self.get_contract_argser(
-            self.args.at, "token", self.args.contract_json)(), None, None, self.w3, self.ident).call()
+            self.args.at, "token", self.args.contract_dict)(), None, None, self.w3, self.ident).call()
         proceed = (price <= self.args.max_price or
                    input("Accept job price {:.8f} AGI? (y/n): ".format(float(price) * 10 ** -8)) == "y")
         if proceed:
             jobs = []
-            with open(Path(__file__).absolute().parent.joinpath("resources", "contracts",
-                                                                "SingularityNetToken.json")) as f:
-                token_contract_json = json.load(f)
-            with open(Path(__file__).absolute().parent.joinpath("resources", "contracts", "Job.json")) as f:
-                job_contract_json = json.load(f)
+            token_contract_dict = get_contract_dict("SingularityNetToken")
+            job_contract_dict = get_contract_dict("Job")
             for _ in range(self.args.number):
                 job = {"job_price": price}
                 cmd = ContractCommand(self.config, self.args, self.err_f, self.err_f, self.w3, self.ident)
@@ -304,13 +309,13 @@ class AgentCommand(BlockchainCommand):
                 if self.args.funded:
                     cmd = ContractCommand(self.config, self.get_contract_argser(
                         token_address, "approve",
-                        token_contract_json)(_spender=job_address, _value=price), self.err_f, self.err_f, self.w3,
+                        token_contract_dict)(_spender=job_address, _value=price), self.err_f, self.err_f, self.w3,
                                           self.ident)
                     self._printerr("Creating transaction to approve token transfer...\n")
                     cmd.transact()
                     cmd = ContractCommand(self.config, self.get_contract_argser(
                         job_address, "fundJob",
-                        job_contract_json)(), self.err_f, self.err_f, self.w3, self.ident)
+                        job_contract_dict)(), self.err_f, self.err_f, self.w3, self.ident)
                     self._printerr("Creating transaction to fund job...\n")
                     cmd.transact()
                 if self.args.signed:
@@ -362,51 +367,47 @@ class ClientCommand(BlockchainCommand):
         agent_address = self._getstring("agent_at")
         self._ensure(agent_address is not None, "--agent-at is required to specify agent address")
 
-        with open(Path(__file__).absolute().parent.joinpath("resources", "contracts", "Job.json")) as f:
-            job_contract_json = json.load(f)
-        with open(Path(__file__).absolute().parent.joinpath("resources", "contracts", "Agent.json")) as f:
-            agent_contract_json = json.load(f)
-        with open(Path(__file__).absolute().parent.joinpath("resources", "contracts",
-                                                            "SingularityNetToken.json")) as f:
-            token_contract_json = json.load(f)
+        job_contract_dict = get_contract_dict("Job")
+        agent_contract_dict = get_contract_dict("Agent")
+        token_contract_dict = get_contract_dict("SingularityNetToken")
 
         job_address = self._getstring("job_at")
 
         if job_address is not None:
             job_agent_address = ContractCommand(self.config, self.get_contract_argser(
-                job_address, "agent", job_contract_json)(), None, None, self.w3, self.ident).call()
+                job_address, "agent", job_contract_dict)(), None, None, self.w3, self.ident).call()
             state = ContractCommand(self.config, self.get_contract_argser(
-                job_address, "state", job_contract_json)(), None, None, self.w3, self.ident).call()
+                job_address, "state", job_contract_dict)(), None, None, self.w3, self.ident).call()
             if agent_address != job_agent_address or state == 2:
                 job_address = None
             else:
                 price = ContractCommand(self.config, self.get_contract_argser(
-                    job_address, "jobPrice", job_contract_json)(), None, None, self.w3, self.ident).call()
+                    job_address, "jobPrice", job_contract_dict)(), None, None, self.w3, self.ident).call()
 
         if job_address is None:
             cmd = AgentCommand(self.config, self.get_contract_argser(
-                None, "createJob", agent_contract_json, number=1)(), self.err_f, self.err_f, self.w3, self.ident)
+                None, "createJob", agent_contract_dict, number=1)(), self.err_f, self.err_f, self.w3, self.ident)
             job = cmd.create_jobs()[0]
             job_address, price = job["job_address"], job["job_price"]
 
         self._set_key("current_job_at", job_address, out_f=self.err_f)
 
         token_address = ContractCommand(self.config, self.get_contract_argser(
-            job_address, "token", job_contract_json)(), None, None, self.w3, self.ident).call()
+            job_address, "token", job_contract_dict)(), None, None, self.w3, self.ident).call()
 
-        cmd = ContractCommand(self.config, self.get_contract_argser(job_address, "state", job_contract_json)(),
+        cmd = ContractCommand(self.config, self.get_contract_argser(job_address, "state", job_contract_dict)(),
                               None, None, self.w3, self.ident)
         state = cmd.call()
 
         if state == 0:
             cmd = ContractCommand(self.config, self.get_contract_argser(
                 token_address, "approve",
-                token_contract_json)(_spender=job_address, _value=price), self.err_f, self.err_f, self.w3, self.ident)
+                token_contract_dict)(_spender=job_address, _value=price), self.err_f, self.err_f, self.w3, self.ident)
             self._printerr("Creating transaction to approve token transfer...\n")
             cmd.transact()
             cmd = ContractCommand(self.config, self.get_contract_argser(
                 job_address, "fundJob",
-                job_contract_json)(), self.err_f, self.err_f, self.w3, self.ident)
+                job_contract_dict)(), self.err_f, self.err_f, self.w3, self.ident)
             self._printerr("Creating transaction to fund job...\n")
             cmd.transact()
 
@@ -414,7 +415,7 @@ class ClientCommand(BlockchainCommand):
         job_signature = self.ident.sign_message(job_address, self.err_f).hex()
 
         endpoint = ContractCommand(self.config, self.get_contract_argser(
-            agent_address, "endpoint", agent_contract_json)(), None, None, self.w3, self.ident).call()
+            agent_address, "endpoint", agent_contract_dict)(), None, None, self.w3, self.ident).call()
 
         params_source, params = self._get_call_params(self.args)
 
@@ -429,6 +430,7 @@ class ClientCommand(BlockchainCommand):
 
 
 class RegistryCommand(BlockchainCommand):
+    # Warning: none of these commands work with the new Registry
     def create_record(self):
         self.args.at = self._getstring("registry_at")
         cmd = ContractCommand(self.config, self.args, self.out_f, self.err_f, self.w3, self.ident)
@@ -468,10 +470,10 @@ class RegistryCommand(BlockchainCommand):
     def query(self):
         self.args.at = self._getstring("registry_at")
         index = ContractCommand(self.config, self.get_contract_argser(
-            self.args.at, "agentIndex", self.args.contract_json)(self.args.name), None, None, self.w3,
+            self.args.at, "agentIndex", self.args.contract_dict)(self.args.name), None, None, self.w3,
                                 self.ident).call()
         record = ContractCommand(self.config, self.get_contract_argser(
-            self.args.at, "agentRecords", self.args.contract_json)(index), None, None, self.w3, self.ident).call()
+            self.args.at, "agentRecords", self.args.contract_dict)(index), None, None, self.w3, self.ident).call()
         self._pprint({"record": {"agent": record[0], "name": record[1].partition(b"\0")[0].decode("utf-8"),
                      "state": record[2]}})
         self._set_key("current_agent_at", record[0], out_f=self.err_f)
@@ -484,13 +486,13 @@ class ContractCommand(BlockchainCommand):
         contract_address = self._getstring("at")
 
         if contract_address is None:
-            networks = self.args.contract_json["networks"]
+            networks = self.args.contract_dict["networks"]
             chain_id = self.w3.version.network
             contract_address = networks.get(chain_id, {}).get("address", None)
 
         self._ensure(contract_address is not None, "--at is required to specify target contract address")
 
-        abi = self.args.contract_json["abi"]
+        abi = self.args.contract_dict["abi"]
 
         contract = Contract(self.w3, contract_address, abi)
 
@@ -508,13 +510,13 @@ class ContractCommand(BlockchainCommand):
         contract_address = self.args.at
 
         if contract_address is None:
-            networks = self.args.contract_json["networks"]
+            networks = self.args.contract_dict["networks"]
             chain_id = self.w3.version.network
             contract_address = networks.get(chain_id, {}).get("address", None)
 
         self._ensure(contract_address is not None, "--at is required to specify target contract address")
 
-        abi = self.args.contract_json["abi"]
+        abi = self.args.contract_dict["abi"]
 
         contract = Contract(self.w3, contract_address, abi)
 
@@ -545,3 +547,255 @@ class ContractCommand(BlockchainCommand):
             return receipt, events
         else:
             self._error("Cancelled")
+
+
+class ServiceCommand(BlockchainCommand):
+
+    # We are sorting files before we add them to the .tar since an archive containing the same files in a different
+    # order will produce a different content hash; sorting order is the same default sorting order used in GNU tar.
+    def _tar_imports(self, paths, entry_path):
+        paths = sorted(paths, key=lambda unsorted_path: (len(unsorted_path.parts), str(unsorted_path.name)))
+        f = tempfile.NamedTemporaryFile()
+        tar = tarfile.open(fileobj=f, mode="w")
+        for path in paths:
+            tar.add(path, path.relative_to(entry_path))
+            self._printout("path: {}".format(str(path)))
+
+        tar.close()
+        return f
+
+    def _get_network(self):
+        if "network_name" in self.args and self.args.network_name:
+            if "eth_rpc_endpoint" in self.args and self.args.eth_rpc_endpoint:
+                network = self.args.eth_rpc_endpoint
+            else:
+                network = self.config["network.{}".format(self.args.network)]['default_eth_rpc_endpoint']
+            self.w3 = get_web3(network)
+        return self.w3.version.network
+
+    def init(self):
+        accept_all_defaults = self.args.y
+        init_args = {
+            "name": os.path.basename(os.getcwd()),
+            "model": "model/",
+            "organization": "",
+            "path": "",
+            "price": 0,
+            "endpoint": "",
+            "tags": [],
+            "metadata": {
+                "description": ""
+            }
+        }
+
+        if not accept_all_defaults:
+            self._printout("Please provide values to populate your service.json file\n")
+
+        if self.args.name:
+            init_args["name"] = self.args.name
+        elif not accept_all_defaults:
+            init_args["name"] = input('Choose a name for your service: (default: "{}")\n'.format(init_args["name"])) or init_args["name"]
+
+        if self.args.model:
+            init_args["model"] = self.args.model
+        elif not accept_all_defaults:
+            init_args["model"] = input('Choose the path to your service\'s model directory: (default: "{}")\n'.format(init_args["model"])) or init_args["model"]
+
+        if self.args.organization:
+            init_args["organization"] = self.args.organization
+        elif not accept_all_defaults:
+            init_args["organization"] = input('Choose an organization to register your service under: (default: "{}")\n'.format(init_args["organization"])) or init_args["organization"]
+
+        if self.args.path:
+            init_args["path"] = self.args.path
+        elif not accept_all_defaults:
+            init_args["path"] = input('Choose the path under which your Service registration will be created: (default: "{}")\n'.format(init_args["path"])) or init_args["path"]
+
+        if self.args.price:
+            init_args["price"] = self.args.price
+        elif not accept_all_defaults:
+            init_args["price"] = input('Choose a price in AGI to call your service: (default: {})\n'.format(init_args["price"])) or init_args["price"]
+
+        if self.args.endpoint:
+            init_args["endpoint"] = self.args.endpoint
+        elif not accept_all_defaults:
+            init_args["endpoint"] = input('Endpoint to call the API for your service: (default: "{}")\n'.format(init_args["endpoint"])) or init_args["endpoint"]
+
+        if self.args.tags:
+            init_args["tags"] = self.args.tags
+        elif not accept_all_defaults:
+            init_args["tags"] = shlex.split(input("Input a list of tags for your service: (default: {})\n".format(init_args["tags"])) or init_args["tags"])
+
+        if self.args.description:
+            init_args["metadata"]["description"] = self.args.description
+        elif not accept_all_defaults:
+            init_args["metadata"]["description"] = input('Input a description for your service: (default: "{}")\n'.format(init_args["metadata"]["description"])) or init_args["metadata"]["description"]
+
+        with open("service.json", "w") as f:
+            json.dump(init_args, f, indent=4, ensure_ascii=False)
+        self._printout(json.dumps(init_args, indent=4, sort_keys=True))
+        self._printout("\nservice.json file has been created!")
+
+    def publish(self):
+        network = self._get_network()
+
+        if "config" in self.args and self.args.config:
+            service_json_path = self.args.config
+        else:
+            service_json_path = "service.json"
+
+        with open(service_json_path) as f:
+            service_json = json.load(f)
+
+        if service_json.get('networks', {}).get(self.w3.version.network, {}).get('agentAddress', {}):
+            self._error("Service has already been deployed to network with id {}".format(network))
+
+        # Get list of model files
+        import_paths = None
+        if 'model' in service_json and service_json['model']:
+            model_path = Path(service_json['model'])
+            if not os.path.isabs(model_path):
+                entry_path = Path.cwd().joinpath(model_path).resolve()
+            else:
+                entry_path = model_path.resolve()
+            if not os.path.isdir(entry_path):
+                self._error("Model path must resolve to a valid directory: {}".format(model_path))
+            import_paths = walk_imports(entry_path)
+
+        # Create model tar and upload it to IPFS
+        ipfs_endpoint = urlparse(self.config["ipfs"]["default_ipfs_endpoint"])
+        ipfs_scheme = ipfs_endpoint.scheme if ipfs_endpoint.scheme else "http"
+        ipfs_port = ipfs_endpoint.port if ipfs_endpoint.port else 5001
+        ipfs_client = ipfsapi.connect(urljoin(ipfs_scheme, ipfs_endpoint.hostname), ipfs_port)
+        model_ipfs_uri = None
+
+        if import_paths:
+            tmp_f = self._tar_imports(import_paths, entry_path)
+            model_ipfs_hash = ipfs_client.add(read_temp_tar(tmp_f).name)["Hash"]
+            model_ipfs_path = "/ipfs/{}".format(model_ipfs_hash)
+            model_ipfs_uri = uri_reference(model_ipfs_path).copy_with(scheme='ipfs').unsplit()
+
+        # Upload metadata JSON to IPFS with modelURI
+        metadata_json = dict(service_json['metadata'])
+
+        if model_ipfs_uri:
+            metadata_json['modelURI'] = model_ipfs_uri
+
+        with tempfile.NamedTemporaryFile(mode='w+') as tmp_json:
+            json.dump(metadata_json, tmp_json)
+            tmp_json.seek(0)
+            metadata_ipfs_hash = ipfs_client.add(tmp_json.name)["Hash"]
+        metadata_ipfs_path = "/ipfs/{}".format(metadata_ipfs_hash)
+        metadata_ipfs_uri = uri_reference(metadata_ipfs_path).copy_with(scheme='ipfs').unsplit()
+
+        # Create Agent
+        agent_factory_dict = get_contract_dict("AgentFactory")
+        self.args.at = self._getstring("agent_factory_at")
+        cmd = ContractCommand(self.config, self.get_contract_argser(
+            self.args.at, "createAgent", agent_factory_dict)(
+                type_converter('uint256')(service_json['price']), service_json['endpoint'], metadata_ipfs_uri
+            ), self.out_f, self.err_f, self.w3, self.ident)
+        self._printerr("Creating transaction to create agent...\n")
+        _, events = cmd.transact()
+
+        # Update service.json with Agent address
+        agent_address = events[0].args.agent
+        if "networks" not in service_json:
+            service_json['networks'] = {}
+        service_json['networks'][self.w3.version.network] = {
+            "agentAddress": agent_address
+        }
+        self._printerr("Adding contract address to service.json file...\n")
+        with open(service_json_path, "w+") as f:
+            json.dump(service_json, f, indent=4, ensure_ascii=False)
+
+        # Register Agent
+        if not self.args.no_register:
+            registry_dict = get_contract_dict("Registry")
+            self.args.at = self._getstring("registry_at")
+            cmd = ContractCommand(self.config, self.get_contract_argser(
+                self.args.at, "createServiceRegistration", registry_dict)(
+                    type_converter('bytes32')(service_json['organization']),
+                    type_converter('bytes32')(service_json['name']),
+                    type_converter('bytes32')(service_json['path']),
+                    type_converter('address')(agent_address),
+                    list(map(type_converter('bytes32'), service_json['tags']))
+                ), self.out_f, self.err_f, self.w3, self.ident)
+            self._printerr("Creating transaction to create record...\n")
+            cmd.transact()
+
+    def update(self):
+        network = self._get_network()
+
+        if "config" in self.args and self.args.config:
+            service_json_path = self.args.config
+        else:
+            service_json_path = "service.json"
+
+        with open(service_json_path) as f:
+            service_json = json.load(f)
+
+        agent_contract_dict = get_contract_dict("Agent")
+
+        if not service_json.get('networks', {}).get(self.w3.version.network, {}).get('agentAddress', {}):
+            self._error("Service hasn't been deployed to network with id {}".format(network))
+
+        if self.args.new_price:
+            cmd = ContractCommand(self.config, self.get_contract_argser(
+                service_json['networks'][self.w3.version.network]['agentAddress'], "setPrice", agent_contract_dict)(
+                self.args.new_price
+            ), self.out_f, self.err_f, self.w3, self.ident)
+            self._printerr("Creating transaction to update price...\n")
+            cmd.transact()
+
+        if self.args.new_endpoint:
+            cmd = ContractCommand(self.config, self.get_contract_argser(
+                service_json['networks'][self.w3.version.network]['agentAddress'], "setEndpoint", agent_contract_dict)(
+                self.args.new_endpoint
+            ), self.out_f, self.err_f, self.w3, self.ident)
+            self._printerr("Creating transaction to update endpoint...\n")
+            cmd.transact()
+
+        if self.args.new_description:
+            # Get current metadata JSON
+            cmd = ContractCommand(self.config, self.get_contract_argser(
+                service_json['networks'][self.w3.version.network]['agentAddress'], "metadataURI",
+                agent_contract_dict)(), self.out_f, self.err_f, self.w3, self.ident
+            )
+            metadata_uri = cmd.call()
+            ipfs_endpoint = urlparse(self.config["ipfs"]["default_ipfs_endpoint"])
+            ipfs_scheme = ipfs_endpoint.scheme if ipfs_endpoint.scheme else "http"
+            ipfs_port = ipfs_endpoint.port if ipfs_endpoint.port else 5001
+            ipfs_client = ipfsapi.connect(urljoin(ipfs_scheme, ipfs_endpoint.hostname), ipfs_port)
+            ipfs_client.get(urlparse(metadata_uri).path)
+            ipfs_file_path = Path.cwd().joinpath(urlparse(metadata_uri).path.split("/")[-1])
+            with open(ipfs_file_path) as f:
+                metadata_json = json.load(f)
+            os.remove(ipfs_file_path)
+
+            # Create new metadata JSON tmp file with updated description
+            metadata_json['description'] = self.args.new_description
+            with tempfile.NamedTemporaryFile(mode='w+') as tmp_json:
+                json.dump(metadata_json, tmp_json, indent=4, ensure_ascii=False)
+                tmp_json.seek(0)
+                metadata_ipfs_hash = ipfs_client.add(tmp_json.name)["Hash"]
+
+            # Update metadataURI in the contract
+            metadata_ipfs_path = "/ipfs/{}".format(metadata_ipfs_hash)
+            metadata_ipfs_uri = uri_reference(metadata_ipfs_path).copy_with(scheme='ipfs').unsplit()
+            cmd = ContractCommand(self.config, self.get_contract_argser(
+                service_json['networks'][self.w3.version.network]["agentAddress"], "setMetadataURI", agent_contract_dict)(metadata_ipfs_uri), self.out_f, self.err_f, self.w3, self.ident)
+            self._printerr("Creating transaction to update metadataURI...\n")
+            cmd.transact()
+
+        if self.args.add_tags:
+            registry_contract_dict = get_contract_dict("Registry")
+            cmd = ContractCommand(self.config, self.get_contract_argser(
+                registry_contract_dict['networks'][self.w3.version.network]['address'], "addTagsToServiceRegistration", registry_contract_dict
+            )(
+                type_converter('bytes32')(service_json['organization']),
+                type_converter('bytes32')(service_json['name']),
+                self.args.add_tags
+            ), self.out_f, self.err_f, self.w3, self.ident)
+            self._printerr("Creating transaction to add tags...\n")
+            cmd.transact()

@@ -1,3 +1,6 @@
+import os
+import json
+from pathlib import Path
 
 import web3
 
@@ -46,14 +49,14 @@ def get_identity(w3, session, args):
     if session.identity is None:
         pass
     if session.identity.identity_type == "rpc":
-        return RpcIdentityProvider(w3, args.wallet_index or session.getint("default_wallet_index"))
+        return RpcIdentityProvider(w3, getattr(args, "wallet_index", None) or session.getint("default_wallet_index"))
     if session.identity.identity_type == "mnemonic":
         return MnemonicIdentityProvider(w3, session.identity.mnemonic,
-                                        args.wallet_index or session.getint("default_wallet_index"))
+                                        getattr(args, "wallet_index", None) or session.getint("default_wallet_index"))
     if session.identity.identity_type == "trezor":
-        return TrezorIdentityProvider(w3, args.wallet_index or session.getint("default_wallet_index"))
+        return TrezorIdentityProvider(w3, getattr(args, "wallet_index", None) or session.getint("default_wallet_index"))
     if session.identity.identity_type == "ledger":
-        return LedgerIdentityProvider(w3, args.wallet_index or session.getint("default_wallet_index"))
+        return LedgerIdentityProvider(w3, getattr(args, "wallet_index", None) or session.getint("default_wallet_index"))
     if session.identity.identity_type == "key":
         return KeyIdentityProvider(w3, session.identity.private_key)
 
@@ -75,11 +78,62 @@ def serializable(o):
 
 
 def type_converter(t):
-    if "int" in t:
-        return lambda x: web3.Web3.toInt(text=x)
-    elif "byte" in t:
-        return lambda x: web3.Web3.toBytes(text=x) if not x.startswith("0x") else web3.Web3.toBytes(hexstr=x)
-    elif "address" in t:
-        return web3.Web3.toChecksumAddress
+    if t.endswith("[]"):
+        return lambda x: list(map(type_converter(t.replace("[]", "")), json.loads(x)))
     else:
-        return str
+        if "int" in t:
+            return lambda x: web3.Web3.toInt(text=x)
+        elif "byte" in t:
+            return lambda x: web3.Web3.toBytes(text=x) if not x.startswith("0x") else web3.Web3.toBytes(hexstr=x)
+        elif "address" in t:
+            return web3.Web3.toChecksumAddress
+        else:
+            return str
+
+
+def _add_next_paths(path, entry_path, seen_paths, next_paths):
+    with open(path) as f:
+        for line in f:
+            if line.strip().startswith("import"):
+                import_statement = "".join(line.split('"')[1::2])
+                if not import_statement.startswith("google/protobuf"):
+                    import_statement_path = Path(path.parent.joinpath(import_statement)).resolve()
+                    if entry_path.parent in path.parents:
+                        if import_statement_path not in seen_paths:
+                            seen_paths.add(import_statement_path)
+                            next_paths.append(import_statement_path)
+                    else:
+                        raise ValueError("Path must not be a parent of entry path")
+
+
+def walk_imports(entry_path):
+    seen_paths = set()
+    next_paths = []
+    for file_path in os.listdir(entry_path):
+        if file_path.endswith(".proto"):
+            file_path = entry_path.joinpath(file_path)
+            seen_paths.add(file_path)
+            next_paths.append(file_path)
+    while next_paths:
+        path = next_paths.pop()
+        if os.path.isfile(path):
+            _add_next_paths(path, entry_path, seen_paths, next_paths)
+        else:
+            raise IOError("Import path must be a valid file: {}".format(path))
+    return seen_paths
+
+
+def get_contract_dict(contract_name, contract_artifacts_root=Path(__file__).absolute().parent.joinpath("resources", "contracts")):
+    contract_dict = {}
+    with open(Path(__file__).absolute().parent.joinpath(contract_artifacts_root, "abi", "{}.json".format(contract_name))) as f:
+        contract_dict["abi"] = json.load(f)
+    if os.path.isfile(Path(__file__).absolute().parent.joinpath(contract_artifacts_root, "networks", "{}.json".format(contract_name))):
+        with open(Path(__file__).absolute().parent.joinpath(contract_artifacts_root, "networks", "{}.json".format(contract_name))) as f:
+            contract_dict["networks"] = json.load(f)
+    return contract_dict
+
+
+def read_temp_tar(f):
+    f.flush()
+    f.seek(0)
+    return f
