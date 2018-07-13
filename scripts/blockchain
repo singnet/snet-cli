@@ -10,25 +10,38 @@ import sys
 def main():
     assert len(sys.argv) > 1, "please select a target from 'install', 'uninstall'"
     target = sys.argv[1]
-    blockchain_path = pathlib.Path(__file__).absolute().parent.parent.joinpath("blockchain")
-    blockchain_node_path = blockchain_path.joinpath("node_modules")
-    blockchain_json_src_path = blockchain_node_path.joinpath("singularitynet-alpha-blockchain")
-    token_json_src_path = blockchain_node_path.joinpath("singularitynet-token-contracts", "SingularityNetToken.json")
-    blockchain_json_dest_path = pathlib.Path(__file__).absolute().parent.parent.joinpath("snet_cli", "resources", "contracts")
-    contracts = ["Agent", "AgentFactory", "Job", "Registry"]
+    blockchain_dir = pathlib.Path(__file__).absolute().parent.parent.joinpath("blockchain")
+    node_modules_dir = blockchain_dir.joinpath("node_modules")
+    blockchain_json_src_dir = node_modules_dir.joinpath("singularitynet-alpha-blockchain")
+    token_json_src_dir = node_modules_dir.joinpath("singularitynet-token-contracts")
+    token_contract_name = "SingularityNetToken"
+    contract_json_dest_dir = pathlib.Path(__file__).absolute().parent.parent.joinpath("snet_cli", "resources", "contracts")
+    abi_contract_names = ["Agent", "AgentFactory", "Job", "Registry", "AlphaRegistry"]
+    networks_contract_names = ["AgentFactory", "Registry", "AlphaRegistry"]
 
     if target == "install":
-        subprocess.call([shutil.which('npm'), "install"], cwd=blockchain_path)
-        for contract in contracts:
-            shutil.copy(blockchain_json_src_path.joinpath("{}.json".format(contract)),
-                        blockchain_json_dest_path.joinpath("{}.json".format(contract)))
-        shutil.copy(token_json_src_path, blockchain_json_dest_path.joinpath("SingularityNetToken.json"))
+        if not os.path.isdir(blockchain_json_src_dir) or not os.path.isdir(token_json_src_dir):
+            subprocess.call([shutil.which('npm'), "install"], cwd=blockchain_dir)
+
+        os.makedirs(contract_json_dest_dir.joinpath("abi"), exist_ok=True)
+        os.makedirs(contract_json_dest_dir.joinpath("networks"), exist_ok=True)
+
+        for contract_name in abi_contract_names:
+            shutil.copy(blockchain_json_src_dir.joinpath("abi", "{}.json".format(contract_name)),
+                        contract_json_dest_dir.joinpath("abi", "{}.json".format(contract_name)))
+        for contract_name in networks_contract_names:
+            shutil.copy(blockchain_json_src_dir.joinpath("networks", "{}.json".format(contract_name)),
+                        contract_json_dest_dir.joinpath("networks", "{}.json".format(contract_name)))
+
+        shutil.copy(token_json_src_dir.joinpath("abi", "{}.json".format(token_contract_name)),
+                    contract_json_dest_dir.joinpath("abi", "{}.json".format(token_contract_name)))
+        shutil.copy(token_json_src_dir.joinpath("networks", "{}.json".format(token_contract_name)),
+                    contract_json_dest_dir.joinpath("networks", "{}.json".format(token_contract_name)))
     elif target == "uninstall":
         try:
-            shutil.rmtree(blockchain_node_path)
-            for contract in contracts:
-                os.remove(blockchain_json_dest_path.joinpath("{}.json".format(contract)))
-            os.remove(blockchain_json_dest_path.joinpath("SingularityNetToken.json"))
+            shutil.rmtree(node_modules_dir)
+            shutil.rmtree(contract_json_dest_dir.joinpath("abi"))
+            shutil.rmtree(contract_json_dest_dir.joinpath("networks"))
         except FileNotFoundError:
             pass
 

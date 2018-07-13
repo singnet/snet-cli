@@ -1,4 +1,5 @@
 import os
+import json
 from pathlib import Path
 
 import web3
@@ -77,28 +78,27 @@ def serializable(o):
 
 
 def type_converter(t):
-    if "int" in t:
-        return lambda x: web3.Web3.toInt(text=x)
-    elif "byte" in t:
-        return lambda x: web3.Web3.toBytes(text=x) if not x.startswith("0x") else web3.Web3.toBytes(hexstr=x)
-    elif "address" in t:
-        return web3.Web3.toChecksumAddress
+    if t.endswith("[]"):
+        return lambda x: list(map(type_converter(t.replace("[]", "")), json.loads(x)))
     else:
-        return str
+        if "int" in t:
+            return lambda x: web3.Web3.toInt(text=x)
+        elif "byte" in t:
+            return lambda x: web3.Web3.toBytes(text=x) if not x.startswith("0x") else web3.Web3.toBytes(hexstr=x)
+        elif "address" in t:
+            return web3.Web3.toChecksumAddress
+        else:
+            return str
 
 
-def _validate_path(path, entry_path):
-    return entry_path.parent in path.parents
-
-
-def _add_next_paths(path, entry_path_parents, seen_paths, next_paths):
+def _add_next_paths(path, entry_path, seen_paths, next_paths):
     with open(path) as f:
         for line in f:
             if line.strip().startswith("import"):
                 import_statement = "".join(line.split('"')[1::2])
                 if not import_statement.startswith("google/protobuf"):
                     import_statement_path = Path(path.parent.joinpath(import_statement)).resolve()
-                    if _validate_path(import_statement_path, entry_path_parents):
+                    if entry_path.parent in path.parents:
                         if import_statement_path not in seen_paths:
                             seen_paths.add(import_statement_path)
                             next_paths.append(import_statement_path)
@@ -121,6 +121,16 @@ def walk_imports(entry_path):
         else:
             raise IOError("Import path must be a valid file: {}".format(path))
     return seen_paths
+
+
+def get_contract_dict(contract_name, contract_artifacts_root=Path(__file__).absolute().parent.joinpath("resources", "contracts")):
+    contract_dict = {}
+    with open(Path(__file__).absolute().parent.joinpath(contract_artifacts_root, "abi", "{}.json".format(contract_name))) as f:
+        contract_dict["abi"] = json.load(f)
+    if os.path.isfile(Path(__file__).absolute().parent.joinpath(contract_artifacts_root, "networks", "{}.json".format(contract_name))):
+        with open(Path(__file__).absolute().parent.joinpath(contract_artifacts_root, "networks", "{}.json".format(contract_name))) as f:
+            contract_dict["networks"] = json.load(f)
+    return contract_dict
 
 
 def read_temp_tar(f):
