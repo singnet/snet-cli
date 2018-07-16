@@ -19,9 +19,13 @@ def main():
     abi_contract_names = ["Agent", "AgentFactory", "Job", "Registry", "AlphaRegistry"]
     networks_contract_names = ["AgentFactory", "Registry", "AlphaRegistry"]
 
+    npm_location = shutil.which('npm')
+    if not npm_location:
+        raise Exception("This script requires 'npm' to be installed and in your PATH")
+
     if target == "install":
         if not os.path.isdir(blockchain_json_src_dir) or not os.path.isdir(token_json_src_dir):
-            subprocess.call([shutil.which('npm'), "install"], cwd=blockchain_dir)
+            subprocess.call([npm_location, "install"], cwd=blockchain_dir)
 
         os.makedirs(contract_json_dest_dir.joinpath("abi"), exist_ok=True)
         os.makedirs(contract_json_dest_dir.joinpath("networks"), exist_ok=True)
