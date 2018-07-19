@@ -1,24 +1,24 @@
+import getpass
 import json
-import sys
 import os
 import shlex
+import sys
 import tarfile
 import tempfile
 from pathlib import Path
 from textwrap import indent
 from urllib.parse import urljoin, urlparse
-from rfc3986 import urlparse, uri_reference
 
+import ipfsapi
 import jsonrpcclient
 import yaml
-import getpass
-import ipfsapi
+from rfc3986 import urlparse, uri_reference
 
 from snet_cli.contract import Contract
 from snet_cli.identity import get_kws_for_identity_type, get_identity_types
 from snet_cli.session import from_config, get_session_keys
 from snet_cli.utils import DefaultAttributeObject, get_web3, get_identity, serializable, walk_imports, \
-                           read_temp_tar, type_converter, get_contract_dict
+    read_temp_tar, type_converter, get_contract_dict, get_agent_version
 
 
 class Command(object):
@@ -320,7 +320,8 @@ class AgentCommand(BlockchainCommand):
                     cmd.transact()
                 if self.args.signed:
                     self._printerr("Signing job...\n")
-                    job["job_signature"] = self.ident.sign_message(job_address, self.err_f).hex()
+                    job["job_signature"] = self.ident.sign_message(
+                        job_address, self.err_f, agent_version=get_agent_version(self.w3, self.args.at)).hex()
                 jobs.append(job)
             self._pprint({"jobs": jobs})
 
@@ -412,7 +413,8 @@ class ClientCommand(BlockchainCommand):
             cmd.transact()
 
         self._printerr("Signing job...\n")
-        job_signature = self.ident.sign_message(job_address, self.err_f).hex()
+        job_signature = self.ident.sign_message(job_address, self.err_f,
+                                                agent_version=get_agent_version(self.w3, agent_address)).hex()
 
         endpoint = ContractCommand(self.config, self.get_contract_argser(
             agent_address, "endpoint", agent_contract_dict)(), None, None, self.w3, self.ident).call()

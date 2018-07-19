@@ -1,5 +1,6 @@
-import os
+import _md5
 import json
+import os
 from pathlib import Path
 
 import web3
@@ -137,3 +138,14 @@ def read_temp_tar(f):
     f.flush()
     f.seek(0)
     return f
+
+
+def get_agent_version(w3, agent_address):
+    # Version 1 expects the signed 20-byte job address and we've hardcoded the checksum of the bytecode for this version
+    # below. Version 2 expects the signed 42-byte hex-encoded job address.
+
+    bytecode = w3.eth.getCode(agent_address)
+    if _md5.md5(bytecode).digest() == bytes([244, 176, 168, 6, 74, 56, 171, 175, 38, 48, 245, 246, 189, 0, 67, 200]):
+        return 1
+    else:
+        return 2
