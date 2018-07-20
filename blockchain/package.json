@@ -1,5 +1,6 @@
 {
   "dependencies": {
-    "singularitynet-alpha-blockchain": "1.1.0"
+    "singularitynet-platform-contracts": "0.2.1",
+    "singularitynet-token-contracts": "2.0.0"
   }
 }

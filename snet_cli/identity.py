@@ -1,19 +1,20 @@
 import abc
 import hashlib
 import struct
+import time
 
 import bip32utils
 import ecdsa
 import rlp
-import time
 from eth_account.internal.transactions import serializable_unsigned_transaction_from_dict, encode_transaction, \
     UnsignedTransaction
 from eth_account.messages import defunct_hash_message
-from snet_cli._vendor.ledgerblue.comm import getDongle
-from snet_cli._vendor.ledgerblue.commException import CommException
 from mnemonic import Mnemonic
 from trezorlib.client import TrezorClient, proto
 from trezorlib.transport_hid import HidTransport
+
+from snet_cli._vendor.ledgerblue.comm import getDongle
+from snet_cli._vendor.ledgerblue.commException import CommException
 
 
 class IdentityProvider(abc.ABC):
@@ -26,7 +27,7 @@ class IdentityProvider(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def sign_message(self, message, out_f):
+    def sign_message(self, message, out_f, agent_version=2):
         raise NotImplementedError()
 
 
@@ -61,9 +62,12 @@ class KeyIdentityProvider(IdentityProvider):
 
         return receipt
 
-    def sign_message(self, message, out_f):
-        return self.w3.eth.account.signHash(
-            defunct_hash_message(hexstr=self.w3.sha3(hexstr=message).hex()), self.private_key).signature
+    def sign_message(self, message, out_f, agent_version=2):
+        if agent_version == 1:
+            h = defunct_hash_message(hexstr=self.w3.sha3(hexstr=message).hex())
+        else:
+            h = defunct_hash_message(text=message.lower())
+        return self.w3.eth.account.signHash(h, self.private_key).signature
 
 
 class RpcIdentityProvider(IdentityProvider):
@@ -86,8 +90,11 @@ class RpcIdentityProvider(IdentityProvider):
 
         return receipt
 
-    def sign_message(self, message, out_f):
-        return self.w3.eth.sign(self.get_address(), hexstr=self.w3.sha3(hexstr=message).hex())
+    def sign_message(self, message, out_f, agent_version=2):
+        if agent_version == 1:
+            return self.w3.eth.sign(self.get_address(), hexstr=self.w3.sha3(hexstr=message).hex())
+        else:
+            return self.w3.eth.sign(self.get_address(), text=message.lower())
 
 
 class MnemonicIdentityProvider(IdentityProvider):
@@ -125,9 +132,12 @@ class MnemonicIdentityProvider(IdentityProvider):
 
         return receipt
 
-    def sign_message(self, message, out_f):
-        return self.w3.eth.account.signHash(
-            defunct_hash_message(hexstr=self.w3.sha3(hexstr=message).hex()), self.private_key).signature
+    def sign_message(self, message, out_f, agent_version=2):
+        if agent_version == 1:
+            h = defunct_hash_message(hexstr=self.w3.sha3(hexstr=message).hex())
+        else:
+            h = defunct_hash_message(text=message.lower())
+        return self.w3.eth.account.signHash(h, self.private_key).signature
 
 
 class TrezorIdentityProvider(IdentityProvider):
@@ -173,14 +183,18 @@ class TrezorIdentityProvider(IdentityProvider):
 
         return receipt
 
-    def sign_message(self, message, out_f):
+    def sign_message(self, message, out_f, agent_version=2):
         n = self.client._convert_prime([44 + bip32utils.BIP32_HARDEN,
                                         60 + bip32utils.BIP32_HARDEN,
                                         bip32utils.BIP32_HARDEN,
                                         0,
                                         self.index])
         print("Sending message to trezor for signature...\n", file=out_f)
-        return self.client.call(proto.EthereumSignMessage(address_n=n, message=self.w3.sha3(hexstr=message))).signature
+        if agent_version == 1:
+            message = self.w3.sha3(hexstr=message)
+        else:
+            message = message.lower().encode("utf-8")
+        return self.client.call(proto.EthereumSignMessage(address_n=n, message=message)).signature
 
 
 def parse_bip32_path(path):
@@ -200,6 +214,7 @@ def parse_bip32_path(path):
 class LedgerIdentityProvider(IdentityProvider):
     GET_ADDRESS_OP = b"\xe0\x02\x00\x00"
     SIGN_TX_OP = b"\xe0\x04\x00\x00"
+    SIGN_TX_OP_CONT = b"\xe0\x04\x80\x00"
     SIGN_MESSAGE_OP = b"\xe0\x08\x00\x00"
 
     def __init__(self, w3, index):
@@ -236,12 +251,28 @@ class LedgerIdentityProvider(IdentityProvider):
 
         encoded_tx = rlp.encode(tx, UnsignedTransaction)
 
+        overflow = len(self.dongle_path) + 1 + len(encoded_tx) - 255
+
+        if overflow > 0:
+            encoded_tx, remaining_tx = encoded_tx[:-overflow], encoded_tx[-overflow:]
+
         apdu = LedgerIdentityProvider.SIGN_TX_OP
         apdu += bytearray([len(self.dongle_path) + 1 + len(encoded_tx), int(len(self.dongle_path) / 4)])
         apdu += self.dongle_path + encoded_tx
         try:
             print("Sending transaction to ledger for signature...\n", file=out_f)
             result = self.dongle.exchange(apdu)
+            while overflow > 0:
+                encoded_tx = remaining_tx
+                overflow = len(encoded_tx) - 255
+
+                if overflow > 0:
+                    encoded_tx, remaining_tx = encoded_tx[:-overflow], encoded_tx[-overflow:]
+
+                apdu = LedgerIdentityProvider.SIGN_TX_OP_CONT
+                apdu += bytearray([len(encoded_tx)])
+                apdu += encoded_tx
+                result = self.dongle.exchange(apdu)
         except CommException:
             raise RuntimeError("Received commException from ledger. Are you sure your device is unlocked and the "
                                "Ethereum app is running?")
@@ -264,8 +295,11 @@ class LedgerIdentityProvider(IdentityProvider):
 
         return receipt
 
-    def sign_message(self, message, out_f):
-        message = self.w3.sha3(hexstr=message)
+    def sign_message(self, message, out_f, agent_version=2):
+        if agent_version == 1:
+            message = self.w3.sha3(hexstr=message)
+        else:
+            message = message.lower().encode("utf-8")
         apdu = LedgerIdentityProvider.SIGN_MESSAGE_OP
         apdu += bytearray([len(self.dongle_path) + 1 + len(message) + 4, int(len(self.dongle_path) / 4)])
         apdu += self.dongle_path + struct.pack(">I", len(message)) + message
