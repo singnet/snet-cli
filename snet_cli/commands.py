@@ -412,9 +412,10 @@ class ClientCommand(BlockchainCommand):
             self._printerr("Creating transaction to fund job...\n")
             cmd.transact()
 
+        agent_version = get_agent_version(self.w3, agent_address)
+
         self._printerr("Signing job...\n")
-        job_signature = self.ident.sign_message(job_address, self.err_f,
-                                                agent_version=get_agent_version(self.w3, agent_address)).hex()
+        job_signature = self.ident.sign_message(job_address, self.err_f, agent_version=agent_version).hex()
 
         endpoint = ContractCommand(self.config, self.get_contract_argser(
             agent_address, "endpoint", agent_contract_dict)(), None, None, self.w3, self.ident).call()
@@ -425,8 +426,18 @@ class ClientCommand(BlockchainCommand):
 
         self._printerr("Calling service...\n")
 
-        response = jsonrpcclient.request(endpoint, self._getstring("method"),
-                                         job_address=job_address, job_signature=job_signature, **params)
+        headers = dict()
+
+        # If agent_version == 1, embed the auth parameters in the params object of the JSON-RPC request. Otherwise,
+        # put auth parameters in headers since service must be behind new daemon to support new signature scheme.
+        if agent_version == 1:
+            params.update({"job_address": job_address, "job_signature": job_signature})
+        else:
+            headers.update({"snet-job-address": job_address, "snet-job-signature": job_signature})
+
+        request = jsonrpcclient.Request(self._getstring("method"), **params)
+
+        response = jsonrpcclient.HTTPClient(endpoint).send(request, headers=headers)
 
         self._pprint({"response": response})
 
