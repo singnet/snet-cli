@@ -8,7 +8,7 @@ from snet_cli.commands import IdentityCommand, SessionCommand, NetworkCommand, C
     AgentFactoryCommand, RegistryCommand, AgentCommand, ClientCommand, ServiceCommand
 from snet_cli.identity import get_identity_types
 from snet_cli.session import get_session_keys
-from snet_cli.utils import type_converter, get_contract_dict
+from snet_cli.utils import type_converter, get_contract_def
 
 
 class CustomParser(argparse.ArgumentParser):
@@ -151,8 +151,6 @@ def add_unset_options(parser):
 
 def add_agent_options(parser):
     parser.set_defaults(cmd=AgentCommand)
-    contract_dict = get_contract_dict("Agent")
-    parser.set_defaults(contract_dict=contract_dict)
 
     add_contract_identity_arguments(parser, [("", "agent_at")])
 
@@ -161,7 +159,6 @@ def add_agent_options(parser):
 
     create_jobs_p = subparsers.add_parser("create-jobs", help="Create jobs")
     create_jobs_p.set_defaults(fn="create_jobs")
-    create_jobs_p.set_defaults(contract_function="createJob")
     create_jobs_p.add_argument("--number", "-n", type=int, default=1, help="number of jobs to create (defaults to 1)")
     create_jobs_p.add_argument("--max-price", type=int, default=0,
                                help="skip interactive confirmation of job price if below max price (defaults to 0)")
@@ -173,8 +170,6 @@ def add_agent_options(parser):
 
 def add_agent_factory_options(parser):
     parser.set_defaults(cmd=AgentFactoryCommand)
-    contract_dict = get_contract_dict("AgentFactory")
-    parser.set_defaults(contract_dict=contract_dict)
 
     add_contract_identity_arguments(parser, [("", "agent_factory_at")])
 
@@ -183,7 +178,6 @@ def add_agent_factory_options(parser):
 
     create_agent_p = subparsers.add_parser("create-agent", help="Create an agent")
     create_agent_p.set_defaults(fn="create_agent")
-    create_agent_p.set_defaults(contract_function="createAgent")
     create_agent_p.add_argument("contract_named_input_price", type=type_converter("uint256"), metavar="PRICE",
                   help="initial price for interacting with the service")
     create_agent_p.add_argument("contract_named_input_endpoint", type=type_converter("string"), metavar="ENDPOINT",
@@ -213,8 +207,8 @@ def add_client_options(parser):
 
 def add_registry_options(parser):
     parser.set_defaults(cmd=RegistryCommand)
-    contract_dict = get_contract_dict("AlphaRegistry")
-    parser.set_defaults(contract_dict=contract_dict)
+    contract_def = get_contract_def("AlphaRegistry")
+    parser.set_defaults(contract_def=contract_def)
 
     add_contract_identity_arguments(parser, [("", "registry_at")])
 
@@ -281,8 +275,8 @@ def _add_service_update_arguments(parser):
     parser.set_defaults(fn="update")
     parser.add_argument("--new-price", help="new price to call the service", type=type_converter("uint256"))
     parser.add_argument("--new-endpoint", help="new endpoint to call the service's API")
-    parser.add_argument("--add-tags", nargs="+", type=type_converter("bytes32"),
-                        metavar=("TAGS", "TAG1, TAG2,"), help="tags you want to add to the service registration")
+    parser.add_argument("--new-tags", nargs="+", type=type_converter("bytes32"),
+                        metavar=("TAGS", "TAG1, TAG2,"), help="new list of tags you want associated with the service registration")
     parser.add_argument("--new-description", help="new description for the service")
     parser.add_argument("--config", help="specify a custom service.json file path")
     add_transaction_arguments(parser)
@@ -301,7 +295,7 @@ def add_service_options(parser, config):
     init_p.add_argument("--model", help='local filesystem path to the service model directory (default: "model/")')
     init_p.add_argument("--organization", help='the organization to which you want to register the service (default: "")')
     init_p.add_argument("--path", help='the path under which you want to register the service in the organization (default: "")')
-    init_p.add_argument("--price", help='initial price for interacting with the service (default: 0)')
+    init_p.add_argument("--price", help='initial price for interacting with the service (default: 0)', type=int)
     init_p.add_argument("--endpoint", help="initial endpoint to call the service's API (default: \"\")")
     init_p.add_argument("--tags", nargs="+", metavar=("TAGS", "TAG1, TAG2,"), help="tags to describe the service (default: [])")
     init_p.add_argument("--description",
@@ -349,11 +343,11 @@ def add_service_options(parser, config):
 def add_contract_function_options(parser, contract_name):
     add_contract_identity_arguments(parser)
 
-    contract_dict = get_contract_dict(contract_name)
-    parser.set_defaults(contract_dict=contract_dict)
+    contract_def = get_contract_def(contract_name)
+    parser.set_defaults(contract_def=contract_def)
 
     fns = []
-    for fn in filter(lambda e: e["type"] == "function", contract_dict["abi"]):
+    for fn in filter(lambda e: e["type"] == "function", contract_def["abi"]):
         fns.append({
             "name": fn["name"],
             "named_inputs": [(i["name"], i["type"]) for i in fn["inputs"] if i["name"] != ""],
@@ -389,7 +383,7 @@ def add_contract_identity_arguments(parser, names_and_destinations=(("", "at"),)
             metavar_name = name
         h = "{} contract address".format(name)
         if destination != "at":
-            h += " (defaults to session.default_{})".format(destination)
+            h += " (defaults to session.current_{})".format(destination)
         identity_g.add_argument("--{}at".format(arg_name), dest=destination, type=type_converter("address"),
                                 metavar="{}ADDRESS".format(metavar_name.upper()),
                                 help=h)

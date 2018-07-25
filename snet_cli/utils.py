@@ -84,6 +84,8 @@ def type_converter(t):
     else:
         if "int" in t:
             return lambda x: web3.Web3.toInt(text=x)
+        elif "bytes32" in t:
+            return lambda x: web3.Web3.toBytes(text=x).ljust(32, b"\0") if not x.startswith("0x") else web3.Web3.toBytes(hexstr=x).ljust(32, b"\0")
         elif "byte" in t:
             return lambda x: web3.Web3.toBytes(text=x) if not x.startswith("0x") else web3.Web3.toBytes(hexstr=x)
         elif "address" in t:
@@ -124,14 +126,14 @@ def walk_imports(entry_path):
     return seen_paths
 
 
-def get_contract_dict(contract_name, contract_artifacts_root=Path(__file__).absolute().parent.joinpath("resources", "contracts")):
-    contract_dict = {}
+def get_contract_def(contract_name, contract_artifacts_root=Path(__file__).absolute().parent.joinpath("resources", "contracts")):
+    contract_def = {}
     with open(Path(__file__).absolute().parent.joinpath(contract_artifacts_root, "abi", "{}.json".format(contract_name))) as f:
-        contract_dict["abi"] = json.load(f)
+        contract_def["abi"] = json.load(f)
     if os.path.isfile(Path(__file__).absolute().parent.joinpath(contract_artifacts_root, "networks", "{}.json".format(contract_name))):
         with open(Path(__file__).absolute().parent.joinpath(contract_artifacts_root, "networks", "{}.json".format(contract_name))) as f:
-            contract_dict["networks"] = json.load(f)
-    return contract_dict
+            contract_def["networks"] = json.load(f)
+    return contract_def
 
 
 def read_temp_tar(f):
