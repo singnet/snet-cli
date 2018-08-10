@@ -4,8 +4,8 @@ import re
 import sys
 from pathlib import Path
 
-from snet_cli.commands import IdentityCommand, SessionCommand, NetworkCommand, ContractCommand, \
-    AgentFactoryCommand, RegistryCommand, AgentCommand, ClientCommand, ServiceCommand
+from snet_cli.commands import IdentityCommand, SessionCommand, NetworkCommand, ContractCommand, AgentFactoryCommand, \
+    AgentCommand, ServiceCommand
 from snet_cli.identity import get_identity_types
 from snet_cli.session import get_session_keys
 from snet_cli.utils import type_converter, get_contract_def
@@ -67,12 +67,6 @@ def add_root_options(parser, config):
     agent_factory_p = subparsers.add_parser("agent-factory",
                                             help="Interact with the SingularityNET AgentFactory contract")
     add_agent_factory_options(agent_factory_p)
-
-    client_p = subparsers.add_parser("client", help="Interact with SingularityNET services")
-    add_client_options(client_p)
-
-    registry_p = subparsers.add_parser("registry", help="Interact with the SingularityNET Registry contract")
-    add_registry_options(registry_p)
 
     contract_p = subparsers.add_parser("contract", help="Interact with contracts at a low level")
     add_contract_options(contract_p)
@@ -185,71 +179,6 @@ def add_agent_factory_options(parser):
     create_agent_p.add_argument("contract_named_input_metadataURI", type=type_converter("string"), metavar="METADATA_URI",
                                  nargs="?", default="", help="uri where service metadata is stored")
     add_transaction_arguments(create_agent_p)
-
-
-def add_client_options(parser):
-    parser.set_defaults(cmd=ClientCommand)
-
-    subparsers = parser.add_subparsers(title="client commands", metavar="COMMAND")
-    subparsers.required = True
-
-    call_p = subparsers.add_parser("call", help="Call a service")
-    call_p.set_defaults(fn="call")
-    call_p.add_argument("method", help="target service's method name to call", metavar="METHOD")
-    call_p.add_argument("params", nargs='?', help="json-serialized parameters object or path containing "
-                                                  "json-serialized parameters object (leave emtpy to read from stdin)",
-                        metavar="PARAMS")
-    call_p.add_argument("--max-price", type=int, default=0,
-                        help="skip interactive confirmation of job price if below max price (defaults to 0)")
-    add_contract_identity_arguments(call_p, [("agent", "agent_at"), ("job", "job_at")])
-    add_transaction_arguments(call_p)
-
-
-def add_registry_options(parser):
-    parser.set_defaults(cmd=RegistryCommand)
-    contract_def = get_contract_def("AlphaRegistry")
-    parser.set_defaults(contract_def=contract_def)
-
-    add_contract_identity_arguments(parser, [("", "registry_at")])
-
-    subparsers = parser.add_subparsers(title="registry commands", metavar="COMMAND")
-    subparsers.required = True
-
-    # Warning: none of these commands work with the new Registry
-    create_record_p = subparsers.add_parser("create-record", help="Create a new record")
-    create_record_p.set_defaults(fn="create_record")
-    create_record_p.set_defaults(contract_function="createRecord")
-    create_record_p.add_argument("contract_named_input_name", type=type_converter("bytes32"), metavar="NAME",
-                                 help="name of the service to be stored in the registry")
-    create_record_p.add_argument("contract_named_input_agent", type=type_converter("address"), metavar="AGENT_ADDRESS",
-                                 help="target agent address for registry record")
-    add_transaction_arguments(create_record_p)
-
-    update_record_p = subparsers.add_parser("update-record", help="Update an existing record")
-    update_record_p.set_defaults(fn="update_record")
-    update_record_p.set_defaults(contract_function="updateRecord")
-    update_record_p.add_argument("contract_named_input_name", type=type_converter("bytes32"), metavar="NAME",
-                                 help="target name for registry record")
-    update_record_p.add_argument("contract_named_input_agent", type=type_converter("address"), metavar="AGENT_ADDRESS",
-                                 help="target agent address for registry record")
-    add_transaction_arguments(update_record_p)
-
-    deprecate_record_p = subparsers.add_parser("deprecate-record", help="Deprecate an existing record")
-    deprecate_record_p.set_defaults(fn="deprecate_record")
-    deprecate_record_p.set_defaults(contract_function="deprecateRecord")
-    deprecate_record_p.add_argument("contract_named_input_name", type=type_converter("bytes32"), metavar="NAME",
-                                    help="target name for registry record")
-    add_transaction_arguments(deprecate_record_p)
-
-    list_records_p = subparsers.add_parser("list-records", help="List records")
-    list_records_p.set_defaults(fn="list_records")
-    list_records_p.set_defaults(contract_function="listRecords")
-    add_transaction_arguments(list_records_p)
-
-    query_p = subparsers.add_parser("query", help="Query for a given name")
-    query_p.set_defaults(fn="query")
-    query_p.add_argument("name", type=type_converter("bytes32"), help="target name for registry record", metavar="NAME")
-    add_transaction_arguments(query_p)
 
 
 def add_contract_options(parser):
