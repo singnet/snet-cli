@@ -182,6 +182,34 @@ networks on which AgentFactory has been deployed by SingularityNET Foundation)
 ---
 
 ```
+snet client call METHOD PARAMS [--max-price MAX_PRICE]
+                               [--agent-at AGENT_ADDRESS]
+                               [--job-at JOB_ADDRESS]
+                               [--gas-price GAS_PRICE]
+                               [--eth-rpc-endpoint ETH_RPC_ENDPOINT]
+                               [--wallet-index WALLET_INDEX]
+                               [--no-confirm]
+                               [--verbose | --quiet]
+```
+
+* Call a SingularityNET service
+  * `METHOD`: service's target JSON-RPC method name
+  * `PARAMS`: serialized JSON object containing target JSON-RPC method's parameters and call arguments (also accepts path
+of file containing serialized JSON parameters object; leave empty to read from stdin)
+  * `MAX_PRICE`: skip interactive confirmation of job price if below this value
+  * `AGENT_ADDRESS`: address of Agent contract associated with service; overwrites session `current_agent_at`
+  * `JOB_ADDRESS`: address of Job contract instance; continue existing job from current state or create a new job if not
+provided or in COMPLETED state; overwrites session `current_job_at`
+  * `GAS_PRICE`: override session `default_gas_price`
+  * `ETH_RPC_ENDPOINT`: override session `default_eth_rpc_endpoint`
+  * `WALLET_INDEX`: override session `default_wallet_index`
+  * `--no-confirm`: skip interactive confirmation of transaction payloads
+  * `--verbose`: print all transaction details
+  * `--quiet`: print minimal transaction details
+
+---
+
+```
 snet contract <ContractName> [--at ADDRESS] <functionName> PARAM1, PARAM2, ... [--transact]
                                                                                [--gas-price GAS_PRICE]
                                                                                [--eth-rpc-endpoint ETH_RPC_ENDPOINT]

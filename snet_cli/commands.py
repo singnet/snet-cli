@@ -1,4 +1,5 @@
 import getpass
+import io
 import json
 import os
 import shlex
@@ -9,9 +10,13 @@ from pathlib import Path
 from textwrap import indent
 from urllib.parse import urljoin, urlparse
 
+import grpc
 import ipfsapi
-import jsonrpcclient
+import pkg_resources
+import requests
 import yaml
+from google.protobuf import json_format
+from grpc_tools.protoc import main as protoc
 from rfc3986 import urlparse, uri_reference
 
 from snet_cli.contract import Contract
@@ -388,6 +393,277 @@ class AgentFactoryCommand(BlockchainCommand):
         self._set_key("current_agent_at", events[0].args.agent, out_f=self.err_f)
         if agent_factory_address is not None:
             self._set_key("current_agent_factory_at", agent_factory_address, out_f=self.err_f)
+
+
+class ClientCommand(BlockchainCommand):
+
+    def _get_call_params(self, args):
+        # Don't use _get_string because it doesn't make sense to store this with session/identity.
+        # We also want to fall back to stdin or a file
+        params_string = getattr(args, "params", None)
+
+        params_source = "cmdline"
+
+        try:
+            if Path(params_string).is_file():
+                params_source = "file"
+                fn = params_string
+                with open(fn, 'rb') as f:
+                    params_string = f.read()
+        except OSError:
+            if params_string is None or params_string == "-":
+                params_source = "stdin"
+                self._printerr("Waiting for call params on stdin...\n")
+                params_string = sys.stdin.read()
+
+        params = json.loads(params_string)
+
+        return params_source, params
+
+    def call(self):
+        agent_address = self._getstring("agent_at")
+        self._ensure(agent_address is not None, "--agent-at is required to specify agent address")
+
+        job_contract_def = get_contract_def("Job")
+        agent_contract_def = get_contract_def("Agent")
+        token_contract_def = get_contract_def("SingularityNetToken")
+
+        job_address = self._getstring("job_at")
+
+        if job_address is not None:
+            job_agent_address = ContractCommand(
+                config=self.config,
+                args=self.get_contract_argser(
+                    contract_address=job_address,
+                    contract_function="agent",
+                    contract_def=job_contract_def)(),
+                out_f=None,
+                err_f=None,
+                w3=self.w3,
+                ident=self.ident).call()
+            state = ContractCommand(
+                config=self.config,
+                args=self.get_contract_argser(
+                    contract_address=job_address,
+                    contract_function="state",
+                    contract_def=job_contract_def)(),
+                out_f=None,
+                err_f=None,
+                w3=self.w3,
+                ident=self.ident).call()
+            if agent_address != job_agent_address or state == 2:
+                job_address = None
+            else:
+                price = ContractCommand(
+                    config=self.config,
+                    args=self.get_contract_argser(
+                        contract_address=job_address,
+                        contract_function="jobPrice",
+                        contract_def=job_contract_def)(),
+                    out_f=None,
+                    err_f=None,
+                    w3=self.w3,
+                    ident=self.ident).call()
+
+        metadata_uri = ContractCommand(
+            config=self.config,
+            args=self.get_contract_argser(
+                contract_address=agent_address,
+                contract_function="metadataURI",
+                contract_def=agent_contract_def)(),
+            out_f=None,
+            err_f=None,
+            w3=self.w3,
+            ident=self.ident).call()
+
+        self._ensure(metadata_uri is not None and metadata_uri != "", "agent does not have valid metadataURI")
+
+        try:
+            ipfs_endpoint = urlparse(self.config["ipfs"]["default_ipfs_endpoint"])
+            ipfs_scheme = ipfs_endpoint.scheme if ipfs_endpoint.scheme else "http"
+            ipfs_port = ipfs_endpoint.port if ipfs_endpoint.port else 5001
+            ipfs_client = ipfsapi.connect(urljoin(ipfs_scheme, ipfs_endpoint.hostname), ipfs_port)
+            model_hash = json.loads(ipfs_client.cat(metadata_uri.split("/")[-1]))["modelURI"].split("/")[-1]
+
+            model_folder = Path("~").expanduser().joinpath(".snet").joinpath("models").joinpath(model_hash)
+            if not os.path.exists(model_folder):
+                os.makedirs(model_folder)
+                model_tar = ipfs_client.cat(model_hash)
+                with tarfile.open(fileobj=io.BytesIO(model_tar)) as f:
+                    f.extractall(model_folder)
+
+            codegen_folder = Path("~").expanduser().joinpath(".snet").joinpath("py-codegen").joinpath(model_hash)
+            if not os.path.exists(codegen_folder):
+                os.makedirs(codegen_folder)
+                proto_include = pkg_resources.resource_filename('grpc_tools', '_proto')
+                protoc_args = [
+                    "protoc",
+                    "-I{}".format(model_folder),
+                    '-I{}'.format(proto_include),
+                    "--python_out={}".format(codegen_folder),
+                    "--grpc_python_out={}".format(codegen_folder)
+                ]
+                protoc_args.extend([str(p) for p in model_folder.glob("**/*.proto")])
+                protoc(protoc_args)
+
+            sys.path.append(str(codegen_folder))
+            mods = []
+            for p in codegen_folder.glob("*_pb2*"):
+                m = __import__(p.name.replace(".py", ""))
+                mods.append(m)
+
+            method = self._getstring("method")
+
+            service_name = None
+            request_name = None
+            response_name = None
+            need_break = False
+            for mod in mods:
+                if need_break:
+                    break
+                desc = getattr(mod, "DESCRIPTOR", None)
+                if desc is not None:
+                    for s_name, s_desc in desc.services_by_name.items():
+                        if need_break:
+                            break
+                        for m_desc in s_desc.methods:
+                            if need_break:
+                                break
+                            if m_desc.name == method:
+                                service_name = s_name
+                                request_name = m_desc.input_type.name
+                                response_name = m_desc.output_type.name
+                                need_break = True
+
+            self._ensure(None not in [service_name, request_name, response_name], "failed to load service model")
+
+            stub_class = None
+            request_class = None
+            response_class = None
+            for mod in mods:
+                if stub_class is None:
+                    stub_class = getattr(mod, service_name + "Stub", None)
+                if request_class is None:
+                    request_class = getattr(mod, request_name, None)
+                if response_class is None:
+                    response_class = getattr(mod, response_name, None)
+
+            self._ensure(None not in [stub_class, request_class, response_class], "failed to load service model")
+        except Exception as e:
+            self._error("failed to load service model")
+
+        if job_address is None:
+            cmd = AgentCommand(
+                config=self.config,
+                args=self.get_contract_argser(
+                    contract_address=None,
+                    contract_function="createJob",
+                    contract_def=agent_contract_def,
+                    number=1)(),
+                out_f=self.err_f,
+                err_f=self.err_f,
+                w3=self.w3,
+                ident=self.ident)
+            job = cmd.create_jobs()[0]
+            job_address, price = job["job_address"], job["job_price"]
+
+        self._set_key("current_job_at", job_address, out_f=self.err_f)
+
+        token_address = ContractCommand(
+            config=self.config,
+            args=self.get_contract_argser(
+                contract_address=job_address,
+                contract_function="token",
+                contract_def=job_contract_def)(),
+            out_f=None,
+            err_f=None,
+            w3=self.w3,
+            ident=self.ident).call()
+
+        state = ContractCommand(
+            config=self.config,
+            args=self.get_contract_argser(
+                contract_address=job_address,
+                contract_function="state",
+                contract_def=job_contract_def)(),
+            out_f=None,
+            err_f=None,
+            w3=self.w3,
+            ident=self.ident).call()
+
+        if state == 0:
+            cmd = ContractCommand(
+                config=self.config,
+                args=self.get_contract_argser(
+                    contract_address=token_address,
+                    contract_function="approve",
+                    contract_def=token_contract_def)(job_address, price),
+                out_f=self.err_f,
+                err_f=self.err_f,
+                w3=self.w3,
+                ident=self.ident)
+            self._printerr("Creating transaction to approve token transfer...\n")
+            cmd.transact()
+            cmd = ContractCommand(
+                config=self.config,
+                args=self.get_contract_argser(
+                    contract_address=job_address,
+                    contract_function="fundJob",
+                    contract_def=job_contract_def)(),
+                out_f=self.err_f,
+                err_f=self.err_f,
+                w3=self.w3,
+                ident=self.ident)
+            self._printerr("Creating transaction to fund job...\n")
+            cmd.transact()
+
+        agent_version = get_agent_version(self.w3, agent_address)
+
+        self._printerr("Signing job...\n")
+        job_signature = self.ident.sign_message(job_address, self.err_f, agent_version=agent_version).hex()
+
+        endpoint = ContractCommand(
+            config=self.config,
+            args=self.get_contract_argser(
+                contract_address=agent_address,
+                contract_function="endpoint",
+                contract_def=agent_contract_def)(),
+            out_f=None,
+            err_f=None,
+            w3=self.w3,
+            ident=self.ident).call()
+
+        channel = grpc.insecure_channel(endpoint.replace("https://", "", 1).replace("http://", "", 1))
+
+        stub = stub_class(channel)
+        call_fn = getattr(stub, method)
+
+        params_source, params = self._get_call_params(self.args)
+
+        self._printerr("Read call params from {}...\n".format(params_source))
+
+        request = request_class()
+        json_format.Parse(json.dumps(params), request, True)
+
+        encoding = requests.get(endpoint + "/encoding").text.strip()
+
+        if encoding == "json":
+            def json_serializer(*args, **kwargs):
+                return bytes(json_format.MessageToJson(args[0], True, preserving_proto_field_name=True), "utf-8")
+
+            def json_deserializer(*args, **kwargs):
+                resp = response_class()
+                json_format.Parse(args[0], resp, True)
+                return resp
+
+            call_fn._request_serializer = json_serializer
+            call_fn._response_deserializer = json_deserializer
+
+        self._printerr("Calling service...\n")
+
+        response = call_fn(request, metadata=[("snet-job-address", job_address), ("snet-job-signature", job_signature)])
+
+        self._pprint({"response": json.loads(json_format.MessageToJson(response, True, preserving_proto_field_name=True))})
 
 
 class ContractCommand(BlockchainCommand):
