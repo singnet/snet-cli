@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='snet-cli',
-    version='0.1.4',
+    version='0.1.5',
     packages=find_packages(),
     url='https://github.com/singnet/snet-cli',
     license='MIT',
@@ -10,6 +10,7 @@ setup(
     author_email='info@singularitynet.io',
     description='SingularityNET CLI',
     install_requires=[
+        'grpcio-tools==1.14.1',
         'jsonrpcclient==2.5.2',
         'web3==4.2.1',
         'mnemonic==0.18',
