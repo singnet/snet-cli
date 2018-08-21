@@ -201,6 +201,11 @@ def add_client_options(parser):
     add_contract_identity_arguments(call_p, [("agent", "agent_at"), ("job", "job_at")])
     add_transaction_arguments(call_p)
 
+    get_model_p = subparsers.add_parser("get-model", help="Get a service's model file")
+    get_model_p.set_defaults(fn="get_model")
+    get_model_p.add_argument("dest_dir", help="destination directory for service's model files", metavar="DEST_DIR")
+    add_contract_identity_arguments(get_model_p, [("agent", "agent_at")])
+
 
 def add_contract_options(parser):
     parser.set_defaults(cmd=ContractCommand)

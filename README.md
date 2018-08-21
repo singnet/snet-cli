@@ -182,6 +182,16 @@ networks on which AgentFactory has been deployed by SingularityNET Foundation)
 ---
 
 ```
+snet client get-model DEST_DIR [--agent-at AGENT_ADDRESS]
+```
+
+* Retrieve the model files for a given SingularityNET service
+  * `DEST_DIR`: directory at which to root the service's model files; created if doesn't exist
+  * `AGENT_ADDRESS`: address of Agent contract associated with service; overwrites session `current_agent_at`
+
+---
+
+```
 snet client call METHOD PARAMS [--max-price MAX_PRICE]
                                [--agent-at AGENT_ADDRESS]
                                [--job-at JOB_ADDRESS]

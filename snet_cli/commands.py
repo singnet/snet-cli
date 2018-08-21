@@ -420,6 +420,43 @@ class ClientCommand(BlockchainCommand):
 
         return params_source, params
 
+    def get_model(self):
+        agent_address = self._getstring("agent_at")
+        self._ensure(agent_address is not None, "--agent-at is required to specify agent address")
+
+        agent_contract_def = get_contract_def("Agent")
+
+        metadata_uri = ContractCommand(
+            config=self.config,
+            args=self.get_contract_argser(
+                contract_address=agent_address,
+                contract_function="metadataURI",
+                contract_def=agent_contract_def)(),
+            out_f=None,
+            err_f=None,
+            w3=self.w3,
+            ident=self.ident).call()
+
+        self._ensure(metadata_uri is not None and metadata_uri != "", "agent does not have valid metadataURI")
+
+        try:
+            ipfs_endpoint = urlparse(self.config["ipfs"]["default_ipfs_endpoint"])
+            ipfs_scheme = ipfs_endpoint.scheme if ipfs_endpoint.scheme else "http"
+            ipfs_port = ipfs_endpoint.port if ipfs_endpoint.port else 5001
+            ipfs_client = ipfsapi.connect(urljoin(ipfs_scheme, ipfs_endpoint.hostname), ipfs_port)
+            model_hash = json.loads(ipfs_client.cat(metadata_uri.split("/")[-1]))["modelURI"].split("/")[-1]
+
+            model_dir = self._getstring("dest_dir") or Path("~").expanduser().joinpath(".snet").joinpath("models").joinpath(model_hash)
+            if not os.path.exists(model_dir):
+                os.makedirs(model_dir)
+                model_tar = ipfs_client.cat(model_hash)
+                with tarfile.open(fileobj=io.BytesIO(model_tar)) as f:
+                    f.extractall(model_dir)
+            self._pprint({"destination": str(model_dir)})
+            return model_hash
+        except Exception as e:
+            self._error("failed to retrieve service model")
+
     def call(self):
         agent_address = self._getstring("agent_at")
         self._ensure(agent_address is not None, "--agent-at is required to specify agent address")
@@ -465,50 +502,34 @@ class ClientCommand(BlockchainCommand):
                     w3=self.w3,
                     ident=self.ident).call()
 
-        metadata_uri = ContractCommand(
+        model_hash = ClientCommand(
             config=self.config,
-            args=self.get_contract_argser(
-                contract_address=agent_address,
-                contract_function="metadataURI",
-                contract_def=agent_contract_def)(),
+            args=self.args,
             out_f=None,
             err_f=None,
             w3=self.w3,
-            ident=self.ident).call()
+            ident=self.ident).get_model()
 
-        self._ensure(metadata_uri is not None and metadata_uri != "", "agent does not have valid metadataURI")
+        model_dir = Path("~").expanduser().joinpath(".snet").joinpath("models").joinpath(model_hash)
 
         try:
-            ipfs_endpoint = urlparse(self.config["ipfs"]["default_ipfs_endpoint"])
-            ipfs_scheme = ipfs_endpoint.scheme if ipfs_endpoint.scheme else "http"
-            ipfs_port = ipfs_endpoint.port if ipfs_endpoint.port else 5001
-            ipfs_client = ipfsapi.connect(urljoin(ipfs_scheme, ipfs_endpoint.hostname), ipfs_port)
-            model_hash = json.loads(ipfs_client.cat(metadata_uri.split("/")[-1]))["modelURI"].split("/")[-1]
-
-            model_folder = Path("~").expanduser().joinpath(".snet").joinpath("models").joinpath(model_hash)
-            if not os.path.exists(model_folder):
-                os.makedirs(model_folder)
-                model_tar = ipfs_client.cat(model_hash)
-                with tarfile.open(fileobj=io.BytesIO(model_tar)) as f:
-                    f.extractall(model_folder)
-
-            codegen_folder = Path("~").expanduser().joinpath(".snet").joinpath("py-codegen").joinpath(model_hash)
-            if not os.path.exists(codegen_folder):
-                os.makedirs(codegen_folder)
+            codegen_dir = Path("~").expanduser().joinpath(".snet").joinpath("py-codegen").joinpath(model_hash)
+            if not os.path.exists(codegen_dir):
+                os.makedirs(codegen_dir)
                 proto_include = pkg_resources.resource_filename('grpc_tools', '_proto')
                 protoc_args = [
                     "protoc",
-                    "-I{}".format(model_folder),
+                    "-I{}".format(model_dir),
                     '-I{}'.format(proto_include),
-                    "--python_out={}".format(codegen_folder),
-                    "--grpc_python_out={}".format(codegen_folder)
+                    "--python_out={}".format(codegen_dir),
+                    "--grpc_python_out={}".format(codegen_dir)
                 ]
-                protoc_args.extend([str(p) for p in model_folder.glob("**/*.proto")])
+                protoc_args.extend([str(p) for p in model_dir.glob("**/*.proto")])
                 protoc(protoc_args)
 
-            sys.path.append(str(codegen_folder))
+            sys.path.append(str(codegen_dir))
             mods = []
-            for p in codegen_folder.glob("*_pb2*"):
+            for p in codegen_dir.glob("*_pb2*"):
                 m = __import__(p.name.replace(".py", ""))
                 mods.append(m)
 
