@@ -24,6 +24,7 @@ setup(
         'hidapi>=0.7.99',  # _vendor/ledgerblue
         'protobuf>=2.6.1',  # _vendor/ledgerblue
         'pycryptodome==3.6.1',  # _vendor/ledgerblue
+        'eth-hash==0.1.4',  # the latest eth-hash v0.2.0 requires pycryptodome>=3.6.6,<4
         'future==0.16.0',  # _vendor/ledgerblue
         'ecpy>=0.8.1',  # _vendor/ledgerblue
         'pillow>=3.4.0',  # _vendor/ledgerblue
