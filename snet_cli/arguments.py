@@ -74,7 +74,7 @@ def add_root_options(parser, config):
     contract_p = subparsers.add_parser("contract", help="Interact with contracts at a low level")
     add_contract_options(contract_p)
 
-    service_p = subparsers.add_parser("service", help="Create, publish, register, and update SingularityNET services")
+    service_p = subparsers.add_parser("service", help="Create, publish, update and delete SingularityNET services")
     add_service_options(service_p, config)
 
 
@@ -201,10 +201,10 @@ def add_client_options(parser):
     add_contract_identity_arguments(call_p, [("agent", "agent_at"), ("job", "job_at")])
     add_transaction_arguments(call_p)
 
-    get_model_p = subparsers.add_parser("get-model", help="Get a service's model file")
-    get_model_p.set_defaults(fn="get_model")
-    get_model_p.add_argument("dest_dir", help="destination directory for service's model files", metavar="DEST_DIR")
-    add_contract_identity_arguments(get_model_p, [("agent", "agent_at")])
+    get_spec_p = subparsers.add_parser("get-spec", help="Get a service's spec file")
+    get_spec_p.set_defaults(fn="get_spec")
+    get_spec_p.add_argument("dest_dir", help="destination directory for service's proto files", metavar="DEST_DIR")
+    add_contract_identity_arguments(get_spec_p, [("agent", "agent_at")])
 
 
 def add_contract_options(parser):
@@ -238,6 +238,15 @@ def _add_service_update_arguments(parser):
     add_contract_identity_arguments(parser, [("registry", "registry_at")])
 
 
+def _add_service_delete_arguments(parser):
+    parser.set_defaults(fn="delete")
+    parser.add_argument("--agent-at", help="service's agent address of the service")
+    parser.add_argument("--name", help="service's name of the service")
+    parser.add_argument("--organization", help="service's organization name of the service")
+    add_transaction_arguments(parser)
+    add_contract_identity_arguments(parser, [("registry", "registry_at")])
+
+
 def add_service_options(parser, config):
     parser.set_defaults(cmd=ServiceCommand)
 
@@ -247,7 +256,7 @@ def add_service_options(parser, config):
     init_p = subparsers.add_parser("init", help="Initialize a service package on the filesystem")
     init_p.set_defaults(fn="init")
     init_p.add_argument("--name", help='name of the service to be stored in the registry (default: <current working directory>)')
-    init_p.add_argument("--model", help='local filesystem path to the service model directory (default: "model/")')
+    init_p.add_argument("--spec", help='local filesystem path to the service spec directory (default: "service-spec/")')
     init_p.add_argument("--organization", help='the organization to which you want to register the service (default: "")')
     init_p.add_argument("--path", help='the path under which you want to register the service in the organization (default: "")')
     init_p.add_argument("--price", help='initial price for interacting with the service (default: 0)', type=int)
@@ -293,6 +302,27 @@ def add_service_options(parser, config):
 
     p = networks_update_subparsers.add_parser("default")
     _add_service_update_arguments(p)
+
+    # Delete service
+    delete_p = subparsers.add_parser("delete", help="Delete a service on the network", default_choice="default")
+    delete_p.set_defaults(fn="delete")
+    networks_update_subparsers = delete_p.add_subparsers(title="networks", metavar="[NETWORK]")
+
+    for network_name in network_names:
+        p = networks_update_subparsers.add_parser(network_name,
+                                                  help="Delete a service on {} network".format(network_name))
+        p.set_defaults(network_name=network_name)
+        _add_service_delete_arguments(p)
+
+    p = networks_update_subparsers.add_parser("eth-rpc-endpoint",
+                                              help="Delete a service using the provided Ethereum-RPC endpoint")
+    p.set_defaults(network_name="eth_rpc_endpoint")
+    p.add_argument("eth_rpc_endpoint", help="ethereum json-rpc endpoint (should start with 'http(s)://')",
+                   metavar="ETH_RPC_ENDPOINT")
+    _add_service_delete_arguments(p)
+
+    p = networks_update_subparsers.add_parser("default")
+    _add_service_delete_arguments(p)
 
 
 def add_contract_function_options(parser, contract_name):

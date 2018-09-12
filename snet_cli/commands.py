@@ -98,6 +98,10 @@ class Command(object):
         SessionCommand(config or self.config, DefaultAttributeObject(key=key, value=value), out_f or self.out_f,
                        err_f or self.err_f).set()
 
+    def _unset_key(self, key, config=None, out_f=None, err_f=None):
+        SessionCommand(config or self.config, DefaultAttributeObject(key=key), out_f or self.out_f,
+                       err_f or self.err_f).unset()
+
     def _nothing(self):
         pass
 
@@ -924,14 +928,12 @@ class ServiceCommand(BlockchainCommand):
                 service_json['networks'] = {}
             service_json['networks'][network_id] = {"agentAddress": agent_address}
 
-            # Updating session
-            self._printerr("Adding contract address to session and to service.json file...\n")
-            self._set_key("current_agent_at", agent_address, out_f=self.err_f)
-
+            self._printerr("Adding contract address to service.json file...\n")
             with open(service_json_path, "w+") as f:
                 json.dump(service_json, f, indent=4, ensure_ascii=False)
 
         else:
+            self._printout("Agent address exists on Registry...\n")
             agent_contract_def = get_contract_def("Agent")
 
             agent_attributes = {
@@ -1061,6 +1063,12 @@ class ServiceCommand(BlockchainCommand):
                     self._printerr("Creating transaction to create service registration...\n")
                     cmd.transact()
 
+        # Updating session
+        self._printerr("Adding contract address to session...\n")
+        self._set_key("current_agent_at", agent_address, out_f=self.err_f)
+        self._printout("Service published!")
+        return
+
     def update(self):
         network_id = self._get_network()
 
@@ -1103,7 +1111,7 @@ class ServiceCommand(BlockchainCommand):
         current_tags = [tag.partition(b"\0")[0].decode("utf-8") for tag in current_tags]
 
         new_price = self.args.new_price
-        if "price" in service_json:
+        if new_price is None and "price" in service_json:
             new_price = service_json["price"]
 
         if new_price:
@@ -1133,7 +1141,7 @@ class ServiceCommand(BlockchainCommand):
                 cmd.transact()
 
         new_endpoint = self.args.new_endpoint
-        if "endpoint" in service_json:
+        if new_endpoint is None and "endpoint" in service_json:
             new_endpoint = service_json["endpoint"]
 
         if new_endpoint:
@@ -1163,7 +1171,7 @@ class ServiceCommand(BlockchainCommand):
                 cmd.transact()
 
         new_description = self.args.new_description
-        if "metadata" in service_json:
+        if new_description is None and "metadata" in service_json:
             if "description" in service_json["metadata"]:
                 new_description = service_json["metadata"]["description"]
 
@@ -1216,7 +1224,7 @@ class ServiceCommand(BlockchainCommand):
                 cmd.transact()
 
         new_tags = self.args.new_tags
-        if "tags" in service_json:
+        if new_tags is None and "tags" in service_json:
             new_tags = service_json["tags"]
 
         # Tags must have max is 32 characters
@@ -1263,5 +1271,63 @@ class ServiceCommand(BlockchainCommand):
         else:
             self._printerr("Tags are too long (max=32 chars)")
 
+        # Updating session
+        self._printerr("Updating current contract address to session...\n")
+        self._set_key("current_agent_at", agent_address, out_f=self.err_f)
         self._printout("Service is updated!")
         return
+
+    def delete(self):
+        network_id = self._get_network()
+
+        if "config" in self.args and self.args.config:
+            service_json_path = self.args.config
+        else:
+            service_json_path = "service.json"
+
+        with open(service_json_path) as f:
+            service_json = json.load(f)
+
+        agent_address = service_json.get('networks', {}).get(network_id, {}).get('agentAddress', None)
+        if agent_address is None:
+            self._error("Service hasn't been deployed to network with id {}".format(network_id))
+            return
+
+        self._printout("Getting information about the service...")
+        registry_contract_def = get_contract_def("Registry")
+        registry_address = self._getstring("registry_at")
+
+        (found, _, current_path, current_agent_address, current_tags) = ContractCommand(
+            config=self.config,
+            args=self.get_contract_argser(
+                contract_address=registry_address,
+                contract_function="getServiceRegistrationByName",
+                contract_def=registry_contract_def)(type_converter("bytes32")(service_json["organization"]),
+                                                    type_converter("bytes32")(service_json["name"])),
+            out_f=None,
+            err_f=None,
+            w3=self.w3,
+            ident=self.ident).call()
+
+        if not found:
+            self._error("Service {} not registered on network with id {}".format(agent_address, network_id))
+            return
+        else:
+            self._printout("Deleting service at {}...".format(agent_address))
+            cmd = ContractCommand(
+                config=self.config,
+                args=self.get_contract_argser(
+                    contract_address=registry_address,
+                    contract_function="deleteServiceRegistration",
+                    contract_def=registry_contract_def)(type_converter("bytes32")(service_json["organization"]),
+                                                        type_converter("bytes32")(service_json["name"])),
+                out_f=None,
+                err_f=None,
+                w3=self.w3,
+                ident=self.ident)
+            cmd.transact()
+
+        # Updating session
+        self._printerr("Removing current contract address from session...\n")
+        self._unset_key("current_agent_at", out_f=self.err_f)
+        self._printout("Service was deleted!")
