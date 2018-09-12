@@ -98,6 +98,10 @@ class Command(object):
         SessionCommand(config or self.config, DefaultAttributeObject(key=key, value=value), out_f or self.out_f,
                        err_f or self.err_f).set()
 
+    def _unset_key(self, key, config=None, out_f=None, err_f=None):
+        SessionCommand(config or self.config, DefaultAttributeObject(key=key), out_f or self.out_f,
+                       err_f or self.err_f).unset()
+
     def _nothing(self):
         pass
 
@@ -420,7 +424,7 @@ class ClientCommand(BlockchainCommand):
 
         return params_source, params
 
-    def get_model(self):
+    def get_spec(self):
         agent_address = self._getstring("agent_at")
         self._ensure(agent_address is not None, "--agent-at is required to specify agent address")
 
@@ -444,18 +448,18 @@ class ClientCommand(BlockchainCommand):
             ipfs_scheme = ipfs_endpoint.scheme if ipfs_endpoint.scheme else "http"
             ipfs_port = ipfs_endpoint.port if ipfs_endpoint.port else 5001
             ipfs_client = ipfsapi.connect(urljoin(ipfs_scheme, ipfs_endpoint.hostname), ipfs_port)
-            model_hash = json.loads(ipfs_client.cat(metadata_uri.split("/")[-1]))["modelURI"].split("/")[-1]
+            spec_hash = json.loads(ipfs_client.cat(metadata_uri.split("/")[-1]))["modelURI"].split("/")[-1]
 
-            model_dir = self._getstring("dest_dir") or Path("~").expanduser().joinpath(".snet").joinpath("models").joinpath(model_hash)
-            if not os.path.exists(model_dir):
-                os.makedirs(model_dir)
-                model_tar = ipfs_client.cat(model_hash)
-                with tarfile.open(fileobj=io.BytesIO(model_tar)) as f:
-                    f.extractall(model_dir)
-            self._pprint({"destination": str(model_dir)})
-            return model_hash
+            spec_dir = self._getstring("dest_dir") or Path("~").expanduser().joinpath(".snet").joinpath("service-spec").joinpath(spec_hash)
+            if not os.path.exists(spec_dir):
+                os.makedirs(spec_dir)
+            spec_tar = ipfs_client.cat(spec_hash)
+            with tarfile.open(fileobj=io.BytesIO(spec_tar)) as f:
+                f.extractall(spec_dir)
+            self._pprint({"destination": str(spec_dir)})
+            return spec_hash
         except Exception as e:
-            self._error("failed to retrieve service model")
+            self._error("failed to retrieve service spec")
 
     def call(self):
         agent_address = self._getstring("agent_at")
@@ -502,29 +506,29 @@ class ClientCommand(BlockchainCommand):
                     w3=self.w3,
                     ident=self.ident).call()
 
-        model_hash = ClientCommand(
+        spec_hash = ClientCommand(
             config=self.config,
             args=self.args,
             out_f=None,
             err_f=None,
             w3=self.w3,
-            ident=self.ident).get_model()
+            ident=self.ident).get_spec()
 
-        model_dir = Path("~").expanduser().joinpath(".snet").joinpath("models").joinpath(model_hash)
+        spec_dir = Path("~").expanduser().joinpath(".snet").joinpath("service-spec").joinpath(spec_hash)
 
         try:
-            codegen_dir = Path("~").expanduser().joinpath(".snet").joinpath("py-codegen").joinpath(model_hash)
+            codegen_dir = Path("~").expanduser().joinpath(".snet").joinpath("py-codegen").joinpath(spec_hash)
             if not os.path.exists(codegen_dir):
                 os.makedirs(codegen_dir)
                 proto_include = pkg_resources.resource_filename('grpc_tools', '_proto')
                 protoc_args = [
                     "protoc",
-                    "-I{}".format(model_dir),
+                    "-I{}".format(spec_dir),
                     '-I{}'.format(proto_include),
                     "--python_out={}".format(codegen_dir),
                     "--grpc_python_out={}".format(codegen_dir)
                 ]
-                protoc_args.extend([str(p) for p in model_dir.glob("**/*.proto")])
+                protoc_args.extend([str(p) for p in spec_dir.glob("**/*.proto")])
                 protoc(protoc_args)
 
             sys.path.append(str(codegen_dir))
@@ -556,7 +560,7 @@ class ClientCommand(BlockchainCommand):
                                 response_name = m_desc.output_type.name
                                 need_break = True
 
-            self._ensure(None not in [service_name, request_name, response_name], "failed to load service model")
+            self._ensure(None not in [service_name, request_name, response_name], "failed to load service spec")
 
             stub_class = None
             request_class = None
@@ -569,9 +573,9 @@ class ClientCommand(BlockchainCommand):
                 if response_class is None:
                     response_class = getattr(mod, response_name, None)
 
-            self._ensure(None not in [stub_class, request_class, response_class], "failed to load service model")
+            self._ensure(None not in [stub_class, request_class, response_class], "failed to load service spec")
         except Exception as e:
-            self._error("failed to load service model")
+            self._error("failed to load service spec")
 
         if job_address is None:
             cmd = AgentCommand(
@@ -709,7 +713,14 @@ class ContractCommand(BlockchainCommand):
         }
 
         result = contract.call(self.args.contract_function, *positional_inputs, **named_inputs)
-        self._printout(result)
+        contract_io = [x for x in abi if "name" in x and x["name"] == self.args.contract_function][0]
+        if not result:
+            if "constant" in contract_io:
+                if not contract_io["constant"]:
+                    self._printout("HINT: Did you forget --transact?")
+        else:
+            self._printout(result)
+
         return result
 
     def transact(self):
@@ -782,7 +793,7 @@ class ServiceCommand(BlockchainCommand):
         accept_all_defaults = self.args.y
         init_args = {
             "name": os.path.basename(os.getcwd()),
-            "model": "model/",
+            "service-spec": "service-spec/",
             "organization": "",
             "path": "",
             "price": 0,
@@ -801,10 +812,10 @@ class ServiceCommand(BlockchainCommand):
         elif not accept_all_defaults:
             init_args["name"] = input('Choose a name for your service: (default: "{}")\n'.format(init_args["name"])) or init_args["name"]
 
-        if self.args.model:
-            init_args["model"] = self.args.model
+        if self.args.spec:
+            init_args["service-spec"] = self.args.spec
         elif not accept_all_defaults:
-            init_args["model"] = input('Choose the path to your service\'s model directory: (default: "{}")\n'.format(init_args["model"])) or init_args["model"]
+            init_args["service-spec"] = input('Choose the path to your service\'s spec directory: (default: "{}")\n'.format(init_args["service-spec"])) or init_args["service-spec"]
 
         if self.args.organization:
             init_args["organization"] = self.args.organization
@@ -855,36 +866,36 @@ class ServiceCommand(BlockchainCommand):
         agent_address = service_json.get('networks', {}).get(network_id, {}).get('agentAddress', None)
         need_agent = agent_address is None
 
-        # Get list of model files
+        # Get list of service-spec files
         import_paths = None
-        if 'model' in service_json and service_json['model']:
-            model_path = Path(service_json['model'])
-            if not os.path.isabs(model_path):
-                entry_path = Path.cwd().joinpath(model_path).resolve()
+        if 'service-spec' in service_json and service_json['service-spec']:
+            spec_path = Path(service_json['service-spec'])
+            if not os.path.isabs(spec_path):
+                entry_path = Path.cwd().joinpath(spec_path).resolve()
             else:
-                entry_path = model_path.resolve()
+                entry_path = spec_path.resolve()
             if not os.path.isdir(entry_path):
-                self._error("Model path must resolve to a valid directory: {}".format(model_path))
+                self._error("Service spec path must resolve to a valid directory: {}".format(spec_path))
             import_paths = walk_imports(entry_path)
 
-        # Create model tar and upload it to IPFS
+        # Create service-spec tar and upload it to IPFS
         ipfs_endpoint = urlparse(self.config["ipfs"]["default_ipfs_endpoint"])
         ipfs_scheme = ipfs_endpoint.scheme if ipfs_endpoint.scheme else "http"
         ipfs_port = ipfs_endpoint.port if ipfs_endpoint.port else 5001
         ipfs_client = ipfsapi.connect(urljoin(ipfs_scheme, ipfs_endpoint.hostname), ipfs_port)
-        model_ipfs_uri = None
+        spec_ipfs_uri = None
 
         if import_paths:
             tmp_f = self._tar_imports(import_paths, entry_path)
-            model_ipfs_hash = ipfs_client.add(read_temp_tar(tmp_f).name)["Hash"]
-            model_ipfs_path = "/ipfs/{}".format(model_ipfs_hash)
-            model_ipfs_uri = uri_reference(model_ipfs_path).copy_with(scheme='ipfs').unsplit()
+            spec_ipfs_hash = ipfs_client.add(read_temp_tar(tmp_f).name)["Hash"]
+            spec_ipfs_path = "/ipfs/{}".format(spec_ipfs_hash)
+            spec_ipfs_uri = uri_reference(spec_ipfs_path).copy_with(scheme='ipfs').unsplit()
 
         # Upload metadata JSON to IPFS with modelURI
         metadata_json = dict(service_json['metadata'])
 
-        if model_ipfs_uri:
-            metadata_json['modelURI'] = model_ipfs_uri
+        if spec_ipfs_uri:
+            metadata_json['modelURI'] = spec_ipfs_uri
 
         with tempfile.NamedTemporaryFile(mode='w+') as tmp_json:
             json.dump(metadata_json, tmp_json, ensure_ascii=False, sort_keys=True)
@@ -916,11 +927,13 @@ class ServiceCommand(BlockchainCommand):
             if "networks" not in service_json:
                 service_json['networks'] = {}
             service_json['networks'][network_id] = {"agentAddress": agent_address}
+
             self._printerr("Adding contract address to service.json file...\n")
             with open(service_json_path, "w+") as f:
                 json.dump(service_json, f, indent=4, ensure_ascii=False)
 
         else:
+            self._printout("Agent address exists on Registry...\n")
             agent_contract_def = get_contract_def("Agent")
 
             agent_attributes = {
@@ -1050,6 +1063,12 @@ class ServiceCommand(BlockchainCommand):
                     self._printerr("Creating transaction to create service registration...\n")
                     cmd.transact()
 
+        # Updating session
+        self._printerr("Adding contract address to session...\n")
+        self._set_key("current_agent_at", agent_address, out_f=self.err_f)
+        self._printout("Service published!")
+        return
+
     def update(self):
         network_id = self._get_network()
 
@@ -1063,36 +1082,69 @@ class ServiceCommand(BlockchainCommand):
 
         agent_contract_def = get_contract_def("Agent")
 
-        if not service_json.get('networks', {}).get(network_id, {}).get('agentAddress', {}):
+        agent_address = service_json.get('networks', {}).get(network_id, {}).get('agentAddress', None)
+        if agent_address is None:
             self._error("Service hasn't been deployed to network with id {}".format(network_id))
+            return
 
-        if self.args.new_price:
+        self._printout("Getting information about the service...")
+        registry_contract_def = get_contract_def("Registry")
+        registry_address = self._getstring("registry_at")
+
+        (found, _, current_path, current_agent_address, current_tags) = ContractCommand(
+            config=self.config,
+            args=self.get_contract_argser(
+                contract_address=registry_address,
+                contract_function="getServiceRegistrationByName",
+                contract_def=registry_contract_def)(type_converter("bytes32")(service_json["organization"]),
+                                                    type_converter("bytes32")(service_json["name"])),
+            out_f=None,
+            err_f=None,
+            w3=self.w3,
+            ident=self.ident).call()
+
+        if not found:
+            self._error("Service {} not registered on network with id {}".format(agent_address, network_id))
+            return
+
+        # Removing the \x00 bytes from tags
+        current_tags = [tag.partition(b"\0")[0].decode("utf-8") for tag in current_tags]
+
+        new_price = self.args.new_price
+        if new_price is None and "price" in service_json:
+            new_price = service_json["price"]
+
+        if new_price:
             current_price = ContractCommand(
                 config=self.config,
                 args=self.get_contract_argser(
                     contract_address=service_json['networks'][network_id]['agentAddress'],
-                    contract_function="price",
+                    contract_function="currentPrice",
                     contract_def=agent_contract_def)(),
                 out_f=None,
                 err_f=None,
                 w3=self.w3,
                 ident=self.ident).call()
-            if current_price != self.args.new_price:
+            if current_price != new_price:
                 cmd = ContractCommand(
                     config=self.config,
                     args=self.get_contract_argser(
                         contract_address=service_json['networks'][network_id]['agentAddress'],
                         contract_function="setPrice",
-                        contract_def=agent_contract_def)(self.args.new_price),
+                        contract_def=agent_contract_def)(new_price),
                     out_f=self.err_f,
                     err_f=self.err_f,
                     w3=self.w3,
                     ident=self.ident)
                 self._printerr("Creating transaction to update agent contract's price from {} to {}...\n".format(
-                    current_price, self.args.new_price))
+                    current_price, new_price))
                 cmd.transact()
 
-        if self.args.new_endpoint:
+        new_endpoint = self.args.new_endpoint
+        if new_endpoint is None and "endpoint" in service_json:
+            new_endpoint = service_json["endpoint"]
+
+        if new_endpoint:
             current_endpoint = ContractCommand(
                 config=self.config,
                 args=self.get_contract_argser(
@@ -1103,22 +1155,27 @@ class ServiceCommand(BlockchainCommand):
                 err_f=None,
                 w3=self.w3,
                 ident=self.ident).call()
-            if current_endpoint != self.args.new_endpoint:
+            if current_endpoint != new_endpoint:
                 cmd = ContractCommand(
                     config=self.config,
                     args=self.get_contract_argser(
                         contract_address=service_json['networks'][network_id]['agentAddress'],
                         contract_function="setEndpoint",
-                        contract_def=agent_contract_def)(self.args.new_endpoint),
+                        contract_def=agent_contract_def)(new_endpoint),
                     out_f=self.err_f,
                     err_f=self.err_f,
                     w3=self.w3,
                     ident=self.ident)
                 self._printerr("Creating transaction to update endpoint from {} to {}...\n".format(
-                    current_endpoint, self.args.new_endpoint))
+                    current_endpoint, new_endpoint))
                 cmd.transact()
 
-        if self.args.new_description:
+        new_description = self.args.new_description
+        if new_description is None and "metadata" in service_json:
+            if "description" in service_json["metadata"]:
+                new_description = service_json["metadata"]["description"]
+
+        if new_description:
             # Get current metadata JSON
             current_metadata_uri = ContractCommand(
                 config=self.config,
@@ -1141,7 +1198,7 @@ class ServiceCommand(BlockchainCommand):
             os.remove(ipfs_file_path)
 
             # Create new metadata JSON tmp file with updated description
-            metadata_json['description'] = self.args.new_description
+            metadata_json['description'] = new_description
             with tempfile.NamedTemporaryFile(mode='w+') as tmp_json:
                 json.dump(metadata_json, tmp_json, ensure_ascii=False, sort_keys=True)
                 tmp_json.seek(0)
@@ -1166,27 +1223,14 @@ class ServiceCommand(BlockchainCommand):
                     current_metadata_uri, metadata_ipfs_uri))
                 cmd.transact()
 
-        if self.args.new_tags:
-            registry_contract_def = get_contract_def("Registry")
-            registry_address = self._getstring("registry_at")
+        new_tags = self.args.new_tags
+        if new_tags is None and "tags" in service_json:
+            new_tags = service_json["tags"]
 
-            (found, _, current_path, current_agent_address, current_tags) = ContractCommand(
-                config=self.config,
-                args=self.get_contract_argser(
-                    contract_address=registry_address,
-                    contract_function="getServiceRegistrationByName",
-                    contract_def=registry_contract_def)(type_converter("bytes32")(service_json['organization']),
-                                                        type_converter("bytes32")(service_json["name"])),
-                out_f=None,
-                err_f=None,
-                w3=self.w3,
-                ident=self.ident).call()
-
-            if not found:
-                self._error("Service hasn't been registered on network with id {}".format(network_id))
-
+        # Tags must have max is 32 characters
+        if len(new_tags) < 32:
             current_tags_set = set(current_tags)
-            new_tags_set = set(self.args.new_tags)
+            new_tags_set = set(new_tags)
 
             if current_tags_set != new_tags_set:
                 remove_tags = current_tags_set - new_tags_set
@@ -1198,15 +1242,15 @@ class ServiceCommand(BlockchainCommand):
                         args=self.get_contract_argser(
                             contract_address=registry_address,
                             contract_function="removeTagsFromServiceRegistration",
-                            contract_def=registry_contract_def)(type_converter("bytes32")(service_json['organization']),
+                            contract_def=registry_contract_def)(type_converter("bytes32")(service_json["organization"]),
                                                                 type_converter("bytes32")(service_json["name"]),
-                                                                [tag for tag in remove_tags]),
+                                                                [tag.encode('utf-8') for tag in remove_tags]),
                         out_f=self.err_f,
                         err_f=self.err_f,
                         w3=self.w3,
                         ident=self.ident)
-                    self._printerr("Creating transaction to remove tags {} from service registration...\n".format(
-                        [tag.partition(b"\0")[0].decode("utf-8") for tag in remove_tags]))
+                    self._printerr("Creating transaction to remove current tags {} from service registration...\n".format(
+                        [tag for tag in remove_tags]))
                     cmd.transact()
                 if len(add_tags) > 0:
                     cmd = ContractCommand(
@@ -1214,13 +1258,76 @@ class ServiceCommand(BlockchainCommand):
                         args=self.get_contract_argser(
                             contract_address=registry_address,
                             contract_function="addTagsToServiceRegistration",
-                            contract_def=registry_contract_def)(type_converter("bytes32")(service_json['organization']),
+                            contract_def=registry_contract_def)(type_converter("bytes32")(service_json["organization"]),
                                                                 type_converter("bytes32")(service_json["name"]),
-                                                                [tag for tag in add_tags]),
+                                                                [tag.encode('utf-8') for tag in add_tags]),
                         out_f=self.err_f,
                         err_f=self.err_f,
                         w3=self.w3,
                         ident=self.ident)
-                    self._printerr("Creating transaction to add tags {} to service registration...\n".format(
-                        [tag.partition(b"\0")[0].decode("utf-8") for tag in add_tags]))
+                    self._printerr("Creating transaction to add new tags {} to service registration...\n".format(
+                        [tag for tag in add_tags]))
                     cmd.transact()
+        else:
+            self._printerr("Tags are too long (max=32 chars)")
+
+        # Updating session
+        self._printerr("Updating current contract address to session...\n")
+        self._set_key("current_agent_at", agent_address, out_f=self.err_f)
+        self._printout("Service is updated!")
+        return
+
+    def delete(self):
+        network_id = self._get_network()
+
+        if "config" in self.args and self.args.config:
+            service_json_path = self.args.config
+        else:
+            service_json_path = "service.json"
+
+        with open(service_json_path) as f:
+            service_json = json.load(f)
+
+        agent_address = service_json.get('networks', {}).get(network_id, {}).get('agentAddress', None)
+        if agent_address is None:
+            self._error("Service hasn't been deployed to network with id {}".format(network_id))
+            return
+
+        self._printout("Getting information about the service...")
+        registry_contract_def = get_contract_def("Registry")
+        registry_address = self._getstring("registry_at")
+
+        (found, _, current_path, current_agent_address, current_tags) = ContractCommand(
+            config=self.config,
+            args=self.get_contract_argser(
+                contract_address=registry_address,
+                contract_function="getServiceRegistrationByName",
+                contract_def=registry_contract_def)(type_converter("bytes32")(service_json["organization"]),
+                                                    type_converter("bytes32")(service_json["name"])),
+            out_f=None,
+            err_f=None,
+            w3=self.w3,
+            ident=self.ident).call()
+
+        if not found:
+            self._error("Service {} not registered on network with id {}".format(agent_address, network_id))
+            return
+        else:
+            self._printout("Deleting service at {}...".format(agent_address))
+            cmd = ContractCommand(
+                config=self.config,
+                args=self.get_contract_argser(
+                    contract_address=registry_address,
+                    contract_function="deleteServiceRegistration",
+                    contract_def=registry_contract_def)(type_converter("bytes32")(service_json["organization"]),
+                                                        type_converter("bytes32")(service_json["name"])),
+                out_f=None,
+                err_f=None,
+                w3=self.w3,
+                ident=self.ident)
+            cmd.transact()
+
+        # Updating session
+        self._printerr("Removing current contract address from session...\n")
+        self._unset_key("current_agent_at", out_f=self.err_f)
+        self._printout("Service was deleted!")
