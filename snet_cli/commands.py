@@ -449,9 +449,9 @@ class ClientCommand(BlockchainCommand):
             model_dir = self._getstring("dest_dir") or Path("~").expanduser().joinpath(".snet").joinpath("models").joinpath(model_hash)
             if not os.path.exists(model_dir):
                 os.makedirs(model_dir)
-                model_tar = ipfs_client.cat(model_hash)
-                with tarfile.open(fileobj=io.BytesIO(model_tar)) as f:
-                    f.extractall(model_dir)
+            model_tar = ipfs_client.cat(model_hash)
+            with tarfile.open(fileobj=io.BytesIO(model_tar)) as f:
+                f.extractall(model_dir)
             self._pprint({"destination": str(model_dir)})
             return model_hash
         except Exception as e:
@@ -916,7 +916,8 @@ class ServiceCommand(BlockchainCommand):
             if "networks" not in service_json:
                 service_json['networks'] = {}
             service_json['networks'][network_id] = {"agentAddress": agent_address}
-            self._printerr("Adding contract address to service.json file...\n")
+            self._printerr("Adding contract address to session and to service.json file...\n")
+            self._set_key("current_agent_at", agent_address, out_f=self.err_f)
             with open(service_json_path, "w+") as f:
                 json.dump(service_json, f, indent=4, ensure_ascii=False)
 
