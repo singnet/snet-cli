@@ -437,6 +437,7 @@ class ClientCommand(BlockchainCommand):
             w3=self.w3,
             ident=self.ident).call()
 
+        self._printerr("Retrieving service spec of {}".format(agent_address))
         self._ensure(metadata_uri is not None and metadata_uri != "", "agent does not have valid metadataURI")
 
         try:
