@@ -238,6 +238,12 @@ def _add_service_update_arguments(parser):
     add_contract_identity_arguments(parser, [("registry", "registry_at")])
 
 
+def _add_service_delete_arguments(parser):
+    parser.set_defaults(fn="delete")
+    add_transaction_arguments(parser)
+    add_contract_identity_arguments(parser, [("registry", "registry_at")])
+
+
 def add_service_options(parser, config):
     parser.set_defaults(cmd=ServiceCommand)
 
@@ -293,6 +299,28 @@ def add_service_options(parser, config):
 
     p = networks_update_subparsers.add_parser("default")
     _add_service_update_arguments(p)
+
+    # Delete service
+    delete_p = subparsers.add_parser("delete", help="Delete a service on the network by service json",
+                                     default_choice="default")
+    delete_p.set_defaults(fn="delete")
+    networks_update_subparsers = delete_p.add_subparsers(title="networks", metavar="[NETWORK]")
+
+    for network_name in network_names:
+        p = networks_update_subparsers.add_parser(network_name,
+                                                  help="Delete a service on {} network".format(network_name))
+        p.set_defaults(network_name=network_name)
+        _add_service_delete_arguments(p)
+
+    p = networks_update_subparsers.add_parser("eth-rpc-endpoint",
+                                              help="Delete a service using the provided Ethereum-RPC endpoint")
+    p.set_defaults(network_name="eth_rpc_endpoint")
+    p.add_argument("eth_rpc_endpoint", help="ethereum json-rpc endpoint (should start with 'http(s)://')",
+                   metavar="ETH_RPC_ENDPOINT")
+    _add_service_delete_arguments(p)
+
+    p = networks_update_subparsers.add_parser("default")
+    _add_service_delete_arguments(p)
 
 
 def add_contract_function_options(parser, contract_name):
