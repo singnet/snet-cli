@@ -1078,6 +1078,7 @@ class ServiceCommand(BlockchainCommand):
             self._error("Service hasn't been deployed to network with id {}".format(network_id))
 
         self._printout("Getting information about the service...")
+
         registry_contract_def = get_contract_def("Registry")
         registry_address = self._getstring("registry_at")
 
@@ -1130,7 +1131,7 @@ class ServiceCommand(BlockchainCommand):
                 try:
                     cmd.transact()
                 except Exception as e:
-                    self._printerr("Transaction error!\nCheck your session and service json file.\n")
+                    self._printerr("\nTransaction error!\nHINT: Check your session and service json file.\n")
                     self._error(e)
 
         new_endpoint = self.args.new_endpoint
@@ -1164,7 +1165,7 @@ class ServiceCommand(BlockchainCommand):
                 try:
                     cmd.transact()
                 except Exception as e:
-                    self._printerr("Transaction error!\nCheck your session and service json file.\n")
+                    self._printerr("\nTransaction error!\nHINT: Check your session and service json file.\n")
                     self._error(e)
 
         new_description = self.args.new_description
@@ -1221,7 +1222,7 @@ class ServiceCommand(BlockchainCommand):
                 try:
                     cmd.transact()
                 except Exception as e:
-                    self._printerr("Transaction error!\nCheck your session and service json file.\n")
+                    self._printerr("\nTransaction error!\nHINT: Check your session and service json file.\n")
                     self._error(e)
 
         new_tags = self.args.new_tags
@@ -1276,14 +1277,14 @@ class ServiceCommand(BlockchainCommand):
                     try:
                         cmd.transact()
                     except Exception as e:
-                        self._printerr("Transaction error!\nCheck your session and service json file.\n")
+                        self._printerr("\nTransaction error!\nHINT: Check your session and service json file.\n")
                         self._error(e)
 
         else:
             self._error("Tags are too long! (max=32 chars)")
 
         # Updating session
-        self._printerr("Updating current contract address to session...\n")
+        self._printerr("Updating current contract address on session...\n")
         self._set_key("current_agent_at", agent_address, out_f=self.err_f)
         self._printout("Service is updated!")
         return
