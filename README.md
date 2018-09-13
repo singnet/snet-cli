@@ -358,6 +358,48 @@ SingularityNET Foundation)
 
 ---
 
+```
+snet service delete [NETWORK] [--no-register]
+                              [--config CONFIG]
+                              [--agent-factory-at AGENT_FACTORY_ADDRESS]
+                              [--registry-at REGISTRY_ADDRESS]
+                                                                          
+                                                                          
+                                                                          
+```
+
+* Delete a service from the network specified by the service json file; optionally specify a network
+  * `NETWORK`: name of network to use (either `mainnet`, `kovan`, `ropsten`, `rinkeby` or `eth-rpc-endpoint`)
+  * `--no-register`: does not register the published service
+  * `CONFIG`: specify a custom service.json file path
+  * `AGENT_FACTORY_ADDRESS`: address of AgentFactory contract (not required for networks on which AgentFactory has been
+deployed by SingularityNET Foundation)
+  * `REGISTRY_ADDRESS`: address of Registry contract (not required for networks on which Registry has been deployed by
+SingularityNET Foundation)
+
+---
+
+```
+snet service delete eth-rpc-endpoint ETH_RPC_ENDPOINT [--no-register]
+                                                      [--config CONFIG]
+                                                      [--agent-factory-at AGENT_FACTORY_ADDRESS]
+                                                      [--registry-at REGISTRY_ADDRESS]
+                                                                          
+                                                                          
+                                                                          
+```
+
+* Delete a service from the network specified by the service json file; optionally specify a network
+  * `ETH_RPC_ENDPOINT`: Ethereum JSON-RPC endpoint (network determined by endpoint)
+  * `--no-register`: does not register the published service
+  * `CONFIG`: specify a custom service.json file path
+  * `AGENT_FACTORY_ADDRESS`: address of AgentFactory contract (not required for networks on which AgentFactory has been
+deployed by SingularityNET Foundation)
+  * `REGISTRY_ADDRESS`: address of Registry contract (not required for networks on which Registry has been deployed by
+SingularityNET Foundation)
+
+---
+
 ## Development
 
 ### Installing
