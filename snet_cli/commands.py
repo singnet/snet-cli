@@ -1079,7 +1079,7 @@ class ServiceCommand(BlockchainCommand):
             self._error("Service hasn't been deployed to network with id {}".format(network_id))
             return
 
-        self._printerr("Getting information about the service...")
+        self._printout("Getting information about the service...")
         registry_contract_def = get_contract_def("Registry")
         registry_address = self._getstring("registry_at")
 
@@ -1096,11 +1096,12 @@ class ServiceCommand(BlockchainCommand):
             ident=self.ident).call()
 
         if not found:
-            self._error("Service {} not registered on network with id {}".format(agent_address, network_id))
+            self._error("Service '{}' not registered on network with id {}".format(service_json["name"], network_id))
             return
 
-        # Removing the \x00 bytes from tags
-        current_tags = [tag.partition(b"\0")[0].decode("utf-8") for tag in current_tags]
+        elif agent_address != current_agent_address:
+            self._error("{} don't match registered address: {}".format(agent_address, current_agent_address))
+            return
 
         new_price = self.args.new_price
         if new_price is None and "price" in service_json:
@@ -1130,7 +1131,12 @@ class ServiceCommand(BlockchainCommand):
                     ident=self.ident)
                 self._printerr("Creating transaction to update agent contract's price from {} to {}...\n".format(
                     current_price, new_price))
-                cmd.transact()
+                try:
+                    cmd.transact()
+                except Exception as e:
+                    self._printerr("Transaction error!\nCheck your session and service json file.\n")
+                    self._error(e)
+                    return
 
         new_endpoint = self.args.new_endpoint
         if new_endpoint is None and "endpoint" in service_json:
@@ -1160,7 +1166,12 @@ class ServiceCommand(BlockchainCommand):
                     ident=self.ident)
                 self._printerr("Creating transaction to update endpoint from {} to {}...\n".format(
                     current_endpoint, new_endpoint))
-                cmd.transact()
+                try:
+                    cmd.transact()
+                except Exception as e:
+                    self._printerr("Transaction error!\nCheck your session and service json file.\n")
+                    self._error(e)
+                    return
 
         new_description = self.args.new_description
         if new_description is None and "metadata" in service_json:
@@ -1213,16 +1224,21 @@ class ServiceCommand(BlockchainCommand):
                     ident=self.ident)
                 self._printerr("Creating transaction to update metadataURI from {} to {}...\n".format(
                     current_metadata_uri, metadata_ipfs_uri))
-                cmd.transact()
+                try:
+                    cmd.transact()
+                except Exception as e:
+                    self._printerr("Transaction error!\nCheck your session and service json file.\n")
+                    self._error(e)
+                    return
 
         new_tags = self.args.new_tags
         if new_tags is None and "tags" in service_json:
             new_tags = service_json["tags"]
 
-        # Tags must have max is 32 characters
-        if len(new_tags) < 32:
+        # Tags has a max length of 32 chars
+        if len(new_tags) <= 32:
             current_tags_set = set(current_tags)
-            new_tags_set = set(new_tags)
+            new_tags_set = set([type_converter("bytes32")(tag) for tag in new_tags])
 
             if current_tags_set != new_tags_set:
                 remove_tags = current_tags_set - new_tags_set
@@ -1236,13 +1252,13 @@ class ServiceCommand(BlockchainCommand):
                             contract_function="removeTagsFromServiceRegistration",
                             contract_def=registry_contract_def)(type_converter("bytes32")(service_json["organization"]),
                                                                 type_converter("bytes32")(service_json["name"]),
-                                                                [tag.encode('utf-8') for tag in remove_tags]),
+                                                                [tag for tag in remove_tags]),
                         out_f=self.err_f,
                         err_f=self.err_f,
                         w3=self.w3,
                         ident=self.ident)
                     self._printerr("Creating transaction to remove current tags {} from service registration...\n".format(
-                        [tag for tag in remove_tags]))
+                        [tag.partition(b"\0")[0].decode("utf-8") for tag in remove_tags]))
                     cmd.transact()
                 if len(add_tags) > 0:
                     cmd = ContractCommand(
@@ -1252,19 +1268,24 @@ class ServiceCommand(BlockchainCommand):
                             contract_function="addTagsToServiceRegistration",
                             contract_def=registry_contract_def)(type_converter("bytes32")(service_json["organization"]),
                                                                 type_converter("bytes32")(service_json["name"]),
-                                                                [tag.encode('utf-8') for tag in add_tags]),
+                                                                [tag for tag in add_tags]),
                         out_f=self.err_f,
                         err_f=self.err_f,
                         w3=self.w3,
                         ident=self.ident)
                     self._printerr("Creating transaction to add new tags {} to service registration...\n".format(
-                        [tag for tag in add_tags]))
-                    cmd.transact()
+                        [tag.partition(b"\0")[0].decode("utf-8") for tag in add_tags]))
+                    try:
+                        cmd.transact()
+                    except Exception as e:
+                        self._printerr("Transaction error!\nCheck your session and service json file.\n")
+                        self._error(e)
+                        return
         else:
-            self._printerr("Tags are too long (max=32 chars)!")
+            self._printerr("Tags are too long! (max=32 chars)")
 
         # Updating session
         self._printerr("Updating current contract address to session...\n")
         self._set_key("current_agent_at", agent_address, out_f=self.err_f)
-        self._printerr("Service is updated!")
+        self._printout("Service is updated!")
         return
