@@ -916,8 +916,7 @@ class ServiceCommand(BlockchainCommand):
             if "networks" not in service_json:
                 service_json['networks'] = {}
             service_json['networks'][network_id] = {"agentAddress": agent_address}
-            self._printerr("Adding contract address to session and to service.json file...\n")
-            self._set_key("current_agent_at", agent_address, out_f=self.err_f)
+            self._printerr("Adding contract address to service.json file...\n")
             with open(service_json_path, "w+") as f:
                 json.dump(service_json, f, indent=4, ensure_ascii=False)
 
