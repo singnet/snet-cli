@@ -450,7 +450,7 @@ class ClientCommand(BlockchainCommand):
             spec_dir = self._getstring("dest_dir") or Path("~").expanduser().joinpath(".snet").joinpath("service-spec").joinpath(spec_hash)
             if not os.path.exists(spec_dir):
                 os.makedirs(spec_dir)
-                spec_tar = ipfs_client.cat(spec_hash)
+            spec_tar = ipfs_client.cat(spec_hash)
             with tarfile.open(fileobj=io.BytesIO(spec_tar)) as f:
                 f.extractall(spec_dir)
             self._pprint({"destination": str(spec_dir)})
