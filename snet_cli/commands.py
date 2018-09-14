@@ -1284,3 +1284,29 @@ class OrganizationCommand(BlockchainCommand):
             if not self.args.members:
                 self._printerr("\nMissing Organization's members: --members ORG_MEMBERS[]\n")
             self._error("Missing params...")
+
+    def delete(self):
+
+        if self.args.name:
+            registry_contract_def = get_contract_def("Registry")
+            registry_address = self._getstring("registry_at")
+            cmd = ContractCommand(
+                config=self.config,
+                args=self.get_contract_argser(
+                    contract_address=registry_address,
+                    contract_function="deleteOrganization",
+                    contract_def=registry_contract_def)(type_converter("bytes32")(self.args.name)),
+                out_f=self.out_f,
+                err_f=self.err_f,
+                w3=self.w3,
+                ident=self.ident)
+            self._printerr("Creating transaction to delete organization {}...\n".format(self.args.name))
+            try:
+                cmd.transact()
+            except Exception as e:
+                self._printerr("\nTransaction error!\nHINT: Check if {} exists and you are its owner.\n".format(self.args.name))
+                self._error(e)
+        else:
+            if not self.args.name:
+                self._printerr("\nMissing Organization's name: --name ORG_NAME")
+            self._error("Missing params...")

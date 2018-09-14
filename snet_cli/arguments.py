@@ -257,6 +257,14 @@ def _add_organization_create_arguments(parser):
     add_contract_identity_arguments(parser, [("registry", "registry_at")])
 
 
+def _add_organization_delete_arguments(parser):
+    parser.set_defaults(fn="delete")
+    parser.add_argument("--name", help="name of the organization to be stored in the Registr")
+    parser.add_argument("--no-register", action="store_true", help="does not register the published service")
+    add_transaction_arguments(parser)
+    add_contract_identity_arguments(parser, [("registry", "registry_at")])
+
+
 def add_service_options(parser, config):
     parser.set_defaults(cmd=ServiceCommand)
 
@@ -360,6 +368,27 @@ def add_organization_options(parser, config):
 
     p = networks_organization_subparsers.add_parser("default")
     _add_organization_arguments(p)
+
+    org_delete_p = subparsers.add_parser("delete", help="Delete an Organization", default_choice="default")
+    org_delete_p.set_defaults(fn="delete")
+    networks_organization_subparsers = org_delete_p.add_subparsers(title="networks", metavar="[NETWORK]")
+
+    for network_name in network_names:
+        p = networks_organization_subparsers.add_parser(network_name,
+                                                        help="Create an Organization on {} network".format(
+                                                            network_name))
+        p.set_defaults(network_name=network_name)
+        _add_organization_delete_arguments(p)
+
+    p = networks_organization_subparsers.add_parser("eth-rpc-endpoint",
+                                                    help="Create an Organization using the provided Ethereum-RPC endpoint")
+    p.set_defaults(network_name="eth_rpc_endpoint")
+    p.add_argument("eth_rpc_endpoint", help="ethereum json-rpc endpoint (should start with 'http(s)://')",
+                   metavar="ETH_RPC_ENDPOINT")
+    _add_organization_delete_arguments(p)
+
+    p = networks_organization_subparsers.add_parser("default")
+    _add_organization_delete_arguments(p)
 
 
 def add_contract_function_options(parser, contract_name):
