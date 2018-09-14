@@ -5,7 +5,7 @@ import sys
 from pathlib import Path
 
 from snet_cli.commands import IdentityCommand, SessionCommand, NetworkCommand, ContractCommand, AgentFactoryCommand, \
-    AgentCommand, ServiceCommand, ClientCommand
+    AgentCommand, ServiceCommand, ClientCommand, OrganizationCommand
 from snet_cli.identity import get_identity_types
 from snet_cli.session import get_session_keys
 from snet_cli.utils import type_converter, get_contract_def
@@ -76,6 +76,9 @@ def add_root_options(parser, config):
 
     service_p = subparsers.add_parser("service", help="Create, publish, register, and update SingularityNET services")
     add_service_options(service_p, config)
+
+    organization_p = subparsers.add_parser("organization", help="Interact with SingularityNET Organizations")
+    add_organization_options(organization_p, config)
 
 
 def add_identity_options(parser, config):
@@ -226,6 +229,12 @@ def _add_service_publish_arguments(parser):
     add_contract_identity_arguments(parser, [("registry", "registry_at"), ("agent-factory", "agent_factory_at")])
 
 
+def _add_organization_arguments(parser):
+    parser.add_argument("--no-register", action="store_true", help="does not register the published service")
+    add_transaction_arguments(parser)
+    add_contract_identity_arguments(parser, [("registry", "registry_at")])
+
+
 def _add_service_update_arguments(parser):
     parser.set_defaults(fn="update")
     parser.add_argument("--new-price", help="new price to call the service", type=type_converter("uint256"))
@@ -234,6 +243,16 @@ def _add_service_update_arguments(parser):
                         metavar=("TAGS", "TAG1, TAG2,"), help="new list of tags you want associated with the service registration")
     parser.add_argument("--new-description", help="new description for the service")
     parser.add_argument("--config", help="specify a custom service.json file path")
+    add_transaction_arguments(parser)
+    add_contract_identity_arguments(parser, [("registry", "registry_at")])
+
+
+def _add_organization_create_arguments(parser):
+    parser.set_defaults(fn="create")
+    parser.add_argument("--name", help="name of the organization to be stored in the Registr")
+    parser.add_argument("--members", nargs="+", metavar=("MEMBERS", "MEMBER1, MEMBER2,"),
+                        help="members address to add into the organization (default: [])")
+    parser.add_argument("--no-register", action="store_true", help="does not register the published service")
     add_transaction_arguments(parser)
     add_contract_identity_arguments(parser, [("registry", "registry_at")])
 
@@ -293,6 +312,33 @@ def add_service_options(parser, config):
 
     p = networks_update_subparsers.add_parser("default")
     _add_service_update_arguments(p)
+
+
+def add_organization_options(parser, config):
+    parser.set_defaults(cmd=OrganizationCommand)
+
+    subparsers = parser.add_subparsers(title="organization commands", metavar="COMMAND")
+    subparsers.required = True
+
+    network_names = list(
+        map(lambda x: x[len("network."):], filter(lambda x: x.startswith("network."), config.sections())))
+
+    org_create_p = subparsers.add_parser("create", help="Create an Organization", default_choice="default")
+    org_create_p.set_defaults(fn="create")
+    networks_organization_subparsers = org_create_p.add_subparsers(title="networks", metavar="[NETWORK]")
+
+    for network_name in network_names:
+        p = networks_organization_subparsers.add_parser(network_name, help="Create an Organization on {} network".format(network_name))
+        p.set_defaults(network_name=network_name)
+        _add_organization_create_arguments(p)
+
+    p = networks_organization_subparsers.add_parser("eth-rpc-endpoint", help="Create an Organization using the provided Ethereum-RPC endpoint")
+    p.set_defaults(network_name="eth_rpc_endpoint")
+    p.add_argument("eth_rpc_endpoint", help="ethereum json-rpc endpoint (should start with 'http(s)://')", metavar="ETH_RPC_ENDPOINT")
+    _add_organization_create_arguments(p)
+
+    p = networks_organization_subparsers.add_parser("default")
+    _add_organization_create_arguments(p)
 
 
 def add_contract_function_options(parser, contract_name):
