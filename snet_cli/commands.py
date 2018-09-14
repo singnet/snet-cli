@@ -98,6 +98,10 @@ class Command(object):
         SessionCommand(config or self.config, DefaultAttributeObject(key=key, value=value), out_f or self.out_f,
                        err_f or self.err_f).set()
 
+    def _unset_key(self, key, config=None, out_f=None, err_f=None):
+        SessionCommand(config or self.config, DefaultAttributeObject(key=key), out_f or self.out_f,
+                       err_f or self.err_f).unset()
+
     def _nothing(self):
         pass
 
@@ -449,9 +453,9 @@ class ClientCommand(BlockchainCommand):
             model_dir = self._getstring("dest_dir") or Path("~").expanduser().joinpath(".snet").joinpath("models").joinpath(model_hash)
             if not os.path.exists(model_dir):
                 os.makedirs(model_dir)
-            model_tar = ipfs_client.cat(model_hash)
-            with tarfile.open(fileobj=io.BytesIO(model_tar)) as f:
-                f.extractall(model_dir)
+                model_tar = ipfs_client.cat(model_hash)
+                with tarfile.open(fileobj=io.BytesIO(model_tar)) as f:
+                    f.extractall(model_dir)
             self._pprint({"destination": str(model_dir)})
             return model_hash
         except Exception as e:
@@ -916,8 +920,7 @@ class ServiceCommand(BlockchainCommand):
             if "networks" not in service_json:
                 service_json['networks'] = {}
             service_json['networks'][network_id] = {"agentAddress": agent_address}
-            self._printerr("Adding contract address to session and to service.json file...\n")
-            self._set_key("current_agent_at", agent_address, out_f=self.err_f)
+            self._printerr("Adding contract address to service.json file...\n")
             with open(service_json_path, "w+") as f:
                 json.dump(service_json, f, indent=4, ensure_ascii=False)
 
@@ -1225,3 +1228,65 @@ class ServiceCommand(BlockchainCommand):
                     self._printerr("Creating transaction to add tags {} to service registration...\n".format(
                         [tag.partition(b"\0")[0].decode("utf-8") for tag in add_tags]))
                     cmd.transact()
+
+    def delete(self):
+        network_id = self._get_network()
+
+        if "config" in self.args and self.args.config:
+            service_json_path = self.args.config
+        else:
+            service_json_path = "service.json"
+
+        try:
+            with open(service_json_path) as f:
+                service_json = json.load(f)
+        except Exception as e:
+            self._error("Failed to load {}!".format(service_json_path))
+
+        agent_address = service_json.get('networks', {}).get(network_id, {}).get('agentAddress', None)
+        if agent_address is None:
+            self._error("Service hasn't been deployed to network with id {}".format(network_id))
+
+        self._printout("Getting information about the service...")
+        registry_contract_def = get_contract_def("Registry")
+        registry_address = self._getstring("registry_at")
+
+        (found, _, current_path, current_agent_address, current_tags) = ContractCommand(
+            config=self.config,
+            args=self.get_contract_argser(
+                contract_address=registry_address,
+                contract_function="getServiceRegistrationByName",
+                contract_def=registry_contract_def)(type_converter("bytes32")(service_json["organization"]),
+                                                    type_converter("bytes32")(service_json["name"])),
+            out_f=None,
+            err_f=None,
+            w3=self.w3,
+            ident=self.ident).call()
+
+        if not found:
+            self._error("Service {} is not registered on network with id {}".format(agent_address, network_id))
+        elif agent_address != current_agent_address:
+            self._error("{} don't match registered address: {}".format(agent_address, current_agent_address))
+        else:
+            self._printout("Deleting service at {}...".format(agent_address))
+            cmd = ContractCommand(
+                config=self.config,
+                args=self.get_contract_argser(
+                    contract_address=registry_address,
+                    contract_function="deleteServiceRegistration",
+                    contract_def=registry_contract_def)(type_converter("bytes32")(service_json["organization"]),
+                                                        type_converter("bytes32")(service_json["name"])),
+                out_f=None,
+                err_f=None,
+                w3=self.w3,
+                ident=self.ident)
+            try:
+                cmd.transact()
+            except Exception as e:
+                self._printerr("\nTransaction error!\nHINT: Check your session and service json file.\n")
+                self._error(e)
+
+        # Updating session
+        self._printerr("Removing current contract address from session...\n")
+        self._unset_key("current_agent_at", out_f=self.err_f)
+        self._printout("Service was deleted!")
