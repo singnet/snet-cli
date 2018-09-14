@@ -1229,6 +1229,30 @@ class ServiceCommand(BlockchainCommand):
 
 class OrganizationCommand(BlockchainCommand):
 
+    def list(self):
+
+        registry_contract_def = get_contract_def("Registry")
+        registry_address = self._getstring("registry_at")
+        try:
+            org_list = ContractCommand(
+                config=self.config,
+                args=self.get_contract_argser(
+                    contract_address=registry_address,
+                    contract_function="listOrganizations",
+                    contract_def=registry_contract_def)(),
+                out_f=None,
+                err_f=None,
+                w3=self.w3,
+                ident=self.ident).call()
+
+            self._printerr("\nList of Organizations:")
+            for idx, organization in enumerate(org_list):
+                self._printerr("- {}".format(organization.partition(b"\0")[0].decode("utf-8")))
+
+        except Exception as e:
+            self._printerr("\nCall error!\nHINT: Check your identity and session.\n")
+            self._error(e)
+
     def create(self):
 
         if self.args.name and self.args.members:

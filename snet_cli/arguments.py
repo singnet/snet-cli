@@ -229,12 +229,6 @@ def _add_service_publish_arguments(parser):
     add_contract_identity_arguments(parser, [("registry", "registry_at"), ("agent-factory", "agent_factory_at")])
 
 
-def _add_organization_arguments(parser):
-    parser.add_argument("--no-register", action="store_true", help="does not register the published service")
-    add_transaction_arguments(parser)
-    add_contract_identity_arguments(parser, [("registry", "registry_at")])
-
-
 def _add_service_update_arguments(parser):
     parser.set_defaults(fn="update")
     parser.add_argument("--new-price", help="new price to call the service", type=type_converter("uint256"))
@@ -243,6 +237,12 @@ def _add_service_update_arguments(parser):
                         metavar=("TAGS", "TAG1, TAG2,"), help="new list of tags you want associated with the service registration")
     parser.add_argument("--new-description", help="new description for the service")
     parser.add_argument("--config", help="specify a custom service.json file path")
+    add_transaction_arguments(parser)
+    add_contract_identity_arguments(parser, [("registry", "registry_at")])
+
+
+def _add_organization_arguments(parser):
+    parser.add_argument("--no-register", action="store_true", help="does not register the published service")
     add_transaction_arguments(parser)
     add_contract_identity_arguments(parser, [("registry", "registry_at")])
 
@@ -339,6 +339,27 @@ def add_organization_options(parser, config):
 
     p = networks_organization_subparsers.add_parser("default")
     _add_organization_create_arguments(p)
+
+    org_list_p = subparsers.add_parser("list", help="List Organizations", default_choice="default")
+    org_list_p.set_defaults(fn="list")
+    networks_organization_subparsers = org_list_p.add_subparsers(title="networks", metavar="[NETWORK]")
+
+    for network_name in network_names:
+        p = networks_organization_subparsers.add_parser(network_name,
+                                                        help="Create an Organization on {} network".format(
+                                                            network_name))
+        p.set_defaults(network_name=network_name)
+        _add_organization_arguments(p)
+
+    p = networks_organization_subparsers.add_parser("eth-rpc-endpoint",
+                                                    help="Create an Organization using the provided Ethereum-RPC endpoint")
+    p.set_defaults(network_name="eth_rpc_endpoint")
+    p.add_argument("eth_rpc_endpoint", help="ethereum json-rpc endpoint (should start with 'http(s)://')",
+                   metavar="ETH_RPC_ENDPOINT")
+    _add_organization_arguments(p)
+
+    p = networks_organization_subparsers.add_parser("default")
+    _add_organization_arguments(p)
 
 
 def add_contract_function_options(parser, contract_name):
