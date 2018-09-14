@@ -1254,7 +1254,6 @@ class OrganizationCommand(BlockchainCommand):
             self._error(e)
 
     def create(self):
-
         if self.args.name and self.args.members:
             members = []
             for idx, m in enumerate(self.args.members):
@@ -1307,6 +1306,40 @@ class OrganizationCommand(BlockchainCommand):
                 self._printerr("\nTransaction error!\nHINT: Check if {} exists and you are its owner.\n".format(self.args.name))
                 self._error(e)
         else:
-            if not self.args.name:
-                self._printerr("\nMissing Organization's name: --name ORG_NAME")
+            self._printerr("\nMissing Organization's name: --name ORG_NAME")
+            self._error("Missing params...")
+
+    def list_services(self):
+
+        if self.args.name:
+            registry_contract_def = get_contract_def("Registry")
+            registry_address = self._getstring("registry_at")
+            try:
+                (found, org_service_list) = ContractCommand(
+                    config=self.config,
+                    args=self.get_contract_argser(
+                        contract_address=registry_address,
+                        contract_function="listServicesForOrganization",
+                        contract_def=registry_contract_def)(type_converter("bytes32")(self.args.name)),
+                    out_f=None,
+                    err_f=None,
+                    w3=self.w3,
+                    ident=self.ident).call()
+
+                if found:
+                    if org_service_list:
+                        self._printerr("\nList of {}'s Services:".format(self.args.name))
+                        for idx, org_service in enumerate(org_service_list):
+                            self._printerr("- {}".format(org_service.partition(b"\0")[0].decode("utf-8")))
+                    else:
+                        self._printerr("\n{} exists but has no registered services.".format(self.args.name))
+                else:
+                    self._printerr("\n{} not registered on network.".format(self.args.name))
+
+            except Exception as e:
+                self._printerr("\nCall error!\nHINT: Check your identity and session.\n")
+                self._error(e)
+
+        else:
+            self._printerr("\nMissing Organization's name: --name ORG_NAME")
             self._error("Missing params...")
