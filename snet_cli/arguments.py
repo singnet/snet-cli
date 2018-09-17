@@ -305,6 +305,8 @@ def add_service_options(parser, config):
                                      default_choice="default")
     delete_p.set_defaults(fn="delete")
     networks_update_subparsers = delete_p.add_subparsers(title="networks", metavar="[NETWORK]")
+    delete_p.add_argument("organization", help="Name of the Organization", metavar="ORG_NAME")
+    delete_p.add_argument("name", help="Name of the Service", metavar="SERVICE_NAME")
 
     for network_name in network_names:
         p = networks_update_subparsers.add_parser(network_name,
