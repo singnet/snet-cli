@@ -1288,3 +1288,320 @@ class ServiceCommand(BlockchainCommand):
         self._set_key("current_agent_at", agent_address, out_f=self.err_f)
         self._printout("Service is updated!")
         return
+
+
+class OrganizationCommand(BlockchainCommand):
+
+    def _getorganizationbyname(self):
+
+        registry_contract_def = get_contract_def("Registry")
+        registry_address = self._getstring("registry_at")
+        try:
+            return ContractCommand(
+                config=self.config,
+                args=self.get_contract_argser(
+                    contract_address=registry_address,
+                    contract_function="getOrganizationByName",
+                    contract_def=registry_contract_def)(type_converter("bytes32")(self.args.name)),
+                out_f=None,
+                err_f=None,
+                w3=self.w3,
+                ident=self.ident).call()
+
+        except Exception as e:
+            self._printerr("\nCall _getorganizationbyname() error!\nHINT: Check your identity and session.\n")
+            self._error(e)
+
+    def list(self):
+
+        try:
+            registry_contract_def = get_contract_def("Registry")
+            registry_address = self._getstring("registry_at")
+            org_list = ContractCommand(
+                config=self.config,
+                args=self.get_contract_argser(
+                    contract_address=registry_address,
+                    contract_function="listOrganizations",
+                    contract_def=registry_contract_def)(),
+                out_f=None,
+                err_f=None,
+                w3=self.w3,
+                ident=self.ident).call()
+
+            self._printerr("\nList of Organizations:")
+            for idx, organization in enumerate(org_list):
+                self._printerr("- {}".format(organization.partition(b"\0")[0].decode("utf-8")))
+
+        except Exception as e:
+            self._printerr("\nCall error!\nHINT: Check your identity and session.\n")
+            self._error(e)
+
+    def info(self):
+
+        try:
+            (found, name, owner, members, serviceNames, repositoryNames) = self._getorganizationbyname()
+
+            if found:
+                self._printerr("\nOwner:\n - {}".format(owner.lower()))
+                if members:
+                    self._printerr("\nMembers:".format(self.args.name))
+                    for idx, member in enumerate(members):
+                        self._printerr(" - {}".format(member.lower()))
+                if serviceNames:
+                    self._printerr("\nServices:".format(self.args.name))
+                    for idx, service in enumerate(serviceNames):
+                        self._printerr(" - {}".format(service.partition(b"\0")[0].decode("utf-8")))
+                if repositoryNames:
+                    self._printerr("\nRepositories:".format(self.args.name))
+                    for idx, repo in enumerate(repositoryNames):
+                        self._printerr(" - {}".format(repo.partition(b"\0")[0].decode("utf-8")))
+            else:
+                self._printerr("\n{} not registered on network.".format(self.args.name))
+
+        except Exception as e:
+            self._printerr("\nCall error!\nHINT: Check your identity and session.\n")
+            self._error(e)
+
+    def create(self):
+
+        try:
+            # Check if Organization already exists
+            (found, _, _, _, _, _) = self._getorganizationbyname()
+            if found:
+                self._printerr("\n{} already exists!\n".format(self.args.name))
+                return
+
+            members = []
+            members_split = self.args.members.split(',')
+            for idx, m in enumerate(members_split):
+                members.append(str(m).replace("[", "").replace("]", "").lower())
+
+            registry_contract_def = get_contract_def("Registry")
+            registry_address = self._getstring("registry_at")
+            cmd = ContractCommand(
+                config=self.config,
+                args=self.get_contract_argser(
+                    contract_address=registry_address,
+                    contract_function="createOrganization",
+                    contract_def=registry_contract_def)(type_converter("bytes32")(self.args.name),
+                                                        [type_converter("address")(member) for member in members]),
+                out_f=self.out_f,
+                err_f=self.err_f,
+                w3=self.w3,
+                ident=self.ident)
+            self._printerr("Creating transaction to create organization {}...\n".format(self.args.name))
+            try:
+                cmd.transact()
+            except Exception as e:
+                self._printerr("\nTransaction error!\nHINT: Check if {} already exists.\n".format(self.args.name))
+                self._error(e)
+
+        except Exception as e:
+            self._printerr("\nTransaction error!\nHINT: Check if address is in hexadecimal with 32 chars.\n")
+            self._error(e)
+
+    def delete(self):
+
+        try:
+            # Check if Organization exists
+            (found, _, _, _, _, _) = self._getorganizationbyname()
+            if not found:
+                self._printerr("\n{} doesn't exist!\n".format(self.args.name))
+                return
+
+            registry_contract_def = get_contract_def("Registry")
+            registry_address = self._getstring("registry_at")
+            cmd = ContractCommand(
+                config=self.config,
+                args=self.get_contract_argser(
+                    contract_address=registry_address,
+                    contract_function="deleteOrganization",
+                    contract_def=registry_contract_def)(type_converter("bytes32")(self.args.name)),
+                out_f=self.out_f,
+                err_f=self.err_f,
+                w3=self.w3,
+                ident=self.ident)
+            self._printerr("Creating transaction to delete organization {}...\n".format(self.args.name))
+            try:
+                cmd.transact()
+            except Exception as e:
+                self._printerr("\nTransaction error!\nHINT: Check if {} exists and you are its owner.\n".format(self.args.name))
+                self._error(e)
+
+        except Exception as e:
+            self._printerr("\nTransaction error!\nHINT: Check ORG_NAME.\n")
+            self._error(e)
+
+    def list_services(self):
+
+        try:
+            registry_contract_def = get_contract_def("Registry")
+            registry_address = self._getstring("registry_at")
+            try:
+                (found, org_service_list) = ContractCommand(
+                    config=self.config,
+                    args=self.get_contract_argser(
+                        contract_address=registry_address,
+                        contract_function="listServicesForOrganization",
+                        contract_def=registry_contract_def)(type_converter("bytes32")(self.args.name)),
+                    out_f=None,
+                    err_f=None,
+                    w3=self.w3,
+                    ident=self.ident).call()
+
+                if found:
+                    if org_service_list:
+                        self._printerr("\nList of {}'s Services:".format(self.args.name))
+                        for idx, org_service in enumerate(org_service_list):
+                            self._printerr("- {}".format(org_service.partition(b"\0")[0].decode("utf-8")))
+                    else:
+                        self._printerr("\n{} exists but has no registered services.".format(self.args.name))
+                else:
+                    self._printerr("\n{} not registered on network.".format(self.args.name))
+
+            except Exception as e:
+                self._printerr("\nCall error!\nHINT: Check your identity and session.\n")
+                self._error(e)
+
+        except Exception as e:
+            self._printerr("\nTransaction error!\nHINT: Check ORG_NAME.\n")
+            self._error(e)
+
+    def change_owner(self):
+
+        try:
+            # Check if Organization exists
+            (found, _, owner, _, _, _) = self._getorganizationbyname()
+            if not found:
+                self._printerr("\n{} doesn't exist!\n".format(self.args.name))
+                return
+
+            new_owner = self.args.owner.lower()
+            new_owner = new_owner if new_owner.startswith("0x") else "0x" + new_owner
+            if new_owner == owner:
+                self._printerr("\n{} is the owner of!\n".format(self.args.owner, self.args.name))
+                return
+
+            registry_contract_def = get_contract_def("Registry")
+            registry_address = self._getstring("registry_at")
+            cmd = ContractCommand(
+                config=self.config,
+                args=self.get_contract_argser(
+                    contract_address=registry_address,
+                    contract_function="changeOrganizationOwner",
+                    contract_def=registry_contract_def)(type_converter("bytes32")(self.args.name),
+                                                        type_converter("address")(self.args.owner)),
+                out_f=None,
+                err_f=None,
+                w3=self.w3,
+                ident=self.ident)
+            self._printerr("Creating transaction to change organization {}'s owner...\n".format(self.args.name))
+            try:
+                cmd.transact()
+            except Exception as e:
+                self._printerr("\nTransaction error!\nHINT: Check if {} already exists.\n".format(self.args.name))
+                self._error(e)
+
+        except Exception as e:
+            self._printerr("\nTransaction error!\nHINT: Check if owner address is in hexadecimal with 32 chars.\n")
+            self._error(e)
+
+    def add_members(self):
+
+        try:
+            # Check if Organization exists and member is not part of it
+            (found, _, _, members, _, _) = self._getorganizationbyname()
+            if not found:
+                self._printerr("\n{} doesn't exist!\n".format(self.args.name))
+                return
+
+            add_members = []
+            members_split = self.args.members.split(',')
+            for idx, m in enumerate(members_split):
+                member_tmp = str(m).replace("[", "").replace("]", "").lower()
+                member_tmp = member_tmp if member_tmp.startswith("0x") else "0x" + member_tmp
+                add_members.append(member_tmp)
+
+            members = [member.lower() for member in members]
+
+            for idx, add_member in enumerate(add_members[:]):
+                if add_member in members:
+                    self._printerr("{} is already a member of organization {}".format(add_member, self.args.name))
+                    add_members.remove(add_member)
+
+            if add_members:
+                registry_contract_def = get_contract_def("Registry")
+                registry_address = self._getstring("registry_at")
+                cmd = ContractCommand(
+                    config=self.config,
+                    args=self.get_contract_argser(
+                        contract_address=registry_address,
+                        contract_function="addOrganizationMembers",
+                        contract_def=registry_contract_def)(type_converter("bytes32")(self.args.name),
+                                                            [type_converter("address")(member) for member in add_members]),
+                    out_f=self.out_f,
+                    err_f=self.err_f,
+                    w3=self.w3,
+                    ident=self.ident)
+                self._printerr("Creating transaction to add {} members into organization {}...\n".format(len(add_members), self.args.name))
+                try:
+                    cmd.transact()
+                except Exception as e:
+                    self._printerr("\nTransaction error!\nHINT: Check if {} already exists and you are its owner.\n".format(self.args.name))
+                    self._error(e)
+            else:
+                self._printerr("No member was added to {}!\n".format(self.args.name))
+
+        except Exception as e:
+            self._printerr("\nTransaction error!\nHINT: Check if address is in hexadecimal with 32 chars.\n")
+            self._error(e)
+
+    def rem_members(self):
+
+        try:
+            # Check if Organization exists and member is part of it
+            (found, _, _, members, _, _) = self._getorganizationbyname()
+            if not found:
+                self._printerr("\n{} doesn't exist!\n".format(self.args.name))
+                return
+
+            rem_members = []
+            members_split = self.args.members.split(',')
+            for idx, m in enumerate(members_split):
+                member_tmp = str(m).replace("[", "").replace("]", "").lower()
+                member_tmp = member_tmp if member_tmp.startswith("0x") else "0x" + member_tmp
+                rem_members.append(member_tmp)
+
+            members = [member.lower() for member in members]
+
+            for idx, rem_member in enumerate(rem_members[:]):
+                if rem_member not in members:
+                    self._printerr("{} is not a member of organization {}".format(rem_member, self.args.name))
+                    rem_members.remove(rem_member)
+
+            if rem_members:
+                registry_contract_def = get_contract_def("Registry")
+                registry_address = self._getstring("registry_at")
+                cmd = ContractCommand(
+                    config=self.config,
+                    args=self.get_contract_argser(
+                        contract_address=registry_address,
+                        contract_function="removeOrganizationMembers",
+                        contract_def=registry_contract_def)(type_converter("bytes32")(self.args.name),
+                                                            [type_converter("address")(member) for member in rem_members]),
+                    out_f=self.out_f,
+                    err_f=self.err_f,
+                    w3=self.w3,
+                    ident=self.ident)
+                self._printerr("Creating transaction to remove {} members from organization {}...\n".format(len(rem_members), self.args.name))
+                try:
+                    cmd.transact()
+                except Exception as e:
+                    self._printerr("\nTransaction error!\nHINT: Check if {} already exists and you are its owner.\n".format(self.args.name))
+                    self._error(e)
+            else:
+                self._printerr("No member was removed from {}!\n".format(self.args.name))
+
+        except Exception as e:
+            self._printerr("\nTransaction error!\nHINT: Check if address is in hexadecimal with 32 chars.\n")
+            self._error(e)
