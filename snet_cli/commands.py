@@ -916,8 +916,7 @@ class ServiceCommand(BlockchainCommand):
             if "networks" not in service_json:
                 service_json['networks'] = {}
             service_json['networks'][network_id] = {"agentAddress": agent_address}
-            self._printerr("Adding contract address to session and to service.json file...\n")
-            self._set_key("current_agent_at", agent_address, out_f=self.err_f)
+            self._printerr("Adding contract address to service.json file...\n")
             with open(service_json_path, "w+") as f:
                 json.dump(service_json, f, indent=4, ensure_ascii=False)
 
@@ -1051,6 +1050,12 @@ class ServiceCommand(BlockchainCommand):
                     self._printerr("Creating transaction to create service registration...\n")
                     cmd.transact()
 
+        # Updating session
+        self._printerr("Adding contract address to session...\n")
+        self._set_key("current_agent_at", agent_address, out_f=self.err_f)
+        self._printout("Service published!")
+        return
+
     def update(self):
         network_id = self._get_network()
 
@@ -1059,41 +1064,80 @@ class ServiceCommand(BlockchainCommand):
         else:
             service_json_path = "service.json"
 
-        with open(service_json_path) as f:
-            service_json = json.load(f)
+        try:
+            with open(service_json_path) as f:
+                service_json = json.load(f)
+        except Exception as e:
+            self._error("Failed to load {}!".format(service_json_path))
 
         agent_contract_def = get_contract_def("Agent")
 
-        if not service_json.get('networks', {}).get(network_id, {}).get('agentAddress', {}):
+        agent_address = service_json.get('networks', {}).get(network_id, {}).get('agentAddress', None)
+        if agent_address is None:
             self._error("Service hasn't been deployed to network with id {}".format(network_id))
 
-        if self.args.new_price:
+        self._printout("Getting information about the service...")
+
+        registry_contract_def = get_contract_def("Registry")
+        registry_address = self._getstring("registry_at")
+
+        (found, _, current_path, current_agent_address, current_tags) = ContractCommand(
+            config=self.config,
+            args=self.get_contract_argser(
+                contract_address=registry_address,
+                contract_function="getServiceRegistrationByName",
+                contract_def=registry_contract_def)(type_converter("bytes32")(service_json["organization"]),
+                                                    type_converter("bytes32")(service_json["name"])),
+            out_f=None,
+            err_f=None,
+            w3=self.w3,
+            ident=self.ident).call()
+
+        if not found:
+            self._error("Service '{}' not registered on network with id {}".format(service_json["name"], network_id))
+
+        elif agent_address != current_agent_address:
+            self._error("{} don't match registered address: {}".format(agent_address, current_agent_address))
+
+        new_price = self.args.new_price
+        if new_price is None and "price" in service_json:
+            new_price = service_json["price"]
+
+        if new_price:
             current_price = ContractCommand(
                 config=self.config,
                 args=self.get_contract_argser(
                     contract_address=service_json['networks'][network_id]['agentAddress'],
-                    contract_function="price",
+                    contract_function="currentPrice",
                     contract_def=agent_contract_def)(),
                 out_f=None,
                 err_f=None,
                 w3=self.w3,
                 ident=self.ident).call()
-            if current_price != self.args.new_price:
+            if current_price != new_price:
                 cmd = ContractCommand(
                     config=self.config,
                     args=self.get_contract_argser(
                         contract_address=service_json['networks'][network_id]['agentAddress'],
                         contract_function="setPrice",
-                        contract_def=agent_contract_def)(self.args.new_price),
+                        contract_def=agent_contract_def)(new_price),
                     out_f=self.err_f,
                     err_f=self.err_f,
                     w3=self.w3,
                     ident=self.ident)
                 self._printerr("Creating transaction to update agent contract's price from {} to {}...\n".format(
-                    current_price, self.args.new_price))
-                cmd.transact()
+                    current_price, new_price))
+                try:
+                    cmd.transact()
+                except Exception as e:
+                    self._printerr("\nTransaction error!\nHINT: Check your session and service json file.\n")
+                    self._error(e)
 
-        if self.args.new_endpoint:
+        new_endpoint = self.args.new_endpoint
+        if new_endpoint is None and "endpoint" in service_json:
+            new_endpoint = service_json["endpoint"]
+
+        if new_endpoint:
             current_endpoint = ContractCommand(
                 config=self.config,
                 args=self.get_contract_argser(
@@ -1104,22 +1148,31 @@ class ServiceCommand(BlockchainCommand):
                 err_f=None,
                 w3=self.w3,
                 ident=self.ident).call()
-            if current_endpoint != self.args.new_endpoint:
+            if current_endpoint != new_endpoint:
                 cmd = ContractCommand(
                     config=self.config,
                     args=self.get_contract_argser(
                         contract_address=service_json['networks'][network_id]['agentAddress'],
                         contract_function="setEndpoint",
-                        contract_def=agent_contract_def)(self.args.new_endpoint),
+                        contract_def=agent_contract_def)(new_endpoint),
                     out_f=self.err_f,
                     err_f=self.err_f,
                     w3=self.w3,
                     ident=self.ident)
                 self._printerr("Creating transaction to update endpoint from {} to {}...\n".format(
-                    current_endpoint, self.args.new_endpoint))
-                cmd.transact()
+                    current_endpoint, new_endpoint))
+                try:
+                    cmd.transact()
+                except Exception as e:
+                    self._printerr("\nTransaction error!\nHINT: Check your session and service json file.\n")
+                    self._error(e)
 
-        if self.args.new_description:
+        new_description = self.args.new_description
+        if new_description is None and "metadata" in service_json:
+            if "description" in service_json["metadata"]:
+                new_description = service_json["metadata"]["description"]
+
+        if new_description:
             # Get current metadata JSON
             current_metadata_uri = ContractCommand(
                 config=self.config,
@@ -1142,7 +1195,7 @@ class ServiceCommand(BlockchainCommand):
             os.remove(ipfs_file_path)
 
             # Create new metadata JSON tmp file with updated description
-            metadata_json['description'] = self.args.new_description
+            metadata_json['description'] = new_description
             with tempfile.NamedTemporaryFile(mode='w+') as tmp_json:
                 json.dump(metadata_json, tmp_json, ensure_ascii=False, sort_keys=True)
                 tmp_json.seek(0)
@@ -1165,29 +1218,20 @@ class ServiceCommand(BlockchainCommand):
                     ident=self.ident)
                 self._printerr("Creating transaction to update metadataURI from {} to {}...\n".format(
                     current_metadata_uri, metadata_ipfs_uri))
-                cmd.transact()
+                try:
+                    cmd.transact()
+                except Exception as e:
+                    self._printerr("\nTransaction error!\nHINT: Check your session and service json file.\n")
+                    self._error(e)
 
-        if self.args.new_tags:
-            registry_contract_def = get_contract_def("Registry")
-            registry_address = self._getstring("registry_at")
+        new_tags = self.args.new_tags
+        if new_tags is None and "tags" in service_json:
+            new_tags = service_json["tags"]
 
-            (found, _, current_path, current_agent_address, current_tags) = ContractCommand(
-                config=self.config,
-                args=self.get_contract_argser(
-                    contract_address=registry_address,
-                    contract_function="getServiceRegistrationByName",
-                    contract_def=registry_contract_def)(type_converter("bytes32")(service_json['organization']),
-                                                        type_converter("bytes32")(service_json["name"])),
-                out_f=None,
-                err_f=None,
-                w3=self.w3,
-                ident=self.ident).call()
-
-            if not found:
-                self._error("Service hasn't been registered on network with id {}".format(network_id))
-
+        # Tags has a max length of 32 chars
+        if len(new_tags) <= 32:
             current_tags_set = set(current_tags)
-            new_tags_set = set(self.args.new_tags)
+            new_tags_set = set([type_converter("bytes32")(tag) for tag in new_tags])
 
             if current_tags_set != new_tags_set:
                 remove_tags = current_tags_set - new_tags_set
@@ -1199,29 +1243,47 @@ class ServiceCommand(BlockchainCommand):
                         args=self.get_contract_argser(
                             contract_address=registry_address,
                             contract_function="removeTagsFromServiceRegistration",
-                            contract_def=registry_contract_def)(type_converter("bytes32")(service_json['organization']),
+                            contract_def=registry_contract_def)(type_converter("bytes32")(service_json["organization"]),
                                                                 type_converter("bytes32")(service_json["name"]),
                                                                 [tag for tag in remove_tags]),
                         out_f=self.err_f,
                         err_f=self.err_f,
                         w3=self.w3,
                         ident=self.ident)
-                    self._printerr("Creating transaction to remove tags {} from service registration...\n".format(
+                    self._printerr("Creating transaction to remove current tags {} from service registration...\n".format(
                         [tag.partition(b"\0")[0].decode("utf-8") for tag in remove_tags]))
-                    cmd.transact()
+                    try:
+                        cmd.transact()
+                    except Exception as e:
+                        self._printerr("Transaction error!\nCheck your session and service json file.\n")
+                        self._error(e)
+
                 if len(add_tags) > 0:
                     cmd = ContractCommand(
                         config=self.config,
                         args=self.get_contract_argser(
                             contract_address=registry_address,
                             contract_function="addTagsToServiceRegistration",
-                            contract_def=registry_contract_def)(type_converter("bytes32")(service_json['organization']),
+                            contract_def=registry_contract_def)(type_converter("bytes32")(service_json["organization"]),
                                                                 type_converter("bytes32")(service_json["name"]),
                                                                 [tag for tag in add_tags]),
                         out_f=self.err_f,
                         err_f=self.err_f,
                         w3=self.w3,
                         ident=self.ident)
-                    self._printerr("Creating transaction to add tags {} to service registration...\n".format(
+                    self._printerr("Creating transaction to add new tags {} to service registration...\n".format(
                         [tag.partition(b"\0")[0].decode("utf-8") for tag in add_tags]))
-                    cmd.transact()
+                    try:
+                        cmd.transact()
+                    except Exception as e:
+                        self._printerr("\nTransaction error!\nHINT: Check your session and service json file.\n")
+                        self._error(e)
+
+        else:
+            self._error("Tags are too long! (max=32 chars)")
+
+        # Updating session
+        self._printerr("Updating current contract address on session...\n")
+        self._set_key("current_agent_at", agent_address, out_f=self.err_f)
+        self._printout("Service is updated!")
+        return
