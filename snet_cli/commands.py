@@ -98,6 +98,10 @@ class Command(object):
         SessionCommand(config or self.config, DefaultAttributeObject(key=key, value=value), out_f or self.out_f,
                        err_f or self.err_f).set()
 
+    def _unset_key(self, key, config=None, out_f=None, err_f=None):
+        SessionCommand(config or self.config, DefaultAttributeObject(key=key), out_f or self.out_f,
+                       err_f or self.err_f).unset()
+
     def _nothing(self):
         pass
 
@@ -779,6 +783,37 @@ class ServiceCommand(BlockchainCommand):
             self.w3 = get_web3(network)
         return self.w3.version.network
 
+    def _getserviceregistrationbyname(self, service_json=None):
+        try:
+            if service_json:
+                organization = service_json["organization"]
+                service_name = service_json["name"]
+            elif self.args.organization and self.args.name:
+                organization = self.args.organization
+                service_name = self.args.name
+            else:
+                self._error("Fail to get ORG_NAME and SERVICE_NAME...")
+
+            registry_contract_def = get_contract_def("Registry")
+            registry_address = self._getstring("registry_at")
+
+            return ContractCommand(
+                config=self.config,
+                args=self.get_contract_argser(
+                    contract_address=registry_address,
+                    contract_function="getServiceRegistrationByName",
+                    contract_def=registry_contract_def)(type_converter("bytes32")(organization),
+                                                        type_converter("bytes32")(service_name)),
+                out_f=None,
+                err_f=None,
+                w3=self.w3,
+                ident=self.ident).call()
+
+        except Exception as e:
+            self._printerr("\nCall getServiceRegistrationByName() error!\nHINT: Check your identity and session.\n")
+            self._error(e)
+
+
     def init(self):
         accept_all_defaults = self.args.y
         init_args = {
@@ -1288,3 +1323,43 @@ class ServiceCommand(BlockchainCommand):
         self._set_key("current_agent_at", agent_address, out_f=self.err_f)
         self._printout("Service is updated!")
         return
+
+    def delete(self):
+
+        try:
+            self._printout("Getting information about the service...")
+            network_id = self._get_network()
+
+            (found, _, current_path, current_agent_address, current_tags) = self._getserviceregistrationbyname()
+
+            if not found:
+                self._error("Service {} is not registered on network with id {}".format(self.args.name, network_id))
+            else:
+                self._printerr("Deleting service {}...".format(self.args.name))
+                registry_contract_def = get_contract_def("Registry")
+                registry_address = self._getstring("registry_at")
+                cmd = ContractCommand(
+                    config=self.config,
+                    args=self.get_contract_argser(
+                        contract_address=registry_address,
+                        contract_function="deleteServiceRegistration",
+                        contract_def=registry_contract_def)(type_converter("bytes32")(self.args.organization),
+                                                            type_converter("bytes32")(self.args.name)),
+                    out_f=None,
+                    err_f=None,
+                    w3=self.w3,
+                    ident=self.ident)
+                try:
+                    cmd.transact()
+                except Exception as e:
+                    self._printerr("\nTransaction error!\nHINT: Check your session and service json file.\n")
+                    self._error(e)
+
+            # Updating session
+            self._printerr("Removing current contract address from session...\n")
+            self._unset_key("current_agent_at", out_f=self.err_f)
+            self._printout("Service was deleted!")
+
+        except Exception as e:
+            self._printerr("\nTransaction error!\nHINT: Check ORG_NAME and SERVICE_NAME..\n")
+            self._error(e)
