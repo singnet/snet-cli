@@ -201,10 +201,10 @@ def add_client_options(parser):
     add_contract_identity_arguments(call_p, [("agent", "agent_at"), ("job", "job_at")])
     add_transaction_arguments(call_p)
 
-    get_model_p = subparsers.add_parser("get-model", help="Get a service's model file")
-    get_model_p.set_defaults(fn="get_model")
-    get_model_p.add_argument("dest_dir", help="destination directory for service's model files", metavar="DEST_DIR")
-    add_contract_identity_arguments(get_model_p, [("agent", "agent_at")])
+    get_spec_p = subparsers.add_parser("get-spec", help="Get a service's spec file")
+    get_spec_p.set_defaults(fn="get_spec")
+    get_spec_p.add_argument("dest_dir", help="destination directory for service's spec files", metavar="DEST_DIR")
+    add_contract_identity_arguments(get_spec_p, [("agent", "agent_at")])
 
 
 def add_contract_options(parser):
@@ -247,7 +247,7 @@ def add_service_options(parser, config):
     init_p = subparsers.add_parser("init", help="Initialize a service package on the filesystem")
     init_p.set_defaults(fn="init")
     init_p.add_argument("--name", help='name of the service to be stored in the registry (default: <current working directory>)')
-    init_p.add_argument("--model", help='local filesystem path to the service model directory (default: "model/")')
+    init_p.add_argument("--spec", help='local filesystem path to the service spec directory (default: "service_spec/")')
     init_p.add_argument("--organization", help='the organization to which you want to register the service (default: "")')
     init_p.add_argument("--path", help='the path under which you want to register the service in the organization (default: "")')
     init_p.add_argument("--price", help='initial price for interacting with the service (default: 0)', type=int)

@@ -182,11 +182,11 @@ networks on which AgentFactory has been deployed by SingularityNET Foundation)
 ---
 
 ```
-snet client get-model DEST_DIR [--agent-at AGENT_ADDRESS]
+snet client get-spec DEST_DIR [--agent-at AGENT_ADDRESS]
 ```
 
-* Retrieve the model files for a given SingularityNET service
-  * `DEST_DIR`: directory at which to root the service's model files; created if doesn't exist
+* Retrieve the spec files for a given SingularityNET service
+  * `DEST_DIR`: directory at which to root the service's spec files; created if doesn't exist
   * `AGENT_ADDRESS`: address of Agent contract associated with service; overwrites session `current_agent_at`
 
 ---
@@ -245,7 +245,7 @@ snet contract <ContractName> [--at ADDRESS] <functionName> PARAM1, PARAM2, ... [
 
 ```
 snet service init [--name NAME]
-                  [--model MODEL]
+                  [--spec SPEC]
                   [--organization ORGANIZATION]
                   [--path PATH]
                   [--price PRICE]
@@ -257,7 +257,7 @@ snet service init [--name NAME]
 
 * Create a service.json file in the current directory either interactively or by passing command line arguments
   * `NAME`: name of the service to be stored in the registry
-  * `MODEL`: local filesystem path to the service model directory
+  * `SPEC`: local filesystem path to the service spec directory
   * `ORGANIZATION`: the organization to which you want to register the service
   * `PATH`: the path under which you want to register the service in the organization
   * `PRICE`: initial price for interacting with the service
