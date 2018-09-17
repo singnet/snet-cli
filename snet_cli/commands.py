@@ -420,7 +420,7 @@ class ClientCommand(BlockchainCommand):
 
         return params_source, params
 
-    def get_model(self):
+    def get_spec(self):
         agent_address = self._getstring("agent_at")
         self._ensure(agent_address is not None, "--agent-at is required to specify agent address")
 
@@ -437,6 +437,7 @@ class ClientCommand(BlockchainCommand):
             w3=self.w3,
             ident=self.ident).call()
 
+        self._printerr("Retrieving service spec of {}".format(agent_address))
         self._ensure(metadata_uri is not None and metadata_uri != "", "agent does not have valid metadataURI")
 
         try:
@@ -444,18 +445,18 @@ class ClientCommand(BlockchainCommand):
             ipfs_scheme = ipfs_endpoint.scheme if ipfs_endpoint.scheme else "http"
             ipfs_port = ipfs_endpoint.port if ipfs_endpoint.port else 5001
             ipfs_client = ipfsapi.connect(urljoin(ipfs_scheme, ipfs_endpoint.hostname), ipfs_port)
-            model_hash = json.loads(ipfs_client.cat(metadata_uri.split("/")[-1]))["modelURI"].split("/")[-1]
+            spec_hash = json.loads(ipfs_client.cat(metadata_uri.split("/")[-1]))["modelURI"].split("/")[-1]
 
-            model_dir = self._getstring("dest_dir") or Path("~").expanduser().joinpath(".snet").joinpath("models").joinpath(model_hash)
-            if not os.path.exists(model_dir):
-                os.makedirs(model_dir)
-            model_tar = ipfs_client.cat(model_hash)
-            with tarfile.open(fileobj=io.BytesIO(model_tar)) as f:
-                f.extractall(model_dir)
-            self._pprint({"destination": str(model_dir)})
-            return model_hash
+            spec_dir = self._getstring("dest_dir") or Path("~").expanduser().joinpath(".snet").joinpath("service-spec").joinpath(spec_hash)
+            if not os.path.exists(spec_dir):
+                os.makedirs(spec_dir)
+            spec_tar = ipfs_client.cat(spec_hash)
+            with tarfile.open(fileobj=io.BytesIO(spec_tar)) as f:
+                f.extractall(spec_dir)
+            self._pprint({"destination": str(spec_dir)})
+            return spec_hash
         except Exception as e:
-            self._error("failed to retrieve service model")
+            self._error("failed to retrieve service spec")
 
     def call(self):
         agent_address = self._getstring("agent_at")
@@ -502,29 +503,29 @@ class ClientCommand(BlockchainCommand):
                     w3=self.w3,
                     ident=self.ident).call()
 
-        model_hash = ClientCommand(
+        spec_hash = ClientCommand(
             config=self.config,
             args=self.args,
             out_f=None,
             err_f=None,
             w3=self.w3,
-            ident=self.ident).get_model()
+            ident=self.ident).get_spec()
 
-        model_dir = Path("~").expanduser().joinpath(".snet").joinpath("models").joinpath(model_hash)
+        spec_dir = Path("~").expanduser().joinpath(".snet").joinpath("service-spec").joinpath(spec_hash)
 
         try:
-            codegen_dir = Path("~").expanduser().joinpath(".snet").joinpath("py-codegen").joinpath(model_hash)
+            codegen_dir = Path("~").expanduser().joinpath(".snet").joinpath("py-codegen").joinpath(spec_hash)
             if not os.path.exists(codegen_dir):
                 os.makedirs(codegen_dir)
                 proto_include = pkg_resources.resource_filename('grpc_tools', '_proto')
                 protoc_args = [
                     "protoc",
-                    "-I{}".format(model_dir),
+                    "-I{}".format(spec_dir),
                     '-I{}'.format(proto_include),
                     "--python_out={}".format(codegen_dir),
                     "--grpc_python_out={}".format(codegen_dir)
                 ]
-                protoc_args.extend([str(p) for p in model_dir.glob("**/*.proto")])
+                protoc_args.extend([str(p) for p in spec_dir.glob("**/*.proto")])
                 protoc(protoc_args)
 
             sys.path.append(str(codegen_dir))
@@ -556,7 +557,7 @@ class ClientCommand(BlockchainCommand):
                                 response_name = m_desc.output_type.name
                                 need_break = True
 
-            self._ensure(None not in [service_name, request_name, response_name], "failed to load service model")
+            self._ensure(None not in [service_name, request_name, response_name], "failed to load service spec")
 
             stub_class = None
             request_class = None
@@ -569,9 +570,9 @@ class ClientCommand(BlockchainCommand):
                 if response_class is None:
                     response_class = getattr(mod, response_name, None)
 
-            self._ensure(None not in [stub_class, request_class, response_class], "failed to load service model")
+            self._ensure(None not in [stub_class, request_class, response_class], "failed to load service spec")
         except Exception as e:
-            self._error("failed to load service model")
+            self._error("failed to load service spec")
 
         if job_address is None:
             cmd = AgentCommand(
@@ -782,7 +783,7 @@ class ServiceCommand(BlockchainCommand):
         accept_all_defaults = self.args.y
         init_args = {
             "name": os.path.basename(os.getcwd()),
-            "model": "model/",
+            "service-spec": "service-spec/",
             "organization": "",
             "path": "",
             "price": 0,
@@ -801,10 +802,10 @@ class ServiceCommand(BlockchainCommand):
         elif not accept_all_defaults:
             init_args["name"] = input('Choose a name for your service: (default: "{}")\n'.format(init_args["name"])) or init_args["name"]
 
-        if self.args.model:
-            init_args["model"] = self.args.model
+        if self.args.spec:
+            init_args["service-spec"] = self.args.spec
         elif not accept_all_defaults:
-            init_args["model"] = input('Choose the path to your service\'s model directory: (default: "{}")\n'.format(init_args["model"])) or init_args["model"]
+            init_args["service-spec"] = input('Choose the path to your service\'s spec directory: (default: "{}")\n'.format(init_args["service-spec"])) or init_args["service-spec"]
 
         if self.args.organization:
             init_args["organization"] = self.args.organization
@@ -855,36 +856,36 @@ class ServiceCommand(BlockchainCommand):
         agent_address = service_json.get('networks', {}).get(network_id, {}).get('agentAddress', None)
         need_agent = agent_address is None
 
-        # Get list of model files
+        # Get list of service-spec files
         import_paths = None
-        if 'model' in service_json and service_json['model']:
-            model_path = Path(service_json['model'])
-            if not os.path.isabs(model_path):
-                entry_path = Path.cwd().joinpath(model_path).resolve()
+        if "service-spec" in service_json and service_json["service-spec"]:
+            spec_path = Path(service_json["service-spec"])
+            if not os.path.isabs(spec_path):
+                entry_path = Path.cwd().joinpath(spec_path).resolve()
             else:
-                entry_path = model_path.resolve()
+                entry_path = spec_path.resolve()
             if not os.path.isdir(entry_path):
-                self._error("Model path must resolve to a valid directory: {}".format(model_path))
+                self._error("Service-spec path must resolve to a valid directory: {}".format(spec_path))
             import_paths = walk_imports(entry_path)
 
-        # Create model tar and upload it to IPFS
+        # Create service-spec tar and upload it to IPFS
         ipfs_endpoint = urlparse(self.config["ipfs"]["default_ipfs_endpoint"])
         ipfs_scheme = ipfs_endpoint.scheme if ipfs_endpoint.scheme else "http"
         ipfs_port = ipfs_endpoint.port if ipfs_endpoint.port else 5001
         ipfs_client = ipfsapi.connect(urljoin(ipfs_scheme, ipfs_endpoint.hostname), ipfs_port)
-        model_ipfs_uri = None
+        spec_ipfs_uri = None
 
         if import_paths:
             tmp_f = self._tar_imports(import_paths, entry_path)
-            model_ipfs_hash = ipfs_client.add(read_temp_tar(tmp_f).name)["Hash"]
-            model_ipfs_path = "/ipfs/{}".format(model_ipfs_hash)
-            model_ipfs_uri = uri_reference(model_ipfs_path).copy_with(scheme='ipfs').unsplit()
+            spec_ipfs_hash = ipfs_client.add(read_temp_tar(tmp_f).name)["Hash"]
+            spec_ipfs_path = "/ipfs/{}".format(spec_ipfs_hash)
+            spec_ipfs_uri = uri_reference(spec_ipfs_path).copy_with(scheme='ipfs').unsplit()
 
         # Upload metadata JSON to IPFS with modelURI
         metadata_json = dict(service_json['metadata'])
 
-        if model_ipfs_uri:
-            metadata_json['modelURI'] = model_ipfs_uri
+        if spec_ipfs_uri:
+            metadata_json['modelURI'] = spec_ipfs_uri
 
         with tempfile.NamedTemporaryFile(mode='w+') as tmp_json:
             json.dump(metadata_json, tmp_json, ensure_ascii=False, sort_keys=True)
