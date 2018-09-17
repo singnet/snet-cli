@@ -447,7 +447,7 @@ class ClientCommand(BlockchainCommand):
             ipfs_client = ipfsapi.connect(urljoin(ipfs_scheme, ipfs_endpoint.hostname), ipfs_port)
             spec_hash = json.loads(ipfs_client.cat(metadata_uri.split("/")[-1]))["modelURI"].split("/")[-1]
 
-            spec_dir = self._getstring("dest_dir") or Path("~").expanduser().joinpath(".snet").joinpath("service-spec").joinpath(spec_hash)
+            spec_dir = self._getstring("dest_dir") or Path("~").expanduser().joinpath(".snet").joinpath("service_spec").joinpath(spec_hash)
             if not os.path.exists(spec_dir):
                 os.makedirs(spec_dir)
             spec_tar = ipfs_client.cat(spec_hash)
@@ -511,7 +511,7 @@ class ClientCommand(BlockchainCommand):
             w3=self.w3,
             ident=self.ident).get_spec()
 
-        spec_dir = Path("~").expanduser().joinpath(".snet").joinpath("service-spec").joinpath(spec_hash)
+        spec_dir = Path("~").expanduser().joinpath(".snet").joinpath("service_spec").joinpath(spec_hash)
 
         try:
             codegen_dir = Path("~").expanduser().joinpath(".snet").joinpath("py-codegen").joinpath(spec_hash)
@@ -783,7 +783,7 @@ class ServiceCommand(BlockchainCommand):
         accept_all_defaults = self.args.y
         init_args = {
             "name": os.path.basename(os.getcwd()),
-            "service-spec": "service-spec/",
+            "service_spec": "service_spec/",
             "organization": "",
             "path": "",
             "price": 0,
@@ -803,9 +803,9 @@ class ServiceCommand(BlockchainCommand):
             init_args["name"] = input('Choose a name for your service: (default: "{}")\n'.format(init_args["name"])) or init_args["name"]
 
         if self.args.spec:
-            init_args["service-spec"] = self.args.spec
+            init_args["service_spec"] = self.args.spec
         elif not accept_all_defaults:
-            init_args["service-spec"] = input('Choose the path to your service\'s spec directory: (default: "{}")\n'.format(init_args["service-spec"])) or init_args["service-spec"]
+            init_args["service_spec"] = input('Choose the path to your service\'s spec directory: (default: "{}")\n'.format(init_args["service_spec"])) or init_args["service_spec"]
 
         if self.args.organization:
             init_args["organization"] = self.args.organization
@@ -856,19 +856,19 @@ class ServiceCommand(BlockchainCommand):
         agent_address = service_json.get('networks', {}).get(network_id, {}).get('agentAddress', None)
         need_agent = agent_address is None
 
-        # Get list of service-spec files
+        # Get list of service_spec files
         import_paths = None
-        if "service-spec" in service_json and service_json["service-spec"]:
-            spec_path = Path(service_json["service-spec"])
+        if "service_spec" in service_json and service_json["service_spec"]:
+            spec_path = Path(service_json["service_spec"])
             if not os.path.isabs(spec_path):
                 entry_path = Path.cwd().joinpath(spec_path).resolve()
             else:
                 entry_path = spec_path.resolve()
             if not os.path.isdir(entry_path):
-                self._error("Service-spec path must resolve to a valid directory: {}".format(spec_path))
+                self._error("Service_spec path must resolve to a valid directory: {}".format(spec_path))
             import_paths = walk_imports(entry_path)
 
-        # Create service-spec tar and upload it to IPFS
+        # Create service_spec tar and upload it to IPFS
         ipfs_endpoint = urlparse(self.config["ipfs"]["default_ipfs_endpoint"])
         ipfs_scheme = ipfs_endpoint.scheme if ipfs_endpoint.scheme else "http"
         ipfs_port = ipfs_endpoint.port if ipfs_endpoint.port else 5001

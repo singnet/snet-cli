@@ -247,7 +247,7 @@ def add_service_options(parser, config):
     init_p = subparsers.add_parser("init", help="Initialize a service package on the filesystem")
     init_p.set_defaults(fn="init")
     init_p.add_argument("--name", help='name of the service to be stored in the registry (default: <current working directory>)')
-    init_p.add_argument("--spec", help='local filesystem path to the service spec directory (default: "service-spec/")')
+    init_p.add_argument("--spec", help='local filesystem path to the service spec directory (default: "service_spec/")')
     init_p.add_argument("--organization", help='the organization to which you want to register the service (default: "")')
     init_p.add_argument("--path", help='the path under which you want to register the service in the organization (default: "")')
     init_p.add_argument("--price", help='initial price for interacting with the service (default: 0)', type=int)
