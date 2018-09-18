@@ -435,12 +435,13 @@ def add_organization_options(parser, config):
     p = networks_organization_subparsers.add_parser("default")
     _add_organization_arguments(p)
 
-    org_add_members_p = subparsers.add_parser("add-members", help="Add members to Organization", default_choice="default")
+    org_add_members_p = subparsers.add_parser("add-members", help="Add members to Organization",
+                                              default_choice="default")
     org_add_members_p.set_defaults(fn="add_members")
     networks_organization_subparsers = org_add_members_p.add_subparsers(title="networks", metavar="[NETWORK]")
     org_add_members_p.add_argument("name", help="Name of the Organization", metavar="ORG_NAME")
     org_add_members_p.add_argument("members", help="List of members to be added to the organization",
-                              metavar="ORG_MEMBERS[]")
+                                   metavar="ORG_MEMBERS[]")
 
     for network_name in network_names:
         p = networks_organization_subparsers.add_parser(network_name,
@@ -459,12 +460,12 @@ def add_organization_options(parser, config):
     _add_organization_arguments(p)
 
     org_rm_members_p = subparsers.add_parser("rem-members", help="Remove members from Organization",
-                                              default_choice="default")
+                                             default_choice="default")
     org_rm_members_p.set_defaults(fn="rem_members")
     networks_organization_subparsers = org_rm_members_p.add_subparsers(title="networks", metavar="[NETWORK]")
     org_rm_members_p.add_argument("name", help="Name of the Organization", metavar="ORG_NAME")
     org_rm_members_p.add_argument("members", help="List of members to be removed from the organization",
-                                   metavar="ORG_MEMBERS[]")
+                                  metavar="ORG_MEMBERS[]")
 
     for network_name in network_names:
         p = networks_organization_subparsers.add_parser(network_name,
