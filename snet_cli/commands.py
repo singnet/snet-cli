@@ -996,17 +996,7 @@ class ServiceCommand(BlockchainCommand):
             registry_contract_def = get_contract_def("Registry")
             registry_address = self._getstring("registry_at")
 
-            (found, _, current_path, current_agent_address, current_tags) = ContractCommand(
-                config=self.config,
-                args=self.get_contract_argser(
-                    contract_address=registry_address,
-                    contract_function="getServiceRegistrationByName",
-                    contract_def=registry_contract_def)(type_converter("bytes32")(organization),
-                                                        type_converter("bytes32")(service_json["name"])),
-                out_f=None,
-                err_f=None,
-                w3=self.w3,
-                ident=self.ident).call()
+            (found, _, current_path, current_agent_address, current_tags) = self._getserviceregistrationbyname()
 
             if found:
                 if (current_path != type_converter("bytes32")(service_json["path"]) or
@@ -1117,17 +1107,7 @@ class ServiceCommand(BlockchainCommand):
         registry_contract_def = get_contract_def("Registry")
         registry_address = self._getstring("registry_at")
 
-        (found, _, current_path, current_agent_address, current_tags) = ContractCommand(
-            config=self.config,
-            args=self.get_contract_argser(
-                contract_address=registry_address,
-                contract_function="getServiceRegistrationByName",
-                contract_def=registry_contract_def)(type_converter("bytes32")(service_json["organization"]),
-                                                    type_converter("bytes32")(service_json["name"])),
-            out_f=None,
-            err_f=None,
-            w3=self.w3,
-            ident=self.ident).call()
+        (found, _, current_path, current_agent_address, current_tags) = self._getserviceregistrationbyname()
 
         if not found:
             self._error("Service '{}' not registered on network with id {}".format(service_json["name"], network_id))
