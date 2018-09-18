@@ -885,8 +885,11 @@ class ServiceCommand(BlockchainCommand):
         else:
             service_json_path = "service.json"
 
-        with open(service_json_path) as f:
-            service_json = json.load(f)
+        try:
+            with open(service_json_path) as f:
+                service_json = json.load(f)
+        except Exception as e:
+            self._error("Failed to load {}!".format(service_json_path))
 
         agent_address = service_json.get('networks', {}).get(network_id, {}).get('agentAddress', None)
         need_agent = agent_address is None
