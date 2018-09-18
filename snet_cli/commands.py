@@ -996,7 +996,7 @@ class ServiceCommand(BlockchainCommand):
             registry_contract_def = get_contract_def("Registry")
             registry_address = self._getstring("registry_at")
 
-            (found, _, current_path, current_agent_address, current_tags) = self._getserviceregistrationbyname()
+            (found, _, current_path, current_agent_address, current_tags) = self._getserviceregistrationbyname(service_json)
 
             if found:
                 if (current_path != type_converter("bytes32")(service_json["path"]) or
@@ -1107,7 +1107,7 @@ class ServiceCommand(BlockchainCommand):
         registry_contract_def = get_contract_def("Registry")
         registry_address = self._getstring("registry_at")
 
-        (found, _, current_path, current_agent_address, current_tags) = self._getserviceregistrationbyname()
+        (found, _, current_path, current_agent_address, current_tags) = self._getserviceregistrationbyname(service_json)
 
         if not found:
             self._error("Service '{}' not registered on network with id {}".format(service_json["name"], network_id))
