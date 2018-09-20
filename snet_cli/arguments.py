@@ -78,7 +78,7 @@ def add_root_options(parser, config):
     add_service_options(service_p, config)
 
     organization_p = subparsers.add_parser("organization", help="Interact with SingularityNET Organizations")
-    add_organization_options(organization_p, config)
+    add_organization_options(organization_p)
 
 
 def add_identity_options(parser, config):
@@ -333,185 +333,57 @@ def add_service_options(parser, config):
     _add_service_delete_arguments(p)
 
 
-def add_organization_options(parser, config):
+def add_organization_options(parser):
     parser.set_defaults(cmd=OrganizationCommand)
 
     subparsers = parser.add_subparsers(title="organization commands", metavar="COMMAND")
     subparsers.required = True
 
-    network_names = list(
-        map(lambda x: x[len("network."):], filter(lambda x: x.startswith("network."), config.sections())))
-
-    org_list_p = subparsers.add_parser("list", help="List Organizations", default_choice="default")
+    org_list_p = subparsers.add_parser("list", help="List Organizations")
     org_list_p.set_defaults(fn="list")
-    networks_organization_subparsers = org_list_p.add_subparsers(title="networks", metavar="[NETWORK]")
 
-    for network_name in network_names:
-        p = networks_organization_subparsers.add_parser(network_name,
-                                                        help="List Organizations from {} network".format(network_name))
-        p.set_defaults(network_name=network_name)
-        _add_organization_arguments(p)
-
-    p = networks_organization_subparsers.add_parser("eth-rpc-endpoint",
-                                                    help="List Organizations at the provided Ethereum-RPC endpoint")
-    p.set_defaults(network_name="eth_rpc_endpoint")
-    p.add_argument("eth_rpc_endpoint", help="ethereum json-rpc endpoint (should start with 'http(s)://')",
-                   metavar="ETH_RPC_ENDPOINT")
-    _add_organization_arguments(p)
-
-    p = networks_organization_subparsers.add_parser("default")
-    _add_organization_arguments(p)
-
-    org_info_p = subparsers.add_parser("info", help="Organization's Informations", default_choice="default")
+    org_info_p = subparsers.add_parser("info", help="Organization's Informations")
     org_info_p.set_defaults(fn="info")
-    networks_organization_subparsers = org_info_p.add_subparsers(title="networks", metavar="[NETWORK]")
     org_info_p.add_argument("name", help="Name of the Organization", metavar="ORG_NAME")
 
-    for network_name in network_names:
-        p = networks_organization_subparsers.add_parser(network_name,
-                                                        help="Organization's Informations from {} network".format(network_name))
-        p.set_defaults(network_name=network_name)
-        _add_organization_arguments(p)
-
-    p = networks_organization_subparsers.add_parser("eth-rpc-endpoint",
-                                                    help="Organization's Informations at the provided Ethereum-RPC endpoint")
-    p.set_defaults(network_name="eth_rpc_endpoint")
-    p.add_argument("eth_rpc_endpoint", help="ethereum json-rpc endpoint (should start with 'http(s)://')",
-                   metavar="ETH_RPC_ENDPOINT")
-    _add_organization_arguments(p)
-
-    p = networks_organization_subparsers.add_parser("default")
-    _add_organization_arguments(p)
-
-    org_create_p = subparsers.add_parser("create", help="Create an Organization", default_choice="default")
+    org_create_p = subparsers.add_parser("create", help="Create an Organization")
     org_create_p.set_defaults(fn="create")
-    networks_organization_subparsers = org_create_p.add_subparsers(title="networks", metavar="[NETWORK]")
     org_create_p.add_argument("name", help="Name of the Organization", metavar="ORG_NAME")
-    org_create_p.add_argument("members", help="List of members to be added to the organization",
+    org_create_p.add_argument("members",
+                              help="List of members to be added to the organization",
                               metavar="ORG_MEMBERS[]")
+    _add_organization_arguments(org_create_p)
 
-    for network_name in network_names:
-        p = networks_organization_subparsers.add_parser(network_name, help="Create an Organization on {} network".format(network_name))
-        p.set_defaults(network_name=network_name)
-        _add_organization_arguments(p)
-
-    p = networks_organization_subparsers.add_parser("eth-rpc-endpoint", help="Create an Organization using the provided Ethereum-RPC endpoint")
-    p.set_defaults(network_name="eth_rpc_endpoint")
-    p.add_argument("eth_rpc_endpoint", help="ethereum json-rpc endpoint (should start with 'http(s)://')", metavar="ETH_RPC_ENDPOINT")
-    _add_organization_arguments(p)
-
-    p = networks_organization_subparsers.add_parser("default")
-    _add_organization_arguments(p)
-
-    org_delete_p = subparsers.add_parser("delete", help="Delete an Organization", default_choice="default")
+    org_delete_p = subparsers.add_parser("delete", help="Delete an Organization")
     org_delete_p.set_defaults(fn="delete")
-    networks_organization_subparsers = org_delete_p.add_subparsers(title="networks", metavar="[NETWORK]")
     org_delete_p.add_argument("name", help="Name of the Organization", metavar="ORG_NAME")
+    _add_organization_arguments(org_delete_p)
 
-    for network_name in network_names:
-        p = networks_organization_subparsers.add_parser(network_name, help="Delete an Organization from {} network".format(network_name))
-        p.set_defaults(network_name=network_name)
-        _add_organization_arguments(p)
-
-    p = networks_organization_subparsers.add_parser("eth-rpc-endpoint",
-                                                    help="Delete an Organization at the provided Ethereum-RPC endpoint")
-    p.set_defaults(network_name="eth_rpc_endpoint")
-    p.add_argument("eth_rpc_endpoint", help="ethereum json-rpc endpoint (should start with 'http(s)://')",
-                   metavar="ETH_RPC_ENDPOINT")
-    _add_organization_arguments(p)
-
-    p = networks_organization_subparsers.add_parser("default")
-    _add_organization_arguments(p)
-
-    org_list_services_p = subparsers.add_parser("list-services", help="List Organization's services", default_choice="default")
+    org_list_services_p = subparsers.add_parser("list-services", help="List Organization's services")
     org_list_services_p.set_defaults(fn="list_services")
-    networks_organization_subparsers = org_list_services_p.add_subparsers(title="networks", metavar="[NETWORK]")
     org_list_services_p.add_argument("name", help="Name of the Organization", metavar="ORG_NAME")
 
-    for network_name in network_names:
-        p = networks_organization_subparsers.add_parser(network_name,help="List Organization's services from {} network".format(network_name))
-        p.set_defaults(network_name=network_name)
-        _add_organization_arguments(p)
-
-    p = networks_organization_subparsers.add_parser("eth-rpc-endpoint",
-                                                    help="List Organization's services at the provided Ethereum-RPC endpoint")
-    p.set_defaults(network_name="eth_rpc_endpoint")
-    p.add_argument("eth_rpc_endpoint", help="ethereum json-rpc endpoint (should start with 'http(s)://')",
-                   metavar="ETH_RPC_ENDPOINT")
-    _add_organization_arguments(p)
-
-    p = networks_organization_subparsers.add_parser("default")
-    _add_organization_arguments(p)
-
-    org_change_owner_p = subparsers.add_parser("change-owner", help="Change Organization's owner",
-                                               default_choice="default")
+    org_change_owner_p = subparsers.add_parser("change-owner", help="Change Organization's owner")
     org_change_owner_p.set_defaults(fn="change_owner")
-    networks_organization_subparsers = org_change_owner_p.add_subparsers(title="networks", metavar="[NETWORK]")
     org_change_owner_p.add_argument("name", help="Name of the Organization", metavar="ORG_NAME")
-    org_change_owner_p.add_argument("owner", help="Address of the new Organization's owner", metavar="OWNER_NAME")
+    org_change_owner_p.add_argument("owner", help="Address of the new Organization's owner", metavar="OWNER_ADDRESS")
+    _add_organization_arguments(org_change_owner_p)
 
-    for network_name in network_names:
-        p = networks_organization_subparsers.add_parser(network_name, help="List Organization's services from {} network".format(network_name))
-        p.set_defaults(network_name=network_name)
-        _add_organization_arguments(p)
-
-    p = networks_organization_subparsers.add_parser("eth-rpc-endpoint",
-                                                    help="Change Organization's owner at the provided Ethereum-RPC endpoint")
-    p.set_defaults(network_name="eth_rpc_endpoint")
-    p.add_argument("eth_rpc_endpoint", help="ethereum json-rpc endpoint (should start with 'http(s)://')",
-                   metavar="ETH_RPC_ENDPOINT")
-    _add_organization_arguments(p)
-
-    p = networks_organization_subparsers.add_parser("default")
-    _add_organization_arguments(p)
-
-    org_add_members_p = subparsers.add_parser("add-members", help="Add members to Organization",
-                                              default_choice="default")
+    org_add_members_p = subparsers.add_parser("add-members", help="Add members to Organization")
     org_add_members_p.set_defaults(fn="add_members")
-    networks_organization_subparsers = org_add_members_p.add_subparsers(title="networks", metavar="[NETWORK]")
     org_add_members_p.add_argument("name", help="Name of the Organization", metavar="ORG_NAME")
-    org_add_members_p.add_argument("members", help="List of members to be added to the organization",
+    org_add_members_p.add_argument("members",
+                                   help="List of members to be added to the organization",
                                    metavar="ORG_MEMBERS[]")
+    _add_organization_arguments(org_add_members_p)
 
-    for network_name in network_names:
-        p = networks_organization_subparsers.add_parser(network_name,
-                                                        help="Add members to Organization on {} network".format(network_name))
-        p.set_defaults(network_name=network_name)
-        _add_organization_arguments(p)
-
-    p = networks_organization_subparsers.add_parser("eth-rpc-endpoint",
-                                                    help="Add members to Organization using the provided Ethereum-RPC endpoint")
-    p.set_defaults(network_name="eth_rpc_endpoint")
-    p.add_argument("eth_rpc_endpoint", help="ethereum json-rpc endpoint (should start with 'http(s)://')",
-                   metavar="ETH_RPC_ENDPOINT")
-    _add_organization_arguments(p)
-
-    p = networks_organization_subparsers.add_parser("default")
-    _add_organization_arguments(p)
-
-    org_rm_members_p = subparsers.add_parser("rem-members", help="Remove members from Organization",
-                                             default_choice="default")
+    org_rm_members_p = subparsers.add_parser("rem-members", help="Remove members from Organization")
     org_rm_members_p.set_defaults(fn="rem_members")
-    networks_organization_subparsers = org_rm_members_p.add_subparsers(title="networks", metavar="[NETWORK]")
     org_rm_members_p.add_argument("name", help="Name of the Organization", metavar="ORG_NAME")
-    org_rm_members_p.add_argument("members", help="List of members to be removed from the organization",
+    org_rm_members_p.add_argument("members",
+                                  help="List of members to be removed from the organization",
                                   metavar="ORG_MEMBERS[]")
-
-    for network_name in network_names:
-        p = networks_organization_subparsers.add_parser(network_name,
-                                                        help="Remove members from Organization on {} network".format(network_name))
-        p.set_defaults(network_name=network_name)
-        _add_organization_arguments(p)
-
-    p = networks_organization_subparsers.add_parser("eth-rpc-endpoint",
-                                                    help="Remove members from Organization using the provided Ethereum-RPC endpoint")
-    p.set_defaults(network_name="eth_rpc_endpoint")
-    p.add_argument("eth_rpc_endpoint", help="ethereum json-rpc endpoint (should start with 'http(s)://')",
-                   metavar="ETH_RPC_ENDPOINT")
-    _add_organization_arguments(p)
-
-    p = networks_organization_subparsers.add_parser("default")
-    _add_organization_arguments(p)
+    _add_organization_arguments(org_rm_members_p)
 
 
 def add_contract_function_options(parser, contract_name):

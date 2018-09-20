@@ -1455,7 +1455,7 @@ class OrganizationCommand(BlockchainCommand):
                 self._error(e)
 
         except Exception as e:
-            self._printerr("\nTransaction error!\nHINT: Check if address is in hexadecimal with 32 chars.\n")
+            self._printerr("\nTransaction error!\nHINT: Check if address is a 40-length hexadecimal.\n")
             self._error(e)
 
     def delete(self):
@@ -1561,7 +1561,7 @@ class OrganizationCommand(BlockchainCommand):
                 self._error(e)
 
         except Exception as e:
-            self._printerr("\nTransaction error!\nHINT: Check if owner address is in hexadecimal with 32 chars.\n")
+            self._printerr("\nTransaction error!\nHINT: Check if address is a 40-length hexadecimal.\n")
             self._error(e)
 
     def add_members(self):
@@ -1611,7 +1611,7 @@ class OrganizationCommand(BlockchainCommand):
                 self._printerr("No member was added to {}!\n".format(self.args.name))
 
         except Exception as e:
-            self._printerr("\nTransaction error!\nHINT: Check if address is in hexadecimal with 32 chars.\n")
+            self._printerr("\nTransaction error!\nHINT: Check if address is a 40-length hexadecimal.\n")
             self._error(e)
 
     def rem_members(self):
@@ -1661,5 +1661,5 @@ class OrganizationCommand(BlockchainCommand):
                 self._printerr("No member was removed from {}!\n".format(self.args.name))
 
         except Exception as e:
-            self._printerr("\nTransaction error!\nHINT: Check if address is in hexadecimal with 32 chars.\n")
+            self._printerr("\nTransaction error!\nHINT: Check if address is a 40-length hexadecimal.\n")
             self._error(e)
