@@ -5,7 +5,7 @@ import sys
 from pathlib import Path
 
 from snet_cli.commands import IdentityCommand, SessionCommand, NetworkCommand, ContractCommand, AgentFactoryCommand, \
-    AgentCommand, ServiceCommand, ClientCommand
+    AgentCommand, ServiceCommand, ClientCommand, OrganizationCommand
 from snet_cli.identity import get_identity_types
 from snet_cli.session import get_session_keys
 from snet_cli.utils import type_converter, get_contract_def
@@ -76,6 +76,9 @@ def add_root_options(parser, config):
 
     service_p = subparsers.add_parser("service", help="Create, publish, register, and update SingularityNET services")
     add_service_options(service_p, config)
+
+    organization_p = subparsers.add_parser("organization", help="Interact with SingularityNET Organizations")
+    add_organization_options(organization_p)
 
 
 def add_identity_options(parser, config):
@@ -244,6 +247,11 @@ def _add_service_delete_arguments(parser):
     add_contract_identity_arguments(parser, [("registry", "registry_at")])
 
 
+def _add_organization_arguments(parser):
+    add_transaction_arguments(parser)
+    add_contract_identity_arguments(parser, [("registry", "registry_at")])
+
+
 def add_service_options(parser, config):
     parser.set_defaults(cmd=ServiceCommand)
 
@@ -323,6 +331,59 @@ def add_service_options(parser, config):
 
     p = networks_update_subparsers.add_parser("default")
     _add_service_delete_arguments(p)
+
+
+def add_organization_options(parser):
+    parser.set_defaults(cmd=OrganizationCommand)
+
+    subparsers = parser.add_subparsers(title="organization commands", metavar="COMMAND")
+    subparsers.required = True
+
+    org_list_p = subparsers.add_parser("list", help="List Organizations")
+    org_list_p.set_defaults(fn="list")
+
+    org_info_p = subparsers.add_parser("info", help="Organization's Informations")
+    org_info_p.set_defaults(fn="info")
+    org_info_p.add_argument("name", help="Name of the Organization", metavar="ORG_NAME")
+
+    org_create_p = subparsers.add_parser("create", help="Create an Organization")
+    org_create_p.set_defaults(fn="create")
+    org_create_p.add_argument("name", help="Name of the Organization", metavar="ORG_NAME")
+    org_create_p.add_argument("members",
+                              help="List of members to be added to the organization",
+                              metavar="ORG_MEMBERS[]")
+    _add_organization_arguments(org_create_p)
+
+    org_delete_p = subparsers.add_parser("delete", help="Delete an Organization")
+    org_delete_p.set_defaults(fn="delete")
+    org_delete_p.add_argument("name", help="Name of the Organization", metavar="ORG_NAME")
+    _add_organization_arguments(org_delete_p)
+
+    org_list_services_p = subparsers.add_parser("list-services", help="List Organization's services")
+    org_list_services_p.set_defaults(fn="list_services")
+    org_list_services_p.add_argument("name", help="Name of the Organization", metavar="ORG_NAME")
+
+    org_change_owner_p = subparsers.add_parser("change-owner", help="Change Organization's owner")
+    org_change_owner_p.set_defaults(fn="change_owner")
+    org_change_owner_p.add_argument("name", help="Name of the Organization", metavar="ORG_NAME")
+    org_change_owner_p.add_argument("owner", help="Address of the new Organization's owner", metavar="OWNER_ADDRESS")
+    _add_organization_arguments(org_change_owner_p)
+
+    org_add_members_p = subparsers.add_parser("add-members", help="Add members to Organization")
+    org_add_members_p.set_defaults(fn="add_members")
+    org_add_members_p.add_argument("name", help="Name of the Organization", metavar="ORG_NAME")
+    org_add_members_p.add_argument("members",
+                                   help="List of members to be added to the organization",
+                                   metavar="ORG_MEMBERS[]")
+    _add_organization_arguments(org_add_members_p)
+
+    org_rm_members_p = subparsers.add_parser("rem-members", help="Remove members from Organization")
+    org_rm_members_p.set_defaults(fn="rem_members")
+    org_rm_members_p.add_argument("name", help="Name of the Organization", metavar="ORG_NAME")
+    org_rm_members_p.add_argument("members",
+                                  help="List of members to be removed from the organization",
+                                  metavar="ORG_MEMBERS[]")
+    _add_organization_arguments(org_rm_members_p)
 
 
 def add_contract_function_options(parser, contract_name):

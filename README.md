@@ -358,6 +358,128 @@ SingularityNET Foundation)
 
 ---
 
+```
+snet service delete [NETWORK] ORG_NAME SERVICE_NAME
+```
+
+* Delete a service by its ORG_NAME and SERVICE_NAME; optionally specify a network
+  * `NETWORK`: name of network to use (either `mainnet`, `kovan`, `ropsten`, `rinkeby` or `eth-rpc-endpoint`)
+  * `ORG_NAME`: name of the organization
+  * `SERVICE_NAME`: name of the service
+
+---
+
+```
+snet service delete eth-rpc-endpoint ETH_RPC_ENDPOINT ORG_NAME SERVICE_NAME
+```
+
+* Delete a service by its ORG_NAME and SERVICE_NAME using a target Ethereum JSON-RPC endpoint
+  * `ETH_RPC_ENDPOINT`: Ethereum JSON-RPC endpoint (network determined by endpoint)
+  * `ORG_NAME`: name of the organization
+  * `SERVICE_NAME`: name of the service
+
+---
+
+```
+snet organization list
+```
+
+* List all registered organizations on current network
+
+---
+
+```
+snet organization info ORG_NAME
+```
+
+* Get information about an organizations
+  * `ORG_NAME`: name of the organization
+  
+---
+
+```
+snet organization create [-h] [--gas-price GAS_PRICE]
+                              [--eth-rpc-endpoint ETH_RPC_ENDPOINT]
+                              [--wallet-index WALLET_INDEX] [--no-confirm]
+                              [--verbose | --quiet]
+                              [--registry-at REGISTRY_ADDRESS]
+                              ORG_NAME ORG_MEMBERS
+```
+
+* Create an organization
+  * `ORG_NAME`: name of the organization
+  * `ORG_MEMBERS`: List of members to be added to the organization (comma-separated)
+
+---
+
+```
+snet organization delete [-h] [--gas-price GAS_PRICE]
+                              [--eth-rpc-endpoint ETH_RPC_ENDPOINT]
+                              [--wallet-index WALLET_INDEX] [--no-confirm]
+                              [--verbose | --quiet]
+                              [--registry-at REGISTRY_ADDRESS]
+                              ORG_NAME
+```
+
+* Delete an organization
+  * `ORG_NAME`: name of the organization
+  
+---
+
+```
+snet organization list-services ORG_NAME
+```
+
+* List all available services from an organization
+  * `ORG_NAME`: name of the organization
+  
+---
+
+```
+snet organization change-owner [-h] [--gas-price GAS_PRICE]
+                                    [--eth-rpc-endpoint ETH_RPC_ENDPOINT]
+                                    [--wallet-index WALLET_INDEX]
+                                    [--no-confirm] [--verbose | --quiet]
+                                    [--registry-at REGISTRY_ADDRESS]
+                                    ORG_NAME OWNER_ADDRESS
+```
+
+* Change the owner of an organization
+  * `ORG_NAME`: name of the organization
+  * `OWNER_ADDRESS`: address of the new organization's owner
+
+---
+
+```
+snet organization add-members [-h] [--gas-price GAS_PRICE]
+                                   [--eth-rpc-endpoint ETH_RPC_ENDPOINT]
+                                   [--wallet-index WALLET_INDEX]
+                                   [--no-confirm] [--verbose | --quiet]
+                                   [--registry-at REGISTRY_ADDRESS]
+                                   ORG_NAME ORG_MEMBERS
+```
+
+* Add members to an organization
+  * `ORG_NAME`: name of the organization
+  * `ORG_MEMBERS`: list of members to be added to the organization (comma-separated)
+
+---
+
+```
+snet organization rem-members [-h] [--gas-price GAS_PRICE]
+                                   [--eth-rpc-endpoint ETH_RPC_ENDPOINT]
+                                   [--wallet-index WALLET_INDEX]
+                                   [--no-confirm] [--verbose | --quiet]
+                                   [--registry-at REGISTRY_ADDRESS]
+                                   ORG_NAME ORG_MEMBERS
+```
+
+* Remove members from an organization
+  * `ORG_NAME`: name of the organization
+  * `ORG_MEMBERS`: list of members to be removed from the organization (comma-separated)
+
+---
+
 ## Development
 
 ### Installing
