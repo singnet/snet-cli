@@ -12,6 +12,7 @@ setup(
     install_requires=[
         'grpcio-tools==1.14.1',
         'jsonrpcclient==2.5.2',
+        'eth-typing<2', # workaround until next version after eth-abi v2.0.0-beta.1 is released
         'web3==4.2.1',
         'mnemonic==0.18',
         'bip32utils==0.3.post3',
