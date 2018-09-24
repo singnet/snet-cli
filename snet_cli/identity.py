@@ -55,10 +55,12 @@ class KeyIdentityProvider(IdentityProvider):
         txn_hash = self.w3.eth.sendRawTransaction(raw_transaction)
 
         # Wait for transaction to be mined
-        receipt = None
-        while receipt is None:
+        receipt = dict()
+        while not receipt:
             time.sleep(1)
             receipt = self.w3.eth.getTransactionReceipt(txn_hash)
+            if receipt and "blockHash" in receipt and receipt["blockHash"] is None:
+                receipt = dict()
 
         return receipt
 
@@ -83,10 +85,12 @@ class RpcIdentityProvider(IdentityProvider):
         txn_hash = self.w3.eth.sendTransaction(transaction)
 
         # Wait for transaction to be mined
-        receipt = None
-        while receipt is None:
+        receipt = dict()
+        while not receipt:
             time.sleep(1)
             receipt = self.w3.eth.getTransactionReceipt(txn_hash)
+            if receipt and "blockHash" in receipt and receipt["blockHash"] is None:
+                receipt = dict()
 
         return receipt
 
@@ -125,10 +129,12 @@ class MnemonicIdentityProvider(IdentityProvider):
         txn_hash = self.w3.eth.sendRawTransaction(raw_transaction)
 
         # Wait for transaction to be mined
-        receipt = None
-        while receipt is None:
+        receipt = dict()
+        while not receipt:
             time.sleep(1)
             receipt = self.w3.eth.getTransactionReceipt(txn_hash)
+            if receipt and "blockHash" in receipt and receipt["blockHash"] is None:
+                receipt = dict()
 
         return receipt
 
@@ -176,10 +182,12 @@ class TrezorIdentityProvider(IdentityProvider):
         txn_hash = self.w3.eth.sendRawTransaction(raw_transaction)
 
         # Wait for transaction to be mined
-        receipt = None
-        while receipt is None:
+        receipt = dict()
+        while not receipt:
             time.sleep(1)
             receipt = self.w3.eth.getTransactionReceipt(txn_hash)
+            if receipt and "blockHash" in receipt and receipt["blockHash"] is None:
+                receipt = dict()
 
         return receipt
 
@@ -288,10 +296,12 @@ class LedgerIdentityProvider(IdentityProvider):
         txn_hash = self.w3.eth.sendRawTransaction(raw_transaction)
 
         # Wait for transaction to be mined
-        receipt = None
-        while receipt is None:
+        receipt = dict()
+        while not receipt:
             time.sleep(1)
             receipt = self.w3.eth.getTransactionReceipt(txn_hash)
+            if receipt and "blockHash" in receipt and receipt["blockHash"] is None:
+                receipt = dict()
 
         return receipt
 
