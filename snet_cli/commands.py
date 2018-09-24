@@ -510,8 +510,8 @@ class ClientCommand(BlockchainCommand):
         spec_hash = ClientCommand(
             config=self.config,
             args=self.args,
-            out_f=None,
-            err_f=None,
+            out_f=self.err_f,
+            err_f=self.err_f,
             w3=self.w3,
             ident=self.ident).get_spec()
 
