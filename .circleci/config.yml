@@ -1,0 +1,18 @@
+version: 2
+jobs:
+  build:
+    docker:
+    - image: circleci/python:3.6.6-stretch-node-browsers
+    working_directory: ~/singnet/snet-cli
+    environment:
+    steps:
+    - run:
+        name: Install tools
+        command: |
+          sudo apt-get -y install libudev-dev libusb-1.0-0-dev
+    - checkout
+    - run:
+        name: Build snet-cli
+        command: |
+          ./scripts/blockchain install
+          sudo pip3 install -e .
