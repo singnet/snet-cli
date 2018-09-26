@@ -9,22 +9,20 @@ import tempfile
 from pathlib import Path
 from shutil import rmtree
 from textwrap import indent
-from urllib.parse import urljoin, urlparse
+from urllib.parse import urljoin
 
 import grpc
 import ipfsapi
-import pkg_resources
 import requests
 import yaml
 from google.protobuf import json_format
-from grpc_tools.protoc import main as protoc
 from rfc3986 import urlparse, uri_reference
 
 from snet_cli.contract import Contract
 from snet_cli.identity import get_kws_for_identity_type, get_identity_types
 from snet_cli.session import from_config, get_session_keys
 from snet_cli.utils import DefaultAttributeObject, get_web3, get_identity, serializable, walk_imports, \
-    read_temp_tar, type_converter, get_contract_def, get_agent_version
+    read_temp_tar, type_converter, get_contract_def, get_agent_version, compile_proto
 
 
 class Command(object):
@@ -94,6 +92,12 @@ class Command(object):
         return (self.session.identity.getboolean(name) or getattr(self.args, name, None) or
                 (self.session.getboolean("default_{}".format(name)) or
                  self.session.getboolean("current_{}".format(name))))
+
+    def _get_ipfs_client(self):
+        ipfs_endpoint = urlparse(self.config["ipfs"]["default_ipfs_endpoint"])
+        ipfs_scheme = ipfs_endpoint.scheme if ipfs_endpoint.scheme else "http"
+        ipfs_port = ipfs_endpoint.port if ipfs_endpoint.port else 5001
+        return ipfsapi.connect(urljoin(ipfs_scheme, ipfs_endpoint.hostname), ipfs_port)
 
     def _set_key(self, key, value, config=None, out_f=None, err_f=None):
         SessionCommand(config or self.config, DefaultAttributeObject(key=key, value=value), out_f or self.out_f,
@@ -445,10 +449,7 @@ class ClientCommand(BlockchainCommand):
         self._ensure(metadata_uri is not None and metadata_uri != "", "agent does not have valid metadataURI")
 
         try:
-            ipfs_endpoint = urlparse(self.config["ipfs"]["default_ipfs_endpoint"])
-            ipfs_scheme = ipfs_endpoint.scheme if ipfs_endpoint.scheme else "http"
-            ipfs_port = ipfs_endpoint.port if ipfs_endpoint.port else 5001
-            ipfs_client = ipfsapi.connect(urljoin(ipfs_scheme, ipfs_endpoint.hostname), ipfs_port)
+            ipfs_client = self._get_ipfs_client()
             spec_hash = json.loads(ipfs_client.cat(metadata_uri.split("/")[-1]))["modelURI"].split("/")[-1]
 
             spec_dir = self._getstring("dest_dir") or Path("~").expanduser().joinpath(".snet").joinpath("service_spec").joinpath(spec_hash)
@@ -519,18 +520,7 @@ class ClientCommand(BlockchainCommand):
 
         try:
             codegen_dir = Path("~").expanduser().joinpath(".snet").joinpath("py-codegen").joinpath(spec_hash)
-            if not os.path.exists(codegen_dir):
-                os.makedirs(codegen_dir)
-                proto_include = pkg_resources.resource_filename('grpc_tools', '_proto')
-                protoc_args = [
-                    "protoc",
-                    "-I{}".format(spec_dir),
-                    '-I{}'.format(proto_include),
-                    "--python_out={}".format(codegen_dir),
-                    "--grpc_python_out={}".format(codegen_dir)
-                ]
-                protoc_args.extend([str(p) for p in spec_dir.glob("**/*.proto")])
-                protoc(protoc_args)
+            compile_proto(spec_dir, codegen_dir)
 
             sys.path.append(str(codegen_dir))
             mods = []
@@ -838,40 +828,18 @@ class ServiceCommand(BlockchainCommand):
             import_paths = walk_imports(entry_path)
 
             if import_paths:
-                codegen_tmp_dir = Path("~").expanduser().joinpath(".snet").joinpath("py-codegen").joinpath(
-                    "tmp_publish")
-                if not os.path.exists(codegen_tmp_dir):
-                    os.makedirs(codegen_tmp_dir)
-                proto_include = pkg_resources.resource_filename("grpc_tools", "_proto")
-
+                codegen_tmp_dir = tempfile.mkdtemp()
                 # Checking if protobuf files are valid by trying to compile them
                 for idx, proto_path in enumerate(import_paths):
-                    protoc_args = [
-                        "protoc",
-                        "-I{}".format(entry_path),
-                        '-I{}'.format(proto_include),
-                        "--python_out={}".format(codegen_tmp_dir),
-                        "--grpc_python_out={}".format(codegen_tmp_dir),
-                        str(proto_path)
-                    ]
-                    # stdout suppression
-                    sys.stdout = open(os.devnull, 'w')
-                    if not protoc(protoc_args):
+                    if compile_proto(entry_path, codegen_tmp_dir, proto_path):
                         valid_import_paths.add(proto_path)
                     else:
-                        sys.stdout = sys.__stdout__
                         self._printerr("{} is not a valid protobuf file.\n".format(proto_path.name))
-
-                # stdout back to console
-                sys.stdout = sys.__stdout__
                 if os.path.exists(codegen_tmp_dir):
                     rmtree(codegen_tmp_dir)
 
         # Create service_spec/ tar and upload it to IPFS
-        ipfs_endpoint = urlparse(self.config["ipfs"]["default_ipfs_endpoint"])
-        ipfs_scheme = ipfs_endpoint.scheme if ipfs_endpoint.scheme else "http"
-        ipfs_port = ipfs_endpoint.port if ipfs_endpoint.port else 5001
-        ipfs_client = ipfsapi.connect(urljoin(ipfs_scheme, ipfs_endpoint.hostname), ipfs_port)
+        ipfs_client = self._get_ipfs_client()
         spec_ipfs_uri = None
 
         if valid_import_paths:
@@ -879,6 +847,11 @@ class ServiceCommand(BlockchainCommand):
             spec_ipfs_hash = ipfs_client.add(read_temp_tar(tmp_f).name)["Hash"]
             spec_ipfs_path = "/ipfs/{}".format(spec_ipfs_hash)
             spec_ipfs_uri = uri_reference(spec_ipfs_path).copy_with(scheme='ipfs').unsplit()
+            self._printerr("\n{} valid protobuf file(s) found.".format(len(valid_import_paths)))
+        else:
+            self._printerr("\nNo valid protobuf file found.")
+            if input("Proceed? (y/n): ") != "y":
+                self._error("Cancelled")
 
         # Upload metadata JSON to IPFS with modelURI
         metadata_json = dict(service_json['metadata'])
@@ -905,7 +878,7 @@ class ServiceCommand(BlockchainCommand):
         except Exception as e:
             self._printerr("\nUnreachable endpoint (should start with http(s)://): {}".format(service_json["endpoint"]))
             if input("Proceed? (y/n): ") != "y":
-                is_ok = False
+                self._error("Cancelled")
 
         return is_ok, service_json, metadata_ipfs_uri
 
@@ -1307,10 +1280,7 @@ class ServiceCommand(BlockchainCommand):
                 err_f=None,
                 w3=self.w3,
                 ident=self.ident).call()
-            ipfs_endpoint = urlparse(self.config["ipfs"]["default_ipfs_endpoint"])
-            ipfs_scheme = ipfs_endpoint.scheme if ipfs_endpoint.scheme else "http"
-            ipfs_port = ipfs_endpoint.port if ipfs_endpoint.port else 5001
-            ipfs_client = ipfsapi.connect(urljoin(ipfs_scheme, ipfs_endpoint.hostname), ipfs_port)
+            ipfs_client = self._get_ipfs_client()
             ipfs_client.get(urlparse(current_metadata_uri).path)
             ipfs_file_path = Path.cwd().joinpath(urlparse(current_metadata_uri).path.split("/")[-1])
             with open(ipfs_file_path) as f:
