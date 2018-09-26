@@ -50,19 +50,7 @@ class KeyIdentityProvider(IdentityProvider):
 
     def transact(self, transaction, out_f):
         raw_transaction = self.w3.eth.account.signTransaction(transaction, self.private_key).rawTransaction
-
-        print("Submitting transaction...\n", file=out_f)
-        txn_hash = self.w3.eth.sendRawTransaction(raw_transaction)
-
-        # Wait for transaction to be mined
-        receipt = dict()
-        while not receipt:
-            time.sleep(1)
-            receipt = self.w3.eth.getTransactionReceipt(txn_hash)
-            if receipt and "blockHash" in receipt and receipt["blockHash"] is None:
-                receipt = dict()
-
-        return receipt
+        return send_and_wait_for_transaction(raw_transaction, self.w3, out_f)
 
     def sign_message(self, message, out_f, agent_version=2):
         if agent_version == 1:
@@ -81,18 +69,7 @@ class RpcIdentityProvider(IdentityProvider):
         return self.address
 
     def transact(self, transaction, out_f):
-        print("Submitting transaction...\n", file=out_f)
-        txn_hash = self.w3.eth.sendTransaction(transaction)
-
-        # Wait for transaction to be mined
-        receipt = dict()
-        while not receipt:
-            time.sleep(1)
-            receipt = self.w3.eth.getTransactionReceipt(txn_hash)
-            if receipt and "blockHash" in receipt and receipt["blockHash"] is None:
-                receipt = dict()
-
-        return receipt
+        return send_and_wait_for_transaction(transaction, self.w3, out_f)
 
     def sign_message(self, message, out_f, agent_version=2):
         if agent_version == 1:
@@ -124,19 +101,7 @@ class MnemonicIdentityProvider(IdentityProvider):
 
     def transact(self, transaction, out_f):
         raw_transaction = self.w3.eth.account.signTransaction(transaction, self.private_key).rawTransaction
-
-        print("Submitting transaction...\n", file=out_f)
-        txn_hash = self.w3.eth.sendRawTransaction(raw_transaction)
-
-        # Wait for transaction to be mined
-        receipt = dict()
-        while not receipt:
-            time.sleep(1)
-            receipt = self.w3.eth.getTransactionReceipt(txn_hash)
-            if receipt and "blockHash" in receipt and receipt["blockHash"] is None:
-                receipt = dict()
-
-        return receipt
+        return send_and_wait_for_transaction(raw_transaction, self.w3, out_f)
 
     def sign_message(self, message, out_f, agent_version=2):
         if agent_version == 1:
@@ -177,19 +142,7 @@ class TrezorIdentityProvider(IdentityProvider):
                                              vrs=(signature[0],
                                                   int(signature[1].hex(), 16),
                                                   int(signature[2].hex(), 16)))
-
-        print("Submitting transaction...\n", file=out_f)
-        txn_hash = self.w3.eth.sendRawTransaction(raw_transaction)
-
-        # Wait for transaction to be mined
-        receipt = dict()
-        while not receipt:
-            time.sleep(1)
-            receipt = self.w3.eth.getTransactionReceipt(txn_hash)
-            if receipt and "blockHash" in receipt and receipt["blockHash"] is None:
-                receipt = dict()
-
-        return receipt
+        return send_and_wait_for_transaction(raw_transaction, self.w3, out_f)
 
     def sign_message(self, message, out_f, agent_version=2):
         n = self.client._convert_prime([44 + bip32utils.BIP32_HARDEN,
@@ -203,6 +156,20 @@ class TrezorIdentityProvider(IdentityProvider):
         else:
             message = message.lower().encode("utf-8")
         return self.client.call(proto.EthereumSignMessage(address_n=n, message=message)).signature
+
+
+def send_and_wait_for_transaction(raw_transaction, w3, out_f):
+    print("Submitting transaction...\n", file=out_f)
+    txn_hash = w3.eth.sendRawTransaction(raw_transaction)
+
+    # Wait for transaction to be mined
+    receipt = dict()
+    while not receipt:
+        time.sleep(1)
+        receipt = w3.eth.getTransactionReceipt(txn_hash)
+        if receipt and "blockHash" in receipt and receipt["blockHash"] is None:
+            receipt = dict()
+    return receipt
 
 
 def parse_bip32_path(path):
@@ -291,19 +258,7 @@ class LedgerIdentityProvider(IdentityProvider):
                                              vrs=(result[0],
                                                   int.from_bytes(result[1:33], byteorder="big"),
                                                   int.from_bytes(result[33:65], byteorder="big")))
-
-        print("Submitting transaction...\n", file=out_f)
-        txn_hash = self.w3.eth.sendRawTransaction(raw_transaction)
-
-        # Wait for transaction to be mined
-        receipt = dict()
-        while not receipt:
-            time.sleep(1)
-            receipt = self.w3.eth.getTransactionReceipt(txn_hash)
-            if receipt and "blockHash" in receipt and receipt["blockHash"] is None:
-                receipt = dict()
-
-        return receipt
+        return send_and_wait_for_transaction(raw_transaction, self.w3, out_f)
 
     def sign_message(self, message, out_f, agent_version=2):
         if agent_version == 1:
