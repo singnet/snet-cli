@@ -4,6 +4,8 @@ jobs:
     docker:
     - image: circleci/python:3.6.6-node
     working_directory: ~/singnet/snet-cli
+    environment:
+      TRIGGER_BUILD_BRANCH: master
     steps:
     - run:
         name: Install tools
@@ -15,3 +17,12 @@ jobs:
         command: |
           ./scripts/blockchain install
           sudo pip3 install -e .
+    - run:
+        name: Trigger platform-pipeline build
+        command: |
+          if [ "$CIRCLE_BRANCH" == "$TRIGGER_BUILD_BRANCH" ]
+          then
+            curl -u ${CIRCLECI_PLATFORM_PIPELINE_TOKEN}: \
+              -d build_parameters[CIRCLE_JOB]=build \
+              https://circleci.com/api/v1.1/project/github/singnet/platform-pipeline/tree/${TRIGGER_BUILD_BRANCH}
+          fi
