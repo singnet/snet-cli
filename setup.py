@@ -1,8 +1,7 @@
 from setuptools import setup, find_packages
-import io
 import re
 
-with io.open('snet_cli/__init__.py', 'rt', encoding='utf8') as f:
+with open('snet_cli/__init__.py', 'rt', encoding='utf8') as f:
     version = re.search(r'__version__ = "(.*?)"', f.read()).group(1)
 
 setup(
