@@ -106,6 +106,11 @@ class Command(object):
         pass
 
 
+class VersionCommand(Command):
+    def show(self):
+        self._pprint({"version": pkg_resources.get_distribution("snet-cli").version})
+
+
 class BlockchainCommand(Command):
     def __init__(self, config, args, out_f=sys.stdout, err_f=sys.stderr, w3=None, ident=None):
         super(BlockchainCommand, self).__init__(config, args, out_f, err_f)

@@ -1,8 +1,13 @@
 from setuptools import setup, find_packages
+import io
+import re
+
+with io.open('snet_cli/__init__.py', 'rt', encoding='utf8') as f:
+    version = re.search(r'__version__ = "(.*?)"', f.read()).group(1)
 
 setup(
     name='snet-cli',
-    version='0.1.5',
+    version=version,
     packages=find_packages(),
     url='https://github.com/singnet/snet-cli',
     license='MIT',
