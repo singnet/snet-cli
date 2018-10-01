@@ -4,6 +4,8 @@ import os
 from pathlib import Path
 
 import web3
+import pkg_resources
+from grpc_tools.protoc import main as protoc
 
 from snet_cli.identity import RpcIdentityProvider, MnemonicIdentityProvider, TrezorIdentityProvider, \
     LedgerIdentityProvider, KeyIdentityProvider
@@ -151,3 +153,29 @@ def get_agent_version(w3, agent_address):
         return 1
     else:
         return 2
+
+
+def compile_proto(entry_path, codegen_dir, proto_file=None):
+    try:
+        if not os.path.exists(codegen_dir):
+            os.makedirs(codegen_dir)
+        proto_include = pkg_resources.resource_filename('grpc_tools', '_proto')
+        protoc_args = [
+            "protoc",
+            "-I{}".format(entry_path),
+            '-I{}'.format(proto_include),
+            "--python_out={}".format(codegen_dir),
+            "--grpc_python_out={}".format(codegen_dir)
+        ]
+        if proto_file:
+            protoc_args.append(str(proto_file))
+        else:
+            protoc_args.extend([str(p) for p in entry_path.glob("**/*.proto")])
+
+        if not protoc(protoc_args):
+            return True
+        else:
+            return False
+
+    except Exception as e:
+        return False

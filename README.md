@@ -1,4 +1,6 @@
 # snet-cli
+
+[![CircleCI](https://circleci.com/gh/singnet/snet-cli.svg?style=svg)](https://circleci.com/gh/singnet/snet-cli)
   
 SingularityNET CLI
   
