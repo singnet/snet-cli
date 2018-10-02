@@ -872,17 +872,38 @@ class ServiceCommand(BlockchainCommand):
         metadata_ipfs_path = "/ipfs/{}".format(metadata_ipfs_hash)
         metadata_ipfs_uri = uri_reference(metadata_ipfs_path).copy_with(scheme='ipfs').unsplit()
 
+        # Checking organization
+        organization = service_json["organization"]
+        if organization == "" or type(organization) != str:
+            self._printerr("\nIn order to deploy your service, an organization is required!"
+                           "\nHINT: Add a registered organization into your service json.\n")
+            self._error("Invalid organization!")
+        else:
+            org_cmd = OrganizationCommand(self.config, self.args)
+            org_cmd.args.name = organization
+            (found, _, org_owner, org_members, _, _) = org_cmd._getorganizationbyname()
+            if not found:
+                self._error("Organization '{}' not registered!".format(organization))
+            else:
+                members = [org_owner.lower()]
+                members.extend([m.lower() for m in org_members])
+                service_owner = self.ident.get_address()
+                if service_owner.lower() not in members:
+                    self._error("You are not a member of organization '{}'!".format(organization))
+
         # Checking price
-        if not type(service_json["price"]) == int:
-            self._printerr("Invalid price format: {} [{}]".format(service_json["price"], type(service_json["price"])))
+        price = service_json["price"]
+        if type(price) != int:
+            self._printerr("Invalid price format: {} [{}]".format(price, type(price)))
             is_ok = False
 
         # Checking endpoint
+        endpoint = service_json["endpoint"]
         try:
-            request = requests.get(str(service_json["endpoint"]), timeout=5)
-            self._printerr("\n{} GET status code: {}".format(str(service_json["endpoint"]), request.status_code))
+            request = requests.get(str(endpoint), timeout=5)
+            self._printerr("\n{} GET status code: {}".format(str(endpoint), request.status_code))
         except Exception as e:
-            self._printerr("\nUnreachable endpoint (should start with http(s)://): {}".format(service_json["endpoint"]))
+            self._printerr("\nUnreachable endpoint (should start with http(s)://): {}".format(endpoint))
             if input("Proceed? (y/n): ") != "y":
                 self._error("Cancelled")
 
@@ -919,7 +940,9 @@ class ServiceCommand(BlockchainCommand):
         if self.args.organization:
             init_args["organization"] = self.args.organization
         elif not accept_all_defaults:
-            init_args["organization"] = input('Choose an organization to register your service under: (default: "{}")\n'.format(init_args["organization"])) or init_args["organization"]
+            init_args["organization"] = input('Choose an organization to register your service under: (required)\n') or init_args["organization"]
+            if init_args["organization"] == "":
+                self._error("Invalid Organization!")
 
         if self.args.path:
             init_args["path"] = self.args.path
@@ -939,7 +962,7 @@ class ServiceCommand(BlockchainCommand):
         if self.args.tags:
             init_args["tags"] = self.args.tags
         elif not accept_all_defaults:
-            init_args["tags"] = shlex.split(input("Input a list of tags for your service: (default: {})\n".format(init_args["tags"])) or init_args["tags"])
+            init_args["tags"] = shlex.split(input("Input a list of tags for your service, space separated: (default: {})\n".format(init_args["tags"])) or init_args["tags"])
 
         if self.args.description:
             init_args["metadata"]["description"] = self.args.description
@@ -1098,9 +1121,9 @@ class ServiceCommand(BlockchainCommand):
                 # Each tag has a max length of 32 chars
                 for tag in service_json["tags"]:
                     if len(tag) <= 32:
-                        new_tags_set.append(tag)
+                        new_tags_set.append(type_converter("bytes32")(tag))
                     else:
-                        self._printerr("Tag {} is too long! Removing...\n")
+                        self._printerr("\nTag '{}' is too long (max = 32 chars)!\n".format(tag))
                 new_tags_set = set(new_tags_set)
 
                 if current_tags_set != new_tags_set:
@@ -1175,7 +1198,6 @@ class ServiceCommand(BlockchainCommand):
         self._printerr("Adding contract address to session...\n")
         self._set_key("current_agent_at", agent_address, out_f=self.err_f)
         self._printout("Service published!")
-        return
 
     def update(self):
         network_id = self._get_network()
@@ -1340,9 +1362,9 @@ class ServiceCommand(BlockchainCommand):
             new_tags_set = []
             for tag in new_tags:
                 if len(tag) <= 32:
-                    new_tags_set.append(tag)
+                    new_tags_set.append(type_converter("bytes32")(tag))
                 else:
-                    self._printerr("Tag {} is too long! Removing...\n")
+                    self._printerr("\nTag '{}' is too long (max = 32 chars)!\n".format(tag))
             new_tags_set = set(new_tags_set)
 
             if current_tags_set != new_tags_set:
@@ -1390,9 +1412,6 @@ class ServiceCommand(BlockchainCommand):
                     except Exception as e:
                         self._printerr("\nTransaction error!\nHINT: Check your session and service json file.\n")
                         self._error(e)
-
-        else:
-            self._error("Tags are too long! (max=32 chars)")
 
         # Updating session
         self._printerr("Updating current contract address on session...\n")
