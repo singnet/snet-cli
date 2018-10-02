@@ -1094,7 +1094,14 @@ class ServiceCommand(BlockchainCommand):
                         self._error(e)
 
                 current_tags_set = set(current_tags)
-                new_tags_set = set([type_converter("bytes32")(tag) for tag in service_json["tags"]])
+                new_tags_set = []
+                # Each tag has a max length of 32 chars
+                for tag in service_json["tags"]:
+                    if len(tag) <= 32:
+                        new_tags_set.append(tag)
+                    else:
+                        self._printerr("Tag {} is too long! Removing...\n")
+                new_tags_set = set(new_tags_set)
 
                 if current_tags_set != new_tags_set:
                     remove_tags = current_tags_set - new_tags_set
@@ -1327,10 +1334,16 @@ class ServiceCommand(BlockchainCommand):
         if new_tags is None and "tags" in service_json:
             new_tags = service_json["tags"]
 
-        # Tags has a max length of 32 chars
-        if len(new_tags) <= 32:
+        if new_tags:
             current_tags_set = set(current_tags)
-            new_tags_set = set([type_converter("bytes32")(tag) for tag in new_tags])
+            # Each tag has a max length of 32 chars
+            new_tags_set = []
+            for tag in new_tags:
+                if len(tag) <= 32:
+                    new_tags_set.append(tag)
+                else:
+                    self._printerr("Tag {} is too long! Removing...\n")
+            new_tags_set = set(new_tags_set)
 
             if current_tags_set != new_tags_set:
                 remove_tags = current_tags_set - new_tags_set
