@@ -434,16 +434,20 @@ class ClientCommand(BlockchainCommand):
 
         agent_contract_def = get_contract_def("Agent")
 
-        metadata_uri = ContractCommand(
-            config=self.config,
-            args=self.get_contract_argser(
-                contract_address=agent_address,
-                contract_function="metadataURI",
-                contract_def=agent_contract_def)(),
-            out_f=None,
-            err_f=None,
-            w3=self.w3,
-            ident=self.ident).call()
+        try:
+            metadata_uri = ContractCommand(
+                config=self.config,
+                args=self.get_contract_argser(
+                    contract_address=agent_address,
+                    contract_function="metadataURI",
+                    contract_def=agent_contract_def)(),
+                out_f=None,
+                err_f=None,
+                w3=self.w3,
+                ident=self.ident).call()
+        except Exception as e:
+            self._printerr("\nTransaction error!\nHINT: Check your session and service json file.\n")
+            self._error(e)
 
         self._printerr("Retrieving service spec of {}".format(agent_address))
         self._ensure(metadata_uri is not None and metadata_uri != "", "agent does not have valid metadataURI")
@@ -461,7 +465,8 @@ class ClientCommand(BlockchainCommand):
             self._pprint({"destination": str(spec_dir)})
             return spec_hash
         except Exception as e:
-            self._error("failed to retrieve service spec")
+            self._printerr("Failed to retrieve service spec")
+            self._error(e)
 
     def call(self):
         agent_address = self._getstring("agent_at")
@@ -551,7 +556,7 @@ class ClientCommand(BlockchainCommand):
                                 response_name = m_desc.output_type.name
                                 need_break = True
 
-            self._ensure(None not in [service_name, request_name, response_name], "failed to load service spec")
+            self._ensure(None not in [service_name, request_name, response_name], "Failed to load service spec")
 
             stub_class = None
             request_class = None
@@ -564,9 +569,10 @@ class ClientCommand(BlockchainCommand):
                 if response_class is None:
                     response_class = getattr(mod, response_name, None)
 
-            self._ensure(None not in [stub_class, request_class, response_class], "failed to load service spec")
+            self._ensure(None not in [stub_class, request_class, response_class], "Failed to load service spec")
         except Exception as e:
-            self._error("failed to load service spec")
+            self._printerr("Failed to load service spec")
+            self._error(e)
 
         if job_address is None:
             cmd = AgentCommand(
@@ -1401,8 +1407,8 @@ class ServiceCommand(BlockchainCommand):
                         contract_function="deleteServiceRegistration",
                         contract_def=registry_contract_def)(type_converter("bytes32")(self.args.organization),
                                                             type_converter("bytes32")(self.args.name)),
-                    out_f=None,
-                    err_f=None,
+                    out_f=self.out_f,
+                    err_f=self.err_f,
                     w3=self.w3,
                     ident=self.ident)
                 try:
@@ -1511,7 +1517,7 @@ class OrganizationCommand(BlockchainCommand):
                     contract_function="createOrganization",
                     contract_def=registry_contract_def)(type_converter("bytes32")(self.args.name),
                                                         [type_converter("address")(member) for member in members]),
-                out_f=self.out_f,
+                out_f=self.err_f,
                 err_f=self.err_f,
                 w3=self.w3,
                 ident=self.ident)
@@ -1542,7 +1548,7 @@ class OrganizationCommand(BlockchainCommand):
                     contract_address=registry_address,
                     contract_function="deleteOrganization",
                     contract_def=registry_contract_def)(type_converter("bytes32")(self.args.name)),
-                out_f=self.out_f,
+                out_f=self.err_f,
                 err_f=self.err_f,
                 w3=self.w3,
                 ident=self.ident)
@@ -1614,8 +1620,8 @@ class OrganizationCommand(BlockchainCommand):
                     contract_function="changeOrganizationOwner",
                     contract_def=registry_contract_def)(type_converter("bytes32")(self.args.name),
                                                         type_converter("address")(self.args.owner)),
-                out_f=None,
-                err_f=None,
+                out_f=self.err_f,
+                err_f=self.err_f,
                 w3=self.w3,
                 ident=self.ident)
             self._printerr("Creating transaction to change organization {}'s owner...\n".format(self.args.name))
@@ -1661,7 +1667,7 @@ class OrganizationCommand(BlockchainCommand):
                         contract_function="addOrganizationMembers",
                         contract_def=registry_contract_def)(type_converter("bytes32")(self.args.name),
                                                             [type_converter("address")(member) for member in add_members]),
-                    out_f=self.out_f,
+                    out_f=self.err_f,
                     err_f=self.err_f,
                     w3=self.w3,
                     ident=self.ident)
@@ -1710,7 +1716,7 @@ class OrganizationCommand(BlockchainCommand):
                         contract_function="removeOrganizationMembers",
                         contract_def=registry_contract_def)(type_converter("bytes32")(self.args.name),
                                                             [type_converter("address")(member) for member in rem_members]),
-                    out_f=self.out_f,
+                    out_f=self.err_f,
                     err_f=self.err_f,
                     w3=self.w3,
                     ident=self.ident)
