@@ -3,7 +3,7 @@ import hashlib
 import struct
 import time
 
-import bip32utils
+from pycoin.key.BIP32Node import BIP32Node
 import ecdsa
 import rlp
 from eth_account.internal.transactions import serializable_unsigned_transaction_from_dict, encode_transaction, \
@@ -81,13 +81,13 @@ class RpcIdentityProvider(IdentityProvider):
 class MnemonicIdentityProvider(IdentityProvider):
     def __init__(self, w3, mnemonic, index):
         self.w3 = w3
-        master_key = bip32utils.BIP32Key.fromEntropy(Mnemonic("english").to_seed(mnemonic))
-        purpose_subtree = master_key.ChildKey(44 + bip32utils.BIP32_HARDEN)
-        coin_type_subtree = purpose_subtree.ChildKey(60 + bip32utils.BIP32_HARDEN)
-        account_subtree = coin_type_subtree.ChildKey(bip32utils.BIP32_HARDEN)
-        change_subtree = account_subtree.ChildKey(0)
-        account = change_subtree.ChildKey(index)
-        self.private_key = account.PrivateKey()
+        master_key = BIP32Node.from_master_secret(Mnemonic("english").to_seed(mnemonic))
+        purpose_subtree = master_key.subkey(i=44, is_hardened=True)
+        coin_type_subtree = purpose_subtree.subkey(i=60, is_hardened=True)
+        account_subtree = coin_type_subtree.subkey(i=0, is_hardened=True)
+        change_subtree = account_subtree.subkey(i=0)
+        account = change_subtree.subkey(i=index)
+        self.private_key = account.secret_exponent().to_bytes(32, 'big')
 
         public_key = ecdsa.SigningKey.from_string(string=self.private_key,
                                                   curve=ecdsa.SECP256k1,
@@ -117,9 +117,9 @@ class TrezorIdentityProvider(IdentityProvider):
         self.client = TrezorClient(HidTransport.enumerate()[0])
         self.index = index
         self.address = self.w3.toChecksumAddress(
-            "0x" + bytes(self.client.ethereum_get_address([44 + bip32utils.BIP32_HARDEN,
-                                                           60 + bip32utils.BIP32_HARDEN,
-                                                           bip32utils.BIP32_HARDEN, 0,
+            "0x" + bytes(self.client.ethereum_get_address([44 + 0x80000000,
+                                                           60 + 0x80000000,
+                                                           0x80000000, 0,
                                                            index])).hex())
 
     def get_address(self):
@@ -127,8 +127,8 @@ class TrezorIdentityProvider(IdentityProvider):
 
     def transact(self, transaction, out_f):
         print("Sending transaction to trezor for signature...\n", file=out_f)
-        signature = self.client.ethereum_sign_tx(n=[44 + bip32utils.BIP32_HARDEN, 60 + bip32utils.BIP32_HARDEN,
-                                                    bip32utils.BIP32_HARDEN, 0, self.index],
+        signature = self.client.ethereum_sign_tx(n=[44 + 0x80000000, 60 + 0x80000000,
+                                                    0x80000000, 0, self.index],
                                                  nonce=transaction["nonce"],
                                                  gas_price=transaction["gasPrice"],
                                                  gas_limit=transaction["gas"],
@@ -145,9 +145,9 @@ class TrezorIdentityProvider(IdentityProvider):
         return send_and_wait_for_transaction(raw_transaction, self.w3, out_f)
 
     def sign_message(self, message, out_f, agent_version=2):
-        n = self.client._convert_prime([44 + bip32utils.BIP32_HARDEN,
-                                        60 + bip32utils.BIP32_HARDEN,
-                                        bip32utils.BIP32_HARDEN,
+        n = self.client._convert_prime([44 + 0x80000000,
+                                        60 + 0x80000000,
+                                        0x80000000,
                                         0,
                                         self.index])
         print("Sending message to trezor for signature...\n", file=out_f)

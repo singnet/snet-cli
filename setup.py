@@ -19,7 +19,7 @@ setup(
         'eth-typing<2', # workaround until next version after eth-abi v2.0.0-beta.1 is released
         'web3==4.2.1',
         'mnemonic==0.18',
-        'bip32utils==0.3.post3',
+        'pycoin>=0.80',
         'ecdsa==0.13',
         'trezor==0.9.1',
         'rlp==0.6.0',
