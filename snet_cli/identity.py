@@ -16,6 +16,8 @@ from trezorlib.transport_hid import HidTransport
 from snet_cli._vendor.ledgerblue.comm import getDongle
 from snet_cli._vendor.ledgerblue.commException import CommException
 
+BIP32_HARDEN = 0x80000000
+
 
 class IdentityProvider(abc.ABC):
     @abc.abstractmethod
@@ -117,9 +119,9 @@ class TrezorIdentityProvider(IdentityProvider):
         self.client = TrezorClient(HidTransport.enumerate()[0])
         self.index = index
         self.address = self.w3.toChecksumAddress(
-            "0x" + bytes(self.client.ethereum_get_address([44 + 0x80000000,
-                                                           60 + 0x80000000,
-                                                           0x80000000, 0,
+            "0x" + bytes(self.client.ethereum_get_address([44 + BIP32_HARDEN,
+                                                           60 + BIP32_HARDEN,
+                                                           BIP32_HARDEN, 0,
                                                            index])).hex())
 
     def get_address(self):
@@ -127,8 +129,8 @@ class TrezorIdentityProvider(IdentityProvider):
 
     def transact(self, transaction, out_f):
         print("Sending transaction to trezor for signature...\n", file=out_f)
-        signature = self.client.ethereum_sign_tx(n=[44 + 0x80000000, 60 + 0x80000000,
-                                                    0x80000000, 0, self.index],
+        signature = self.client.ethereum_sign_tx(n=[44 + BIP32_HARDEN, 60 + BIP32_HARDEN,
+                                                    BIP32_HARDEN, 0, self.index],
                                                  nonce=transaction["nonce"],
                                                  gas_price=transaction["gasPrice"],
                                                  gas_limit=transaction["gas"],
@@ -145,9 +147,9 @@ class TrezorIdentityProvider(IdentityProvider):
         return send_and_wait_for_transaction(raw_transaction, self.w3, out_f)
 
     def sign_message(self, message, out_f, agent_version=2):
-        n = self.client._convert_prime([44 + 0x80000000,
-                                        60 + 0x80000000,
-                                        0x80000000,
+        n = self.client._convert_prime([44 + BIP32_HARDEN,
+                                        60 + BIP32_HARDEN,
+                                        BIP32_HARDEN,
                                         0,
                                         self.index])
         print("Sending message to trezor for signature...\n", file=out_f)
@@ -182,7 +184,7 @@ def parse_bip32_path(path):
         if len(element) == 1:
             result = result + struct.pack(">I", int(element[0]))
         else:
-            result = result + struct.pack(">I", 0x80000000 | int(element[0]))
+            result = result + struct.pack(">I", BIP32_HARDEN | int(element[0]))
     return result
 
 
