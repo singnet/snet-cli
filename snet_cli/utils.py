@@ -155,6 +155,10 @@ def get_agent_version(w3, agent_address):
         return 2
 
 
+def get_cli_version():
+    return pkg_resources.get_distribution("snet-cli").version
+
+
 def compile_proto(entry_path, codegen_dir, proto_file=None):
     try:
         if not os.path.exists(codegen_dir):

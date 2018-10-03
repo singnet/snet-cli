@@ -5,7 +5,7 @@ import sys
 from pathlib import Path
 
 from snet_cli.commands import IdentityCommand, SessionCommand, NetworkCommand, ContractCommand, AgentFactoryCommand, \
-    AgentCommand, ServiceCommand, ClientCommand, OrganizationCommand
+    AgentCommand, ServiceCommand, ClientCommand, OrganizationCommand, VersionCommand
 from snet_cli.identity import get_identity_types
 from snet_cli.session import get_session_keys
 from snet_cli.utils import type_converter, get_contract_def
@@ -46,6 +46,9 @@ def add_root_options(parser, config):
     subparsers = parser.add_subparsers(title="snet commands", metavar="COMMAND")
     subparsers.required = True
 
+    version_p = subparsers.add_parser("version", help="Show version and exit")
+    add_version_options(version_p)
+
     identity_p = subparsers.add_parser("identity", help="Manage identities")
     add_identity_options(identity_p, config)
 
@@ -79,6 +82,11 @@ def add_root_options(parser, config):
 
     organization_p = subparsers.add_parser("organization", help="Interact with SingularityNET Organizations")
     add_organization_options(organization_p)
+
+
+def add_version_options(parser):
+    parser.set_defaults(cmd=VersionCommand)
+    parser.set_defaults(fn="show")
 
 
 def add_identity_options(parser, config):
