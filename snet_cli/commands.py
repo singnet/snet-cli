@@ -22,7 +22,7 @@ from snet_cli.contract import Contract
 from snet_cli.identity import get_kws_for_identity_type, get_identity_types
 from snet_cli.session import from_config, get_session_keys
 from snet_cli.utils import DefaultAttributeObject, get_web3, get_identity, serializable, walk_imports, \
-    read_temp_tar, type_converter, get_contract_def, get_agent_version, compile_proto
+    read_temp_tar, type_converter, get_contract_def, get_agent_version, get_cli_version, compile_proto
 
 
 class Command(object):
@@ -109,6 +109,11 @@ class Command(object):
 
     def _nothing(self):
         pass
+
+
+class VersionCommand(Command):
+    def show(self):
+        self._pprint({"version": get_cli_version()})
 
 
 class BlockchainCommand(Command):
