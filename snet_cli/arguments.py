@@ -277,13 +277,15 @@ def add_service_options(parser, config):
     init_p.add_argument("--tags", nargs="+", metavar=("TAGS", "TAG1, TAG2,"), help="tags to describe the service (default: [])")
     init_p.add_argument("--description",
                         help='human-readable description of the service (default: "")')
-    init_p.add_argument("-y", action="store_true", help="accept defaults for any argument that is not provided")
+    init_p.add_argument("--yes", "-y", action="store_true", help="accept defaults for any argument that is not provided")
 
     network_names = list(
         map(lambda x: x[len("network."):], filter(lambda x: x.startswith("network."), config.sections())))
 
     publish_p = subparsers.add_parser("publish", help="Publish a service to the network", default_choice="default")
     publish_p.set_defaults(fn="publish")
+    publish_p.add_argument("--yes", "-y", action="store_true",
+                           help="skip interactive confirmation of service publish")
     networks_publish_subparsers = publish_p.add_subparsers(title="networks", metavar="[NETWORK]")
 
     for network_name in network_names:
@@ -301,6 +303,8 @@ def add_service_options(parser, config):
 
     update_p = subparsers.add_parser("update", help="Update a service on the network", default_choice="default")
     update_p.set_defaults(fn="update")
+    update_p.add_argument("--yes", "-y", action="store_true",
+                          help="skip interactive confirmation of service update")
     networks_update_subparsers = update_p.add_subparsers(title="networks", metavar="[NETWORK]")
 
     for network_name in network_names:
@@ -323,6 +327,8 @@ def add_service_options(parser, config):
     networks_update_subparsers = delete_p.add_subparsers(title="networks", metavar="[NETWORK]")
     delete_p.add_argument("organization", help="Name of the Organization", metavar="ORG_NAME")
     delete_p.add_argument("name", help="Name of the Service", metavar="SERVICE_NAME")
+    delete_p.add_argument("--yes", "-y", action="store_true",
+                          help="skip interactive confirmation of service delete")
 
     for network_name in network_names:
         p = networks_update_subparsers.add_parser(network_name,
@@ -453,7 +459,7 @@ def add_transaction_arguments(parser):
     transaction_g.add_argument("--wallet-index", type=int,
                                help="wallet index of account to use for signing (defaults to session.default_wallet"
                                     " index)")
-    transaction_g.add_argument("--no-confirm", action="store_true",
+    transaction_g.add_argument("--yes", "-y", action="store_true",
                                help="skip interactive confirmation of transaction payload", default=False)
     g = transaction_g.add_mutually_exclusive_group()
     g.add_argument("--verbose", "-v", action="store_true", help="verbose transaction printing", default=False)

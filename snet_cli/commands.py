@@ -747,10 +747,10 @@ class ContractCommand(BlockchainCommand):
                                          *positional_inputs,
                                          **named_inputs)
 
-        if not self.args.no_confirm or self.args.verbose:
+        if not self.args.yes or self.args.verbose:
             self._pprint({"transaction": txn})
 
-        proceed = self.args.no_confirm or input("Proceed? (y/n): ") == "y"
+        proceed = self.args.yes or input("Proceed? (y/n): ") == "y"
 
         if proceed:
             receipt = self.ident.transact(txn, self.err_f)
@@ -861,7 +861,8 @@ class ServiceCommand(BlockchainCommand):
             self._printerr("\n{} valid protobuf file(s) found.".format(len(valid_import_paths)))
         else:
             self._printerr("\nNo valid protobuf file found.")
-            if input("Proceed? (y/n): ") != "y":
+            proceed = self.args.yes or input("Proceed? (y/n): ") == "y"
+            if not proceed:
                 self._error("Cancelled")
 
         # Upload metadata JSON to IPFS with modelURI
@@ -888,13 +889,19 @@ class ServiceCommand(BlockchainCommand):
             org_cmd.args.name = organization
             (found, _, org_owner, org_members, _, _) = org_cmd._getorganizationbyname()
             if not found:
-                self._error("Organization '{}' not registered!".format(organization))
+                self._printerr("Organization '{}' not registered!".format(organization))
+                proceed = self.args.yes or input("Proceed? (y/n): ") == "y"
+                if not proceed:
+                    self._error("Cancelled")
             else:
                 members = [org_owner.lower()]
                 members.extend([m.lower() for m in org_members])
                 service_owner = self.ident.get_address()
                 if service_owner.lower() not in members:
-                    self._error("You are not a member of organization '{}'!".format(organization))
+                    self._printerr("You are not a member of organization '{}'!".format(organization))
+                    proceed = self.args.yes or input("Proceed? (y/n): ") == "y"
+                    if not proceed:
+                        self._error("Cancelled")
 
         # Checking price
         price = service_json["price"]
@@ -909,13 +916,14 @@ class ServiceCommand(BlockchainCommand):
             self._printerr("\n{} GET status code: {}".format(str(endpoint), request.status_code))
         except Exception as e:
             self._printerr("\nUnreachable endpoint (should start with http(s)://): {}".format(endpoint))
-            if input("Proceed? (y/n): ") != "y":
+            proceed = self.args.yes or input("Proceed? (y/n): ") == "y"
+            if not proceed:
                 self._error("Cancelled")
 
         return is_ok, service_json, metadata_ipfs_uri
 
     def init(self):
-        accept_all_defaults = self.args.y
+        accept_all_defaults = self.args.yes
         init_args = {
             "name": os.path.basename(os.getcwd()),
             "service_spec": "service_spec/",
@@ -1012,7 +1020,8 @@ class ServiceCommand(BlockchainCommand):
                     self._printerr("{} already deployed.".format(agent_address))
                     self._printerr("\nHINT: Do you mean update?"
                                    "\nHINT: To rename, delete it first then publish it again.\n".format(agent_address))
-                    if input("Proceed? (y/n): ") != "y":
+                    proceed = self.args.yes or input("Proceed? (y/n): ") == "y"
+                    if not proceed:
                         self._error("Cancelled")
 
             except Exception as e:
