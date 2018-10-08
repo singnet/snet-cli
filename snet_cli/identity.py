@@ -60,7 +60,10 @@ class KeyIdentityProvider(IdentityProvider):
         else:
             h = defunct_hash_message(text=message.lower())
         return self.w3.eth.account.signHash(h, self.private_key).signature
-
+    
+    def sign_message_after_soliditySha3(self, message):
+        h = defunct_hash_message(message)
+        return self.w3.eth.account.signHash(h, self.private_key).signature
 
 class RpcIdentityProvider(IdentityProvider):
     def __init__(self, w3, index):
@@ -78,7 +81,8 @@ class RpcIdentityProvider(IdentityProvider):
             return self.w3.eth.sign(self.get_address(), hexstr=self.w3.sha3(hexstr=message).hex())
         else:
             return self.w3.eth.sign(self.get_address(), text=message.lower())
-
+    def sign_message_after_soliditySha3(self, message):
+        return self.w3.eth.sign(self.get_address(), message)
 
 class MnemonicIdentityProvider(IdentityProvider):
     def __init__(self, w3, mnemonic, index):

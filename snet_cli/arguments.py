@@ -9,6 +9,7 @@ from snet_cli.commands import IdentityCommand, SessionCommand, NetworkCommand, C
 from snet_cli.identity import get_identity_types
 from snet_cli.session import get_session_keys
 from snet_cli.utils import type_converter, get_contract_def
+from snet_cli.mpe_client_command import MPEClientCommand
 
 
 class CustomParser(argparse.ArgumentParser):
@@ -82,6 +83,9 @@ def add_root_options(parser, config):
 
     organization_p = subparsers.add_parser("organization", help="Interact with SingularityNET Organizations")
     add_organization_options(organization_p)
+
+    mpe_client_p = subparsers.add_parser("mpe-client", help="Interact with SingularityNET services (using MultiPartyEscrow channels)")
+    add_mpe_client_options(mpe_client_p)
 
 
 def add_version_options(parser):
@@ -467,3 +471,17 @@ class AppendPositionalAction(argparse.Action):
             setattr(namespace, "contract_positional_inputs", [])
         getattr(namespace, "contract_positional_inputs").append(values)
         delattr(namespace, self.dest)
+
+def add_mpe_client_options(parser):
+    parser.set_defaults(cmd=MPEClientCommand)
+    subparsers = parser.add_subparsers(title="Commands", metavar="COMMAND")
+    subparsers.required = True
+    sign_message_p = subparsers.add_parser("sign_message", help="Sign the message for the given channel")
+    sign_message_p.set_defaults(fn="print_sign_message")
+    
+    # int is ok here because in python3 int is unlimited
+    sign_message_p.add_argument("mpe_address",          help="address of MPE contract")
+    sign_message_p.add_argument("channel_id", type=int, help="channel_id")
+    sign_message_p.add_argument("nonce",      type=int, help="nonce of the channel")
+    sign_message_p.add_argument("amount",     type=int, help="amount")
+                                                  
