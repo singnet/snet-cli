@@ -16,8 +16,8 @@ class MPEClientCommand(BlockchainCommand):
     
     def print_sign_message(self):
         sign = self.sign_message()
-        print("signature hex: ")
-        print(sign.hex())
-        print("signature base64: ")
-        print(base64.b64encode(sign))
+        self._printout("signature hex: ")
+        self._printout(sign.hex())
+        self._printout("signature base64: ")
+        self._printout(base64.b64encode(sign))
         

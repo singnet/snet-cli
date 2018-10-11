@@ -472,6 +472,7 @@ class AppendPositionalAction(argparse.Action):
         getattr(namespace, "contract_positional_inputs").append(values)
         delattr(namespace, self.dest)
 
+
 def add_mpe_client_options(parser):
     parser.set_defaults(cmd=MPEClientCommand)
     subparsers = parser.add_subparsers(title="Commands", metavar="COMMAND")
@@ -484,4 +485,3 @@ def add_mpe_client_options(parser):
     sign_message_p.add_argument("channel_id", type=int, help="channel_id")
     sign_message_p.add_argument("nonce",      type=int, help="nonce of the channel")
     sign_message_p.add_argument("amount",     type=int, help="amount")
-                                                  
