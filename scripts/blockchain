@@ -16,7 +16,7 @@ def main():
     token_json_src_dir = node_modules_dir.joinpath("singularitynet-token-contracts")
     token_contract_name = "SingularityNetToken"
     contract_json_dest_dir = pathlib.Path(__file__).absolute().parent.parent.joinpath("snet_cli", "resources", "contracts")
-    abi_contract_names = ["Agent", "AgentFactory", "Job", "Registry"]
+    abi_contract_names = ["Agent", "AgentFactory", "Job", "Registry", "MultiPartyEscrow"]
     networks_contract_names = ["AgentFactory", "Registry"]
 
     npm_location = shutil.which('npm')
