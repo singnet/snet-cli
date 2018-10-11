@@ -24,7 +24,7 @@ if not npm_location:
     raise Exception("This script requires 'npm' to be installed and in your PATH")
 
 if (not os.path.isdir(os.path.join(pcdir, "node_modules"))):
-    subprocess.call([npm_location, "npm", "install"],     cwd=pcdir)
+    subprocess.call([npm_location, "install"],     cwd=pcdir)
 
 if (not os.path.isdir(os.path.join(pcdir, "build", "npm-module"))):
     subprocess.call([npm_location, "run-script", "compile"],     cwd=pcdir)
