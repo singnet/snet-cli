@@ -14,6 +14,10 @@ def persist():
 try:
     with open(_snet_folder.joinpath("config")) as f:
         conf.read_file(f)
+    # Looking for IPFS at snet-cli config file (required)
+    if "ipfs" not in conf:
+        conf["ipfs"] = {"default_ipfs_endpoint": "http://ipfs.singularitynet.io:80"}
+        persist()
 except FileNotFoundError:
     conf["network.kovan"] = {"default_eth_rpc_endpoint": "https://kovan.infura.io"}
     conf["network.mainnet"] = {"default_eth_rpc_endpoint": "https://mainnet.infura.io"}
