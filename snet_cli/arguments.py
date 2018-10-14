@@ -521,3 +521,6 @@ def add_mpe_client_options(parser):
     p.add_argument("params", nargs='?',    help="json-serialized parameters object or path containing "
                                                 "json-serialized parameters object (leave emtpy to read from stdin)")
     
+    # "block_number":   get the most recent block number
+    p = subparsers.add_parser("block_number", help="Get Low level function for calling the server")
+    p.set_defaults(fn="print_block_number")

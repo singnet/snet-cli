@@ -178,3 +178,9 @@ class MPEClientCommand(BlockchainCommand):
         
         response = call_fn(request, metadata=metadata)
         self._printout(response)
+     
+    #III. Auxilary functions
+    
+    # get the most recent block number
+    def print_block_number(self):
+         self._printout(self.ident.w3.eth.blockNumber)
