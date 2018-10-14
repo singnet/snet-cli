@@ -151,6 +151,7 @@ class MPEClientCommand(BlockchainCommand):
         if (not is_found):
             self._error("Cannot find method %s in the protobuf"%(self.args.method))
         
+        self._check_isidentifier(request_name)  # it is an overkill, but let's check it also
         request_class = eval("%s_pb2.%s"%(service_name, request_name))
 
         return stub_class, request_class
