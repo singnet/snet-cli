@@ -38,6 +38,7 @@ class CustomParser(argparse.ArgumentParser):
 
 def get_root_parser(config):
     parser = CustomParser(prog="snet", description="SingularityNET CLI")
+    parser.add_argument("--print-traceback", action='store_true', help="Do not catch last exception and print full TraceBack")
     add_root_options(parser, config)
 
     return parser
@@ -483,11 +484,40 @@ def add_mpe_client_options(parser):
     parser.set_defaults(cmd=MPEClientCommand)
     subparsers = parser.add_subparsers(title="Commands", metavar="COMMAND")
     subparsers.required = True
-    sign_message_p = subparsers.add_parser("sign_message", help="Sign the message for the given channel")
-    sign_message_p.set_defaults(fn="print_sign_message")
+
+    def add_p_channel_id(p):
+        # int is ok here because in python3 int is unlimited
+        p.add_argument("channel_id", type=int, help="channel_id")
+    def add_p_full_message(p):
+        p.add_argument("mpe_address",          help="address of MPE contract")
+        add_p_channel_id(p)
+        p.add_argument("nonce",      type=int, help="nonce of the channel")
+        p.add_argument("amount",     type=int, help="amount")
+
+    # "sing_message":
+    p = subparsers.add_parser("sign_message", help="Sign the message for the given channel")
+    p.set_defaults(fn="print_sign_message")
+    add_p_full_message(p)
+
+    # "verify_signature":
+    p = subparsers.add_parser("verify_signature", help="Verify our own signature")
+    p.set_defaults(fn="print_verify_signature_base64")
+    add_p_full_message(p)
+    p.add_argument("signature_base64",     help="signature in base64")
+
+    # "complie_from_file": Compile protobuf from the file. We will use it for the given channel (channel_id)
+    p = subparsers.add_parser("compile_from_file", help="Compile protobuf from the file")
+    p.set_defaults(fn="compile_protobuf_from_file")
+    p.add_argument("proto_dir",  type=str, help="protobuf .proto directory")
+    p.add_argument("proto_file", type=str, help="protobuf .proto file")
+    add_p_channel_id(p)
     
-    # int is ok here because in python3 int is unlimited
-    sign_message_p.add_argument("mpe_address",          help="address of MPE contract")
-    sign_message_p.add_argument("channel_id", type=int, help="channel_id")
-    sign_message_p.add_argument("nonce",      type=int, help="nonce of the channel")
-    sign_message_p.add_argument("amount",     type=int, help="amount")
+    # "call_server":  low level function for calling the server using already compiled protobuf
+    p = subparsers.add_parser("call_server", help="Low level function for calling the server")
+    p.set_defaults(fn="call_server")
+    add_p_full_message(p)
+    p.add_argument("endpoint",             help="service endpoint")
+    p.add_argument("method",               help="target service's method name to call")
+    p.add_argument("params", nargs='?',    help="json-serialized parameters object or path containing "
+                                                "json-serialized parameters object (leave emtpy to read from stdin)")
+    
