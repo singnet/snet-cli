@@ -15,4 +15,12 @@ def main():
     except TypeError:
         args = parser.parse_args(argv + ["-h"])
 
-    getattr(args.cmd(conf, args), args.fn)()
+    try:
+        getattr(args.cmd(conf, args), args.fn)()
+    except Exception as e:
+        if (args.print_traceback):
+            raise
+        else:
+            print("Error:", e)
+            print("If you want to see full Traceback then run:")
+            print("snet --print-traceback [parameters]")
