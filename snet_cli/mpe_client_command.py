@@ -8,7 +8,9 @@ import os
 import importlib
 import grpc
 from eth_account.messages import defunct_hash_message
-
+from web3.utils.encoding import pad_hex
+from web3.utils.events import get_event_data
+from snet_cli.utils import get_contract_def, abi_get_element_by_name, abi_decode_struct_to_dict
 
 class MPEClientCommand(BlockchainCommand):
     
@@ -16,7 +18,7 @@ class MPEClientCommand(BlockchainCommand):
     def _sign_message(self):
         # here it is ok to accept address without checksum
         mpe_address = self._safe_to_checksum_address(self.args.mpe_address, error_message = "Wrong format of MultiPartyEscrow address")
-        
+
         message = self.w3.soliditySha3(
         ["address",   "uint256",            "uint256",       "uint256"],
         [mpe_address, self.args.channel_id, self.args.nonce, self.args.amount])
@@ -38,7 +40,7 @@ class MPEClientCommand(BlockchainCommand):
         message = self.w3.soliditySha3(
         ["address",   "uint256",            "uint256",       "uint256"],
         [mpe_address, self.args.channel_id, self.args.nonce, self.args.amount])
-        
+
         message_hash = defunct_hash_message(message)
         a = self.ident.w3.eth.account.recoverHash(message_hash, signature=base64.b64decode(self.args.signature_base64))
         return a == self.ident.address
@@ -174,11 +176,34 @@ class MPEClientCommand(BlockchainCommand):
                     ("snet-payment-channel-id",            str(self.args.channel_id)  ), 
                     ("snet-payment-channel-nonce",         str(self.args.nonce)       ), 
                     ("snet-payment-channel-amount",        str(self.args.amount)      ),
-                    ("snet-payment-channel-signature-bin", base64.b64encode(signature))]
+                    ("snet-payment-channel-signature-bin", bytes(signature))]
         
         response = call_fn(request, metadata=metadata)
         self._printout(response)
-     
+        
+    def print_my_channels(self):
+        # TODO: check that it is faster to use events to get all channels with the given sender (instead of using channels directly)
+        event_signature   = self.ident.w3.sha3(text="EventChannelOpen(uint256,address,address,uint256)").hex()
+        my_address_padded = pad_hex(self.ident.address.lower(), 256)
+        logs = self.ident.w3.eth.getLogs({"fromBlock" : self.args.from_block,
+                                          "address"   : self.args.mpe_address.lower(),
+                                          "topics"    : [event_signature,  my_address_padded]})
+        
+        # If we are sure that ABI will be fixed forever we can do like this:
+        # channels_ids = [int(l['data'],16) for l in logs]
+        abi           = get_contract_def("MultiPartyEscrow")
+        event_abi     = abi_get_element_by_name(abi, "EventChannelOpen")
+        channels_ids  = [get_event_data(event_abi, l)["args"]["channelId"] for l in logs]
+        
+        channel_abi = abi_get_element_by_name(abi, "channels")
+        
+        self._printout("#id nonce recipient  replicaId  value   expiration(blocks)")
+        for i in channels_ids:
+            channel = self.call_contract_command("MultiPartyEscrow", self.args.mpe_address, "channels", [i])
+            channel = abi_decode_struct_to_dict(channel_abi, channel)
+            self._printout("%i %i %s %i %i %i"%(i, channel["nonce"], channel["recipient"], channel["replicaId"],
+                                                channel["value"], channel["expiration"]))
+    
     #III. Auxilary functions
     
     # get the most recent block number

@@ -183,3 +183,13 @@ def compile_proto(entry_path, codegen_dir, proto_file=None):
 
     except Exception as e:
         return False
+
+# return element of abi (return None if fails to find)
+def abi_get_element_by_name(abi, name):
+    for a in abi["abi"]:
+        if ("name" in a and a["name"] == name):
+            return a
+    return None
+
+def abi_decode_struct_to_dict(abi, struct_list):
+    return {el_abi["name"] : el for el_abi, el in zip(abi["outputs"], struct_list)}

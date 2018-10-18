@@ -488,8 +488,10 @@ def add_mpe_client_options(parser):
     def add_p_channel_id(p):
         # int is ok here because in python3 int is unlimited
         p.add_argument("channel_id", type=int, help="channel_id")
-    def add_p_full_message(p):
+    def add_p_mpe_address(p):
         p.add_argument("mpe_address",          help="address of MPE contract")
+    def add_p_full_message(p):
+        add_p_mpe_address(p)
         add_p_channel_id(p)
         p.add_argument("nonce",      type=int, help="nonce of the channel")
         p.add_argument("amount",     type=int, help="amount")
@@ -524,3 +526,10 @@ def add_mpe_client_options(parser):
     # "block_number":   get the most recent block number
     p = subparsers.add_parser("block_number", help="Get Low level function for calling the server")
     p.set_defaults(fn="print_block_number")
+
+    # "print_my_channels": print all channels which have the given idendity as a sender 
+    p = subparsers.add_parser("print_my_channels", help="Print all channels related to the current identity")
+    p.set_defaults(fn="print_my_channels")
+    add_p_mpe_address(p)
+    p.add_argument("--from_block", type=int, default=0, help="Start searching from this block")
+    
