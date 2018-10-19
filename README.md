@@ -493,24 +493,15 @@ snet organization rem-members [-h] [--gas-price GAS_PRICE]
 
 ---
 
-* If you haven't done it already, clone the git repository of
-platform-contrats
-```bash  
-$ git clone git@github.com:singnet/platform-contracts.git
-```  
-
-
 * Clone the git repository  
 ```bash  
 $ git clone git@github.com:singnet/snet-cli.git
 $ cd snet-cli
 ```  
   
-* Install blockchain dependencies. Instead of ../platform-contracts
-you can give a path to your platform-contracts
-
+* Install development/test blockchain dependencies  
 ```bash  
-$ ./scripts/install_dev.py ../platform-contracts
+$ ./scripts/blockchain install
 ```
   
 * Install the package in development/editable mode  
