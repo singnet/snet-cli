@@ -136,7 +136,28 @@ class BlockchainCommand(Command):
                 args_dict["contract_named_input_{}".format(k)] = v
             return DefaultAttributeObject(**args_dict)
         return f
+    
+    def get_ContractCommand(self, contract_name, contract_address, contract_fn, contract_params, is_silent = True):
+        contract_def = get_contract_def(contract_name)
+        if (is_silent):
+            out_f = None
+        else:
+            out_f = self.err_f
+        return ContractCommand(config= self.config,
+                               args  = self.get_contract_argser(
+                                             contract_address  = contract_address,
+                                             contract_function = contract_fn,
+                                             contract_def      = contract_def)(*contract_params),
+                               out_f = out_f,
+                               err_f = out_f,
+                               w3    = self.w3,
+                               ident = self.ident)
 
+    def call_contract_command(self, contract_name, contract_address, contract_fn, contract_params, is_silent = True):
+        return self.get_ContractCommand(contract_name, contract_address, contract_fn, contract_params, is_silent).call()
+
+    def transact_contract_command(self, contract_name, contract_address, contract_fn, contract_params, is_silent = True):
+        return self.get_ContractCommand(contract_name, contract_address, contract_fn, contract_params, is_silent).transact()
 
 class InitCommand(Command):
     def init(self):
