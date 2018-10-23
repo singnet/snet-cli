@@ -490,22 +490,20 @@ def add_mpe_client_options(parser):
         p.add_argument("channel_id", type=int, help="channel_id")
     def add_p_mpe_address(p):
         p.add_argument("mpe_address",          help="address of MPE contract")
+    def add_p_endpoint(p):        
+        p.add_argument("endpoint",             help="service endpoint")
+    def add_p_full_service_for_call(p):
+        add_p_endpoint(p)
+        p.add_argument("service",              help="name of protobuf service to call")
+        p.add_argument("method",               help="target service's method name to call")
+        p.add_argument("params", nargs='?',    help="json-serialized parameters object or path containing "
+                                                "json-serialized parameters object (leave emtpy to read from stdin)")        
     def add_p_full_message(p):
         add_p_mpe_address(p)
         add_p_channel_id(p)
         p.add_argument("nonce",      type=int, help="nonce of the channel")
         p.add_argument("amount",     type=int, help="amount")
 
-    # "sing_message":
-    p = subparsers.add_parser("sign_message", help="Sign the message for the given channel")
-    p.set_defaults(fn="print_sign_message")
-    add_p_full_message(p)
-
-    # "verify_signature":
-    p = subparsers.add_parser("verify_signature", help="Verify our own signature")
-    p.set_defaults(fn="print_verify_signature_base64")
-    add_p_full_message(p)
-    p.add_argument("signature_base64",     help="signature in base64")
 
     # "complie_from_file": Compile protobuf from the file. We will use it for the given channel (channel_id)
     p = subparsers.add_parser("compile_from_file", help="Compile protobuf from the file")
@@ -514,14 +512,30 @@ def add_mpe_client_options(parser):
     p.add_argument("proto_file", type=str, help="protobuf .proto file")
     add_p_channel_id(p)
     
-    # "call_server":  low level function for calling the server using already compiled protobuf
-    p = subparsers.add_parser("call_server", help="Low level function for calling the server")
-    p.set_defaults(fn="call_server")
+    # "call_server":  call server using the payment channel
+    p = subparsers.add_parser("call_server", help="call server in stateless manner. We ask state of the channel from the server.")
+    p.set_defaults(fn="call_server_statelessly")
+    add_p_mpe_address(p)
+    add_p_channel_id(p)
+    p.add_argument("price",     type=int, help="price for this call")
+    add_p_full_service_for_call(p)                                                
+    
+    # "call_server_lowlevel":  low level function for calling the server using already compiled protobuf
+    p = subparsers.add_parser("call_server_lowlevel", help="Low level function for calling the server")
+    p.set_defaults(fn="call_server_lowlevel")
     add_p_full_message(p)
-    p.add_argument("endpoint",             help="service endpoint")
-    p.add_argument("method",               help="target service's method name to call")
-    p.add_argument("params", nargs='?',    help="json-serialized parameters object or path containing "
-                                                "json-serialized parameters object (leave emtpy to read from stdin)")
+    add_p_full_service_for_call(p)
+
+    # "sing_message":
+    p = subparsers.add_parser("sign_message", help="Sign the message for the given channel")
+    p.set_defaults(fn="print_sign_message")
+    add_p_full_message(p)
+
+    # "verify_my_signature":
+    p = subparsers.add_parser("verify_my_signature", help="Verify our own signature")
+    p.set_defaults(fn="print_verify_my_signature_base64")
+    add_p_full_message(p)
+    p.add_argument("signature_base64",     help="signature in base64")
     
     # "block_number":   get the most recent block number
     p = subparsers.add_parser("block_number", help="Get Low level function for calling the server")
@@ -533,3 +547,10 @@ def add_mpe_client_options(parser):
     add_p_mpe_address(p)
     p.add_argument("--from_block", type=int, default=0, help="Start searching from this block")
     
+    # "print_channel_state_from_server":  
+    p = subparsers.add_parser("print_channel_state_from_server", help="Get channel state from the server and print it")
+    p.set_defaults(fn="print_channel_state_from_server")
+    add_p_mpe_address(p)
+    add_p_channel_id(p)
+    add_p_endpoint(p)
+     
