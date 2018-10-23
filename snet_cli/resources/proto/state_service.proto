@@ -1,0 +1,39 @@
+syntax = "proto3";
+
+package escrow;
+
+// PaymentChannelStateService contains methods to get the MultiPartyEscrow
+// payment channel state.
+// channel_id, channel_nonce, value and amount fields below in fact are
+// Solidity uint256 values. Which are big-endian integers padded by zeros, see
+// https://github.com/ethereum/wiki/wiki/Ethereum-Contract-ABI#formal-specification-of-the-encoding
+service PaymentChannelStateService {
+    // GetChannelState method returns a channel state by channel id.
+    rpc GetChannelState(ChannelStateRequest) returns (ChannelStateReply) {}
+}
+
+// ChanelStateRequest is a request for channel state.
+message ChannelStateRequest {
+    // channel_id contains id of the channel which state is requested.
+    bytes channel_id = 1;
+    // signature is a client signature of the message which contains
+    // channel_id. It is used for client authorization.
+    bytes signature = 2;
+}
+
+// ChannelStateReply message contains a latest channel state. current_nonce and
+// current_value fields can be different from ones stored in the blockchain if
+// server started withdrawing funds froms channel but transaction is still not
+// finished.
+message ChannelStateReply {
+    // current_nonce is a latest nonce of the payment channel.
+    bytes current_nonce = 1;
+
+    // current_signed_amount is a last amount which were signed by client with current_nonce
+    //it could be absent if none message was signed with current_nonce
+    bytes current_signed_amount = 2; 
+
+    // current_signature is a last signature sent by client with current_nonce
+    // it could be abset if none message was signed with current nonce
+    bytes current_signature = 3; 
+ }

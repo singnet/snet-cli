@@ -10,43 +10,42 @@ import grpc
 from eth_account.messages import defunct_hash_message
 from web3.utils.encoding import pad_hex
 from web3.utils.events import get_event_data
-from snet_cli.utils import get_contract_def, abi_get_element_by_name, abi_decode_struct_to_dict
+from snet_cli.utils import get_contract_def, abi_get_element_by_name, abi_decode_struct_to_dict, import_protobuf_from_dir
 
 class MPEClientCommand(BlockchainCommand):
     
     # I. Signature related functions
-    def _sign_message(self):
+    
+    def _compose_message_to_sign(self, mpe_address, channel_id, nonce, amount):
         # here it is ok to accept address without checksum
-        mpe_address = self._safe_to_checksum_address(self.args.mpe_address, error_message = "Wrong format of MultiPartyEscrow address")
+        mpe_address = self._safe_to_checksum_address(mpe_address, error_message = "Wrong format of MultiPartyEscrow address")
 
-        message = self.w3.soliditySha3(
-        ["address",   "uint256",            "uint256",       "uint256"],
-        [mpe_address, self.args.channel_id, self.args.nonce, self.args.amount])
-        
-        sign = self.ident.sign_message_after_soliditySha3(message)
+        return self.w3.soliditySha3(
+               ["address",   "uint256", "uint256", "uint256"],
+               [mpe_address, channel_id, nonce,     amount])
+    
+    def _sign_message(self, mpe_address, channel_id, nonce, amount):
+        message = self._compose_message_to_sign(mpe_address, channel_id, nonce, amount)
+        sign    = self.ident.sign_message_after_soliditySha3(message)
         return sign    
     
     def print_sign_message(self):
-        sign = self._sign_message()
+        sign = self._sign_message(self.args.mpe_address, self.args.channel_id, self.args.nonce, self.args.amount)
         self._printout("signature hex: ")
         self._printout(sign.hex())
         self._printout("signature base64: ")
         self._printout(base64.b64encode(sign))
 
-    def _verify_signature_base64(self):
-        # here it is ok to accept address without checksum
-        mpe_address = self._safe_to_checksum_address(self.args.mpe_address, error_message = "Wrong format of MultiPartyEscrow address")
-        
-        message = self.w3.soliditySha3(
-        ["address",   "uint256",            "uint256",       "uint256"],
-        [mpe_address, self.args.channel_id, self.args.nonce, self.args.amount])
-
+    def _verify_my_signature(self, signature, mpe_address, channel_id, nonce, amount):
+        message      = self._compose_message_to_sign(mpe_address, channel_id, nonce, amount)
         message_hash = defunct_hash_message(message)
-        a = self.ident.w3.eth.account.recoverHash(message_hash, signature=base64.b64decode(self.args.signature_base64))
-        return a == self.ident.address
+        sign_address = self.ident.w3.eth.account.recoverHash(message_hash, signature=signature)
+        return sign_address == self.ident.address
     
-    def print_verify_signature_base64(self):
-        self._printout(self._verify_signature_base64())
+    def print_verify_my_signature_base64(self):
+        signature = base64.b64decode(self.args.signature_base64)
+        rez       = self._verify_my_signature(signature, self.args.mpe_address, self.args.channel_id, self.args.nonce, self.args.amount)
+        self._printout(rez)
 
     def _safe_to_checksum_address(self, a, error_message):
         try:
@@ -115,72 +114,39 @@ class MPEClientCommand(BlockchainCommand):
                     raise Exception("Unknow modifier ('%s') in call parameters. Possible modifiers: file, b64encode, b64decode"%m)
             rez[k_final] = v
         return rez
-        
-    def _import_protobuf_for_channel(self):
+            
+    def _import_protobuf_for_channel(self, service_name, method_name):
         channel_dir = self.get_channel_dir()
-        pfiles = [str(os.path.basename(p)) for p in channel_dir.glob("*.py")]
-        if (len(pfiles) != 2):
-            self._error("We should have exactly two .py files in %s\n"%channel_dir +
-                        "You should remove %s/.py and run _compile_from_file again"%channel_dir)
-
-        # normally we should use importlib for import (see https://stackoverflow.com/questions/67631/how-to-import-a-module-given-the-full-path)
-        # but here we cannot do it because <SERVICE>_pb2_grpc.py import <SERVICE>_pb2.py ... 
-        # so we were forced to play with sys.path
-        sys.path.append(str(channel_dir))
+        return import_protobuf_from_dir(channel_dir, service_name, method_name)
         
-        # make import 
-        for p in pfiles:
-            
-            to_import = p.replace(".py","")
-            # we check that we cannot be attacked via exec (check to_import)
-            self._check_isidentifier(to_import)
-            exec("import %s"%to_import, globals())
-            
-        service_name = pfiles[0].split("_")[0]   
+    def _call_server_withchannel(self, grpc_channel, service, method, mpe_address, channel_id, nonce, amount, params):        
+        stub_class, request_class = self._import_protobuf_for_channel(service, method)
+        request                   = request_class(**params)        
         
-        # we check that we cannot be attacked via eval (check service_name)
-        self._check_isidentifier(service_name)
-        stub_class = eval("%s_pb2_grpc.%sStub"%(service_name, service_name))
-        
-        service_descriptor = eval("%s_pb2.DESCRIPTOR.services_by_name['%s']"%(service_name, service_name))
-        is_found = False
-        for method in service_descriptor.methods:
-            if(method.name == self.args.method):
-                request_name  = method.input_type.name
-                response_name = method.output_type.name
-                is_found = True
-                
-        if (not is_found):
-            self._error("Cannot find method %s in the protobuf"%(self.args.method))
-        
-        self._check_isidentifier(request_name)  # it is an overkill, but let's check it also
-        request_class = eval("%s_pb2.%s"%(service_name, request_name))
-
-        return stub_class, request_class
-
-    def _check_isidentifier(self, s):
-        if (not s.isidentifier()):
-            self._error('"%s" is not an identifier'%s)
-        
-    def call_server(self):
-        params  = self._get_call_params()
-        stub_class, request_class = self._import_protobuf_for_channel()
-        request = request_class(**params)
-        channel = grpc.insecure_channel(self.args.endpoint)
-        
-        stub    = stub_class(channel)
+        stub    = stub_class(grpc_channel)
         call_fn = getattr(stub, self.args.method)
         
-        signature = self._sign_message()
+        signature = self._sign_message(mpe_address, channel_id, nonce, amount)
         metadata = [("snet-payment-type",                 "escrow"                    ),
-                    ("snet-payment-channel-id",            str(self.args.channel_id)  ), 
-                    ("snet-payment-channel-nonce",         str(self.args.nonce)       ), 
-                    ("snet-payment-channel-amount",        str(self.args.amount)      ),
+                    ("snet-payment-channel-id",            str(channel_id)  ), 
+                    ("snet-payment-channel-nonce",         str(nonce)       ), 
+                    ("snet-payment-channel-amount",        str(amount)      ),
                     ("snet-payment-channel-signature-bin", bytes(signature))]
         
         response = call_fn(request, metadata=metadata)
+        return response
+        
+    def call_server_lowlevel(self):
+        params                    = self._get_call_params()
+        grpc_channel              = grpc.insecure_channel(self.args.endpoint)
+        
+        response = self._call_server_withchannel(grpc_channel, self.args.service, self.args.method, 
+                                                 self.args.mpe_address, self.args.channel_id, self.args.nonce, self.args.amount, 
+                                                 params)
         self._printout(response)
         
+    # III. Stateless client related functions 
+    
     def print_my_channels(self):
         # TODO: check that it is faster to use events to get all channels with the given sender (instead of using channels directly)
         event_signature   = self.ident.w3.sha3(text="EventChannelOpen(uint256,address,address,uint256)").hex()
@@ -204,7 +170,74 @@ class MPEClientCommand(BlockchainCommand):
             self._printout("%i %i %s %i %i %i"%(i, channel["nonce"], channel["recipient"], channel["replicaId"],
                                                 channel["value"], channel["expiration"]))
     
-    #III. Auxilary functions
+    def _get_channel_state_from_server(self, grpc_channel, mpe_address, channel_id):
+        # Compile protobuf if needed
+        codegen_dir = Path.home().joinpath(".snet", "mpe_client", "state_service")
+        proto_dir   = Path(__file__).absolute().parent.joinpath("resources", "proto")
+        if (not codegen_dir.joinpath("state_service_pb2.py").is_file()):
+            compile_proto(proto_dir, codegen_dir, proto_file = "state_service.proto")
+        
+        # make PaymentChannelStateService.GetChannelState call to the daemon
+        stub_class, request_class = import_protobuf_from_dir(codegen_dir, "PaymentChannelStateService", "GetChannelState")
+        message   = self.w3.soliditySha3(["uint256"], [channel_id])
+        signature = self.ident.sign_message_after_soliditySha3(message)
+
+#        request   = request_class(channel_id = self.w3.toBytes(channel_id), signature = bytes(signature))
+        request   = request_class(channel_id = self.w3.toBytes(channel_id).rjust(32,b"\0"), signature = bytes(signature))
+        
+        stub     = stub_class(grpc_channel)
+        response = getattr(stub, "GetChannelState")(request)
+        # convert bytes to int
+        state = dict()
+        state["current_nonce"]          = int.from_bytes(response.current_nonce,         byteorder='big')
+        state["current_signed_amount"]  = int.from_bytes(response.current_signed_amount, byteorder='big')
+        if (state["current_signed_amount"] > 0):
+         good = self._verify_my_signature(bytes(response.current_signature), mpe_address, channel_id, state["current_nonce"], state["current_signed_amount"])
+         if (not good):
+             raise Exception("Error in _get_channel_state_from_server. My own signature from the server is not valid.")
+             
+        return state
+
+    def print_channel_state_from_server(self):
+        grpc_channel = grpc.insecure_channel(self.args.endpoint)         
+        state     = self._get_channel_state_from_server(grpc_channel, self.args.mpe_address, self.args.channel_id)
+        self._printout(state)
+        
+    def _get_channel_state_from_blockchain(self, mpe_address, channel_id):
+        abi         = get_contract_def("MultiPartyEscrow")
+        channel_abi = abi_get_element_by_name(abi, "channels")
+        channel     = self.call_contract_command("MultiPartyEscrow", self.args.mpe_address, "channels", [channel_id])
+        channel     = abi_decode_struct_to_dict(channel_abi, channel)
+        return channel
+    
+    # we get state of the channel (nonce, amount, unspent_amount)
+    # We do it by securely combine information from the server and blockchain
+    # https://github.com/singnet/wiki/blob/master/multiPartyEscrowContract/MultiPartyEscrow_stateless_client.md
+    def _get_channel_state_statelessly(self, grpc_channel, mpe_address, channel_id):
+        server     = self._get_channel_state_from_server    (grpc_channel, mpe_address, channel_id)
+        blockchain = self._get_channel_state_from_blockchain(              mpe_address, channel_id)
+        
+        if (server["current_nonce"] == blockchain["nonce"]):
+            unspent_amount = blockchain["value"] - server["current_signed_amount"]
+        else:
+            unspent_amount = None # in this case we cannot securely define unspent_amount yet
+        
+        return (server["current_nonce"], server["current_signed_amount"], unspent_amount)
+        
+    
+    def call_server_statelessly(self):
+        params                    = self._get_call_params()
+        grpc_channel              = grpc.insecure_channel(self.args.endpoint)
+                
+        current_nonce, current_amount, unspent_amount = self._get_channel_state_statelessly(grpc_channel, self.args.mpe_address, self.args.channel_id)
+        self._printout("unspent_amount before call (None means that we cannot get it now):%i"%unspent_amount)
+        response = self._call_server_withchannel(grpc_channel, self.args.service, self.args.method,
+                                                 self.args.mpe_address, self.args.channel_id, current_nonce, current_amount + self.args.price, 
+                                                 params)
+        self._printout(response)
+        
+        
+    #IV. Auxilary functions
     
     # get the most recent block number
     def print_block_number(self):
