@@ -6,6 +6,7 @@ from pathlib import Path
 import web3
 import pkg_resources
 from grpc_tools.protoc import main as protoc
+import sys
 
 from snet_cli.identity import RpcIdentityProvider, MnemonicIdentityProvider, TrezorIdentityProvider, \
     LedgerIdentityProvider, KeyIdentityProvider
@@ -194,3 +195,52 @@ def abi_get_element_by_name(abi, name):
 
 def abi_decode_struct_to_dict(abi, struct_list):
     return {el_abi["name"] : el for el_abi, el in zip(abi["outputs"], struct_list)}
+
+# dynamical import grpc-protobuf from given directory
+# you should have exactly two .py files in proto_dir: <prefix>_pb2.py and <prefix>_pb2_grpc.py
+# these files should contain required grpc service (service_name). These serive should contain required method (method_name) 
+def import_protobuf_from_dir(proto_dir, service_name, method_name):
+    pfiles = [str(os.path.basename(p)) for p in proto_dir.glob("*.py")]
+    if (len(pfiles) != 2):
+        raise Exception("We should have exactly two .py files in %s\n"%proto_dir +
+                        "You should remove %s/.py and (re)compile protobuf"%proto_dir)
+
+    for f in pfiles:
+        if (f.endswith("pb2_grpc.py")):
+            prefix = f[:-12]  # we remove "_pb2_grpc.py"
+
+    # normally we should use importlib for import (see https://stackoverflow.com/questions/67631/how-to-import-a-module-given-the-full-path)
+    # but here we cannot do it because <SERVICE>_pb2_grpc.py import <SERVICE>_pb2.py ... 
+    # so we were forced to play with sys.path
+    sys.path.append(str(proto_dir))
+    
+    # make import 
+    # we check that we cannot be attacked via exec (check prefix)
+    _check_isidentifier(prefix)
+    exec("import %s_pb2"%prefix,      globals())
+    exec("import %s_pb2_grpc"%prefix, globals())
+    
+    # we check that we cannot be attacked via eval (check service_name)
+    _check_isidentifier(service_name)
+    stub_class = eval("%s_pb2_grpc.%sStub"%(prefix, service_name))
+    
+    service_descriptor = eval("%s_pb2.DESCRIPTOR.services_by_name['%s']"%(prefix, service_name))
+    is_found = False
+    for method in service_descriptor.methods:
+        if(method.name == method_name):
+            request_name  = method.input_type.name
+            response_name = method.output_type.name
+            is_found = True
+                
+    if (not is_found):
+        raise Exception("Error in import_protobuf_from_dir. Cannot find method %s in the protobuf"%(method_name))
+        
+    _check_isidentifier(request_name)  # it is an overkill, but let's check it also
+    request_class = eval("%s_pb2.%s"%(prefix, request_name))
+
+    return stub_class, request_class
+
+# helper function for import_protobuf_from_dir
+def _check_isidentifier(s):
+    if (not s.isidentifier()):
+        raise Exception('Critial Error. "%s" is not an identifier'%s)

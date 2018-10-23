@@ -10,7 +10,7 @@ import grpc
 from eth_account.messages import defunct_hash_message
 from web3.utils.encoding import pad_hex
 from web3.utils.events import get_event_data
-from snet_cli.utils import get_contract_def, abi_get_element_by_name, abi_decode_struct_to_dict
+from snet_cli.utils import get_contract_def, abi_get_element_by_name, abi_decode_struct_to_dict, import_protobuf_from_dir
 
 class MPEClientCommand(BlockchainCommand):
     
@@ -44,7 +44,7 @@ class MPEClientCommand(BlockchainCommand):
     
     def print_verify_my_signature_base64(self):
         signature = base64.b64decode(self.args.signature_base64)
-        rez       = self._verify_my_signature(signature, self.args.mpe_address, self.args.channel_id, self.args.nonce, self.args.nonce)
+        rez       = self._verify_my_signature(signature, self.args.mpe_address, self.args.channel_id, self.args.nonce, self.args.amount)
         self._printout(rez)
 
     def _safe_to_checksum_address(self, a, error_message):
@@ -114,56 +114,11 @@ class MPEClientCommand(BlockchainCommand):
                     raise Exception("Unknow modifier ('%s') in call parameters. Possible modifiers: file, b64encode, b64decode"%m)
             rez[k_final] = v
         return rez
-        
-    def _import_protobuf_from_dir(self, proto_dir, service_name, method_name):
-        pfiles = [str(os.path.basename(p)) for p in proto_dir.glob("*.py")]
-        if (len(pfiles) != 2):
-            self._error("We should have exactly two .py files in %s\n"%proto_dir +
-                        "You should remove %s/.py and (re)compile protobuf"%proto_dir)
-
-        for f in pfiles:
-            if (f.endswith("pb2_grpc.py")):
-                prefix = f[:-12]  # we remove "_pb2_grpc.py"
-
-        # normally we should use importlib for import (see https://stackoverflow.com/questions/67631/how-to-import-a-module-given-the-full-path)
-        # but here we cannot do it because <SERVICE>_pb2_grpc.py import <SERVICE>_pb2.py ... 
-        # so we were forced to play with sys.path
-        sys.path.append(str(proto_dir))
-        
-        # make import 
-        # we check that we cannot be attacked via exec (check prefix)
-        self._check_isidentifier(prefix)
-        exec("import %s_pb2"%prefix,      globals())
-        exec("import %s_pb2_grpc"%prefix, globals())
-                
-        # we check that we cannot be attacked via eval (check service_name)
-        self._check_isidentifier(service_name)
-        stub_class = eval("%s_pb2_grpc.%sStub"%(prefix, service_name))
-        
-        service_descriptor = eval("%s_pb2.DESCRIPTOR.services_by_name['%s']"%(prefix, service_name))
-        is_found = False
-        for method in service_descriptor.methods:
-            if(method.name == method_name):
-                request_name  = method.input_type.name
-                response_name = method.output_type.name
-                is_found = True
-                
-        if (not is_found):
-            self._error("Cannot find method %s in the protobuf"%(method_name))
-        
-        self._check_isidentifier(request_name)  # it is an overkill, but let's check it also
-        request_class = eval("%s_pb2.%s"%(prefix, request_name))
-
-        return stub_class, request_class
-    
+            
     def _import_protobuf_for_channel(self, service_name, method_name):
         channel_dir = self.get_channel_dir()
-        return self._import_protobuf_from_dir(channel_dir, service_name, method_name)
-    
-    def _check_isidentifier(self, s):
-        if (not s.isidentifier()):
-            self._error('"%s" is not an identifier'%s)
-    
+        return import_protobuf_from_dir(channel_dir, service_name, method_name)
+        
     def _call_server_withchannel(self, grpc_channel, service, method, mpe_address, channel_id, nonce, amount, params):        
         stub_class, request_class = self._import_protobuf_for_channel(service, method)
         request                   = request_class(**params)        
@@ -223,7 +178,7 @@ class MPEClientCommand(BlockchainCommand):
             compile_proto(proto_dir, codegen_dir, proto_file = "state_service.proto")
         
         # make PaymentChannelStateService.GetChannelState call to the daemon
-        stub_class, request_class = self._import_protobuf_from_dir(codegen_dir, "PaymentChannelStateService", "GetChannelState")
+        stub_class, request_class = import_protobuf_from_dir(codegen_dir, "PaymentChannelStateService", "GetChannelState")
         message   = self.w3.soliditySha3(["uint256"], [channel_id])
         signature = self.ident.sign_message_after_soliditySha3(message)
 
@@ -239,7 +194,7 @@ class MPEClientCommand(BlockchainCommand):
         if (state["current_signed_amount"] > 0):
          good = self._verify_my_signature(bytes(response.current_signature), mpe_address, channel_id, state["current_nonce"], state["current_signed_amount"])
          if (not good):
-             Exception("Error in _get_channel_state_from_server. My own signature from the server is not valid.")
+             raise Exception("Error in _get_channel_state_from_server. My own signature from the server is not valid.")
              
         return state
 
