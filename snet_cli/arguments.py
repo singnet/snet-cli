@@ -9,7 +9,8 @@ from snet_cli.commands import IdentityCommand, SessionCommand, NetworkCommand, C
 from snet_cli.identity import get_identity_types
 from snet_cli.session import get_session_keys
 from snet_cli.utils import type_converter, get_contract_def
-from snet_cli.mpe_client_command import MPEClientCommand
+from snet_cli.mpe_client_command  import MPEClientCommand
+from snet_cli.mpe_service_command import MPEServiceCommand
 
 
 class CustomParser(argparse.ArgumentParser):
@@ -85,8 +86,11 @@ def add_root_options(parser, config):
     organization_p = subparsers.add_parser("organization", help="Interact with SingularityNET Organizations")
     add_organization_options(organization_p)
 
-    mpe_client_p = subparsers.add_parser("mpe-client", help="Interact with SingularityNET services (using MultiPartyEscrow channels)")
+    mpe_client_p = subparsers.add_parser("mpe-client", help="Interact with SingularityNET services in the context of MPE payment system")
     add_mpe_client_options(mpe_client_p)
+
+    mpe_server_p = subparsers.add_parser("mpe-service", help="Functionality for publish service in the context of MPE payment system")
+    add_mpe_service_options(mpe_server_p)
 
 
 def add_version_options(parser):
@@ -505,14 +509,14 @@ def add_mpe_client_options(parser):
         p.add_argument("amount",     type=int, help="amount")
 
 
-    # "complie_from_file": Compile protobuf from the file. We will use it for the given channel (channel_id)
+    # "compile_from_file": Compile protobuf from the file. We will use it for the given channel (channel_id)
     p = subparsers.add_parser("compile_from_file", help="Compile protobuf from the file")
     p.set_defaults(fn="compile_protobuf_from_file")
     p.add_argument("proto_dir",  type=str, help="protobuf .proto directory")
     p.add_argument("proto_file", type=str, help="protobuf .proto file")
     add_p_channel_id(p)
     
-    # "call_server":  call server using the payment channel
+    # "call_server":  call server using the payment channel in stateless manner (protobuf should be already compiled)
     p = subparsers.add_parser("call_server", help="call server in stateless manner. We ask state of the channel from the server.")
     p.set_defaults(fn="call_server_statelessly")
     add_p_mpe_address(p)
@@ -538,7 +542,7 @@ def add_mpe_client_options(parser):
     p.add_argument("signature_base64",     help="signature in base64")
     
     # "block_number":   get the most recent block number
-    p = subparsers.add_parser("block_number", help="Get Low level function for calling the server")
+    p = subparsers.add_parser("block_number", help="Print the last ethereum block number")
     p.set_defaults(fn="print_block_number")
 
     # "print_my_channels": print all channels which have the given idendity as a sender 
@@ -554,3 +558,103 @@ def add_mpe_client_options(parser):
     add_p_channel_id(p)
     add_p_endpoint(p)
      
+def add_mpe_service_options(parser):
+    parser.set_defaults(cmd=MPEServiceCommand)
+    subparsers = parser.add_subparsers(title="Commands", metavar="COMMAND")
+    subparsers.required = True
+    
+    def add_p_metadata_file_opt(p):
+        p.add_argument("--metadata_file", default="service_metadata.json", help="Service metadata json file (default service_metadata.json)")
+    def add_p_model_ipfs_hash(p):
+        p.add_argument("model_ipfs_hash", help="ipfs hash of .tar file which contains service .proto files")
+    def add_p_group_name(p):
+        p.add_argument("group_name", help="unique name of the group (human readable)")
+    def add_p_mpe_address(p):
+        p.add_argument("mpe_address",          help="address of MPE contract")
+    def add_p_registry_info(p):
+        p.add_argument("registry_address",     help="address of Registry contract")
+        p.add_argument("organization", help="Name of organization")
+        p.add_argument("service",      help="Name of service")
+    def add_p_price(p):
+        p.add_argument("price", type = int, help="fix price in cogs for all methods (cogs = 10^(-8) AGI)")
+    def add_p_payment_address(p):
+        p.add_argument("payment_address", help="payment_address for this group")
+    def add_p_transact_yes(p):
+        p.add_argument("--yes", "-y", action="store_true", help="skip interactive confirmation for blockchain operations")
+    def add_p_tags_opt(p):
+        p.add_argument("--tags", nargs="*", default=[], help="tags for service")
+    def add_p_service_path_opt(p):
+        p.add_argument("--service_path",  default="",  help="Registry path for the service (default \"\")")
+
+    def add_p_endpoints_finalarg(p):
+        p.add_argument("endpoints", nargs="+",  help="endpoints")
+
+    
+    # "publish protobuf in IPFS":
+    p = subparsers.add_parser("publish_proto", help="Publish protobuf file(s) in IPFS")
+    p.set_defaults(fn="publish_proto_in_ipfs")
+    p.add_argument("protodir",     help="Directory which contains protobuf files")
+    
+    p = subparsers.add_parser("metadata_init", help="Init metadata file")
+    p.set_defaults(fn="metadata_init")
+    add_p_metadata_file_opt(p)
+    add_p_model_ipfs_hash(p)
+    add_p_mpe_address(p)
+
+    p = subparsers.add_parser("metadata_set_fixed_price", help="Set pricing model as fixed price for all methods")
+    p.set_defaults(fn="metadata_set_fixed_price")
+    add_p_metadata_file_opt(p)
+    add_p_price(p)
+
+    p = subparsers.add_parser("metadata_add_group", help="Add new group of replicas")
+    p.set_defaults(fn="metadata_add_group")
+    add_p_metadata_file_opt(p)
+    add_p_group_name(p)
+    add_p_payment_address(p)
+ 
+    p = subparsers.add_parser("metadata_add_endpoints", help="Add endpoints to the groups")
+    p.set_defaults(fn="metadata_add_endpoints")
+    add_p_metadata_file_opt(p)
+    add_p_group_name(p)
+    add_p_endpoints_finalarg(p)
+ 
+    p = subparsers.add_parser("publish_metadata_in_ipfs", help="Publish metadata in IPFS")
+    p.set_defaults(fn="publish_metadata_in_ipfs")
+    add_p_metadata_file_opt(p)
+
+    p = subparsers.add_parser("publish_metadata_in_registry", help="Publish metadata in existed service")
+    p.set_defaults(fn="publish_metadata_in_ipfs_and_registry")    
+    add_p_registry_info(p)
+    add_p_metadata_file_opt(p)
+    add_p_transact_yes(p)
+    
+    p = subparsers.add_parser("publish_service", help="Publish service with given metadata file")
+    p.set_defaults(fn="publish_service_with_metadata")
+    add_p_registry_info(p)
+    add_p_service_path_opt(p)
+    add_p_metadata_file_opt(p)
+    add_p_tags_opt(p)
+    add_p_transact_yes(p)
+
+    p = subparsers.add_parser("get_service_metadata", help="Get service metadata from registry")
+    p.set_defaults(fn="get_service_metadata_hash_from_registry")
+    add_p_registry_info(p)
+
+    p = subparsers.add_parser("publish_service_fixed_price_single_group", help="Publish service with fixed price, single group and multiply endpoints")
+    p.set_defaults(fn="publish_service_fixed_price_single_group")
+    p.add_argument("protodir",     help="Directory which contains protobuf files")    
+    add_p_registry_info(p)
+    add_p_mpe_address(p)
+    add_p_price(p)
+    add_p_payment_address(p)
+    add_p_endpoints_finalarg(p)
+    p.add_argument("--group_name", default="group1", help="unique name of the group (human readable), default is group1")
+    add_p_metadata_file_opt(p)
+    add_p_tags_opt(p)
+    add_p_service_path_opt(p)
+    add_p_transact_yes(p)
+    
+
+    
+
+    

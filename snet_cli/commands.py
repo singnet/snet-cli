@@ -156,7 +156,7 @@ class BlockchainCommand(Command):
     def call_contract_command(self, contract_name, contract_address, contract_fn, contract_params, is_silent = True):
         return self.get_ContractCommand(contract_name, contract_address, contract_fn, contract_params, is_silent).call()
 
-    def transact_contract_command(self, contract_name, contract_address, contract_fn, contract_params, is_silent = True):
+    def transact_contract_command(self, contract_name, contract_address, contract_fn, contract_params, is_silent = False):
         return self.get_ContractCommand(contract_name, contract_address, contract_fn, contract_params, is_silent).transact()
 
 class InitCommand(Command):
