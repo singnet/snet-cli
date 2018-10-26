@@ -15,7 +15,7 @@
 #              (other pricing models can be easily supported)
 # groups[]       - group is the number of endpoints which shares same payment channel; 
 #                   grouping strategy is defined by service provider; 
-#                   for example service provider can use region name as group id
+#                   for example service provider can use region name as group name
 #      group_name - unique name of the group (human readable)
 #      group_id   - unique id of the group (random 32 byte string in base64 encoding)
 #      payment_address - Ethereum address to recieve payments
@@ -68,7 +68,7 @@ class mpe_service_metadata:
             raise Exception("the group %s is not present"%str(group_name))
         e = {"group_name" : group_name, "endpoint"   : endpoint}
         if (e in self.m["endpoints"]):
-            raise Exception("We alread have endpoint %s in group %s"%(endpoint, group_name))
+            raise Exception("We already have endpoint %s in group %s"%(endpoint, group_name))
         self.m["endpoints"] += [e]
     
     # check if group is already present
@@ -83,7 +83,8 @@ class mpe_service_metadata:
         return json.dumps(self.m)
     
     def set_from_json(self, j):
-        # TODO: we should consistensy here
+        # TODO: we probaly should check th  consistensy of loaded json here
+        #       check that it contains required fields
         self.m = json.loads(j)
         
     def load(self, file_name):        

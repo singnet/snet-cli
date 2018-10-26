@@ -517,7 +517,7 @@ def add_mpe_client_options(parser):
     add_p_channel_id(p)
     
     # "call_server":  call server using the payment channel in stateless manner (protobuf should be already compiled)
-    p = subparsers.add_parser("call_server", help="call server in stateless manner. We ask state of the channel from the server.")
+    p = subparsers.add_parser("call_server", help="call server in stateless manner. We ask state of the channel from the server. Protobuf should be already compiled.")
     p.set_defaults(fn="call_server_statelessly")
     add_p_mpe_address(p)
     add_p_channel_id(p)
@@ -525,7 +525,7 @@ def add_mpe_client_options(parser):
     add_p_full_service_for_call(p)                                                
     
     # "call_server_lowlevel":  low level function for calling the server using already compiled protobuf
-    p = subparsers.add_parser("call_server_lowlevel", help="Low level function for calling the server")
+    p = subparsers.add_parser("call_server_lowlevel", help="Low level function for calling the server. Protobuf should be already compiled")
     p.set_defaults(fn="call_server_lowlevel")
     add_p_full_message(p)
     add_p_full_service_for_call(p)
