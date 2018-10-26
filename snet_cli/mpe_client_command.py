@@ -163,11 +163,11 @@ class MPEClientCommand(BlockchainCommand):
         
         channel_abi = abi_get_element_by_name(abi, "channels")
         
-        self._printout("#id nonce recipient  replicaId  value   expiration(blocks)")
+        self._printout("#id nonce recipient  groupId  value   expiration(blocks)")
         for i in channels_ids:
             channel = self.call_contract_command("MultiPartyEscrow", self.args.mpe_address, "channels", [i])
             channel = abi_decode_struct_to_dict(channel_abi, channel)
-            self._printout("%i %i %s %i %i %i"%(i, channel["nonce"], channel["recipient"], channel["replicaId"],
+            self._printout("%i %i %s %i %i %i"%(i, channel["nonce"], channel["recipient"], channel["groupId"],
                                                 channel["value"], channel["expiration"]))
     
     def _get_channel_state_from_server(self, grpc_channel, mpe_address, channel_id):
@@ -230,7 +230,7 @@ class MPEClientCommand(BlockchainCommand):
         grpc_channel              = grpc.insecure_channel(self.args.endpoint)
                 
         current_nonce, current_amount, unspent_amount = self._get_channel_state_statelessly(grpc_channel, self.args.mpe_address, self.args.channel_id)
-        self._printout("unspent_amount before call (None means that we cannot get it now):%i"%unspent_amount)
+        self._printout("unspent_amount before call (None means that we cannot get it now):%s"%str(unspent_amount))
         response = self._call_server_withchannel(grpc_channel, self.args.service, self.args.method,
                                                  self.args.mpe_address, self.args.channel_id, current_nonce, current_amount + self.args.price, 
                                                  params)
