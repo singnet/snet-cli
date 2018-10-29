@@ -1571,9 +1571,10 @@ class OrganizationCommand(BlockchainCommand):
                 return
 
             members = []
-            members_split = self.args.members.split(',')
-            for idx, m in enumerate(members_split):
-                members.append(str(m).replace("[", "").replace("]", "").lower())
+            if self.args.members:
+                members_split = self.args.members.split(',')
+                for idx, m in enumerate(members_split):
+                    members.append(str(m).replace("[", "").replace("]", "").lower())
 
             registry_contract_def = get_contract_def("Registry")
             registry_address = self._getstring("registry_at")
