@@ -372,7 +372,7 @@ def add_organization_options(parser):
     org_create_p = subparsers.add_parser("create", help="Create an Organization")
     org_create_p.set_defaults(fn="create")
     org_create_p.add_argument("name", help="Name of the Organization", metavar="ORG_NAME")
-    org_create_p.add_argument("members",
+    org_create_p.add_argument("--members",
                               help="List of members to be added to the organization",
                               metavar="ORG_MEMBERS[]")
     _add_organization_arguments(org_create_p)

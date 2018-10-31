@@ -986,7 +986,7 @@ class ServiceCommand(BlockchainCommand):
         if self.args.price:
             init_args["price"] = self.args.price
         elif not accept_all_defaults:
-            init_args["price"] = int(input('Choose a price in AGI to call your service: (default: {})\n'.format(init_args["price"])) or init_args["price"])
+            init_args["price"] = int(input('Choose a price in cogs (cogs = 10^-8 AGI) to call your service: (default: {})\n'.format(init_args["price"])) or init_args["price"])
 
         if self.args.endpoint:
             init_args["endpoint"] = self.args.endpoint
@@ -996,7 +996,7 @@ class ServiceCommand(BlockchainCommand):
         if self.args.tags:
             init_args["tags"] = self.args.tags
         elif not accept_all_defaults:
-            init_args["tags"] = shlex.split(input("Input a list of tags for your service, space separated: (default: {})\n".format(init_args["tags"])) or init_args["tags"])
+            init_args["tags"] = shlex.split(input("Input a list of tags for your service, space separated: (default: {})\n".format(init_args["tags"]))) or init_args["tags"]
 
         if self.args.description:
             init_args["metadata"]["description"] = self.args.description
@@ -1571,9 +1571,10 @@ class OrganizationCommand(BlockchainCommand):
                 return
 
             members = []
-            members_split = self.args.members.split(',')
-            for idx, m in enumerate(members_split):
-                members.append(str(m).replace("[", "").replace("]", "").lower())
+            if self.args.members:
+                members_split = self.args.members.split(',')
+                for idx, m in enumerate(members_split):
+                    members.append(str(m).replace("[", "").replace("]", "").lower())
 
             registry_contract_def = get_contract_def("Registry")
             registry_address = self._getstring("registry_at")
