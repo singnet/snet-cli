@@ -1,13 +1,15 @@
 # functions for manipulate with server.json file
 # metadata format:
 #----------------------------------------------------
-# version         - used to track format changes (current version is 1)
-# model_ipfs_hash - IPFS HASH to the .tar archive of protobuf service specification
-# mpe_address     - Address of MultiPartyEscrow contract. 
-#                   Client should use it exclusively for cross-checking of mpe_address, 
-#                        (because service can attack via mpe_address)
-#                   Daemon can use it directly if authenticity of metadata is confirmed
-# pricing {}      - Pricing model
+# version          - used to track format changes (current version is 1)
+# display_name     - Display name of the service
+# encoding         - Service encoding (json or grpc)
+# model_ipfs_hash  - IPFS HASH to the .tar archive of protobuf service specification
+# mpe_address      - Address of MultiPartyEscrow contract. 
+#                    Client should use it exclusively for cross-checking of mpe_address, 
+#                         (because service can attack via mpe_address)
+#                    Daemon can use it directly if authenticity of metadata is confirmed
+# pricing {}      -  Pricing model
 #          Possible pricing models:
 #          1. Fixed price
 #              price_model  - "fixed_price"
@@ -34,16 +36,24 @@ class mpe_service_metadata:
     # init with modelIPFSHash
     def __init__(self):
         self.m = {"version"        : 1,
+                  "display_name"   : "",
+                  "encoding"       : "grpc", # grpc by default
                   "model_ipfs_hash": "",
                   "mpe_address"    : "",
                   "pricing"        : {},
                   "groups"         : [],
                   "endpoints"      : []}
                   
-    
+
     def set_model_ipfs_hash(self, model_ipfs_hash):
         self.m["model_ipfs_hash"] = model_ipfs_hash
 
+    def set_display_name(self, display_name):
+        self.m["display_name"] = display_name
+
+    def set_encoding(self, encoding):
+        self.m["encoding"] = encoding 
+        
     def set_mpe_address(self, mpe_address):
         self.m["mpe_address"] = mpe_address
         

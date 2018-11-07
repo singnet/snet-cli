@@ -585,21 +585,40 @@ def add_mpe_service_options(parser):
         p.add_argument("--tags", nargs="*", default=[], help="tags for service")
     def add_p_service_path_opt(p):
         p.add_argument("--service_path",  default="",  help="Registry path for the service (default \"\")")
-
     def add_p_endpoints_finalarg(p):
         p.add_argument("endpoints", nargs="+",  help="endpoints")
+    def add_p_display_name(p):
+        p.add_argument("display_name", help="Service display name")
+    def add_p_encoding(p):
+        p.add_argument("--encoding", default = "grcp", choices=['grpc', 'json'], help="Service encoding")
+    def add_p_protodir(p):
+        p.add_argument("protodir",     help="Directory which contains protobuf files")
 
+    
+                    
     
     # "publish protobuf in IPFS":
     p = subparsers.add_parser("publish_proto", help="Publish protobuf file(s) in IPFS")
     p.set_defaults(fn="publish_proto_in_ipfs")
-    p.add_argument("protodir",     help="Directory which contains protobuf files")
+    add_p_protodir(p)
     
-    p = subparsers.add_parser("metadata_init", help="Init metadata file")
+    
+    p = subparsers.add_parser("metadata_init", help="Init metadata file (with providing model_ipfs_hash, mpe_address, display_name and optionally encoding. Default enconding is grpc)")
     p.set_defaults(fn="metadata_init")
     add_p_metadata_file_opt(p)
     add_p_model_ipfs_hash(p)
     add_p_mpe_address(p)
+    add_p_display_name(p)
+    add_p_encoding(p)
+
+    p = subparsers.add_parser("publish_proto_metadata_init", help="Publish protobuf file(s) in IPFS and init metadata file (with providing mpe_address, display_name and optionally encoding. Default enconding is grpc)")
+    p.set_defaults(fn="publish_proto_metadata_init")
+    add_p_protodir(p)
+    add_p_metadata_file_opt(p)
+    add_p_mpe_address(p)
+    add_p_display_name(p)
+    add_p_encoding(p)
+                
 
     p = subparsers.add_parser("metadata_set_fixed_price", help="Set pricing model as fixed price for all methods")
     p.set_defaults(fn="metadata_set_fixed_price")
@@ -639,20 +658,6 @@ def add_mpe_service_options(parser):
     p = subparsers.add_parser("get_service_metadata", help="Get service metadata from registry")
     p.set_defaults(fn="get_service_metadata_hash_from_registry")
     add_p_registry_info(p)
-
-    p = subparsers.add_parser("publish_service_fixed_price_single_group", help="Publish service with fixed price, single group and multiply endpoints")
-    p.set_defaults(fn="publish_service_fixed_price_single_group")
-    p.add_argument("protodir",     help="Directory which contains protobuf files")    
-    add_p_registry_info(p)
-    add_p_mpe_address(p)
-    add_p_price(p)
-    add_p_payment_address(p)
-    add_p_endpoints_finalarg(p)
-    p.add_argument("--group_name", default="group1", help="unique name of the group (human readable), default is group1")
-    add_p_metadata_file_opt(p)
-    add_p_tags_opt(p)
-    add_p_service_path_opt(p)
-    add_p_transact_yes(p)
     
 
     
