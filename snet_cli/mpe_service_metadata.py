@@ -4,6 +4,11 @@
 # version          - used to track format changes (current version is 1)
 # display_name     - Display name of the service
 # encoding         - Service encoding (json or grpc)
+# service_type     - Service type (grpc, jsonrpc or process)  
+# payment_expiration_threshold - Service will reject payments with expiration less
+#                                than current_block + payment_expiration_threshold.
+#                                This field should be used by the client with caution.
+#                                Client should not accept arbitrary payment_expiration_threshold
 # model_ipfs_hash  - IPFS HASH to the .tar archive of protobuf service specification
 # mpe_address      - Address of MultiPartyEscrow contract. 
 #                    Client should use it exclusively for cross-checking of mpe_address, 
@@ -38,24 +43,20 @@ class mpe_service_metadata:
         self.m = {"version"        : 1,
                   "display_name"   : "",
                   "encoding"       : "grpc", # grpc by default
+                  "service_type"   : "grpc", # grpc by default
+                  "payment_expiration_threshold" : 40320, # one week by default (15 sec block,  24*60*60*7/15) 
                   "model_ipfs_hash": "",
                   "mpe_address"    : "",
                   "pricing"        : {},
                   "groups"         : [],
                   "endpoints"      : []}
                   
-
-    def set_model_ipfs_hash(self, model_ipfs_hash):
-        self.m["model_ipfs_hash"] = model_ipfs_hash
-
-    def set_display_name(self, display_name):
-        self.m["display_name"] = display_name
-
-    def set_encoding(self, encoding):
-        self.m["encoding"] = encoding 
-        
-    def set_mpe_address(self, mpe_address):
-        self.m["mpe_address"] = mpe_address
+    
+    def set_simple_field(self, f, v):
+        if (f != "display_name" and f != "encoding" and f != "model_ipfs_hash" and f != "mpe_address" and
+            f != "service_type" and f != "payment_expiration_threshold"):
+                raise Exception("unknow field in mpe_service_metadata")
+        self.m[f] = v        
         
     def set_fixed_price(self, price):
         if (type(price) != int): 

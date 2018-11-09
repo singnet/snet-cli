@@ -13,21 +13,23 @@ class MPEServiceCommand(BlockchainCommand):
         ipfs_hash_base58 = utils_ipfs.publish_proto_in_ipfs(self._get_ipfs_client(), self.args.protodir)
         self._printout(ipfs_hash_base58)
 
-    # Init metadata with providing model_ipfs_hash, mpe_address, display_name and encoding  
-    def _metadata_init(self, model_ipfs_hash, mpe_address, display_name, encoding, metadata_file):
+    # Init metadata with providing model_ipfs_hash (all other parameters are taken from self.args)  
+    def _metadata_init(self, model_ipfs_hash):
         metadata = mpe_service_metadata()
-        metadata.set_model_ipfs_hash(model_ipfs_hash)
-        metadata.set_mpe_address(mpe_address)
-        metadata.set_display_name(display_name)
-        metadata.set_encoding(encoding)
-        metadata.save(metadata_file)
+        metadata.set_simple_field("model_ipfs_hash",              model_ipfs_hash)
+        metadata.set_simple_field("mpe_address",                  self.args.mpe_address)
+        metadata.set_simple_field("display_name",                 self.args.display_name)
+        metadata.set_simple_field("encoding",                     self.args.encoding)
+        metadata.set_simple_field("service_type",                 self.args.service_type)
+        metadata.set_simple_field("payment_expiration_threshold", self.args.payment_expiration_threshold)        
+        metadata.save(self.args.metadata_file)
     
     def metadata_init(self):
-        self._metadata_init(self.args.model_ipfs_hash, self.args.mpe_address, self.args.display_name, self.args.encoding, self.args.metadata_file)
+        self._metadata_init(self.args.model_ipfs_hash)
     
     def publish_proto_metadata_init(self):
         ipfs_hash_base58 = utils_ipfs.publish_proto_in_ipfs(self._get_ipfs_client(), self.args.protodir)
-        self._metadata_init(ipfs_hash_base58, self.args.mpe_address, self.args.display_name, self.args.encoding, self.args.metadata_file)
+        self._metadata_init(ipfs_hash_base58)
         
     #  metadata set fixed price  
     def metadata_set_fixed_price(self):        

@@ -589,11 +589,21 @@ def add_mpe_service_options(parser):
         p.add_argument("endpoints", nargs="+",  help="endpoints")
     def add_p_display_name(p):
         p.add_argument("display_name", help="Service display name")
-    def add_p_encoding(p):
+    def add_p_encoding_opt(p):
         p.add_argument("--encoding", default = "grcp", choices=['grpc', 'json'], help="Service encoding")
+    def add_p_service_type_opt(p):
+        p.add_argument("--service_type", default = "grcp", choices=['grpc', 'jsonrpc', 'process'], help="Service type")
+    def add_p_payment_expiration_threshold_p(p):
+        p.add_argument("--payment_expiration_threshold", type=int, default = 40320, help="Service expiration threshold in blocks (default is 40320 ~ one week with 15s/block)")
     def add_p_protodir(p):
         p.add_argument("protodir",     help="Directory which contains protobuf files")
 
+    def add_p_metadata_init_basic(p):
+        add_p_mpe_address(p)
+        add_p_display_name(p)
+        add_p_encoding_opt(p)
+        add_p_service_type_opt(p)
+        add_p_payment_expiration_threshold_p(p)
     
                     
     
@@ -603,21 +613,17 @@ def add_mpe_service_options(parser):
     add_p_protodir(p)
     
     
-    p = subparsers.add_parser("metadata_init", help="Init metadata file (with providing model_ipfs_hash, mpe_address, display_name and optionally encoding. Default enconding is grpc)")
+    p = subparsers.add_parser("metadata_init", help="Init metadata file (with providing model_ipfs_hash, mpe_address, display_name and optionally encoding, service_type and payment_expiration_threshold)")
     p.set_defaults(fn="metadata_init")
     add_p_metadata_file_opt(p)
     add_p_model_ipfs_hash(p)
-    add_p_mpe_address(p)
-    add_p_display_name(p)
-    add_p_encoding(p)
-
-    p = subparsers.add_parser("publish_proto_metadata_init", help="Publish protobuf file(s) in IPFS and init metadata file (with providing mpe_address, display_name and optionally encoding. Default enconding is grpc)")
+    add_p_metadata_init_basic(p)
+    
+    p = subparsers.add_parser("publish_proto_metadata_init", help="Publish protobuf file(s) in IPFS and init metadata file (with providing mpe_address, display_name and optionally encoding, service_type and payment_expiration_threshold)")
     p.set_defaults(fn="publish_proto_metadata_init")
     add_p_protodir(p)
     add_p_metadata_file_opt(p)
-    add_p_mpe_address(p)
-    add_p_display_name(p)
-    add_p_encoding(p)
+    add_p_metadata_init_basic(p)
                 
 
     p = subparsers.add_parser("metadata_set_fixed_price", help="Set pricing model as fixed price for all methods")
