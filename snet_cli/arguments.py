@@ -498,9 +498,9 @@ def add_mpe_client_options(parser):
         p.add_argument("endpoint",             help="service endpoint")
     def add_p_full_service_for_call(p):
         add_p_endpoint(p)
-        p.add_argument("service",              help="name of protobuf service to call")
-        p.add_argument("method",               help="target service's method name to call")
-        p.add_argument("params", nargs='?',    help="json-serialized parameters object or path containing "
+        p.add_argument("--service", default=None, help="name of protobuf service to call. It should be specified in case of method name conflict.")
+        p.add_argument("method",                  help="target service's method name to call")
+        p.add_argument("params", nargs='?',       help="json-serialized parameters object or path containing "
                                                 "json-serialized parameters object (leave emtpy to read from stdin)")        
     def add_p_full_message(p):
         add_p_mpe_address(p)
@@ -508,12 +508,13 @@ def add_mpe_client_options(parser):
         p.add_argument("nonce",      type=int, help="nonce of the channel")
         p.add_argument("amount",     type=int, help="amount")
 
+    def add_p_is_json_encoding_opt(p):
+        p.add_argument("--json", action="store_true", help="switch to JSON payload encoding for GRPC calls")
 
-    # "compile_from_file": Compile protobuf from the file. We will use it for the given channel (channel_id)
-    p = subparsers.add_parser("compile_from_file", help="Compile protobuf from the file")
-    p.set_defaults(fn="compile_protobuf_from_file")
+    # "compile_from_dir": Compile protobuf from the directory. We will use it for the given channel (channel_id)
+    p = subparsers.add_parser("compile_from_dir", help="Compile protobuf from given directory (we take all *.proto)")
+    p.set_defaults(fn="compile_protobuf_from_dir")
     p.add_argument("proto_dir",  type=str, help="protobuf .proto directory")
-    p.add_argument("proto_file", type=str, help="protobuf .proto file")
     add_p_channel_id(p)
     
     # "call_server":  call server using the payment channel in stateless manner (protobuf should be already compiled)
@@ -523,12 +524,14 @@ def add_mpe_client_options(parser):
     add_p_channel_id(p)
     p.add_argument("price",     type=int, help="price for this call")
     add_p_full_service_for_call(p)                                                
+    add_p_is_json_encoding_opt(p)
     
     # "call_server_lowlevel":  low level function for calling the server using already compiled protobuf
     p = subparsers.add_parser("call_server_lowlevel", help="Low level function for calling the server. Protobuf should be already compiled")
     p.set_defaults(fn="call_server_lowlevel")
     add_p_full_message(p)
     add_p_full_service_for_call(p)
+    add_p_is_json_encoding_opt(p)
 
     # "sing_message":
     p = subparsers.add_parser("sign_message", help="Sign the message for the given channel")
