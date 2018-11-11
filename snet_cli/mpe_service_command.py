@@ -12,13 +12,24 @@ class MPEServiceCommand(BlockchainCommand):
     def publish_proto_in_ipfs(self):
         ipfs_hash_base58 = utils_ipfs.publish_proto_in_ipfs(self._get_ipfs_client(), self.args.protodir)
         self._printout(ipfs_hash_base58)
-        
-    # Init metadata and set model_ipfs_hash  
-    def metadata_init(self):
+
+    # Init metadata with providing model_ipfs_hash (all other parameters are taken from self.args)  
+    def _metadata_init(self, model_ipfs_hash):
         metadata = mpe_service_metadata()
-        metadata.set_model_ipfs_hash(self.args.model_ipfs_hash)
-        metadata.set_mpe_address(self.args.mpe_address)
+        metadata.set_simple_field("model_ipfs_hash",              model_ipfs_hash)
+        metadata.set_simple_field("mpe_address",                  self.args.mpe_address)
+        metadata.set_simple_field("display_name",                 self.args.display_name)
+        metadata.set_simple_field("encoding",                     self.args.encoding)
+        metadata.set_simple_field("service_type",                 self.args.service_type)
+        metadata.set_simple_field("payment_expiration_threshold", self.args.payment_expiration_threshold)        
         metadata.save(self.args.metadata_file)
+    
+    def metadata_init(self):
+        self._metadata_init(self.args.model_ipfs_hash)
+    
+    def publish_proto_metadata_init(self):
+        ipfs_hash_base58 = utils_ipfs.publish_proto_in_ipfs(self._get_ipfs_client(), self.args.protodir)
+        self._metadata_init(ipfs_hash_base58)
         
     #  metadata set fixed price  
     def metadata_set_fixed_price(self):        
@@ -77,25 +88,3 @@ class MPEServiceCommand(BlockchainCommand):
     def get_service_metadata_hash_from_registry(self):
         self._printout(self._get_service_metadata_hash_from_registry(self.args.registry_address, self.args.organization, self.args.service))
         
-    # II. High level functions
-    def publish_service_fixed_price_single_group(self):
-        
-        # publish protobuf in ipfs
-        model_ipfs_hash = utils_ipfs.publish_proto_in_ipfs(self._get_ipfs_client(), self.args.protodir)
-        
-        # create service metadata
-        metadata = mpe_service_metadata()
-        metadata.set_model_ipfs_hash(model_ipfs_hash)
-        metadata.set_mpe_address(self.args.mpe_address)        
-        metadata.set_fixed_price(self.args.price)
-        metadata.add_group(self.args.group_name, self.args.payment_address)
-        
-        for endpoint in self.args.endpoints:            
-            metadata.add_endpoint(self.args.group_name, endpoint)
-            
-        # save metadata in the file
-        metadata.save(self.args.metadata_file)
-        
-        # publish service
-        self._publish_service_with_metadata(self.args.registry_address, self.args.organization, self.args.service, self.args.service_path, self.args.tags, self.args.metadata_file)
-            
