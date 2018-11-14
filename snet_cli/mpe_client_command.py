@@ -10,7 +10,9 @@ import grpc
 from eth_account.messages import defunct_hash_message
 from web3.utils.encoding import pad_hex
 from web3.utils.events import get_event_data
-from snet_cli.utils import get_contract_def, abi_get_element_by_name, abi_decode_struct_to_dict, import_protobuf_from_dir
+from snet_cli.utils import get_contract_def, abi_get_element_by_name, abi_decode_struct_to_dict
+from snet_cli.utils_proto import import_protobuf_from_dir, switch_to_json_payload_econding
+
 
 class MPEClientCommand(BlockchainCommand):
     
@@ -57,9 +59,10 @@ class MPEClientCommand(BlockchainCommand):
     # II. Call related functions
     
     # complie protobuf for the given payment channel
-    def compile_protobuf_from_file(self):
+    def compile_protobuf_from_dir(self):
         codegen_dir = self.get_channel_dir()
-        compile_proto(self.args.proto_dir, codegen_dir, proto_file=self.args.proto_file)
+        if (not compile_proto(Path(self.args.proto_dir), codegen_dir)):
+            self._error("Fail to compile %s/*.proto"%self.args.proto_dir)
     
     # get persistent storage for the given channel (~/.snet/mpe_client/<channel-id>/)
     def get_channel_dir(self):
@@ -117,14 +120,17 @@ class MPEClientCommand(BlockchainCommand):
             
     def _import_protobuf_for_channel(self, service_name, method_name):
         channel_dir = self.get_channel_dir()
-        return import_protobuf_from_dir(channel_dir, service_name, method_name)
+        return import_protobuf_from_dir(channel_dir, method_name, service_name)
+
+    def _call_server_withchannel(self, grpc_channel, service, method, mpe_address, channel_id, nonce, amount, params, is_json_encoding):
+        stub_class, request_class, response_class = self._import_protobuf_for_channel(service, method)
         
-    def _call_server_withchannel(self, grpc_channel, service, method, mpe_address, channel_id, nonce, amount, params):        
-        stub_class, request_class = self._import_protobuf_for_channel(service, method)
-        request                   = request_class(**params)        
+        request  = request_class(**params)
+        stub     = stub_class(grpc_channel)
+        call_fn  = getattr(stub, self.args.method)
         
-        stub    = stub_class(grpc_channel)
-        call_fn = getattr(stub, self.args.method)
+        if is_json_encoding:
+            switch_to_json_payload_econding(call_fn, response_class)
         
         signature = self._sign_message(mpe_address, channel_id, nonce, amount)
         metadata = [("snet-payment-type",                 "escrow"                    ),
@@ -142,7 +148,7 @@ class MPEClientCommand(BlockchainCommand):
         
         response = self._call_server_withchannel(grpc_channel, self.args.service, self.args.method, 
                                                  self.args.mpe_address, self.args.channel_id, self.args.nonce, self.args.amount, 
-                                                 params)
+                                                 params, self.args.json)
         self._printout(response)
         
     # III. Stateless client related functions 
@@ -178,12 +184,11 @@ class MPEClientCommand(BlockchainCommand):
             compile_proto(proto_dir, codegen_dir, proto_file = "state_service.proto")
         
         # make PaymentChannelStateService.GetChannelState call to the daemon
-        stub_class, request_class = import_protobuf_from_dir(codegen_dir, "PaymentChannelStateService", "GetChannelState")
+        stub_class, request_class, _ = import_protobuf_from_dir(codegen_dir, "GetChannelState")
         message   = self.w3.soliditySha3(["uint256"], [channel_id])
         signature = self.ident.sign_message_after_soliditySha3(message)
 
-#        request   = request_class(channel_id = self.w3.toBytes(channel_id), signature = bytes(signature))
-        request   = request_class(channel_id = self.w3.toBytes(channel_id).rjust(32,b"\0"), signature = bytes(signature))
+        request   = request_class(channel_id = self.w3.toBytes(channel_id), signature = bytes(signature))
         
         stub     = stub_class(grpc_channel)
         response = getattr(stub, "GetChannelState")(request)
@@ -233,7 +238,7 @@ class MPEClientCommand(BlockchainCommand):
         self._printout("unspent_amount before call (None means that we cannot get it now):%s"%str(unspent_amount))
         response = self._call_server_withchannel(grpc_channel, self.args.service, self.args.method,
                                                  self.args.mpe_address, self.args.channel_id, current_nonce, current_amount + self.args.price, 
-                                                 params)
+                                                 params, self.args.json)
         self._printout(response)
         
         
