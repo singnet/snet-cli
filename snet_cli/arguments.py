@@ -484,6 +484,18 @@ class AppendPositionalAction(argparse.Action):
         delattr(namespace, self.dest)
 
 
+def add_p_mpe_address_opt(p):
+    p.add_argument("--multipartyescrow", "--mpe", default=None,  help="address of MultiPartyEscrow contract, if not specified we read address from \"networks\"")
+
+def add_p_metadata_file_opt(p):
+    p.add_argument("--metadata_file", default="service_metadata.json", help="Service metadata json file (default service_metadata.json)")
+
+def add_p_service_in_registry(p):
+    p.add_argument("--registry",  default=None, help="address of Registry contract, if not specified we read address from \"networks\"")
+    p.add_argument("organization", help="Name of organization")
+    p.add_argument("service",      help="Name of service")
+
+
 def add_mpe_client_options(parser):
     parser.set_defaults(cmd=MPEClientCommand)
     subparsers = parser.add_subparsers(title="Commands", metavar="COMMAND")
@@ -492,8 +504,6 @@ def add_mpe_client_options(parser):
     def add_p_channel_id(p):
         # int is ok here because in python3 int is unlimited
         p.add_argument("channel_id", type=int, help="channel_id")
-    def add_p_mpe_address(p):
-        p.add_argument("mpe_address",          help="address of MPE contract")
     def add_p_endpoint(p):        
         p.add_argument("endpoint",             help="service endpoint")
     def add_p_full_service_for_call(p):
@@ -503,61 +513,84 @@ def add_mpe_client_options(parser):
         p.add_argument("params", nargs='?',       help="json-serialized parameters object or path containing "
                                                 "json-serialized parameters object (leave emtpy to read from stdin)")        
     def add_p_full_message(p):
-        add_p_mpe_address(p)
+        add_p_mpe_address_opt(p)
         add_p_channel_id(p)
         p.add_argument("nonce",      type=int, help="nonce of the channel")
         p.add_argument("amount",     type=int, help="amount")
 
-    def add_p_is_json_encoding_opt(p):
-        p.add_argument("--json", action="store_true", help="switch to JSON payload encoding for GRPC calls")
+    def add_p_snt_address_opt(p):
+        p.add_argument("--singularitynettoken", "--snt", default=None,  help="address of SingularityNetToken contract, if not specified we read address from \"networks\"")
+    
+    def add_p_open_channel_basic(p):
+        p.add_argument("amount",         type=int, help="amount of cogs to put in the new channel (cogs = 10^(-8) AGI)")
+        p.add_argument("expiration",     type=int, help="expiration time (in blocks) for the new channel (one block ~ 15 seconds)")
+        p.add_argument("--group_name", default=None, help="name of payment group for which we want to open the channel. Parameter should be specified only for services with several payment groups")
+        add_p_mpe_address_opt(p)
+        add_transaction_arguments(p)
+        
+    p = subparsers.add_parser("balance", help="print balance of AGI tokens and balance of MPE wallet")
+    p.set_defaults(fn="print_agi_and_mpe_balances")
+    add_p_snt_address_opt(p)
+    add_p_mpe_address_opt(p)
 
-    # "compile_from_dir": Compile protobuf from the directory. We will use it for the given channel (channel_id)
-    p = subparsers.add_parser("compile_from_dir", help="Compile protobuf from given directory (we take all *.proto)")
-    p.set_defaults(fn="compile_protobuf_from_dir")
-    p.add_argument("proto_dir",  type=str, help="protobuf .proto directory")
-    add_p_channel_id(p)
+    p = subparsers.add_parser("deposit", help="deposit AGI tokens to MPE wallet")
+    p.set_defaults(fn="deposit_to_mpe")
+    p.add_argument("amount",  type=int, help="amount of cogs to deposit in MPE wallet (cogs = 10^(-8) AGI)")
+    add_p_snt_address_opt(p)    
+    add_p_mpe_address_opt(p)
+    add_transaction_arguments(p)
     
-    # "call_server":  call server using the payment channel in stateless manner (protobuf should be already compiled)
-    p = subparsers.add_parser("call_server", help="call server in stateless manner. We ask state of the channel from the server. Protobuf should be already compiled.")
+    p = subparsers.add_parser("withdraw", help="withdraw AGI tokens from MPE wallet")
+    p.set_defaults(fn="withdraw_from_mpe")
+    p.add_argument("amount",  type=int, help="amount of cogs to withdraw from MPE wallet (cogs = 10^(-8) AGI)")
+    add_p_mpe_address_opt(p)
+    add_transaction_arguments(p)
+
+    p = subparsers.add_parser("init_channel_metadata", help="Initialize channel using service metadata")
+    p.set_defaults(fn="init_channel_from_metadata")
+    add_p_metadata_file_opt(p)
+    add_p_mpe_address_opt(p)
+    add_p_channel_id(p)
+
+    p = subparsers.add_parser("init_channel_registry", help="Initialize channel taking service metadata from Registry")
+    p.set_defaults(fn="init_channel_from_registry")
+    add_p_service_in_registry(p)
+    add_p_mpe_address_opt(p)
+    add_p_channel_id(p)
+
+    p = subparsers.add_parser("open_init_channel_metadata", help="Open and initilize channel using service metadata")
+    p.set_defaults(fn="open_init_channel_from_metadata")
+    add_p_open_channel_basic(p)
+    add_p_metadata_file_opt(p)
+    
+    p = subparsers.add_parser("open_init_channel_registry", help="Open and initilize channel using metadata from Registry")
+    p.set_defaults(fn="open_init_channel_from_registry")
+    add_p_service_in_registry(p)
+    add_p_open_channel_basic(p)
+    
+    p = subparsers.add_parser("call", help="call server in stateless manner. We ask state of the channel from the server. Channel should be already initialized.")
     p.set_defaults(fn="call_server_statelessly")
-    add_p_mpe_address(p)
     add_p_channel_id(p)
-    p.add_argument("price",     type=int, help="price for this call")
+    p.add_argument("price",     type=int, help="price for this call in cogs (cogs = 10^(-8) AGI)")
     add_p_full_service_for_call(p)                                                
-    add_p_is_json_encoding_opt(p)
+    add_p_mpe_address_opt(p)
     
-    # "call_server_lowlevel":  low level function for calling the server using already compiled protobuf
-    p = subparsers.add_parser("call_server_lowlevel", help="Low level function for calling the server. Protobuf should be already compiled")
+    p = subparsers.add_parser("call_lowlevel", help="Low level function for calling the server. Channel should be already initialized.")
     p.set_defaults(fn="call_server_lowlevel")
     add_p_full_message(p)
     add_p_full_service_for_call(p)
-    add_p_is_json_encoding_opt(p)
-
-    # "sing_message":
-    p = subparsers.add_parser("sign_message", help="Sign the message for the given channel")
-    p.set_defaults(fn="print_sign_message")
-    add_p_full_message(p)
-
-    # "verify_my_signature":
-    p = subparsers.add_parser("verify_my_signature", help="Verify our own signature")
-    p.set_defaults(fn="print_verify_my_signature_base64")
-    add_p_full_message(p)
-    p.add_argument("signature_base64",     help="signature in base64")
     
-    # "block_number":   get the most recent block number
     p = subparsers.add_parser("block_number", help="Print the last ethereum block number")
     p.set_defaults(fn="print_block_number")
 
-    # "print_my_channels": print all channels which have the given idendity as a sender 
-    p = subparsers.add_parser("print_my_channels", help="Print all channels related to the current identity")
-    p.set_defaults(fn="print_my_channels")
-    add_p_mpe_address(p)
+    p = subparsers.add_parser("list_channels_all", help="Print all channels related to the current identity directly from blockchain.")
+    p.set_defaults(fn="print_my_channels_from_blockchain")
+    add_p_mpe_address_opt(p)
     p.add_argument("--from_block", type=int, default=0, help="Start searching from this block")
     
-    # "print_channel_state_from_server":  
-    p = subparsers.add_parser("print_channel_state_from_server", help="Get channel state from the server and print it")
-    p.set_defaults(fn="print_channel_state_from_server")
-    add_p_mpe_address(p)
+    p = subparsers.add_parser("get_channel_state", help="Get channel state in stateless manner")
+    p.set_defaults(fn="print_channel_state_statelessly")
+    add_p_mpe_address_opt(p)
     add_p_channel_id(p)
     add_p_endpoint(p)
      
@@ -566,109 +599,72 @@ def add_mpe_service_options(parser):
     subparsers = parser.add_subparsers(title="Commands", metavar="COMMAND")
     subparsers.required = True
     
-    def add_p_metadata_file_opt(p):
-        p.add_argument("--metadata_file", default="service_metadata.json", help="Service metadata json file (default service_metadata.json)")
-    def add_p_model_ipfs_hash(p):
-        p.add_argument("model_ipfs_hash", help="ipfs hash of .tar file which contains service .proto files")
     def add_p_group_name(p):
         p.add_argument("group_name", help="unique name of the group (human readable)")
-    def add_p_mpe_address(p):
-        p.add_argument("mpe_address",          help="address of MPE contract")
-    def add_p_registry_info(p):
-        p.add_argument("registry_address",     help="address of Registry contract")
-        p.add_argument("organization", help="Name of organization")
-        p.add_argument("service",      help="Name of service")
-    def add_p_price(p):
-        p.add_argument("price", type = int, help="fix price in cogs for all methods (cogs = 10^(-8) AGI)")
-    def add_p_payment_address(p):
-        p.add_argument("payment_address", help="payment_address for this group")
-    def add_p_transact_yes(p):
-        p.add_argument("--yes", "-y", action="store_true", help="skip interactive confirmation for blockchain operations")
-    def add_p_tags_opt(p):
-        p.add_argument("--tags", nargs="*", default=[], help="tags for service")
-    def add_p_service_path_opt(p):
-        p.add_argument("--service_path",  default="",  help="Registry path for the service (default \"\")")
-    def add_p_endpoints_finalarg(p):
-        p.add_argument("endpoints", nargs="+",  help="endpoints")
-    def add_p_display_name(p):
-        p.add_argument("display_name", help="Service display name")
-    def add_p_encoding_opt(p):
-        p.add_argument("--encoding", default = "grcp", choices=['grpc', 'json'], help="Service encoding")
-    def add_p_service_type_opt(p):
-        p.add_argument("--service_type", default = "grcp", choices=['grpc', 'jsonrpc', 'process'], help="Service type")
-    def add_p_payment_expiration_threshold_p(p):
-        p.add_argument("--payment_expiration_threshold", type=int, default = 40320, help="Service expiration threshold in blocks (default is 40320 ~ one week with 15s/block)")
     def add_p_protodir(p):
-        p.add_argument("protodir",     help="Directory which contains protobuf files")
-
-    def add_p_metadata_init_basic(p):
-        add_p_mpe_address(p)
-        add_p_display_name(p)
-        add_p_encoding_opt(p)
-        add_p_service_type_opt(p)
-        add_p_payment_expiration_threshold_p(p)
-    
+        p.add_argument("protodir",     help="Directory which contains protobuf files")    
                     
-    
-    # "publish protobuf in IPFS":
-    p = subparsers.add_parser("publish_proto", help="Publish protobuf file(s) in IPFS")
-    p.set_defaults(fn="publish_proto_in_ipfs")
-    add_p_protodir(p)
-    
-    
-    p = subparsers.add_parser("metadata_init", help="Init metadata file (with providing model_ipfs_hash, mpe_address, display_name and optionally encoding, service_type and payment_expiration_threshold)")
-    p.set_defaults(fn="metadata_init")
-    add_p_metadata_file_opt(p)
-    add_p_model_ipfs_hash(p)
-    add_p_metadata_init_basic(p)
-    
-    p = subparsers.add_parser("publish_proto_metadata_init", help="Publish protobuf file(s) in IPFS and init metadata file (with providing mpe_address, display_name and optionally encoding, service_type and payment_expiration_threshold)")
+    p = subparsers.add_parser("metadata_init", help="Init metadata file with providing protobuf directory (which we publish in IPFS) and display_name (optionally encoding, service_type and payment_expiration_threshold)")
     p.set_defaults(fn="publish_proto_metadata_init")
     add_p_protodir(p)
     add_p_metadata_file_opt(p)
-    add_p_metadata_init_basic(p)
-                
+    add_p_mpe_address_opt(p)
+    p.add_argument("display_name", help="Service display name")
+    p.add_argument("--encoding", default = "grcp", choices=['grpc', 'json'], help="Service encoding")
+    p.add_argument("--service_type", default = "grcp", choices=['grpc', 'jsonrpc', 'process'], help="Service type")
+    p.add_argument("--payment_expiration_threshold", type=int, default = 40320, help="Service expiration threshold in blocks (default is 40320 ~ one week with 15s/block)")
 
     p = subparsers.add_parser("metadata_set_fixed_price", help="Set pricing model as fixed price for all methods")
     p.set_defaults(fn="metadata_set_fixed_price")
+    p.add_argument("price", type = int, help="fix price in cogs for all methods (cogs = 10^(-8) AGI)")
     add_p_metadata_file_opt(p)
-    add_p_price(p)
 
     p = subparsers.add_parser("metadata_add_group", help="Add new group of replicas")
     p.set_defaults(fn="metadata_add_group")
     add_p_metadata_file_opt(p)
     add_p_group_name(p)
-    add_p_payment_address(p)
+    p.add_argument("payment_address", help="payment_address for this group")
  
     p = subparsers.add_parser("metadata_add_endpoints", help="Add endpoints to the groups")
     p.set_defaults(fn="metadata_add_endpoints")
     add_p_metadata_file_opt(p)
     add_p_group_name(p)
-    add_p_endpoints_finalarg(p)
+    p.add_argument("endpoints", nargs="+",  help="endpoints")
  
-    p = subparsers.add_parser("publish_metadata_in_ipfs", help="Publish metadata in IPFS")
+    p = subparsers.add_parser("publish_in_ipfs", help="Publish metadata only in IPFS, without publising in Registry")
     p.set_defaults(fn="publish_metadata_in_ipfs")
     add_p_metadata_file_opt(p)
 
-    p = subparsers.add_parser("publish_metadata_in_registry", help="Publish metadata in existed service")
-    p.set_defaults(fn="publish_metadata_in_ipfs_and_registry")    
-    add_p_registry_info(p)
-    add_p_metadata_file_opt(p)
-    add_p_transact_yes(p)
-    
-    p = subparsers.add_parser("publish_service", help="Publish service with given metadata file")
+    p = subparsers.add_parser("publish", help="Publish service with given metadata")
     p.set_defaults(fn="publish_service_with_metadata")
-    add_p_registry_info(p)
-    add_p_service_path_opt(p)
+    add_p_service_in_registry(p)
     add_p_metadata_file_opt(p)
-    add_p_tags_opt(p)
-    add_p_transact_yes(p)
+    p.add_argument("--tags", nargs="*", default=[], help="tags for service")
+    add_transaction_arguments(p)
 
-    p = subparsers.add_parser("get_service_metadata", help="Get service metadata from registry")
-    p.set_defaults(fn="get_service_metadata_hash_from_registry")
-    add_p_registry_info(p)
-    
+    p = subparsers.add_parser("update_metadata", help="Publish metadata in IPFS and update existed service")
+    p.set_defaults(fn="publish_metadata_in_ipfs_and_update_registration")    
+    add_p_service_in_registry(p)
+    add_p_metadata_file_opt(p)
+    add_transaction_arguments(p)
 
-    
+    p = subparsers.add_parser("update_add_tags", help="Add tags to existed service registration")
+    p.set_defaults(fn="update_registration_add_tags")    
+    add_p_service_in_registry(p)
+    p.add_argument("tags", nargs="+", default=[], help="tags which will be add")
+    add_transaction_arguments(p)
 
-    
+    p = subparsers.add_parser("update_remove_tags", help="Remove tags from existed service registration")
+    p.set_defaults(fn="update_registration_remove_tags")    
+    add_p_service_in_registry(p)
+    p.add_argument("tags", nargs="+", default=[], help="tags which will be removed")
+    add_transaction_arguments(p)
+
+    p = subparsers.add_parser("print_metadata", help="Print service metadata from registry")
+    p.set_defaults(fn="print_service_metadata_from_registry")
+    add_p_service_in_registry(p)
+
+    p = subparsers.add_parser("print_tags", help="Print tags for given service from registry")
+    p.set_defaults(fn="print_service_tags_from_registry")
+    add_p_service_in_registry(p)
+

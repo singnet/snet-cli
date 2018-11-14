@@ -195,3 +195,33 @@ def abi_get_element_by_name(abi, name):
 
 def abi_decode_struct_to_dict(abi, struct_list):
     return {el_abi["name"] : el for el_abi, el in zip(abi["outputs"], struct_list)}
+
+
+# if arg is not None we take address from it otherwise we read the address from "networks/*json"
+def get_contract_address_from_args_or_networks(w3, contract_name, arg):
+    if (arg):
+        return w3.toChecksumAddress(arg)
+    
+    # try to take address from networks
+    try :
+        contract_def     = get_contract_def(contract_name)
+        networks         = contract_def["networks"]
+        chain_id         = w3.version.network
+        contract_address = networks.get(chain_id, {}).get("address", None)
+        if (not contract_address):
+            raise Exception()
+        contract_address = w3.toChecksumAddress(contract_address)
+    except:
+        raise Exception("Fail to read %s address from \"networks\", you should specify address by yourself via --%s parameter"%(contract_name, contract_name.lower()))
+        
+    return contract_address
+
+def get_registry_address_from_args_or_networks(w3, arg):
+    return get_contract_address_from_args_or_networks(w3, "Registry", arg)
+
+def get_mpe_address_from_args_or_networks(w3, arg):
+    return get_contract_address_from_args_or_networks(w3, "MultiPartyEscrow", arg)
+
+def get_snt_address_from_args_or_networks(w3, arg):
+    return get_contract_address_from_args_or_networks(w3, "SingularityNetToken", arg)
+

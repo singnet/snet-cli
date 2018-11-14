@@ -1,4 +1,4 @@
-# functions for manipulate with server.json file
+# functions for manipulate service metadata
 # metadata format:
 #----------------------------------------------------
 # version          - used to track format changes (current version is 1)
@@ -36,6 +36,7 @@ import json
 import base64
 import secrets
 
+# TODO: we should use some standart solution here
 class mpe_service_metadata:
     
     # init with modelIPFSHash
@@ -70,7 +71,7 @@ class mpe_service_metadata:
             raise Exception("the group \"%s\" is already present"%str(group_name))
         group_id_base64 = base64.b64encode(secrets.token_bytes(32))
         self.m["groups"] += [{"group_name"      : group_name , 
-                              "group_id"        : str(group_id_base64),
+                              "group_id"        : group_id_base64.decode("ascii"),
                               "payment_address" : payment_address}]
         return group_id_base64
     
@@ -94,20 +95,53 @@ class mpe_service_metadata:
         return json.dumps(self.m)
     
     def set_from_json(self, j):
-        # TODO: we probaly should check th  consistensy of loaded json here
+        # TODO: we probaly should check the  consistensy of loaded json here
         #       check that it contains required fields
         self.m = json.loads(j)
         
     def load(self, file_name):        
         with open(file_name) as f:
-            self.set_from_json(json.load(f))
+            self.set_from_json(f.read())
     
     def save(self, file_name):
         with open(file_name, 'w') as f:
-            json.dump(self.get_json(), f)
+            json.dump(self.m, f)
 
+    def __getitem__(self, key):
+        return self.m[key]
+    
+    # In all getter function group_name == None works only in case of single payment group
+    
+    def get_group(self, group_name = None):
+        groups = self.m["groups"]
+        if (len(groups) == 0):
+            raise Exception("Cannot find any groups in metadata")
+        if (not group_name):
+            if (len(groups) > 1):
+                raise Exception("We have more than one payment group in metadata, so group_name should be specified")
+            return groups[0]
+        for g in groups:
+            if (g["group_name"] == group_name):
+                return g
+        raise Exception('Cannot find group "%s" in metadata'%group_name)
 
+    def get_group_id_base64(self, group_name = None):
+        return self.get_group(group_name)["group_id"]
+
+    def get_group_id(self, group_name = None):
+        return base64.b64decode(self.get_group_id_base64(group_name))
+
+    def get_payment_address(self, group_name = None):
+        return self.get_group(group_name)["payment_address"]
+
+    
 def load_mpe_service_metadata(f):
     metadata = mpe_service_metadata()
     metadata.load(f)
     return metadata
+
+def mpe_service_metadata_from_json(j):
+    metadata      = mpe_service_metadata()
+    metadata.set_from_json(j)
+    return metadata
+                    

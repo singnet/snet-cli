@@ -12,10 +12,138 @@ from web3.utils.encoding import pad_hex
 from web3.utils.events import get_event_data
 from snet_cli.utils import get_contract_def, abi_get_element_by_name, abi_decode_struct_to_dict
 from snet_cli.utils_proto import import_protobuf_from_dir, switch_to_json_payload_econding
+from snet_cli.utils import get_snt_address_from_args_or_networks, get_mpe_address_from_args_or_networks, get_registry_address_from_args_or_networks, type_converter
+from snet_cli.mpe_service_metadata import mpe_service_metadata_from_json, load_mpe_service_metadata
+from snet_cli.utils_ipfs import bytesuri_to_hash, get_from_ipfs_and_checkhash
+import tarfile
+import io
+import shutil
+import tempfile
 
 
 class MPEClientCommand(BlockchainCommand):
+
+    # O. MultiPartyEscrow related functions
+    def get_mpe_address(self):
+        if (not hasattr(self, "_mpe_address")):
+            self._mpe_address = get_mpe_address_from_args_or_networks(self.w3, self.args.multipartyescrow)
+        return self._mpe_address
     
+    def get_snt_address(self):
+        if (not hasattr(self, "_snt_address")):
+            self._snt_address = get_snt_address_from_args_or_networks(self.w3, self.args.singularitynettoken)
+        return self._snt_address
+    
+    # print balance of AGI tokens and balance of MPE wallet
+    def print_agi_and_mpe_balances(self):        
+        agi_balance = self.call_contract_command("SingularityNetToken", self.get_snt_address(), "balanceOf", [self.ident.address])        
+        mpe_balance = self.call_contract_command("MultiPartyEscrow",    self.get_mpe_address(), "balances",  [self.ident.address])
+        print("#AGI token balance in cogs (cogs = 10^(-8) AGI)")
+        print(agi_balance)
+        print("#MPE wallet balance in cogs (cogs = 10^(-8) AGI)")
+        print(mpe_balance)
+    
+    def deposit_to_mpe(self):
+        snt_address = self.get_snt_address()
+        mpe_address = self.get_mpe_address()
+        amount      = self.args.amount
+        
+        self.transact_contract_command("SingularityNetToken", snt_address, "approve", [mpe_address, amount])
+        self.transact_contract_command("MultiPartyEscrow",    mpe_address, "deposit", [amount])
+        
+    def withdraw_from_mpe(self):
+        self.transact_contract_command("MultiPartyEscrow", self.get_mpe_address(), "withdraw", [self.args.amount])
+                
+        
+    #TODO: this function is copy paste from mpe_service_command.py
+    def _get_service_metadata_from_registry(self):
+        registry_address = get_registry_address_from_args_or_networks(self.w3, self.args.registry)
+        params = [type_converter("bytes32")(self.args.organization), type_converter("bytes32")(self.args.service)]
+        rez = self.call_contract_command("Registry", registry_address, "getServiceRegistrationByName", params)
+        if (rez[0] == False):
+            raise Exception("Cannot find Service %s in Organization %s"%(self.args.service, self.args.organization))
+        metadata_hash = bytesuri_to_hash(rez[2])
+        metadata_json = get_from_ipfs_and_checkhash(self._get_ipfs_client(), metadata_hash)
+        metadata      = mpe_service_metadata_from_json(metadata_json)
+        return metadata
+    
+    # we make sure that MultiPartyEscrow address from metadata is correct 
+    def _check_mpe_address_metadata(self, metadata):
+        mpe_address = self.get_mpe_address()
+        if (str(mpe_address).lower() != str(metadata["mpe_address"]).lower()):
+            raise Exception("MultiPartyEscrow contract address from metadata %s do not correspond to current MultiPartyEscrow address %s"%(metadata["mpe_address"], mpe_address))
+
+    def _init_channel_from_metadata(self, channel_dir, metadata):
+        self._check_mpe_address_metadata(metadata)
+        if (os.path.exists(channel_dir)):
+            raise Exception("Directory %s already exists"%channel_dir)
+        os.makedirs(channel_dir)
+        try:
+            spec_dir = os.path.join(channel_dir, "service_spec")
+            os.makedirs(spec_dir)        
+            # take tar of .proto files from ipfs and extract them to channel_dir/service_spec
+            spec_tar = get_from_ipfs_and_checkhash(self._get_ipfs_client(), metadata["model_ipfs_hash"])
+            with tarfile.open(fileobj=io.BytesIO(spec_tar)) as f:
+                f.extractall(spec_dir)
+            
+            # compile .proto files
+            if (not compile_proto(Path(spec_dir), channel_dir)):
+                raise Exception("Fail to compile %s/*.proto"%spec_dir)
+            
+            # save service_metadata.json in channel_dir
+            metadata.save(os.path.join(channel_dir, "service_metadata.json"))
+        
+            # save current ethereum address in channel dir
+            with open(os.path.join(channel_dir, "client_address.txt"), 'w') as f:
+                f.write(self.ident.address)
+        except:
+            # it is secure to remove channel_dir, because we've created it
+            shutil.rmtree(channel_dir)
+            raise        
+        
+    def init_channel_from_metadata(self):
+        metadata  = load_mpe_service_metadata(self.args.metadata_file)
+        self._init_channel_from_metadata(self.get_channel_dir(), metadata)
+
+    def init_channel_from_registry(self):
+        channel_dir   = self.get_channel_dir()
+        metadata      = self._get_service_metadata_from_registry()
+        self._init_channel_from_metadata(channel_dir, metadata)
+        
+    def _open_channel_for_service(self, metadata):        
+        group_id    = metadata.get_group_id(self.args.group_name)
+        recipient   = metadata.get_payment_address(self.args.group_name)
+        mpe_address = self.get_mpe_address()
+        rez = self.transact_contract_command("MultiPartyEscrow", mpe_address, "openChannel", [recipient, self.args.amount, self.args.expiration, 0, self.ident.address])
+        
+        if (len(rez[1]) != 1 or rez[1][0]["event"] != "ChannelOpen"):
+            raise Exception("We've expected only one ChannelOpen event after openChannel")
+        return rez[1][0]["args"]["channelId"]
+    
+    def _open_init_channel_from_metadata(self, metadata):
+        # try to initilize channel without actually open it (we check metadata and we compile .proto files)
+        tmp_dir = tempfile.mkdtemp()
+        shutil.rmtree(tmp_dir)
+        self._init_channel_from_metadata(tmp_dir, metadata)
+        shutil.rmtree(tmp_dir)
+            
+        # open payment channel
+        channel_id = self._open_channel_for_service(metadata)
+        self._printout("#channel_id")
+        self._printout(channel_id)
+        
+        # move initilize channel to the channel directory
+        self._init_channel_from_metadata(self._get_channel_dir(channel_id), metadata)
+            
+            
+    def open_init_channel_from_metadata(self):
+        metadata  = load_mpe_service_metadata(self.args.metadata_file)
+        self._open_init_channel_from_metadata(metadata)
+
+    def open_init_channel_from_registry(self):
+        metadata   = self._get_service_metadata_from_registry()
+        self._open_init_channel_from_metadata(metadata)
+
     # I. Signature related functions
     
     def _compose_message_to_sign(self, mpe_address, channel_id, nonce, amount):
@@ -31,24 +159,12 @@ class MPEClientCommand(BlockchainCommand):
         sign    = self.ident.sign_message_after_soliditySha3(message)
         return sign    
     
-    def print_sign_message(self):
-        sign = self._sign_message(self.args.mpe_address, self.args.channel_id, self.args.nonce, self.args.amount)
-        self._printout("signature hex: ")
-        self._printout(sign.hex())
-        self._printout("signature base64: ")
-        self._printout(base64.b64encode(sign))
-
     def _verify_my_signature(self, signature, mpe_address, channel_id, nonce, amount):
         message      = self._compose_message_to_sign(mpe_address, channel_id, nonce, amount)
         message_hash = defunct_hash_message(message)
         sign_address = self.ident.w3.eth.account.recoverHash(message_hash, signature=signature)
         return sign_address == self.ident.address
     
-    def print_verify_my_signature_base64(self):
-        signature = base64.b64decode(self.args.signature_base64)
-        rez       = self._verify_my_signature(signature, self.args.mpe_address, self.args.channel_id, self.args.nonce, self.args.amount)
-        self._printout(rez)
-
     def _safe_to_checksum_address(self, a, error_message):
         try:
             return self.w3.toChecksumAddress(a)
@@ -56,17 +172,20 @@ class MPEClientCommand(BlockchainCommand):
             self._printerr(error_message)
             raise
         
-    # II. Call related functions
+    # II. Call related functions (low level)
+        
+    # get persistent storage for mpe_client
+    def _get_persistent_dir(self):
+        return Path.home().joinpath(".snet", "mpe_client")
+        
+    # get persistent storage for the given channel (~/.snet/mpe_client/<mpe_address>/<my_address>/<channel-id>/)
+    def _get_channel_dir(self, channel_id):
+        mpe_address = self.get_mpe_address().lower()
+        my_address  = self.ident.address.lower()
+        return self._get_persistent_dir().joinpath(mpe_address, my_address, str(channel_id))
     
-    # complie protobuf for the given payment channel
-    def compile_protobuf_from_dir(self):
-        codegen_dir = self.get_channel_dir()
-        if (not compile_proto(Path(self.args.proto_dir), codegen_dir)):
-            self._error("Fail to compile %s/*.proto"%self.args.proto_dir)
-    
-    # get persistent storage for the given channel (~/.snet/mpe_client/<channel-id>/)
     def get_channel_dir(self):
-        return Path.home().joinpath(".snet", "mpe_client", str(self.args.channel_id))
+        return self._get_channel_dir(self.args.channel_id)
    
     def _get_call_params(self):
         params_string = self.args.params
@@ -118,20 +237,26 @@ class MPEClientCommand(BlockchainCommand):
             rez[k_final] = v
         return rez
             
-    def _import_protobuf_for_channel(self, service_name, method_name):
+    def _import_protobuf_for_channel(self):
         channel_dir = self.get_channel_dir()
-        return import_protobuf_from_dir(channel_dir, method_name, service_name)
+        return import_protobuf_from_dir(channel_dir, self.args.method, self.args.service)
 
-    def _call_server_withchannel(self, grpc_channel, service, method, mpe_address, channel_id, nonce, amount, params, is_json_encoding):
-        stub_class, request_class, response_class = self._import_protobuf_for_channel(service, method)
+    def _get_channel_service_metadata():
+        load_mpe_channel_metadata()
+    def _call_server_via_grpc_channel(self, grpc_channel, nonce, amount, params):
+        
+        service_metadata = load_mpe_service_metadata(self.get_channel_dir().joinpath("service_metadata.json"))
+        stub_class, request_class, response_class = self._import_protobuf_for_channel()
         
         request  = request_class(**params)
         stub     = stub_class(grpc_channel)
         call_fn  = getattr(stub, self.args.method)
         
-        if is_json_encoding:
+        if service_metadata["encoding"] == "json":
             switch_to_json_payload_econding(call_fn, response_class)
         
+        mpe_address = self.get_mpe_address() 
+        channel_id  = self.args.channel_id
         signature = self._sign_message(mpe_address, channel_id, nonce, amount)
         metadata = [("snet-payment-type",                 "escrow"                    ),
                     ("snet-payment-channel-id",            str(channel_id)  ), 
@@ -141,41 +266,39 @@ class MPEClientCommand(BlockchainCommand):
         
         response = call_fn(request, metadata=metadata)
         return response
-        
+    
     def call_server_lowlevel(self):
         params                    = self._get_call_params()
         grpc_channel              = grpc.insecure_channel(self.args.endpoint)
         
-        response = self._call_server_withchannel(grpc_channel, self.args.service, self.args.method, 
-                                                 self.args.mpe_address, self.args.channel_id, self.args.nonce, self.args.amount, 
-                                                 params, self.args.json)
+        response = self._call_server_via_grpc_channel(grpc_channel, self.args.nonce, self.args.amount, params)
         self._printout(response)
         
     # III. Stateless client related functions 
     
-    def print_my_channels(self):
+    def print_my_channels_from_blockchain(self):
         # TODO: check that it is faster to use events to get all channels with the given sender (instead of using channels directly)
-        event_signature   = self.ident.w3.sha3(text="EventChannelOpen(uint256,address,address,uint256)").hex()
+        mpe_address = self.get_mpe_address()
+        event_signature   = self.ident.w3.sha3(text="ChannelOpen(uint256,address,address,uint256,address,uint256,uint256)").hex()
         my_address_padded = pad_hex(self.ident.address.lower(), 256)
         logs = self.ident.w3.eth.getLogs({"fromBlock" : self.args.from_block,
-                                          "address"   : self.args.mpe_address.lower(),
+                                          "address"   : mpe_address,
                                           "topics"    : [event_signature,  my_address_padded]})
-        
         # If we are sure that ABI will be fixed forever we can do like this:
         # channels_ids = [int(l['data'],16) for l in logs]
         abi           = get_contract_def("MultiPartyEscrow")
-        event_abi     = abi_get_element_by_name(abi, "EventChannelOpen")
+        event_abi     = abi_get_element_by_name(abi, "ChannelOpen")
         channels_ids  = [get_event_data(event_abi, l)["args"]["channelId"] for l in logs]
         
         channel_abi = abi_get_element_by_name(abi, "channels")
         
         self._printout("#id nonce recipient  groupId  value   expiration(blocks)")
         for i in channels_ids:
-            channel = self.call_contract_command("MultiPartyEscrow", self.args.mpe_address, "channels", [i])
+            channel = self.call_contract_command("MultiPartyEscrow", mpe_address, "channels", [i])
             channel = abi_decode_struct_to_dict(channel_abi, channel)
             self._printout("%i %i %s %i %i %i"%(i, channel["nonce"], channel["recipient"], channel["groupId"],
                                                 channel["value"], channel["expiration"]))
-    
+
     def _get_channel_state_from_server(self, grpc_channel, mpe_address, channel_id):
         # Compile protobuf if needed
         codegen_dir = Path.home().joinpath(".snet", "mpe_client", "state_service")
@@ -202,11 +325,6 @@ class MPEClientCommand(BlockchainCommand):
              raise Exception("Error in _get_channel_state_from_server. My own signature from the server is not valid.")
              
         return state
-
-    def print_channel_state_from_server(self):
-        grpc_channel = grpc.insecure_channel(self.args.endpoint)         
-        state     = self._get_channel_state_from_server(grpc_channel, self.args.mpe_address, self.args.channel_id)
-        self._printout(state)
         
     def _get_channel_state_from_blockchain(self, mpe_address, channel_id):
         abi         = get_contract_def("MultiPartyEscrow")
@@ -218,7 +336,8 @@ class MPEClientCommand(BlockchainCommand):
     # we get state of the channel (nonce, amount, unspent_amount)
     # We do it by securely combine information from the server and blockchain
     # https://github.com/singnet/wiki/blob/master/multiPartyEscrowContract/MultiPartyEscrow_stateless_client.md
-    def _get_channel_state_statelessly(self, grpc_channel, mpe_address, channel_id):
+    def _get_channel_state_statelessly(self, grpc_channel, channel_id):
+        mpe_address = self.get_mpe_address()
         server     = self._get_channel_state_from_server    (grpc_channel, mpe_address, channel_id)
         blockchain = self._get_channel_state_from_blockchain(              mpe_address, channel_id)
         
@@ -228,20 +347,23 @@ class MPEClientCommand(BlockchainCommand):
             unspent_amount = None # in this case we cannot securely define unspent_amount yet
         
         return (server["current_nonce"], server["current_signed_amount"], unspent_amount)
-        
-    
+
+    def print_channel_state_statelessly(self):
+        grpc_channel = grpc.insecure_channel(self.args.endpoint)
+        current_nonce, current_amount, unspent_amount = self._get_channel_state_statelessly(grpc_channel, self.args.channel_id)
+        self._printout("current_nonce          = %i"%current_nonce)
+        self._printout("current_signed_amount  = %i"%current_amount)
+        self._printout("current_unspent_amount = %i"%unspent_amount)
+             
     def call_server_statelessly(self):
         params                    = self._get_call_params()
         grpc_channel              = grpc.insecure_channel(self.args.endpoint)
-                
-        current_nonce, current_amount, unspent_amount = self._get_channel_state_statelessly(grpc_channel, self.args.mpe_address, self.args.channel_id)
+        
+        current_nonce, current_amount, unspent_amount = self._get_channel_state_statelessly(grpc_channel, self.args.channel_id)
         self._printout("unspent_amount before call (None means that we cannot get it now):%s"%str(unspent_amount))
-        response = self._call_server_withchannel(grpc_channel, self.args.service, self.args.method,
-                                                 self.args.mpe_address, self.args.channel_id, current_nonce, current_amount + self.args.price, 
-                                                 params, self.args.json)
+        response = self._call_server_via_grpc_channel(grpc_channel, current_nonce, current_amount + self.args.price, params)
         self._printout(response)
-        
-        
+                
     #IV. Auxilary functions
     
     # get the most recent block number
