@@ -29,7 +29,7 @@
 #
 #endpoints[] - address in the off-chain network to provide a service
 #      group_name 
-#      endpoint - 127.0.0.1:1234 (or http://127.0.0.1:1234) - unique endpoint identifier
+#      endpoint  -  unique endpoint identifier (ip:port)
 #-------------------------------------------------------
 
 import json
@@ -78,10 +78,9 @@ class mpe_service_metadata:
     def add_endpoint(self, group_name, endpoint):
         if (not self._is_group_present(group_name)):
             raise Exception("the group %s is not present"%str(group_name))
-        e = {"group_name" : group_name, "endpoint"   : endpoint}
-        if (e in self.m["endpoints"]):
-            raise Exception("We already have endpoint %s in group %s"%(endpoint, group_name))
-        self.m["endpoints"] += [e]
+        if (endpoint in self.get_all_endpoints()):
+            raise Exception("the endpoint %s is already present"%str(endpoint))
+        self.m["endpoints"] += [{"group_name" : group_name, "endpoint"   : endpoint}]
     
     # check if group is already present
     def _is_group_present(self, group_name):
@@ -93,7 +92,10 @@ class mpe_service_metadata:
 
     def get_json(self):
         return json.dumps(self.m)
-    
+
+    def get_json_pretty(self):
+        return json.dumps(self.m, indent = 4)
+
     def set_from_json(self, j):
         # TODO: we probaly should check the  consistensy of loaded json here
         #       check that it contains required fields
@@ -103,24 +105,27 @@ class mpe_service_metadata:
         with open(file_name) as f:
             self.set_from_json(f.read())
     
-    def save(self, file_name):
+    def save_pretty(self, file_name):
         with open(file_name, 'w') as f:
-            json.dump(self.m, f)
+            f.write(self.get_json_pretty())
 
     def __getitem__(self, key):
         return self.m[key]
     
-    # In all getter function group_name == None works only in case of single payment group
-    
-    def get_group(self, group_name = None):
+    # In all getter function in case of single payment group, group_name can be None
+    def get_group_name_nonetrick(group_name = None):
         groups = self.m["groups"]
         if (len(groups) == 0):
             raise Exception("Cannot find any groups in metadata")
         if (not group_name):
             if (len(groups) > 1):
                 raise Exception("We have more than one payment group in metadata, so group_name should be specified")
-            return groups[0]
-        for g in groups:
+            return groups[0].group_name
+        return group_name
+
+    def get_group(self, group_name = None):
+        group_name = self.get_group_name_nonetrick(group_name)
+        for g in self.m["groups"]:
             if (g["group_name"] == group_name):
                 return g
         raise Exception('Cannot find group "%s" in metadata'%group_name)
@@ -134,6 +139,8 @@ class mpe_service_metadata:
     def get_payment_address(self, group_name = None):
         return self.get_group(group_name)["payment_address"]
 
+    def get_all_endpoints(self):
+        return [e["endpoint"] for e in self.m["endpoints"]]
     
 def load_mpe_service_metadata(f):
     metadata = mpe_service_metadata()

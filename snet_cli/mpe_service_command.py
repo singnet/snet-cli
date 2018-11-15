@@ -1,6 +1,6 @@
 from snet_cli.commands    import BlockchainCommand
 import snet_cli.utils_ipfs as utils_ipfs
-from snet_cli.mpe_service_metadata import mpe_service_metadata, load_mpe_service_metadata
+from snet_cli.mpe_service_metadata import mpe_service_metadata, load_mpe_service_metadata, mpe_service_metadata_from_json
 from snet_cli.utils import type_converter
 import base58
 from snet_cli.utils import get_mpe_address_from_args_or_networks, get_registry_address_from_args_or_networks
@@ -25,7 +25,7 @@ class MPEServiceCommand(BlockchainCommand):
         metadata.set_simple_field("encoding",                     self.args.encoding)
         metadata.set_simple_field("service_type",                 self.args.service_type)
         metadata.set_simple_field("payment_expiration_threshold", self.args.payment_expiration_threshold)        
-        metadata.save(self.args.metadata_file)
+        metadata.save_pretty(self.args.metadata_file)
         
     def publish_proto_metadata_init(self):
         ipfs_hash_base58 = utils_ipfs.publish_proto_in_ipfs(self._get_ipfs_client(), self.args.protodir)
@@ -35,13 +35,13 @@ class MPEServiceCommand(BlockchainCommand):
     def metadata_set_fixed_price(self):        
         metadata = load_mpe_service_metadata(self.args.metadata_file)
         metadata.set_fixed_price(self.args.price)
-        metadata.save(self.args.metadata_file)
+        metadata.save_pretty(self.args.metadata_file)
         
     # metadata add group
     def metadata_add_group(self):
         metadata = load_mpe_service_metadata(self.args.metadata_file)
         metadata.add_group(self.args.group_name, self.args.payment_address)
-        metadata.save(self.args.metadata_file)
+        metadata.save_pretty(self.args.metadata_file)
 
     # metadata add endpoint to the group
     def metadata_add_endpoints(self):
@@ -49,7 +49,7 @@ class MPEServiceCommand(BlockchainCommand):
         metadata.load(self.args.metadata_file)
         for endpoint in self.args.endpoints:
             metadata.add_endpoint(self.args.group_name, endpoint)
-        metadata.save(self.args.metadata_file)
+        metadata.save_pretty(self.args.metadata_file)
 
     def _publish_metadata_in_ipfs(self, metadata_file):
         metadata = load_mpe_service_metadata(metadata_file)
@@ -106,7 +106,8 @@ class MPEServiceCommand(BlockchainCommand):
         metadata_hash = bytesuri_to_hash(rez[2])
         metadata      = get_from_ipfs_and_checkhash(self._get_ipfs_client(), metadata_hash)
         metadata      = metadata.decode("utf-8")
-        self._printout(metadata)
+        metadata      = mpe_service_metadata_from_json(metadata)
+        self._printout(metadata.get_json_pretty())
 
     def print_service_tags_from_registry(self):
         rez  = self._get_service_registration()
