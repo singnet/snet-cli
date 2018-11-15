@@ -583,11 +583,15 @@ def add_mpe_client_options(parser):
     p = subparsers.add_parser("block_number", help="Print the last ethereum block number")
     p.set_defaults(fn="print_block_number")
 
-    p = subparsers.add_parser("list_channels_all", help="Print all channels related to the current identity directly from blockchain.")
-    p.set_defaults(fn="print_my_channels_from_blockchain")
+    p = subparsers.add_parser("print_all_channels", help="Print all channels related to the current identity. It may take a long time.")
+    p.set_defaults(fn="print_all_channels_my")
     add_p_mpe_address_opt(p)
     p.add_argument("--from_block", type=int, default=0, help="Start searching from this block")
-    
+
+    p = subparsers.add_parser("print_initialized_channels", help="Print initialized channels related to the current identity.")
+    p.set_defaults(fn="print_initialized_channels_my")
+    add_p_mpe_address_opt(p)
+
     p = subparsers.add_parser("get_channel_state", help="Get channel state in stateless manner")
     p.set_defaults(fn="print_channel_state_statelessly")
     add_p_mpe_address_opt(p)
