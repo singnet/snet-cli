@@ -520,14 +520,14 @@ def add_mpe_client_options(parser):
 
     def add_p_snt_address_opt(p):
         p.add_argument("--singularitynettoken", "--snt", default=None,  help="address of SingularityNetToken contract, if not specified we read address from \"networks\"")
-    
+
     def add_p_open_channel_basic(p):
         p.add_argument("amount",         type=int, help="amount of cogs to put in the new channel (cogs = 10^(-8) AGI)")
         p.add_argument("expiration",     type=int, help="expiration time (in blocks) for the new channel (one block ~ 15 seconds)")
         p.add_argument("--group_name", default=None, help="name of payment group for which we want to open the channel. Parameter should be specified only for services with several payment groups")
         add_p_mpe_address_opt(p)
         add_transaction_arguments(p)
-        
+
     p = subparsers.add_parser("balance", help="print balance of AGI tokens and balance of MPE wallet")
     p.set_defaults(fn="print_agi_and_mpe_balances")
     add_p_snt_address_opt(p)
@@ -536,10 +536,10 @@ def add_mpe_client_options(parser):
     p = subparsers.add_parser("deposit", help="deposit AGI tokens to MPE wallet")
     p.set_defaults(fn="deposit_to_mpe")
     p.add_argument("amount",  type=int, help="amount of cogs to deposit in MPE wallet (cogs = 10^(-8) AGI)")
-    add_p_snt_address_opt(p)    
+    add_p_snt_address_opt(p)
     add_p_mpe_address_opt(p)
     add_transaction_arguments(p)
-    
+
     p = subparsers.add_parser("withdraw", help="withdraw AGI tokens from MPE wallet")
     p.set_defaults(fn="withdraw_from_mpe")
     p.add_argument("amount",  type=int, help="amount of cogs to withdraw from MPE wallet (cogs = 10^(-8) AGI)")
@@ -562,7 +562,7 @@ def add_mpe_client_options(parser):
     p.set_defaults(fn="open_init_channel_from_metadata")
     add_p_open_channel_basic(p)
     add_p_metadata_file_opt(p)
-    
+
     p = subparsers.add_parser("open_init_channel_registry", help="Open and initilize channel using metadata from Registry")
     p.set_defaults(fn="open_init_channel_from_registry")
     add_p_service_in_registry(p)
@@ -606,8 +606,8 @@ def add_mpe_service_options(parser):
     def add_p_group_name(p):
         p.add_argument("group_name", help="unique name of the group (human readable)")
     def add_p_protodir(p):
-        p.add_argument("protodir",     help="Directory which contains protobuf files")    
-                    
+        p.add_argument("protodir",     help="Directory which contains protobuf files")
+
     p = subparsers.add_parser("metadata_init", help="Init metadata file with providing protobuf directory (which we publish in IPFS) and display_name (optionally encoding, service_type and payment_expiration_threshold)")
     p.set_defaults(fn="publish_proto_metadata_init")
     add_p_protodir(p)
@@ -647,19 +647,19 @@ def add_mpe_service_options(parser):
     add_transaction_arguments(p)
 
     p = subparsers.add_parser("update_metadata", help="Publish metadata in IPFS and update existed service")
-    p.set_defaults(fn="publish_metadata_in_ipfs_and_update_registration")    
+    p.set_defaults(fn="publish_metadata_in_ipfs_and_update_registration")
     add_p_service_in_registry(p)
     add_p_metadata_file_opt(p)
     add_transaction_arguments(p)
 
     p = subparsers.add_parser("update_add_tags", help="Add tags to existed service registration")
-    p.set_defaults(fn="update_registration_add_tags")    
+    p.set_defaults(fn="update_registration_add_tags")
     add_p_service_in_registry(p)
     p.add_argument("tags", nargs="+", default=[], help="tags which will be add")
     add_transaction_arguments(p)
 
     p = subparsers.add_parser("update_remove_tags", help="Remove tags from existed service registration")
-    p.set_defaults(fn="update_registration_remove_tags")    
+    p.set_defaults(fn="update_registration_remove_tags")
     add_p_service_in_registry(p)
     p.add_argument("tags", nargs="+", default=[], help="tags which will be removed")
     add_transaction_arguments(p)

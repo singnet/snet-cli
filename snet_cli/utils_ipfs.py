@@ -31,7 +31,7 @@ def get_from_ipfs_and_checkhash(ipfs_client, ipfs_hash_base58):
 
 # Convert in and from bytes uri format used in Registry contract
 # TODO: we should pad string with zeros till closest 32 bytes word because of a bug in processReceipt (in snet_cli.contract.process_receipt)
-def hash_to_bytesuri(s):    
+def hash_to_bytesuri(s):
     s = "ipfs://" + s
     return s.encode("ascii").ljust(32 * (len(s)//32 + 1), b"\0")
 
@@ -39,4 +39,4 @@ def bytesuri_to_hash(s):
     s = s.rstrip(b"\0").decode('ascii')
     if (not s.startswith("ipfs://")):
         raise Exception("We support only ipfs uri in Registry")
-    return s[7:]    
+    return s[7:]

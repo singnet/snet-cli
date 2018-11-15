@@ -144,4 +144,3 @@ def mpe_service_metadata_from_json(j):
     metadata      = mpe_service_metadata()
     metadata.set_from_json(j)
     return metadata
-                    

@@ -57,8 +57,8 @@ class MPEServiceCommand(BlockchainCommand):
     
     # publish metadata in ipfs and print hash
     def publish_metadata_in_ipfs(self):
-        self._printout( self._publish_metadata_in_ipfs(self.args.metadata_file) )         
-    
+        self._printout( self._publish_metadata_in_ipfs(self.args.metadata_file) )
+
     def _publish_metadata_and_get_registry_address(self):
         registry_address = get_registry_address_from_args_or_networks(self.w3, self.args.registry)
         metadata_uri     = hash_to_bytesuri( self._publish_metadata_in_ipfs(self.args.metadata_file))
@@ -67,34 +67,34 @@ class MPEServiceCommand(BlockchainCommand):
     def _get_converted_tags(self):
         return [type_converter("bytes32")(tag) for tag in self.args.tags]
     
-    def publish_service_with_metadata(self):        
-        registry_address, metadata_uri = self._publish_metadata_and_get_registry_address()        
+    def publish_service_with_metadata(self):
+        registry_address, metadata_uri = self._publish_metadata_and_get_registry_address()
         tags             = self._get_converted_tags()
         params           = [type_converter("bytes32")(self.args.organization), type_converter("bytes32")(self.args.service), metadata_uri, tags]
-        self.transact_contract_command("Registry", registry_address, "createServiceRegistration", params)    
+        self.transact_contract_command("Registry", registry_address, "createServiceRegistration", params)
 
     def publish_metadata_in_ipfs_and_update_registration(self):
-        registry_address, metadata_uri = self._publish_metadata_and_get_registry_address()        
-        params           = [type_converter("bytes32")(self.args.organization), type_converter("bytes32")(self.args.service), metadata_uri]        
-        self.transact_contract_command("Registry", registry_address, "updateServiceRegistration", params)    
+        registry_address, metadata_uri = self._publish_metadata_and_get_registry_address()
+        params           = [type_converter("bytes32")(self.args.organization), type_converter("bytes32")(self.args.service), metadata_uri]
+        self.transact_contract_command("Registry", registry_address, "updateServiceRegistration", params)
 
     def _get_params_for_tags_update(self):
         registry_address = get_registry_address_from_args_or_networks(self.w3, self.args.registry)
         tags             = self._get_converted_tags()
-        params           = [type_converter("bytes32")(self.args.organization), type_converter("bytes32")(self.args.service), tags] 
+        params           = [type_converter("bytes32")(self.args.organization), type_converter("bytes32")(self.args.service), tags]
         return registry_address, params
     
     def update_registration_add_tags(self):
         registry_address, params = self._get_params_for_tags_update()
-        self.transact_contract_command("Registry", registry_address, "addTagsToServiceRegistration", params)    
+        self.transact_contract_command("Registry", registry_address, "addTagsToServiceRegistration", params)
 
     def update_registration_remove_tags(self):
         registry_address, params = self._get_params_for_tags_update()
-        self.transact_contract_command("Registry", registry_address, "removeTagsFromServiceRegistration", params)    
+        self.transact_contract_command("Registry", registry_address, "removeTagsFromServiceRegistration", params)
 
         
     def _get_service_registration(self):
-        registry_address = get_registry_address_from_args_or_networks(self.w3, self.args.registry)        
+        registry_address = get_registry_address_from_args_or_networks(self.w3, self.args.registry)
         params = [type_converter("bytes32")(self.args.organization), type_converter("bytes32")(self.args.service)]
         rez = self.call_contract_command("Registry", registry_address, "getServiceRegistrationByName", params)
         if (rez[0] == False):
