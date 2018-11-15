@@ -4,8 +4,7 @@ import re
 import sys
 from pathlib import Path
 
-from snet_cli.commands import IdentityCommand, SessionCommand, NetworkCommand, ContractCommand, AgentFactoryCommand, \
-    AgentCommand, ServiceCommand, ClientCommand, OrganizationCommand, VersionCommand
+from snet_cli.commands import IdentityCommand, SessionCommand, NetworkCommand, ContractCommand, OrganizationCommand, VersionCommand
 from snet_cli.identity import get_identity_types
 from snet_cli.session import get_session_keys
 from snet_cli.utils import type_converter, get_contract_def
@@ -67,29 +66,16 @@ def add_root_options(parser, config):
     unset_p = subparsers.add_parser("unset", help="Unset session keys")
     add_unset_options(unset_p)
 
-    agent_p = subparsers.add_parser("agent", help="Interact with the SingularityNET Agent contract")
-    add_agent_options(agent_p)
-
-    agent_factory_p = subparsers.add_parser("agent-factory",
-                                            help="Interact with the SingularityNET AgentFactory contract")
-    add_agent_factory_options(agent_factory_p)
-
-    client_p = subparsers.add_parser("client", help="Interact with SingularityNET services")
-    add_client_options(client_p)
-
     contract_p = subparsers.add_parser("contract", help="Interact with contracts at a low level")
     add_contract_options(contract_p)
-
-    service_p = subparsers.add_parser("service", help="Create, publish, register, and update SingularityNET services")
-    add_service_options(service_p, config)
 
     organization_p = subparsers.add_parser("organization", help="Interact with SingularityNET Organizations")
     add_organization_options(organization_p)
 
-    mpe_client_p = subparsers.add_parser("mpe-client", help="Interact with SingularityNET services in the context of MPE payment system")
+    mpe_client_p = subparsers.add_parser("client", help="Interact with SingularityNET services")
     add_mpe_client_options(mpe_client_p)
 
-    mpe_server_p = subparsers.add_parser("mpe-service", help="Functionality for publish service in the context of MPE payment system")
+    mpe_server_p = subparsers.add_parser("service", help="Create, publish, register, and update SingularityNET services")
     add_mpe_service_options(mpe_server_p)
 
 
@@ -166,67 +152,6 @@ def add_unset_options(parser):
                         help="session key to unset from {}".format(get_session_keys()), metavar="KEY")
 
 
-def add_agent_options(parser):
-    parser.set_defaults(cmd=AgentCommand)
-
-    add_contract_identity_arguments(parser, [("", "agent_at")])
-
-    subparsers = parser.add_subparsers(title="agent commands", metavar="COMMAND")
-    subparsers.required = True
-
-    create_jobs_p = subparsers.add_parser("create-jobs", help="Create jobs")
-    create_jobs_p.set_defaults(fn="create_jobs")
-    create_jobs_p.add_argument("--number", "-n", type=int, default=1, help="number of jobs to create (defaults to 1)")
-    create_jobs_p.add_argument("--max-price", type=int, default=0,
-                               help="skip interactive confirmation of job price if below max price (defaults to 0)")
-    create_jobs_p.add_argument("--funded", action="store_true", help="fund created jobs", default=False)
-    create_jobs_p.add_argument("--signed", action="store_true", help="generate job signatures for created jobs",
-                               default=False)
-    add_transaction_arguments(create_jobs_p)
-
-
-def add_agent_factory_options(parser):
-    parser.set_defaults(cmd=AgentFactoryCommand)
-
-    add_contract_identity_arguments(parser, [("", "agent_factory_at")])
-
-    subparsers = parser.add_subparsers(title="agent-factory commands", metavar="COMMAND")
-    subparsers.required = True
-
-    create_agent_p = subparsers.add_parser("create-agent", help="Create an agent")
-    create_agent_p.set_defaults(fn="create_agent")
-    create_agent_p.add_argument("contract_named_input_price", type=type_converter("uint256"), metavar="PRICE",
-                  help="initial price for interacting with the service")
-    create_agent_p.add_argument("contract_named_input_endpoint", type=type_converter("string"), metavar="ENDPOINT",
-                  help="initial endpoint to call the service's API")
-    create_agent_p.add_argument("contract_named_input_metadataURI", type=type_converter("string"), metavar="METADATA_URI",
-                                 nargs="?", default="", help="uri where service metadata is stored")
-    add_transaction_arguments(create_agent_p)
-
-
-def add_client_options(parser):
-    parser.set_defaults(cmd=ClientCommand)
-
-    subparsers = parser.add_subparsers(title="client commands", metavar="COMMAND")
-    subparsers.required = True
-
-    call_p = subparsers.add_parser("call", help="Call a service")
-    call_p.set_defaults(fn="call")
-    call_p.add_argument("method", help="target service's method name to call", metavar="METHOD")
-    call_p.add_argument("params", nargs='?', help="json-serialized parameters object or path containing "
-                                                  "json-serialized parameters object (leave emtpy to read from stdin)",
-                        metavar="PARAMS")
-    call_p.add_argument("--max-price", type=int, default=0,
-                        help="skip interactive confirmation of job price if below max price (defaults to 0)")
-    add_contract_identity_arguments(call_p, [("agent", "agent_at"), ("job", "job_at")])
-    add_transaction_arguments(call_p)
-
-    get_spec_p = subparsers.add_parser("get-spec", help="Get a service's spec file")
-    get_spec_p.set_defaults(fn="get_spec")
-    get_spec_p.add_argument("dest_dir", help="destination directory for service's spec files", metavar="DEST_DIR")
-    add_contract_identity_arguments(get_spec_p, [("agent", "agent_at")])
-
-
 def add_contract_options(parser):
     parser.set_defaults(cmd=ContractCommand)
 
@@ -239,121 +164,9 @@ def add_contract_options(parser):
         add_contract_function_options(contract_p, contract_name)
 
 
-def _add_service_publish_arguments(parser):
-    parser.add_argument("--no-register", action="store_true", help="does not register the published service")
-    parser.add_argument("--config", help="specify a custom service.json file path")
-    add_transaction_arguments(parser)
-    add_contract_identity_arguments(parser, [("registry", "registry_at"), ("agent-factory", "agent_factory_at")])
-
-
-def _add_service_update_arguments(parser):
-    parser.set_defaults(fn="update")
-    parser.add_argument("--new-price", help="new price to call the service", type=type_converter("uint256"))
-    parser.add_argument("--new-endpoint", help="new endpoint to call the service's API")
-    parser.add_argument("--new-tags", nargs="+", type=type_converter("bytes32"),
-                        metavar=("TAGS", "TAG1, TAG2,"), help="new list of tags you want associated with the service registration")
-    parser.add_argument("--new-description", help="new description for the service")
-    parser.add_argument("--config", help="specify a custom service.json file path")
-    add_transaction_arguments(parser)
-    add_contract_identity_arguments(parser, [("registry", "registry_at")])
-
-
-def _add_service_delete_arguments(parser):
-    parser.set_defaults(fn="delete")
-    add_transaction_arguments(parser)
-    add_contract_identity_arguments(parser, [("registry", "registry_at")])
-
-
 def _add_organization_arguments(parser):
     add_transaction_arguments(parser)
     add_contract_identity_arguments(parser, [("registry", "registry_at")])
-
-
-def add_service_options(parser, config):
-    parser.set_defaults(cmd=ServiceCommand)
-
-    subparsers = parser.add_subparsers(title="service commands", metavar="COMMAND")
-    subparsers.required = True
-
-    init_p = subparsers.add_parser("init", help="Initialize a service package on the filesystem")
-    init_p.set_defaults(fn="init")
-    init_p.add_argument("--name", help='name of the service to be stored in the registry (default: <current working directory>)')
-    init_p.add_argument("--spec", help='local filesystem path to the service spec directory (default: "service_spec/")')
-    init_p.add_argument("--organization", help='the organization to which you want to register the service (default: "")')
-    init_p.add_argument("--path", help='the path under which you want to register the service in the organization (default: "")')
-    init_p.add_argument("--price", help='initial price for interacting with the service (default: 0)', type=int)
-    init_p.add_argument("--endpoint", help="initial endpoint to call the service's API (default: \"\")")
-    init_p.add_argument("--tags", nargs="+", metavar=("TAGS", "TAG1, TAG2,"), help="tags to describe the service (default: [])")
-    init_p.add_argument("--description",
-                        help='human-readable description of the service (default: "")')
-    init_p.add_argument("--yes", "-y", action="store_true", help="accept defaults for any argument that is not provided")
-
-    network_names = list(
-        map(lambda x: x[len("network."):], filter(lambda x: x.startswith("network."), config.sections())))
-
-    publish_p = subparsers.add_parser("publish", help="Publish a service to the network", default_choice="default")
-    publish_p.set_defaults(fn="publish")
-    publish_p.add_argument("--yes", "-y", action="store_true",
-                           help="skip interactive confirmation of service publish")
-    networks_publish_subparsers = publish_p.add_subparsers(title="networks", metavar="[NETWORK]")
-
-    for network_name in network_names:
-        p = networks_publish_subparsers.add_parser(network_name, help="Publish a service to {} network".format(network_name))
-        p.set_defaults(network_name=network_name)
-        _add_service_publish_arguments(p)
-
-    p = networks_publish_subparsers.add_parser("eth-rpc-endpoint", help="Publish a service using the provided Ethereum-RPC endpoint")
-    p.set_defaults(network_name="eth_rpc_endpoint")
-    p.add_argument("eth_rpc_endpoint", help="ethereum json-rpc endpoint (should start with 'http(s)://')", metavar="ETH_RPC_ENDPOINT")
-    _add_service_publish_arguments(p)
-
-    p = networks_publish_subparsers.add_parser("default")
-    _add_service_publish_arguments(p)
-
-    update_p = subparsers.add_parser("update", help="Update a service on the network", default_choice="default")
-    update_p.set_defaults(fn="update")
-    update_p.add_argument("--yes", "-y", action="store_true",
-                          help="skip interactive confirmation of service update")
-    networks_update_subparsers = update_p.add_subparsers(title="networks", metavar="[NETWORK]")
-
-    for network_name in network_names:
-        p = networks_update_subparsers.add_parser(network_name, help="Update a service on {} network".format(network_name))
-        p.set_defaults(network_name=network_name)
-        _add_service_update_arguments(p)
-
-    p = networks_update_subparsers.add_parser("eth-rpc-endpoint", help="Update a service using the provided Ethereum-RPC endpoint")
-    p.set_defaults(network_name="eth_rpc_endpoint")
-    p.add_argument("eth_rpc_endpoint", help="ethereum json-rpc endpoint (should start with 'http(s)://')", metavar="ETH_RPC_ENDPOINT")
-    _add_service_update_arguments(p)
-
-    p = networks_update_subparsers.add_parser("default")
-    _add_service_update_arguments(p)
-
-    # Delete service
-    delete_p = subparsers.add_parser("delete", help="Delete a service on the network by service json",
-                                     default_choice="default")
-    delete_p.set_defaults(fn="delete")
-    networks_update_subparsers = delete_p.add_subparsers(title="networks", metavar="[NETWORK]")
-    delete_p.add_argument("organization", help="Name of the Organization", metavar="ORG_NAME")
-    delete_p.add_argument("name", help="Name of the Service", metavar="SERVICE_NAME")
-    delete_p.add_argument("--yes", "-y", action="store_true",
-                          help="skip interactive confirmation of service delete")
-
-    for network_name in network_names:
-        p = networks_update_subparsers.add_parser(network_name,
-                                                  help="Delete a service on {} network".format(network_name))
-        p.set_defaults(network_name=network_name)
-        _add_service_delete_arguments(p)
-
-    p = networks_update_subparsers.add_parser("eth-rpc-endpoint",
-                                              help="Delete a service using the provided Ethereum-RPC endpoint")
-    p.set_defaults(network_name="eth_rpc_endpoint")
-    p.add_argument("eth_rpc_endpoint", help="ethereum json-rpc endpoint (should start with 'http(s)://')",
-                   metavar="ETH_RPC_ENDPOINT")
-    _add_service_delete_arguments(p)
-
-    p = networks_update_subparsers.add_parser("default")
-    _add_service_delete_arguments(p)
 
 
 def add_organization_options(parser):
@@ -487,8 +300,10 @@ class AppendPositionalAction(argparse.Action):
 def add_p_mpe_address_opt(p):
     p.add_argument("--multipartyescrow", "--mpe", default=None,  help="address of MultiPartyEscrow contract, if not specified we read address from \"networks\"")
 
+
 def add_p_metadata_file_opt(p):
     p.add_argument("--metadata_file", default="service_metadata.json", help="Service metadata json file (default service_metadata.json)")
+
 
 def add_p_service_in_registry(p):
     p.add_argument("--registry",  default=None, help="address of Registry contract, if not specified we read address from \"networks\"")
@@ -597,7 +412,8 @@ def add_mpe_client_options(parser):
     add_p_mpe_address_opt(p)
     add_p_channel_id(p)
     add_p_endpoint(p)
-     
+
+
 def add_mpe_service_options(parser):
     parser.set_defaults(cmd=MPEServiceCommand)
     subparsers = parser.add_subparsers(title="Commands", metavar="COMMAND")
