@@ -394,6 +394,7 @@ def add_mpe_client_options(parser):
     p.set_defaults(fn="channel_claim_timeout")
     add_p_channel_id(p)
     add_p_mpe_address_opt(p)
+    add_transaction_arguments(p)
 
     p = subparsers.add_parser("channel_extend_add", help="Set new exporation for the channel and add funds")
     p.set_defaults(fn="channel_extend_and_add_funds")
@@ -402,6 +403,7 @@ def add_mpe_client_options(parser):
     expiration_amount_g.add_argument("--expiration", type=int,         required=True, help="New expiration for the channel (should be bigger then old one)")
     expiration_amount_g.add_argument("--amount",     type=stragi2cogs, required=True, help="Amount of AGI tokens to add to the channel")
     add_p_mpe_address_opt(p)
+    add_transaction_arguments(p)
 
     p = subparsers.add_parser("call", help="call server in stateless manner. We ask state of the channel from the server. Channel should be already initialized.")
     p.set_defaults(fn="call_server_statelessly")

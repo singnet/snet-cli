@@ -300,7 +300,7 @@ class MPEClientCommand(BlockchainCommand):
     
     def _print_channels_from_blockchain(self, channels_ids):
         self._printout("#channelId  nonce  recipient  groupId(base64) value(AGI)  expiration(blocks)")
-        for i in channels_ids:
+        for i in sorted(channels_ids):
             channel = self._get_channel_state_from_blockchain(i)
             value_agi = cogs2stragi(channel["value"])
             group_id_base64 = base64.b64encode(channel["groupId"]).decode("ascii")
@@ -382,7 +382,7 @@ class MPEClientCommand(BlockchainCommand):
     def _call_check_price(self, service_metadata):
         pricing = service_metadata["pricing"]
         if (pricing["price_model"] == "fixed_price" and pricing["price"] != self.args.price):
-            raise Exception("Service price is %i, but you set price %i"%(pricing["price"], self.args.price))
+            raise Exception("Service price is %s, but you set price %s"%(cogs2stragi(pricing["price"]), cogs2stragi(self.args.price)))
         
     def call_server_statelessly(self):
         params           = self._get_call_params()
