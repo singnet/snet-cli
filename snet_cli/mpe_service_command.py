@@ -5,6 +5,7 @@ from snet_cli.utils import type_converter
 import base58
 from snet_cli.utils import get_mpe_address_from_args_or_networks, get_registry_address_from_args_or_networks
 from snet_cli.utils_ipfs import hash_to_bytesuri, bytesuri_to_hash, get_from_ipfs_and_checkhash
+import web3
 
 class MPEServiceCommand(BlockchainCommand):
         
@@ -15,32 +16,32 @@ class MPEServiceCommand(BlockchainCommand):
         ipfs_hash_base58 = utils_ipfs.publish_proto_in_ipfs(self._get_ipfs_client(), self.args.protodir)
         self._printout(ipfs_hash_base58)
 
-    # Init metadata with providing model_ipfs_hash (all other parameters are taken from self.args)  
-    def _metadata_init(self, model_ipfs_hash):
+    def publish_proto_metadata_init(self):
+        ipfs_hash_base58 = utils_ipfs.publish_proto_in_ipfs(self._get_ipfs_client(), self.args.protodir)
         metadata    = mpe_service_metadata()
         mpe_address = get_mpe_address_from_args_or_networks(self.w3, self.args.multipartyescrow)
-        metadata.set_simple_field("model_ipfs_hash",              model_ipfs_hash)
+        metadata.set_simple_field("model_ipfs_hash",              ipfs_hash_base58)
         metadata.set_simple_field("mpe_address",                  mpe_address)
         metadata.set_simple_field("display_name",                 self.args.display_name)
         metadata.set_simple_field("encoding",                     self.args.encoding)
         metadata.set_simple_field("service_type",                 self.args.service_type)
-        metadata.set_simple_field("payment_expiration_threshold", self.args.payment_expiration_threshold)        
+        metadata.set_simple_field("payment_expiration_threshold", self.args.payment_expiration_threshold)
+        self._metadata_add_group(metadata)
         metadata.save_pretty(self.args.metadata_file)
-        
-    def publish_proto_metadata_init(self):
-        ipfs_hash_base58 = utils_ipfs.publish_proto_in_ipfs(self._get_ipfs_client(), self.args.protodir)
-        self._metadata_init(ipfs_hash_base58)
-        
-    #  metadata set fixed price  
+
     def metadata_set_fixed_price(self):        
         metadata = load_mpe_service_metadata(self.args.metadata_file)
         metadata.set_fixed_price(self.args.price)
         metadata.save_pretty(self.args.metadata_file)
-        
-    # metadata add group
+
+    def _metadata_add_group(self, metadata):
+        if (not web3.eth.is_checksum_address(self.args.payment_address)):
+            raise Exception("payment_address parameter is not a valid Ethereum checksum address")
+        metadata.add_group(self.args.group_name, self.args.payment_address)
+
     def metadata_add_group(self):
         metadata = load_mpe_service_metadata(self.args.metadata_file)
-        metadata.add_group(self.args.group_name, self.args.payment_address)
+        self._metadata_add_group(metadata)
         metadata.save_pretty(self.args.metadata_file)
 
     # metadata add endpoint to the group

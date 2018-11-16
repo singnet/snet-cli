@@ -55,6 +55,9 @@ class MPEClientCommand(BlockchainCommand):
     def withdraw_from_mpe(self):
         self.transact_contract_command("MultiPartyEscrow", self.get_mpe_address(), "withdraw", [self.args.amount])
 
+    def transfer_in_mpe(self):
+        self.transact_contract_command("MultiPartyEscrow", self.get_mpe_address(), "transfer", [self.args.receiver, self.args.amount])
+
     #TODO: this function is copy paste from mpe_service_command.py
     def _get_service_metadata_from_registry(self):
         registry_address = get_registry_address_from_args_or_networks(self.w3, self.args.registry)

@@ -361,6 +361,13 @@ def add_mpe_client_options(parser):
     add_p_mpe_address_opt(p)
     add_transaction_arguments(p)
 
+    p = subparsers.add_parser("transfer", help="transfer AGI tokens inside MPE wallet")
+    p.set_defaults(fn="transfer_in_mpe")
+    p.add_argument("receiver", help="address of the receiver")
+    p.add_argument("amount",   type=stragi2cogs, help="amount of AGI tokens to be transfered to another account inside MPE wallet")
+    add_p_mpe_address_opt(p)
+    add_transaction_arguments(p)
+
     p = subparsers.add_parser("init_channel_metadata", help="Initialize channel using service metadata")
     p.set_defaults(fn="init_channel_from_metadata")
     add_p_metadata_file_opt(p)
@@ -443,6 +450,8 @@ def add_mpe_service_options(parser):
     add_p_metadata_file_opt(p)
     add_p_mpe_address_opt(p)
     p.add_argument("display_name", help="Service display name")
+    p.add_argument("payment_address", help="payment_address for the first payment group")
+    p.add_argument("--group_name", default="default_group", help="name of the first payment group")
     p.add_argument("--encoding", default = "grcp", choices=['grpc', 'json'], help="Service encoding")
     p.add_argument("--service_type", default = "grcp", choices=['grpc', 'jsonrpc', 'process'], help="Service type")
     p.add_argument("--payment_expiration_threshold", type=int, default = 40320, help="Service expiration threshold in blocks (default is 40320 ~ one week with 15s/block)")
