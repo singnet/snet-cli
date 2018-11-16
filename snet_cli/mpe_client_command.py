@@ -19,6 +19,8 @@ import tarfile
 import io
 import shutil
 import tempfile
+from snet_cli.utils_agi2cogs import cogs2stragi
+
 
 
 class MPEClientCommand(BlockchainCommand):
@@ -38,17 +40,16 @@ class MPEClientCommand(BlockchainCommand):
     def print_agi_and_mpe_balances(self):
         agi_balance = self.call_contract_command("SingularityNetToken", self.get_snt_address(), "balanceOf", [self.ident.address])
         mpe_balance = self.call_contract_command("MultiPartyEscrow",    self.get_mpe_address(), "balances",  [self.ident.address])
-        print("#AGI token balance in cogs (cogs = 10^(-8) AGI)")
-        print(agi_balance)
-        print("#MPE wallet balance in cogs (cogs = 10^(-8) AGI)")
-        print(mpe_balance)
+        self._pprint({"agi_balance": cogs2stragi(agi_balance), "mpe_wallet_balance": cogs2stragi(mpe_balance)})
 
     def deposit_to_mpe(self):
         snt_address = self.get_snt_address()
         mpe_address = self.get_mpe_address()
         amount      = self.args.amount
 
-        self.transact_contract_command("SingularityNetToken", snt_address, "approve", [mpe_address, amount])
+        already_approved = self.call_contract_command("SingularityNetToken", snt_address, "allowance", [self.ident.address, mpe_address])
+        if (already_approved < amount):
+            self.transact_contract_command("SingularityNetToken", snt_address, "approve", [mpe_address, amount])
         self.transact_contract_command("MultiPartyEscrow",    mpe_address, "deposit", [amount])
 
     def withdraw_from_mpe(self):
@@ -90,7 +91,7 @@ class MPEClientCommand(BlockchainCommand):
                 raise Exception("Fail to compile %s/*.proto"%spec_dir)
 
             # save service_metadata.json in channel_dir
-            metadata.save(os.path.join(channel_dir, "service_metadata.json"))
+            metadata.save_pretty(os.path.join(channel_dir, "service_metadata.json"))
 
             # save current ethereum address in channel dir
             with open(os.path.join(channel_dir, "client_address.txt"), 'w') as f:
@@ -125,7 +126,7 @@ class MPEClientCommand(BlockchainCommand):
         rez = self.transact_contract_command("MultiPartyEscrow", mpe_address, "openChannel", [recipient, self.args.amount, self.args.expiration, group_id, self.ident.address])
 
         if (len(rez[1]) != 1 or rez[1][0]["event"] != "ChannelOpen"):
-            raise Exception("We've expected only one ChannelOpen event after openChannel")
+            raise Exception("We've expected only one ChannelOpen event after openChannel. Make sure that you use correct MultiPartyEscrow address")
         return rez[1][0]["args"]["channelId"]
 
     def _open_init_channel_from_metadata(self, metadata):
@@ -150,6 +151,12 @@ class MPEClientCommand(BlockchainCommand):
     def open_init_channel_from_registry(self):
         metadata   = self._get_service_metadata_from_registry()
         self._open_init_channel_from_metadata(metadata)
+
+    def channel_claim_timeout(self):
+        self.transact_contract_command("MultiPartyEscrow", self.get_mpe_address(), "channelClaimTimeout", [self.args.channel_id])
+        
+    def channel_extend_and_add_funds(self):
+        self.transact_contract_command("MultiPartyEscrow", self.get_mpe_address(), "channelExtendAndAddFunds", [self.args.channel_id, self.args.expiration, self.args.amount])
 
     # I. Signature related functions
     def _compose_message_to_sign(self, mpe_address, channel_id, nonce, amount):
@@ -289,12 +296,13 @@ class MPEClientCommand(BlockchainCommand):
         return channel
     
     def _print_channels_from_blockchain(self, channels_ids):
-        self._printout("#channelId  nonce  recipient  groupId(base64) value  expiration(blocks)")
+        self._printout("#channelId  nonce  recipient  groupId(base64) value(AGI)  expiration(blocks)")
         for i in channels_ids:
             channel = self._get_channel_state_from_blockchain(i)
+            value_agi = cogs2stragi(channel["value"])
             group_id_base64 = base64.b64encode(channel["groupId"]).decode("ascii")
-            self._printout("%i %i %s %s %i %i"%(i, channel["nonce"], channel["recipient"], group_id_base64,
-                                                   channel["value"], channel["expiration"]))
+            self._printout("%i %i %s %s %s %i"%(i, channel["nonce"], channel["recipient"], group_id_base64,
+                                                   value_agi, channel["expiration"]))
 
     
     def print_all_channels_my(self):

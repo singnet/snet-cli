@@ -113,7 +113,7 @@ class mpe_service_metadata:
         return self.m[key]
     
     # In all getter function in case of single payment group, group_name can be None
-    def get_group_name_nonetrick(group_name = None):
+    def get_group_name_nonetrick(self, group_name = None):
         groups = self.m["groups"]
         if (len(groups) == 0):
             raise Exception("Cannot find any groups in metadata")

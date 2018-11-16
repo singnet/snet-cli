@@ -10,7 +10,7 @@ from snet_cli.session import get_session_keys
 from snet_cli.utils import type_converter, get_contract_def
 from snet_cli.mpe_client_command  import MPEClientCommand
 from snet_cli.mpe_service_command import MPEServiceCommand
-
+from snet_cli.utils_agi2cogs import stragi2cogs
 
 class CustomParser(argparse.ArgumentParser):
     def __init__(self, default_choice=None, *args, **kwargs):
@@ -337,7 +337,7 @@ def add_mpe_client_options(parser):
         p.add_argument("--singularitynettoken", "--snt", default=None,  help="address of SingularityNetToken contract, if not specified we read address from \"networks\"")
 
     def add_p_open_channel_basic(p):
-        p.add_argument("amount",         type=int, help="amount of cogs to put in the new channel (cogs = 10^(-8) AGI)")
+        p.add_argument("amount",         type=stragi2cogs, help="amount of AGI tokens to put in the new channel")
         p.add_argument("expiration",     type=int, help="expiration time (in blocks) for the new channel (one block ~ 15 seconds)")
         p.add_argument("--group_name", default=None, help="name of payment group for which we want to open the channel. Parameter should be specified only for services with several payment groups")
         add_p_mpe_address_opt(p)
@@ -350,14 +350,14 @@ def add_mpe_client_options(parser):
 
     p = subparsers.add_parser("deposit", help="deposit AGI tokens to MPE wallet")
     p.set_defaults(fn="deposit_to_mpe")
-    p.add_argument("amount",  type=int, help="amount of cogs to deposit in MPE wallet (cogs = 10^(-8) AGI)")
+    p.add_argument("amount",  type=stragi2cogs, help="amount of AGI tokens to deposit in MPE wallet")
     add_p_snt_address_opt(p)
     add_p_mpe_address_opt(p)
     add_transaction_arguments(p)
 
     p = subparsers.add_parser("withdraw", help="withdraw AGI tokens from MPE wallet")
     p.set_defaults(fn="withdraw_from_mpe")
-    p.add_argument("amount",  type=int, help="amount of cogs to withdraw from MPE wallet (cogs = 10^(-8) AGI)")
+    p.add_argument("amount",  type=stragi2cogs, help="amount of AGI tokens to withdraw from MPE wallet")
     add_p_mpe_address_opt(p)
     add_transaction_arguments(p)
 
@@ -383,10 +383,23 @@ def add_mpe_client_options(parser):
     add_p_service_in_registry(p)
     add_p_open_channel_basic(p)
     
+    p = subparsers.add_parser("channel_claim_timeout", help="Claim timeout of the channel")
+    p.set_defaults(fn="channel_claim_timeout")
+    add_p_channel_id(p)
+    add_p_mpe_address_opt(p)
+
+    p = subparsers.add_parser("channel_extend_add", help="Set new exporation for the channel and add funds")
+    p.set_defaults(fn="channel_extend_and_add_funds")
+    add_p_channel_id(p)
+    expiration_amount_g = p.add_argument_group(title="Expiration and amount")
+    expiration_amount_g.add_argument("--expiration", type=int,         required=True, help="New expiration for the channel (should be bigger then old one)")
+    expiration_amount_g.add_argument("--amount",     type=stragi2cogs, required=True, help="Amount of AGI tokens to add to the channel")
+    add_p_mpe_address_opt(p)
+
     p = subparsers.add_parser("call", help="call server in stateless manner. We ask state of the channel from the server. Channel should be already initialized.")
     p.set_defaults(fn="call_server_statelessly")
     add_p_channel_id(p)
-    p.add_argument("price",     type=int, help="price for this call in cogs (cogs = 10^(-8) AGI)")
+    p.add_argument("price",     type=stragi2cogs, help="price for this call in AGI tokens")
     add_p_full_service_for_call(p)                                                
     add_p_mpe_address_opt(p)
     
@@ -436,7 +449,7 @@ def add_mpe_service_options(parser):
 
     p = subparsers.add_parser("metadata_set_fixed_price", help="Set pricing model as fixed price for all methods")
     p.set_defaults(fn="metadata_set_fixed_price")
-    p.add_argument("price", type = int, help="fix price in cogs for all methods (cogs = 10^(-8) AGI)")
+    p.add_argument("price", type = stragi2cogs, help="set fixed price in AGI token for all methods")
     add_p_metadata_file_opt(p)
 
     p = subparsers.add_parser("metadata_add_group", help="Add new group of replicas")
