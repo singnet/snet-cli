@@ -120,7 +120,7 @@ class mpe_service_metadata:
         if (not group_name):
             if (len(groups) > 1):
                 raise Exception("We have more than one payment group in metadata, so group_name should be specified")
-            return groups[0].group_name
+            return groups[0]["group_name"]
         return group_name
 
     def get_group(self, group_name = None):

@@ -439,8 +439,6 @@ def add_mpe_service_options(parser):
     subparsers = parser.add_subparsers(title="Commands", metavar="COMMAND")
     subparsers.required = True
     
-    def add_p_group_name(p):
-        p.add_argument("group_name", help="unique name of the group (human readable)")
     def add_p_protodir(p):
         p.add_argument("protodir",     help="Directory which contains protobuf files")
 
@@ -464,14 +462,14 @@ def add_mpe_service_options(parser):
     p = subparsers.add_parser("metadata_add_group", help="Add new group of replicas")
     p.set_defaults(fn="metadata_add_group")
     add_p_metadata_file_opt(p)
-    add_p_group_name(p)
+    p.add_argument("group_name", help="name of the new payment group")
     p.add_argument("payment_address", help="payment_address for this group")
  
     p = subparsers.add_parser("metadata_add_endpoints", help="Add endpoints to the groups")
     p.set_defaults(fn="metadata_add_endpoints")
-    add_p_metadata_file_opt(p)
-    add_p_group_name(p)
     p.add_argument("endpoints", nargs="+",  help="endpoints")
+    p.add_argument("--group_name", default=None, help="name of the payment group to which we want to add endpoints. Parameter should be specified in case of several payment groups")
+    add_p_metadata_file_opt(p)
  
     p = subparsers.add_parser("publish_in_ipfs", help="Publish metadata only in IPFS, without publising in Registry")
     p.set_defaults(fn="publish_metadata_in_ipfs")

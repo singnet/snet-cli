@@ -48,8 +48,9 @@ class MPEServiceCommand(BlockchainCommand):
     def metadata_add_endpoints(self):
         metadata = load_mpe_service_metadata(self.args.metadata_file)
         metadata.load(self.args.metadata_file)
+        group_name = metadata.get_group_name_nonetrick(self.args.group_name)
         for endpoint in self.args.endpoints:
-            metadata.add_endpoint(self.args.group_name, endpoint)
+            metadata.add_endpoint(group_name, endpoint)
         metadata.save_pretty(self.args.metadata_file)
 
     def _publish_metadata_in_ipfs(self, metadata_file):
