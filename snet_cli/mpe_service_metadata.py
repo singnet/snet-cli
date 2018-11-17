@@ -17,8 +17,8 @@
 # pricing {}      -  Pricing model
 #          Possible pricing models:
 #          1. Fixed price
-#              price_model  - "fixed_price"
-#              price        -  unique fixed price for all method
+#              price_model   - "fixed_price"
+#              price_in_cogs -  unique fixed price in cogs for all method (1 AGI = 10^8 cogs)
 #              (other pricing models can be easily supported)
 # groups[]       - group is the number of endpoints which shares same payment channel; 
 #                   grouping strategy is defined by service provider; 
@@ -59,11 +59,11 @@ class mpe_service_metadata:
                 raise Exception("unknow field in mpe_service_metadata")
         self.m[f] = v        
         
-    def set_fixed_price(self, price):
+    def set_fixed_price_in_cogs(self, price):
         if (type(price) != int): 
             raise Exception("Price should have int type")
-        self.m["pricing"] = {"price_model" : "fixed_price",
-                             "price"       : price}
+        self.m["pricing"] = {"price_model"   : "fixed_price",
+                             "price_in_cogs" : price}
                  
     # return new group_id in base64
     def add_group(self, group_name, payment_address):

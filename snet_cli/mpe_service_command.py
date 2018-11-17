@@ -31,7 +31,7 @@ class MPEServiceCommand(BlockchainCommand):
 
     def metadata_set_fixed_price(self):        
         metadata = load_mpe_service_metadata(self.args.metadata_file)
-        metadata.set_fixed_price(self.args.price)
+        metadata.set_fixed_price_in_cogs(self.args.price)
         metadata.save_pretty(self.args.metadata_file)
 
     def _metadata_add_group(self, metadata):
