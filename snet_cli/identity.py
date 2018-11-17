@@ -74,13 +74,16 @@ class RpcIdentityProvider(IdentityProvider):
         return self.address
 
     def transact(self, transaction, out_f):
-        return send_and_wait_for_transaction(transaction, self.w3, out_f)
+        print("Submitting transaction...\n", file=out_f)
+        txn_hash = self.w3.eth.sendTransaction(transaction)
+        return send_and_wait_for_transaction_receipt(txn_hash, self.w3)
 
     def sign_message(self, message, out_f, agent_version=2):
         if agent_version == 1:
             return self.w3.eth.sign(self.get_address(), hexstr=self.w3.sha3(hexstr=message).hex())
         else:
             return self.w3.eth.sign(self.get_address(), text=message.lower())
+
     def sign_message_after_soliditySha3(self, message):
         return self.w3.eth.sign(self.get_address(), message)
 
@@ -163,11 +166,7 @@ class TrezorIdentityProvider(IdentityProvider):
             message = message.lower().encode("utf-8")
         return self.client.call(proto.EthereumSignMessage(address_n=n, message=message)).signature
 
-
-def send_and_wait_for_transaction(raw_transaction, w3, out_f):
-    print("Submitting transaction...\n", file=out_f)
-    txn_hash = w3.eth.sendRawTransaction(raw_transaction)
-
+def send_and_wait_for_transaction_receipt(txn_hash, w3):
     # Wait for transaction to be mined
     receipt = dict()
     while not receipt:
@@ -176,6 +175,12 @@ def send_and_wait_for_transaction(raw_transaction, w3, out_f):
         if receipt and "blockHash" in receipt and receipt["blockHash"] is None:
             receipt = dict()
     return receipt
+
+
+def send_and_wait_for_transaction(raw_transaction, w3, out_f):
+    print("Submitting transaction...\n", file=out_f)
+    txn_hash = w3.eth.sendRawTransaction(raw_transaction)
+    return send_and_wait_for_transaction_receipt(txn_hash, w3)
 
 
 def parse_bip32_path(path):
