@@ -381,8 +381,8 @@ class MPEClientCommand(BlockchainCommand):
         
     def _call_check_price(self, service_metadata):
         pricing = service_metadata["pricing"]
-        if (pricing["price_model"] == "fixed_price" and pricing["price"] != self.args.price):
-            raise Exception("Service price is %s, but you set price %s"%(cogs2stragi(pricing["price"]), cogs2stragi(self.args.price)))
+        if (pricing["price_model"] == "fixed_price" and pricing["price_in_cogs"] != self.args.price):
+            raise Exception("Service price is %s, but you set price %s"%(cogs2stragi(pricing["price_in_cogs"]), cogs2stragi(self.args.price)))
         
     def call_server_statelessly(self):
         params           = self._get_call_params()
