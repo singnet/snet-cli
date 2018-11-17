@@ -29,7 +29,7 @@ class IdentityProvider(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def sign_message(self, message, out_f, agent_version=2):
+    def sign_message_after_soliditySha3(self, message):
         raise NotImplementedError()
 
 
@@ -53,13 +53,6 @@ class KeyIdentityProvider(IdentityProvider):
     def transact(self, transaction, out_f):
         raw_transaction = self.w3.eth.account.signTransaction(transaction, self.private_key).rawTransaction
         return send_and_wait_for_transaction(raw_transaction, self.w3, out_f)
-
-    def sign_message(self, message, out_f, agent_version=2):
-        if agent_version == 1:
-            h = defunct_hash_message(hexstr=self.w3.sha3(hexstr=message).hex())
-        else:
-            h = defunct_hash_message(text=message.lower())
-        return self.w3.eth.account.signHash(h, self.private_key).signature
     
     def sign_message_after_soliditySha3(self, message):
         h = defunct_hash_message(message)
@@ -77,12 +70,6 @@ class RpcIdentityProvider(IdentityProvider):
         print("Submitting transaction...\n", file=out_f)
         txn_hash = self.w3.eth.sendTransaction(transaction)
         return send_and_wait_for_transaction_receipt(txn_hash, self.w3)
-
-    def sign_message(self, message, out_f, agent_version=2):
-        if agent_version == 1:
-            return self.w3.eth.sign(self.get_address(), hexstr=self.w3.sha3(hexstr=message).hex())
-        else:
-            return self.w3.eth.sign(self.get_address(), text=message.lower())
 
     def sign_message_after_soliditySha3(self, message):
         return self.w3.eth.sign(self.get_address(), message)
@@ -112,11 +99,8 @@ class MnemonicIdentityProvider(IdentityProvider):
         raw_transaction = self.w3.eth.account.signTransaction(transaction, self.private_key).rawTransaction
         return send_and_wait_for_transaction(raw_transaction, self.w3, out_f)
 
-    def sign_message(self, message, out_f, agent_version=2):
-        if agent_version == 1:
-            h = defunct_hash_message(hexstr=self.w3.sha3(hexstr=message).hex())
-        else:
-            h = defunct_hash_message(text=message.lower())
+    def sign_message_after_soliditySha3(self, message):
+        h = defunct_hash_message(message)
         return self.w3.eth.account.signHash(h, self.private_key).signature
 
 
@@ -153,17 +137,12 @@ class TrezorIdentityProvider(IdentityProvider):
                                                   int(signature[2].hex(), 16)))
         return send_and_wait_for_transaction(raw_transaction, self.w3, out_f)
 
-    def sign_message(self, message, out_f, agent_version=2):
+    def sign_message_after_soliditySha3(self, message):
         n = self.client._convert_prime([44 + BIP32_HARDEN,
                                         60 + BIP32_HARDEN,
                                         BIP32_HARDEN,
                                         0,
                                         self.index])
-        print("Sending message to trezor for signature...\n", file=out_f)
-        if agent_version == 1:
-            message = self.w3.sha3(hexstr=message)
-        else:
-            message = message.lower().encode("utf-8")
         return self.client.call(proto.EthereumSignMessage(address_n=n, message=message)).signature
 
 def send_and_wait_for_transaction_receipt(txn_hash, w3):
@@ -271,16 +250,11 @@ class LedgerIdentityProvider(IdentityProvider):
                                                   int.from_bytes(result[33:65], byteorder="big")))
         return send_and_wait_for_transaction(raw_transaction, self.w3, out_f)
 
-    def sign_message(self, message, out_f, agent_version=2):
-        if agent_version == 1:
-            message = self.w3.sha3(hexstr=message)
-        else:
-            message = message.lower().encode("utf-8")
+    def sign_message_after_soliditySha3(self, message):
         apdu = LedgerIdentityProvider.SIGN_MESSAGE_OP
         apdu += bytearray([len(self.dongle_path) + 1 + len(message) + 4, int(len(self.dongle_path) / 4)])
         apdu += self.dongle_path + struct.pack(">I", len(message)) + message
         try:
-            print("Sending message to ledger for signature...\n", file=out_f)
             result = self.dongle.exchange(apdu)
         except CommException:
             raise RuntimeError("Received commException from ledger. Are you sure your device is unlocked and the "
