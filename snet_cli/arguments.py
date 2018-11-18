@@ -345,6 +345,7 @@ def add_mpe_client_options(parser):
 
     p = subparsers.add_parser("balance", help="print balance of AGI tokens and balance of MPE wallet")
     p.set_defaults(fn="print_agi_and_mpe_balances")
+    p.add_argument("--account", default=None, help="Account to print balance for (default is the current identity)")
     add_p_snt_address_opt(p)
     add_p_mpe_address_opt(p)
 

@@ -22,7 +22,6 @@ import tempfile
 from snet_cli.utils_agi2cogs import cogs2stragi
 
 
-
 class MPEClientCommand(BlockchainCommand):
 
     # O. MultiPartyEscrow related functions
@@ -36,11 +35,21 @@ class MPEClientCommand(BlockchainCommand):
             self._snt_address = get_snt_address_from_args_or_networks(self.w3, self.args.singularitynettoken)
         return self._snt_address
 
-    # print balance of AGI tokens and balance of MPE wallet
+    # print balance of ETH, AGI, and MPE wallet
     def print_agi_and_mpe_balances(self):
-        agi_balance = self.call_contract_command("SingularityNetToken", self.get_snt_address(), "balanceOf", [self.ident.address])
-        mpe_balance = self.call_contract_command("MultiPartyEscrow",    self.get_mpe_address(), "balances",  [self.ident.address])
-        self._pprint({"agi_balance": cogs2stragi(agi_balance), "mpe_wallet_balance": cogs2stragi(mpe_balance)})
+        if (self.args.account):
+            account = self.args.account
+        else:
+            account = self.ident.address
+        eth_wei  = self.w3.eth.getBalance(account)
+        agi_cogs = self.call_contract_command("SingularityNetToken", self.get_snt_address(), "balanceOf", [account])
+        mpe_cogs = self.call_contract_command("MultiPartyEscrow",    self.get_mpe_address(), "balances",  [account])
+
+        # we cannot use _pprint here because it doesn't conserve order yet
+        self._printout("    account: %s"%account)
+        self._printout("    ETH: %s"%self.w3.fromWei(eth_wei, 'ether'))
+        self._printout("    AGI: %s"%cogs2stragi(agi_cogs))
+        self._printout("    MPE: %s"%cogs2stragi(mpe_cogs))
 
     def deposit_to_mpe(self):
         snt_address = self.get_snt_address()
