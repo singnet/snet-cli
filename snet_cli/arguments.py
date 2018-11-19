@@ -511,3 +511,7 @@ def add_mpe_service_options(parser):
     p.set_defaults(fn="print_service_tags_from_registry")
     add_p_service_in_registry(p)
 
+    p = subparsers.add_parser("delete", help="Delete service registration from registry")
+    p.set_defaults(fn="delete_service_registration")
+    add_p_service_in_registry(p)
+    add_transaction_arguments(p)

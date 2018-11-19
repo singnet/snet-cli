@@ -116,3 +116,8 @@ class MPEServiceCommand(BlockchainCommand):
         tags = rez[3]
         tags = [tag.rstrip(b"\0").decode('utf-8') for tag in tags]
         self._printout(" ".join(tags))
+
+    def delete_service_registration(self):
+        registry_address = get_registry_address_from_args_or_networks(self.w3, self.args.registry)
+        params = [type_converter("bytes32")(self.args.organization), type_converter("bytes32")(self.args.service)]
+        self.transact_contract_command("Registry", registry_address, "deleteServiceRegistration", params)
