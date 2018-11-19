@@ -6,7 +6,6 @@ from pathlib import Path
 import web3
 import pkg_resources
 from grpc_tools.protoc import main as protoc
-import sys
 
 from snet_cli.identity import RpcIdentityProvider, MnemonicIdentityProvider, TrezorIdentityProvider, \
     LedgerIdentityProvider, KeyIdentityProvider
@@ -145,17 +144,6 @@ def read_temp_tar(f):
     return f
 
 
-def get_agent_version(w3, agent_address):
-    # Version 1 expects the signed 20-byte job address and we've hardcoded the checksum of the bytecode for this version
-    # below. Version 2 expects the signed 42-byte hex-encoded job address.
-
-    bytecode = w3.eth.getCode(agent_address)
-    if _md5.md5(bytecode).digest() == bytes([244, 176, 168, 6, 74, 56, 171, 175, 38, 48, 245, 246, 189, 0, 67, 200]):
-        return 1
-    else:
-        return 2
-
-
 def get_cli_version():
     return pkg_resources.get_distribution("snet-cli").version
 
@@ -195,3 +183,34 @@ def abi_get_element_by_name(abi, name):
 
 def abi_decode_struct_to_dict(abi, struct_list):
     return {el_abi["name"] : el for el_abi, el in zip(abi["outputs"], struct_list)}
+
+
+# TODO: move get_contract_address_from_args_or_networks to the new session/config logic (issue #110)
+# if arg is not None we take address from it otherwise we read the address from "networks/*json"
+def get_contract_address_from_args_or_networks(w3, contract_name, arg):
+    if (arg):
+        return w3.toChecksumAddress(arg)
+    
+    # try to take address from networks
+    try :
+        contract_def     = get_contract_def(contract_name)
+        networks         = contract_def["networks"]
+        chain_id         = w3.version.network
+        contract_address = networks.get(chain_id, {}).get("address", None)
+        if (not contract_address):
+            raise Exception()
+        contract_address = w3.toChecksumAddress(contract_address)
+    except:
+        raise Exception("Fail to read %s address from \"networks\", you should specify address by yourself via --%s parameter"%(contract_name, contract_name.lower()))
+        
+    return contract_address
+
+def get_registry_address_from_args_or_networks(w3, arg):
+    return get_contract_address_from_args_or_networks(w3, "Registry", arg)
+
+def get_mpe_address_from_args_or_networks(w3, arg):
+    return get_contract_address_from_args_or_networks(w3, "MultiPartyEscrow", arg)
+
+def get_snt_address_from_args_or_networks(w3, arg):
+    return get_contract_address_from_args_or_networks(w3, "SingularityNetToken", arg)
+

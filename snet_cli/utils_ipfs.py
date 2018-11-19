@@ -1,6 +1,5 @@
 # utils related to ipfs
 import tarfile
-import base58
 import glob
 import io
 import os
@@ -24,7 +23,19 @@ def publish_proto_in_ipfs(ipfs_client, protodir):
 
 # get file from ipfs
 # We must check the hash becasue we cannot believe that ipfs_client wasn't been compromise
-def get_from_ipfs_and_checkhash(self, ipfs_client, ipfs_hash_base58):
+def get_from_ipfs_and_checkhash(ipfs_client, ipfs_hash_base58):
     data  = ipfs_client.cat(ipfs_hash_base58)
     print("!!! We must check that hash in IPFS is correct (we cannot be sure that ipfs is not compromized) !!! Please implement it !!!")
     return data
+
+# Convert in and from bytes uri format used in Registry contract
+# TODO: we should pad string with zeros till closest 32 bytes word because of a bug in processReceipt (in snet_cli.contract.process_receipt)
+def hash_to_bytesuri(s):
+    s = "ipfs://" + s
+    return s.encode("ascii").ljust(32 * (len(s)//32 + 1), b"\0")
+
+def bytesuri_to_hash(s):
+    s = s.rstrip(b"\0").decode('ascii')
+    if (not s.startswith("ipfs://")):
+        raise Exception("We support only ipfs uri in Registry")
+    return s[7:]
