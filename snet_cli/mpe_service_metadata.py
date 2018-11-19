@@ -37,8 +37,7 @@ import base64
 import secrets
 
 # TODO: we should use some standart solution here
-class mpe_service_metadata:
-    
+class MPEServiceMetadata:
     # init with modelIPFSHash
     def __init__(self):
         self.m = {"version"        : 1,
@@ -56,7 +55,7 @@ class mpe_service_metadata:
     def set_simple_field(self, f, v):
         if (f != "display_name" and f != "encoding" and f != "model_ipfs_hash" and f != "mpe_address" and
             f != "service_type" and f != "payment_expiration_threshold"):
-                raise Exception("unknow field in mpe_service_metadata")
+                raise Exception("unknow field in MPEServiceMetadata")
         self.m[f] = v        
         
     def set_fixed_price_in_cogs(self, price):
@@ -143,11 +142,11 @@ class mpe_service_metadata:
         return [e["endpoint"] for e in self.m["endpoints"]]
     
 def load_mpe_service_metadata(f):
-    metadata = mpe_service_metadata()
+    metadata = MPEServiceMetadata()
     metadata.load(f)
     return metadata
 
 def mpe_service_metadata_from_json(j):
-    metadata      = mpe_service_metadata()
+    metadata = MPEServiceMetadata()
     metadata.set_from_json(j)
     return metadata

@@ -1,28 +1,18 @@
 import getpass
-import io
 import json
-import os
-import shlex
 import sys
-import tarfile
-import tempfile
-from pathlib import Path
-from shutil import rmtree
 from textwrap import indent
 from urllib.parse import urljoin
 
-import grpc
 import ipfsapi
-import requests
 import yaml
-from google.protobuf import json_format
-from rfc3986 import urlparse, uri_reference
+from rfc3986 import urlparse
 
 from snet_cli.contract import Contract
 from snet_cli.identity import get_kws_for_identity_type, get_identity_types
 from snet_cli.session import from_config, get_session_keys
-from snet_cli.utils import DefaultAttributeObject, get_web3, get_identity, serializable, walk_imports, \
-    read_temp_tar, type_converter, get_contract_def, get_cli_version, compile_proto
+from snet_cli.utils import DefaultAttributeObject, get_web3, get_identity, serializable, \
+    read_temp_tar, type_converter, get_contract_def, get_cli_version
 
 
 class Command(object):

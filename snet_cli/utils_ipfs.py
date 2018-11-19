@@ -1,6 +1,5 @@
 # utils related to ipfs
 import tarfile
-import base58
 import glob
 import io
 import os

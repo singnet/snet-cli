@@ -4,8 +4,7 @@ import base64
 from pathlib import Path
 import json
 import sys
-import os 
-import importlib
+import os
 import grpc
 from eth_account.messages import defunct_hash_message
 from web3.utils.encoding import pad_hex
@@ -25,6 +24,8 @@ from snet_cli.utils_agi2cogs import cogs2stragi
 class MPEClientCommand(BlockchainCommand):
 
     # O. MultiPartyEscrow related functions
+    
+    # TODO: move "get_mpe_address" and "get_snt_address" to the new session/config logic (part of issue #110)
     def get_mpe_address(self):
         if (not hasattr(self, "_mpe_address")):
             self._mpe_address = get_mpe_address_from_args_or_networks(self.w3, self.args.multipartyescrow)
@@ -104,10 +105,6 @@ class MPEClientCommand(BlockchainCommand):
 
             # save service_metadata.json in channel_dir
             metadata.save_pretty(os.path.join(channel_dir, "service_metadata.json"))
-
-            # save current ethereum address in channel dir
-            with open(os.path.join(channel_dir, "client_address.txt"), 'w') as f:
-                f.write(self.ident.address)
         except:
             # it is secure to remove channel_dir, because we've created it
             shutil.rmtree(channel_dir)

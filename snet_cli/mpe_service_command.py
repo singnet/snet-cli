@@ -1,8 +1,7 @@
 from snet_cli.commands    import BlockchainCommand
 import snet_cli.utils_ipfs as utils_ipfs
-from snet_cli.mpe_service_metadata import mpe_service_metadata, load_mpe_service_metadata, mpe_service_metadata_from_json
+from snet_cli.mpe_service_metadata import MPEServiceMetadata, load_mpe_service_metadata, mpe_service_metadata_from_json
 from snet_cli.utils import type_converter
-import base58
 from snet_cli.utils import get_mpe_address_from_args_or_networks, get_registry_address_from_args_or_networks
 from snet_cli.utils_ipfs import hash_to_bytesuri, bytesuri_to_hash, get_from_ipfs_and_checkhash
 import web3
@@ -18,7 +17,7 @@ class MPEServiceCommand(BlockchainCommand):
 
     def publish_proto_metadata_init(self):
         ipfs_hash_base58 = utils_ipfs.publish_proto_in_ipfs(self._get_ipfs_client(), self.args.protodir)
-        metadata    = mpe_service_metadata()
+        metadata    = MPEServiceMetadata()
         mpe_address = get_mpe_address_from_args_or_networks(self.w3, self.args.multipartyescrow)
         metadata.set_simple_field("model_ipfs_hash",              ipfs_hash_base58)
         metadata.set_simple_field("mpe_address",                  mpe_address)

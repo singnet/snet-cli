@@ -6,7 +6,6 @@ from pathlib import Path
 import web3
 import pkg_resources
 from grpc_tools.protoc import main as protoc
-import sys
 
 from snet_cli.identity import RpcIdentityProvider, MnemonicIdentityProvider, TrezorIdentityProvider, \
     LedgerIdentityProvider, KeyIdentityProvider
@@ -186,6 +185,7 @@ def abi_decode_struct_to_dict(abi, struct_list):
     return {el_abi["name"] : el for el_abi, el in zip(abi["outputs"], struct_list)}
 
 
+# TODO: move get_contract_address_from_args_or_networks to the new session/config logic (issue #110)
 # if arg is not None we take address from it otherwise we read the address from "networks/*json"
 def get_contract_address_from_args_or_networks(w3, contract_name, arg):
     if (arg):
