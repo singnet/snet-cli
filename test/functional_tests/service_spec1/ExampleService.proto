@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+service ExampleService {
+  rpc classify(ClassifyRequest) returns (ClassifyResponse);
+}
+
+message ClassifyRequest {
+  string image_type = 1;
+  string image = 2;
+}
+
+message ClassifyResponse {
+  repeated string predictions = 1;  
+  repeated float confidences = 2;
+}
+
