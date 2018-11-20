@@ -24,3 +24,4 @@ def main():
             print("Error:", e)
             print("If you want to see full Traceback then run:")
             print("snet --print-traceback [parameters]")
+            sys.exit(42)
