@@ -6,10 +6,12 @@
 # - reset .snet configuration
 # - add snet-user to snet-cli with first ganache idenity
 
-if [[ $EUID -ne 0 ]]; then
-   echo "This script must be run as root from circleci enviroment" 
+
+if [ ! $1 = "--i-no-what-i-am-doing" ]; then
+   echo "This script is intended to be run from circleci"
    exit 1
 fi
+      
 
 # I. restart ipfs
 killall -q || echo "supress an error"
@@ -26,8 +28,8 @@ nohup ipfs daemon > ipfs.log 2>&1 &
 killall -q ganache-cli || echo "supress an error"
 
 cd ../platform-contracts
-nohup ganache-cli --mnemonic 'gauge enact biology destroy normal tunnel slight slide wide sauce ladder produce' > /dev/null &
-truffle migrate --network local
+nohup ./node_modules/.bin/ganache-cli --mnemonic 'gauge enact biology destroy normal tunnel slight slide wide sauce ladder produce' > /dev/null &
+./node_modules/.bin/truffle migrate --network local
 
 # III. set correct networks/*json for Registry and MultiPartyEscrow (but not for SingularityNetToken !) 
 npm run-script package-npm
