@@ -39,7 +39,7 @@ jobs:
     - run:
         name: Unit tests
         command: |
-	    nosetests3 test/unit_tests/
+            nosetests3 test/unit_tests/
     - run:
         name: Functional tests
         command: |
