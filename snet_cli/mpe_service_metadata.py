@@ -3,7 +3,7 @@
 #----------------------------------------------------
 # version          - used to track format changes (current version is 1)
 # display_name     - Display name of the service
-# encoding         - Service encoding (json or grpc)
+# encoding         - Service encoding (proto or json)
 # service_type     - Service type (grpc, jsonrpc or process)  
 # payment_expiration_threshold - Service will reject payments with expiration less
 #                                than current_block + payment_expiration_threshold.

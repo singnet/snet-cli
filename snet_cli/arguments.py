@@ -453,8 +453,8 @@ def add_mpe_service_options(parser):
     p.add_argument("display_name", help="Service display name")
     p.add_argument("payment_address", help="payment_address for the first payment group")
     p.add_argument("--group_name", default="default_group", help="name of the first payment group")
-    p.add_argument("--encoding", default = "grcp", choices=['grpc', 'json'], help="Service encoding")
-    p.add_argument("--service_type", default = "grcp", choices=['grpc', 'jsonrpc', 'process'], help="Service type")
+    p.add_argument("--encoding", default = "proto", choices=['proto', 'json'], help="Service encoding")
+    p.add_argument("--service_type", default = "grpc", choices=['grpc', 'jsonrpc', 'process'], help="Service type")
     p.add_argument("--payment_expiration_threshold", type=int, default = 40320, help="Service expiration threshold in blocks (default is 40320 ~ one week with 15s/block)")
 
     p = subparsers.add_parser("metadata_set_fixed_price", help="Set pricing model as fixed price for all methods")
