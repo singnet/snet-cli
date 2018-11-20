@@ -381,9 +381,9 @@ class MPEClientCommand(BlockchainCommand):
     def print_channel_state_statelessly(self):
         grpc_channel = grpc.insecure_channel(self.args.endpoint)
         current_nonce, current_amount, unspent_amount = self._get_channel_state_statelessly(grpc_channel, self.args.channel_id)
-        self._printout("current_nonce          = %i"%current_nonce)
-        self._printout("current_signed_amount  = %i"%current_amount)
-        self._printout("current_unspent_amount = %s"%str(unspent_amount))
+        self._printout("current_nonce                  = %i"%current_nonce)
+        self._printout("current_signed_amount_in_cogs  = %i"%current_amount)
+        self._printout("current_unspent_amount_in_cogs = %s"%str(unspent_amount))
         
     def _call_check_price(self, service_metadata):
         pricing = service_metadata["pricing"]
@@ -398,7 +398,7 @@ class MPEClientCommand(BlockchainCommand):
         self._call_check_price(service_metadata)
 
         current_nonce, current_amount, unspent_amount = self._get_channel_state_statelessly(grpc_channel, self.args.channel_id)
-        self._printout("unspent_amount before call (None means that we cannot get it now):%s"%str(unspent_amount))
+        self._printout("unspent_amount_in_cogs before call (None means that we cannot get it now):%s"%str(unspent_amount))
         response = self._call_server_via_grpc_channel(grpc_channel, current_nonce, current_amount + self.args.price, params, service_metadata)
         self._printout(response)
 
