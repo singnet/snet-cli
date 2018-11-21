@@ -8,7 +8,7 @@ jobs:
       TRIGGER_BUILD_BRANCH: master
     steps:
     - run:
-        name: Install tools, ipfs
+        name: Install tools and ipfs
         command: |
             cd ..
             sudo apt-get update
@@ -33,8 +33,7 @@ jobs:
         name: Install snet-cli 
         command: |
             ./scripts/blockchain install
-            pip3 install -e . --user
-	    echo export PATH=\$PATH:~/.local/lib >> ~/.bashrc
+            sudo pip3 install -e .
     - run:
         name: Unit tests
         command: |
