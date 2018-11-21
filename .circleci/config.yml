@@ -12,12 +12,7 @@ jobs:
         command: |
             cd ..
             sudo apt-get update
-            sudo apt-get -y install python3-nose
-            sudo apt-get -y install libudev-dev libusb-1.0-0-dev curl
-            # Install NodeJS toolset
-            #apt-get -y install nodejs npm
-            # install Go tools
-            #sudo apt-get -y install golang go-dep golang-goprotobuf-dev golint
+            sudo apt-get -y install python3-nose libudev-dev libusb-1.0-0-dev curl
             # install IPFS
             wget https://dist.ipfs.io/go-ipfs/v0.4.17/go-ipfs_v0.4.17_linux-amd64.tar.gz
             tar xvfz go-ipfs_*.tar.gz
@@ -38,7 +33,7 @@ jobs:
         name: Install snet-cli 
         command: |
             ./scripts/blockchain install
-            sudo pip3 install -e .
+            pip3 install -e .
     - run:
         name: Unit tests
         command: |

@@ -14,7 +14,6 @@ setup(
     author_email='info@singularitynet.io',
     description='SingularityNET CLI',
     install_requires=[
-        'base58==1.0.2',
         'grpcio-tools==1.14.1',
         'jsonrpcclient==2.5.2',
         'eth-typing<2', # workaround until next version after eth-abi v2.0.0-beta.1 is released
