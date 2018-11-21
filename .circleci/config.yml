@@ -17,6 +17,12 @@ jobs:
             wget https://dist.ipfs.io/go-ipfs/v0.4.17/go-ipfs_v0.4.17_linux-amd64.tar.gz
             tar xvfz go-ipfs_*.tar.gz
             sudo cp ./go-ipfs/ipfs /usr/local/bin
+    - checkout
+    - run:
+        name: Install snet-cli 
+        command: |
+            ./scripts/blockchain install
+            sudo pip3 install -e .
     - run:
         name: Install platform-contracts from master
         command: |
@@ -28,12 +34,6 @@ jobs:
             npm install
             npm install ganache-cli
             npm run-script compile
-    - checkout
-    - run:
-        name: Install snet-cli 
-        command: |
-            ./scripts/blockchain install
-            sudo pip3 install -e .
     - run:
         name: Unit tests
         command: |
