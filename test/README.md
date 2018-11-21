@@ -15,7 +15,7 @@ example of unit tests.
 ### Functional tests
 
 Our functional tests are de facto integration tests with
-[https://github.com/singnet/platform-contracts](platform-contracts). 
+[platform-contracts](https://github.com/singnet/platform-contracts). 
 
 Functional tests are excecuted in the following environment (see [utils/reset_environment.sh](utils/reset_environment.sh))
 
