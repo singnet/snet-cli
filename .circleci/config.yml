@@ -33,7 +33,7 @@ jobs:
         name: Install snet-cli 
         command: |
             ./scripts/blockchain install
-            pip3 install -e .
+            pip3 install -e . --user
     - run:
         name: Unit tests
         command: |
