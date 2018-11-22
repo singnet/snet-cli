@@ -3,7 +3,7 @@
 We have three layers of tests for snet-cli 
 * classical unit tests: [unit_tests](unit_tests)
 * functional tests: [functional_tests](functional_tests)
-* integration test of the whole system. This test can be found in the
+* integration test for the whole system. This test can be found in the
 separate repository: [platform-pipeline](https://github.com/singnet/platform-pipeline)
 
 
