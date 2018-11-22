@@ -6,13 +6,11 @@ We have three layers of tests for snet-cli
 * integration test of the whole system. This test can be found in the
 separate repository: [https://github.com/singnet/platform-pipeline]
 
-
 ### Unit tests
 
 You can simply add your unit test in [unit_tests], it will be run
 automatically in circleci. In the same directory you can find an
 example of unit tests. 
-
 
 ### Functional tests
 
