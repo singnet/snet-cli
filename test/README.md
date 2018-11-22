@@ -6,7 +6,6 @@ We have three layers of tests for snet-cli
 * integration test for the whole system. This test can be found in the
 separate repository: [platform-pipeline](https://github.com/singnet/platform-pipeline)
 
-
 ### Unit tests
 
 You can simply add your unit test in [unit_tests](unit_tests), it will be run
