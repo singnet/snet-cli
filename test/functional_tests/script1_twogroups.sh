@@ -4,19 +4,29 @@ snet service metadata_add_group group2 0x0067b427E299Eb2A4CBafc0B04C723F77c6d8a1
 snet service metadata_add_endpoints  8.8.8.8:2020 9.8.9.8:8080 --group_name group1
 snet service metadata_add_endpoints  8.8.8.8:22   1.2.3.4:8080 --group_name group2
 snet service metadata_set_fixed_price 0.0001
-snet service publish_in_ipfs
+IPFS_HASH=$(snet service publish_in_ipfs)
+ipfs cat $IPFS_HASH > service_metadata2.json
+
+# compare service_metadata.json and service_metadata2.json
+cmp <(jq -S . service_metadata.json) <(jq -S . service_metadata2.json)
 
 snet organization create testo -y -q
 snet service publish testo tests -y -q
 snet service update_add_tags testo tests tag1 tag2 tag3 -y -q
-snet service update_remove_tags testo tests tag2 -y -q
+snet service update_remove_tags testo tests tag2 tag1 -y -q
 snet service print_tags  testo tests
-snet service print_metadata  testo tests > /dev/null
 
+# it should have only tag3 now
+cmp <(echo "tag3") <(snet service print_tags testo tests)
+
+snet service print_metadata  testo tests |grep -v "We must check that hash in IPFS is correct" > service_metadata3.json
+
+# compare service_metadata.json and service_metadata3.json
+cmp <(jq -S . service_metadata.json) <(jq -S . service_metadata3.json)
 
 # client side
-snet client balance --snt 0x6e5f20669177f5bdf3703ec5ea9c4d4fe3aabd14
-snet client deposit 12345 --snt 0x6e5f20669177f5bdf3703ec5ea9c4d4fe3aabd14 -y -q
+snet client balance 
+snet client deposit 12345 -y -q
 snet client transfer 0x0067b427E299Eb2A4CBafc0B04C723F77c6d8a18 42 -y -q
 snet client withdraw 1 -y -q
 snet client open_init_channel_metadata 42 1 --group_name group1 -y  -q
