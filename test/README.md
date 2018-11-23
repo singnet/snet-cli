@@ -25,7 +25,7 @@ slight slide wide sauce ladder produce") is running, and snet-cli is
 configured to use it by default
 * There is already one identity in snet-cli. It is "private-key" identity
 called "snet-user", which corresponds to the first ganache identity.
-* snet-cli already know correct addreses for Registry and MultiPartyEscrow contracts, so you shoundn't set them manualy, however address of SingularityNetToken contract is not set, and you should pass it by hands (address of SingularityNetToken in our environment  0x6e5f20669177f5bdf3703ec5ea9c4d4fe3aabd14)
+* snet-cli already know correct addreses for SingularityNetToken, Registry and MultiPartyEscrow contracts, so you shoundn't set them manualy
 
 Examples of tests can be found here: [functional_tests](functional_tests). You should add your tests in
 this directory.
