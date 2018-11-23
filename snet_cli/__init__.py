@@ -3,7 +3,7 @@ import sys
 from snet_cli import arguments
 from snet_cli.config import conf
 
-__version__ = "0.1.6"
+__version__ = "0.1.7"
 
 
 def main():
