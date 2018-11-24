@@ -17,7 +17,8 @@ example of unit tests.
 Our functional tests are *de facto* integration tests with
 [platform-contracts](https://github.com/singnet/platform-contracts). 
 
-Functional tests are excecuted in the following environment (see [utils/reset_environment.sh](utils/reset_environment.sh))
+Functional tests are excecuted in the following environment (see
+[utils/reset_environment.sh](utils/reset_environment.sh)):
 
 * IPFS is running and snet-cli is correctly configured to use it
 * local ethereum network (ganache-cli with mnemonics "gauge enact biology destroy normal tunnel
