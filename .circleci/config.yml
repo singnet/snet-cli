@@ -8,16 +8,40 @@ jobs:
       TRIGGER_BUILD_BRANCH: master
     steps:
     - run:
-        name: Install tools
+        name: Install tools and ipfs
         command: |
-          sudo apt-get update
-          sudo apt-get -y install libudev-dev libusb-1.0-0-dev
+            cd ..
+            sudo apt-get update
+            sudo apt-get -y install libudev-dev libusb-1.0-0-dev curl jq
+            # install IPFS
+            wget https://dist.ipfs.io/go-ipfs/v0.4.17/go-ipfs_v0.4.17_linux-amd64.tar.gz
+            tar xvfz go-ipfs_*.tar.gz
+            sudo cp ./go-ipfs/ipfs /usr/local/bin
     - checkout
     - run:
-        name: Build snet-cli
+        name: Install snet-cli 
         command: |
-          ./scripts/blockchain install
-          sudo pip3 install -e .
+            ./scripts/blockchain install
+            sudo pip3 install -e .
+    - run:
+        name: Install platform-contracts from master
+        command: |
+            # Install platform-contracts (from master)
+            # we will deploy contracts from test/utils/reset_enviroment.sh
+            cd ..
+            git clone https://github.com/singnet/platform-contracts
+            cd platform-contracts
+            npm install
+            npm install ganache-cli
+            npm run-script compile
+    - run:
+        name: Unit tests
+        command: |
+            bash -ex test/utils/run_all_unit.sh
+    - run:
+        name: Functional tests
+        command: |
+            bash -ex test/utils/run_all_functional.sh
     - run:
         name: Trigger platform-pipeline build
         command: |
