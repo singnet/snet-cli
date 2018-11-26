@@ -163,11 +163,11 @@ snet client open_init_channel_registry [-h] [--registry REGISTRY]
            expiration
 ```
 * Open channel with our specified service
- * `organization`:Name of organization
- * `service`:     Name of service
+ * `organization`:name of organization
+ * `service`:     name of service
  * `amount`:      amount of AGI tokens to put in the new channel
  * `expiration`:  expiration time (in blocks) for the new channel (one:block ~ 15 seconds)
- * `REGISTRY   address of Registry contract, if not specified we read address from "networks"
+ * `REGISTRY`:  address of Registry contract, if not specified we read address from "networks"
  * `GROUP_NAME`:name of payment group for which we want to open the channel. Parameter should be specified only for services with several payment groups
  * `MULTIPARTYESCROW`:address of MultiPartyEscrow contract, if not specified we read address from "networks"
  * `GAS_PRICE`: override session `default_gas_price`
@@ -199,8 +199,8 @@ snet client call [-h] [--service SERVICE]
  
 ```
 * Initializes metadata file
- * `organization`:Name of organization
- * `service`:  Name of service
+ * `organization`:name of organization
+ * `service`:  name of service
  * `amount`:      amount of AGI tokens to put in the new channel
  * `expiration`:  expiration time (in blocks) for the new channel (one:block ~ 15 seconds)
  * `REGISTRY`:   address of Registry contract, if not specified we read address from "networks"
@@ -214,7 +214,7 @@ snet service metadata_set_fixed_price [-h]
 ```
 * Sets the price in AGI tokens for the specified service. 
  * `price`: set price in AGI token for all methods
- * `METADATA_FILE`: Service metadata json file (default service_metadata.json)
+ * `METADATA_FILE`: service metadata json file (default service_metadata.json)
 ---
 ```
 snet service metadata_add_endpoints [-h] [--group_name GROUP NAME]
@@ -288,7 +288,7 @@ snet organization create [-h] [--gas-price GAS_PRICE]
 
 * Create an organization
   * `ORG_NAME`: name of the organization
-  * `ORG_MEMBERS`: List of members to be added to the organization (comma-separated)
+  * `ORG_MEMBERS`: list of members to be added to the organization (comma-separated)
 
 ---
 
