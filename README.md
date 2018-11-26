@@ -92,7 +92,6 @@ snet network eth-rpc-endpoint ETH_RPC_ENDPOINT
 ```
 snet session
 ```
-
 * Dump current session state
 
 ---
@@ -100,16 +99,11 @@ snet session
 ```
 snet set KEY VALUE
 ```
-
 * Set session key
   * `KEY`: target session key:
-    * `current_agent_at`: current Agent contract address
-    * `current_agent_factory_at`: current AgentFactory contract address
     * `default_gas_price`: default gas price for transactions
     * `default_eth_rpc_endpoint`: default Ethereum JSON-RPC endpoint
     * `default_wallet_index`: default index of account within a given wallet
-    * `current_job_at`: current Job contract address
-    * `current_registry_at`: current Registry contract address
     * `identity_name`: name of identity to use for signing
   * `VALUE`: desired value
 
@@ -121,262 +115,146 @@ snet unset KEY
 
 * Unset session key:
   * `KEY`: target session key:
-    * `current_agent_at`: current Agent contract address
-    * `current_agent_factory_at`: current AgentFactory contract address
     * `default_gas_price`: default gas price for transactions
     * `default_eth_rpc_endpoint`: default Ethereum JSON-RPC endpoint
     * `default_wallet_index`: default index of account within a given wallet
-    * `current_job_at`: current Job contract address
-    * `current_registry_at`: current Registry contract address
     * `identity_name`: name of identity to use for signing
 
 ---
 
 ```
-snet agent [--at ADDRESS] create-jobs [--number NUMBER]
-                                      [--max-price MAX_PRICE]
-                                      [--funded]
-                                      [--signed]
-                                      [--gas-price GAS_PRICE]
-                                      [--eth-rpc-endpoint ETH_RPC_ENDPOINT]
-                                      [--wallet-index WALLET_INDEX]
-                                      [--no-confirm]
-                                      [--verbose | --quiet]
+snet client balance
 ```
-
-* Create jobs associated with an agent and output their information; overwrites session `current_job_at` to the last
-created Job contract's address
-  * `ADDRESS`: address of target Agent contract; overwrites session `current_agent_at`
-  * `NUMBER`: number of jobs to create
-  * `MAX_PRICE`: skip interactive confirmation of job price if below this value
-  * `--funded`: fund created jobs
-  * `--signed`: sign created job addresses
-  * `GAS_PRICE`: override session `default_gas_price`
-  * `ETH_RPC_ENDPOINT`: override session `default_eth_rpc_endpoint`
-  * `WALLET_INDEX`: override session `default_wallet_index`
-  * `--no-confirm`: skip interactive confirmation of transaction payloads
-  * `--verbose`: print all transaction details
-  * `--quiet`: print minimal transaction details
+* Retrieves balance of the current identity
 
 ---
 
 ```
-snet agent-factory [--at ADDRESS] create-agent PRICE ENDPOINT [METADATA_URI] [--gas-price GAS_PRICE]
-                                                                             [--eth-rpc-endpoint ETH_RPC_ENDPOINT]
-                                                                             [--wallet-index WALLET_INDEX]
-                                                                             [--no-confirm]
-                                                                             [--verbose | --quiet]
+snet client deposit [--singularitynettoken SINGULARITYNETTOKEN]
+                    [--multipartyescrow MULTIPARTYESCROW]
+                    [--gas-price GAS_PRICE]
+                    [--eth-rpc-endpoint ETH_RPC_ENDPOINT]
+                    [--wallet-index WALLET_INDEX] [--yes]
+                    [--verbose | --quiet]
+                     amount
 ```
-
-* Create an agent; overwrites session `current_agent_at` to created Agent contract's address
-  * `ADDRESS`: address of target AgentFactory contract; overwrites session `current_agent_factory_at` (not required for
-networks on which AgentFactory has been deployed by SingularityNET Foundation)
-  * `PRICE`: initial job price for created agent
-  * `ENDPOINT`: endpoint on which daemon for the new agent will listen for requests
-  * `METADATA_URI`: uri where service metadata is stored
-  * `GAS_PRICE`: override session `default_gas_price`
-  * `ETH_RPC_ENDPOINT`: override session `default_eth_rpc_endpoint`
-  * `WALLET_INDEX`: override session `default_wallet_index`
-  * `--no-confirm`: skip interactive confirmation of transaction payloads
-  * `--verbose`: print all transaction details
-  * `--quiet`: print minimal transaction details
-
+* Deposit AGI tokens to the MPE wallet
+ * `AMOUNT`: amount of AGI tokens to deposit in MPE wallet
+ * `SINGULARITYNETTOKEN`: address of SingularityNetToken contract, if not specified we read address from "networks"
+ * `MULTIPARTYESCROW`: address of MultiPartyEscrow contract, if not specified we read address from "networks"
+ * `GAS_PRICE`: override session `default_gas_price`
+ * `ETH_RPC_ENDPOINT`: override session `default_eth_rpc_endpoint`
+ * `WALLET_INDEX`: override session `default_wallet_index`
+ * `--no-confirm`: skip interactive confirmation of transaction payloads
+ * `--yes, -y`: accept defaults for any argument that is not provided
+ * `--verbose`: print all transaction details
+ * `--quiet`: print minimal transaction details
 ---
 
 ```
-snet client get-spec DEST_DIR [--agent-at AGENT_ADDRESS]
+snet client open_init_channel_registry [-h] [--registry REGISTRY]
+           [--group_name GROUP_NAME]
+           [--multipartyescrow MULTIPARTYESCROW]
+           [--gas-price GAS_PRICE]
+           [--eth-rpc-endpoint ETH_RPC_ENDPOINT]
+           [--wallet-index WALLET_INDEX]
+           [--yes] [--verbose | --quiet]
+           organization service amount
+           expiration
 ```
-
-* Retrieve the spec files for a given SingularityNET service
-  * `DEST_DIR`: directory at which to root the service's spec files; created if doesn't exist
-  * `AGENT_ADDRESS`: address of Agent contract associated with service; overwrites session `current_agent_at`
-
+* Open channel with our specified service
+ * `organization`:Name of organization
+ * `service`:     Name of service
+ * `amount`:      amount of AGI tokens to put in the new channel
+ * `expiration`:  expiration time (in blocks) for the new channel (one:block ~ 15 seconds)
+ * `REGISTRY   address of Registry contract, if not specified we read address from "networks"
+ * `GROUP_NAME`:name of payment group for which we want to open the channel. Parameter should be specified only for services with several payment groups
+ * `MULTIPARTYESCROW`:address of MultiPartyEscrow contract, if not specified we read address from "networks"
+ * `GAS_PRICE`: override session `default_gas_price`
+ * `ETH_RPC_ENDPOINT`: override session `default_eth_rpc_endpoint`
+ * `WALLET_INDEX`: override session `default_wallet_index`
+ * `--no-confirm`: skip interactive confirmation of transaction payloads
+ * `--yes, -y`: accept defaults for any argument that is not provided
+ * `--verbose`: print all transaction details
+ * `--quiet`: print minimal transaction details
 ---
 
 ```
-snet client call METHOD PARAMS [--max-price MAX_PRICE]
-                               [--agent-at AGENT_ADDRESS]
-                               [--job-at JOB_ADDRESS]
-                               [--gas-price GAS_PRICE]
-                               [--eth-rpc-endpoint ETH_RPC_ENDPOINT]
-                               [--wallet-index WALLET_INDEX]
-                               [--no-confirm]
-                               [--verbose | --quiet]
+snet client call [-h] [--service SERVICE]
+                        [--multipartyescrow MULTIPARTYESCROW]
+                        channel_id price endpoint method [params]
 ```
-
-* Call a SingularityNET service
-  * `METHOD`: service's target JSON-RPC method name
-  * `PARAMS`: serialized JSON object containing target JSON-RPC method's parameters and call arguments (also accepts path
-of file containing serialized JSON parameters object; leave empty to read from stdin)
-  * `MAX_PRICE`: skip interactive confirmation of job price if below this value
-  * `AGENT_ADDRESS`: address of Agent contract associated with service; overwrites session `current_agent_at`
-  * `JOB_ADDRESS`: address of Job contract instance; continue existing job from current state or create a new job if not
-provided or in COMPLETED state; overwrites session `current_job_at`
-  * `GAS_PRICE`: override session `default_gas_price`
-  * `ETH_RPC_ENDPOINT`: override session `default_eth_rpc_endpoint`
-  * `WALLET_INDEX`: override session `default_wallet_index`
-  * `--no-confirm`: skip interactive confirmation of transaction payloads
-  * `--verbose`: print all transaction details
-  * `--quiet`: print minimal transaction details
-
+* Invoke the service
+ * `channel_id`: channel_id obtained from the open_init_channel_registry call
+ * `price`: price for this call in AGI tokens
+ * `endpoint`: service endpoint
+ * `method`: target service's method name to call
+ * `params`: json-serialized parameters object or path containing json-serialized parameters object (leave emtpy to read from stdin)
+ * `SERVICE`: name of protobuf service to call. It should be specified in case of method name conflict.
+ * `MULTIPARTYESCROW`:address of MultiPartyEscrow contract, if not specified we read address from "networks"
+ ---
+ 
+```
+ snet service metadata_init
+ 
+```
+* Initializes metadata file
+ * `organization`:Name of organization
+ * `service`:  Name of service
+ * `amount`:      amount of AGI tokens to put in the new channel
+ * `expiration`:  expiration time (in blocks) for the new channel (one:block ~ 15 seconds)
+ * `REGISTRY`:   address of Registry contract, if not specified we read address from "networks"
+ * `GROUP_NAME`: name of payment group for which we want to open the channel. Parameter should be specified only for services with several payment groups
+ ---
+ 
+```
+snet service metadata_set_fixed_price [-h]
+                                      [--metadata_file METADATA_FILE]
+                                      price
+```
+* Sets the price in AGI tokens for the specified service. 
+ * `price`: set price in AGI token for all methods
+ * `METADATA_FILE`: Service metadata json file (default service_metadata.json)
+---
+```
+snet service metadata_add_endpoints [-h] [--group_name GROUP NAME]
+                                    [--metadata_file METADATA FILE]
+                                    endpoints [endpoints ...]
+```
+* Sets the endpoints of the daemon corresponding to the service. The value specified for the endpoint must be used as is in the daemon config file.
+ *`endpoints`: endpoints
+ * `GROUP NAME`: name of the payment group to which we want to add endpoints. Parameter should be specified in case of several payment groups
+ * `METADATA FILE`: service metadata json file (default service_metadata.json)
+---
+```
+snet service publish [-h] [--registry REGISTRY]
+                        [--metadata_file METADATA FILE]
+                        [--tags [TAGS [TAGS ...]]] [--gas-price GAS_PRICE]
+                        [--eth-rpc-endpoint ETH_RPC_ENDPOINT]
+                        [--wallet-index WALLET_INDEX] [--yes]
+                        [--verbose | --quiet]
+                        organization service
+```
+* Publish the service to the network and creates service metadata file on ipfs
+ * `organization`: name of organization
+ * `service`: name of service
+ * `REGISTRY`: address of Registry contract, if not specified we read address from "networks"
+ * `METADATA FILE`: service metadata json file (default service_metadata.json)
+ * `[TAGS [TAGS ...]]`:tags for service                                                              
+ * `GAS_PRICE`: override session `default_gas_price`
+ * `ETH_RPC_ENDPOINT`: override session `default_eth_rpc_endpoint`
+ * `WALLET_INDEX`: override session `default_wallet_index`
+ * `--no-confirm`: skip interactive confirmation of transaction payloads
+ * `--yes, -y`: accept defaults for any argument that is not provided
+ * `--verbose`: print all transaction details
+ * `--quiet`: print minimal transaction details
 ---
 
 ```
-snet contract <ContractName> [--at ADDRESS] <functionName> PARAM1, PARAM2, ... [--transact]
-                                                                               [--gas-price GAS_PRICE]
-                                                                               [--eth-rpc-endpoint ETH_RPC_ENDPOINT]
-                                                                               [--wallet-index WALLET_INDEX]
-                                                                               [--no-confirm]
-                                                                               [--verbose | --quiet]
-```
-
-* Interact with a contract
-  * `<ContractName>`: name of contract (either `Agent`, `AgentFactory`, `Job`, `Registry`, or `SingularityNetToken`)
-  * `ADDRESS`: address of target contract
-  * `<functionName>`: name of contract's target function
-  * `PARAM1, PARAM2, ...`: arguments to pass to given function
-  * `--transact`: conduct interaction as a transaction rather than a call
-  * `GAS_PRICE`: override session `default_gas_price`
-  * `ETH_RPC_ENDPOINT`: override session `default_eth_rpc_endpoint`
-  * `WALLET_INDEX`: override session `default_wallet_index`
-  * `--no-confirm`: skip interactive confirmation of transaction payloads
-  * `--verbose`: print all transaction details
-  * `--quiet`: print minimal transaction details
-
----
-
-```
-snet service init [--name NAME]
-                  [--spec SPEC]
-                  [--organization ORGANIZATION]
-                  [--path PATH]
-                  [--price PRICE]
-                  [--endpoint ENDPOINT]
-                  [--tags TAGS [TAG1, TAG2, ...]]
-                  [--description DESCRIPTION]
-                  [-y]
-```
-
-* Create a service.json file in the current directory either interactively or by passing command line arguments
-  * `NAME`: name of the service to be stored in the registry
-  * `SPEC`: local filesystem path to the service spec directory
-  * `ORGANIZATION`: the organization to which you want to register the service
-  * `PATH`: the path under which you want to register the service in the organization
-  * `PRICE`: initial price for interacting with the service
-  * `ENDPOINT`: initial endpoint to call the service's API 
-  * `TAGS`: tags to describe the service
-  * `DESCRIPTION`: human-readable description of the service 
-  * `-y`: accept defaults for any argument that is not provided
-
----
-
-```
-snet service publish [NETWORK] [--no-register]
-                               [--config CONFIG]
-                               [--agent-factory-at AGENT_FACTORY_ADDRESS]
-                               [--registry-at REGISTRY_ADDRESS]
-                                                                          
-                                                                          
-                                                                          
-```
-
-* Publish the service to the network; creates Agent contract and ServiceRegistration if applicable, updates Agent
-contract and ServiceRegistration metadata with local state if applicable; optionally specify a network
-  * `NETWORK`: name of network to use (either `mainnet`, `kovan`, `ropsten`, `rinkeby` or `eth-rpc-endpoint`)
-  * `--no-register`: does not register the published service
-  * `CONFIG`: specify a custom service.json file path
-  * `AGENT_FACTORY_ADDRESS`: address of AgentFactory contract (not required for networks on which AgentFactory has been
-deployed by SingularityNET Foundation)
-  * `REGISTRY_ADDRESS`: address of Registry contract (not required for networks on which Registry has been deployed by
-SingularityNET Foundation)
-
----
-
-```
-snet service publish eth-rpc-endpoint ETH_RPC_ENDPOINT [--no-register]
-                                                       [--config CONFIG]
-                                                       [--agent-factory-at AGENT_FACTORY_ADDRESS]
-                                                       [--registry-at REGISTRY_ADDRESS]
-                                                                          
-                                                                          
-                                                                          
-```
-
-* Publish the service to the network; creates Agent contract and ServiceRegistration if applicable, updates Agent
-contract and ServiceRegistration metadata with local state if applicable; optionally specify a network
-  * `ETH_RPC_ENDPOINT`: Ethereum JSON-RPC endpoint (network determined by endpoint)
-  * `--no-register`: does not register the published service
-  * `CONFIG`: specify a custom service.json file path
-  * `AGENT_FACTORY_ADDRESS`: address of AgentFactory contract (not required for networks on which AgentFactory has been
-deployed by SingularityNET Foundation)
-  * `REGISTRY_ADDRESS`: address of Registry contract (not required for networks on which Registry has been deployed by
-SingularityNET Foundation)
-
----
-
-```
-snet service update [NETWORK] [--new-price NEW_PRICE]
-                              [--new-endpoint NEW_ENDPOINT]
-                              [--new-tags TAGS [TAG1, TAG2, ...]]
-                              [--new-description NEW_DESCRIPTION]
-                              [--config CONFIG]
-                              [--agent-factory-at AGENT_FACTORY_ADDRESS]
-                              [--registry-at REGISTRY_ADDRESS]
-                                                                          
-```
-
-* Update individual fields in a service's contracts; optionally specify a network
-  * `NETWORK`: name of network to use (either `mainnet`, `kovan`, `ropsten`, `rinkeby` or `eth-rpc-endpoint`)
-  * `NEW_PRICE`: new price to call the service
-  * `NEW_ENDPOINT`: new endpoint to call the service's API
-  * `TAGS`: new list of tags you want associated with the service registration
-  * `NEW_DESCRIPTION`: new description for the service
-  * `CONFIG`: specify a custom service.json file path
-  * `REGISTRY_ADDRESS`: address of Registry contract (not required for networks on which Registry has been deployed by
-SingularityNET Foundation)
-
----
-
-```
-snet service update eth-rpc-endpoint ETH_RPC_ENDPOINT [--new-price NEW_PRICE]
-                                                      [--new-endpoint NEW_ENDPOINT]
-                                                      [--new-tags TAGS [TAG1, TAG2, ...]]
-                                                      [--new-description NEW_DESCRIPTION]
-                                                      [--config CONFIG]
-                                                      [--agent-factory-at AGENT_FACTORY_ADDRESS]
-                                                      [--registry-at REGISTRY_ADDRESS]
-                                                                          
-```
-
-* Update individual fields in a service's contracts using a target Ethereum JSON-RPC endpoint
-  * `ETH_RPC_ENDPOINT`: Ethereum JSON-RPC endpoint (network determined by endpoint)
-  * `NEW_PRICE`: new price to call the service
-  * `NEW_ENDPOINT`: new endpoint to call the service's API
-  * `TAGS`: new list of tags you want associated with the service registration
-  * `NEW_DESCRIPTION`: new description for the service
-  * `CONFIG`: specify a custom service.json file path
-  * `REGISTRY_ADDRESS`: address of Registry contract (not required for networks on which Registry has been deployed by
-SingularityNET Foundation)
-
----
-
-```
-snet service delete [NETWORK] ORG_NAME SERVICE_NAME
+snet service delete ORG_NAME SERVICE_NAME
 ```
 
 * Delete a service by its ORG_NAME and SERVICE_NAME; optionally specify a network
-  * `NETWORK`: name of network to use (either `mainnet`, `kovan`, `ropsten`, `rinkeby` or `eth-rpc-endpoint`)
-  * `ORG_NAME`: name of the organization
-  * `SERVICE_NAME`: name of the service
-
----
-
-```
-snet service delete eth-rpc-endpoint ETH_RPC_ENDPOINT ORG_NAME SERVICE_NAME
-```
-
-* Delete a service by its ORG_NAME and SERVICE_NAME using a target Ethereum JSON-RPC endpoint
-  * `ETH_RPC_ENDPOINT`: Ethereum JSON-RPC endpoint (network determined by endpoint)
   * `ORG_NAME`: name of the organization
   * `SERVICE_NAME`: name of the service
 
