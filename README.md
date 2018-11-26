@@ -162,7 +162,7 @@ snet client open_init_channel_registry [-h] [--registry REGISTRY]
            organization service amount
            expiration
 ```
-* Open channel with our specified service
+* Open channel with the specified service
  * `organization`:name of organization
  * `service`:     name of service
  * `amount`:      amount of AGI tokens to put in the new channel
