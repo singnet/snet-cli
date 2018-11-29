@@ -6,11 +6,11 @@ from pathlib import Path
 
 from snet_cli.commands import IdentityCommand, SessionCommand, NetworkCommand, ContractCommand, OrganizationCommand, VersionCommand
 from snet_cli.identity import get_identity_types
-from snet_cli.session import get_session_keys
 from snet_cli.utils import type_converter, get_contract_def
 from snet_cli.mpe_client_command  import MPEClientCommand
 from snet_cli.mpe_service_command import MPEServiceCommand
 from snet_cli.utils_agi2cogs import stragi2cogs
+from snet_cli.config import get_session_keys, get_session_network_keys_removable
 
 class CustomParser(argparse.ArgumentParser):
     def __init__(self, default_choice=None, *args, **kwargs):
@@ -86,26 +86,30 @@ def add_version_options(parser):
 
 def add_identity_options(parser, config):
     parser.set_defaults(cmd=IdentityCommand)
-    parser.set_defaults(fn="list")
+
     subparsers = parser.add_subparsers(title="actions", metavar="ACTION")
+    subparsers.required = True
 
-    identity_names = list(
-        map(lambda x: x[len("identity."):], filter(lambda x: x.startswith("identity."), config.sections())))
+    p = subparsers.add_parser("list", help="List of identies")
+    p.set_defaults(fn="list")
 
-    create_p = subparsers.add_parser("create", help="Create a new identity")
-    create_p.set_defaults(fn="create")
-    create_p.add_argument("identity_name", help="name of identity to create", metavar="IDENTITY_NAME")
-    create_p.add_argument("identity_type", choices=get_identity_types(),
-                          help="type of identity to create from {}".format(get_identity_types()),
-                          metavar="IDENTITY_TYPE")
-    create_p.add_argument("--mnemonic", help="bip39 mnemonic for 'mnemonic' identity_type")
-    create_p.add_argument("--private-key", help="hex-encoded private key for 'key' identity_type")
-    create_p.add_argument("--eth-rpc-endpoint", help="ethereum json-rpc endpoint for 'rpc' identity_type")
+    p = subparsers.add_parser("create", help="Create a new identity")
+    p.set_defaults(fn="create")
+    p.add_argument("identity_name", help="name of identity to create", metavar="IDENTITY_NAME")
+    p.add_argument("identity_type", choices=get_identity_types(),
+                   help="type of identity to create from {}".format(get_identity_types()),
+                   metavar="IDENTITY_TYPE")
+    p.add_argument("--mnemonic", help="bip39 mnemonic for 'mnemonic' identity_type")
+    p.add_argument("--private-key", help="hex-encoded private key for 'key' identity_type")
+    p.add_argument("--eth-rpc-endpoint", help="ethereum json-rpc endpoint for 'rpc' identity_type")
 
-    delete_p = subparsers.add_parser("delete", help="Delete an identity")
-    delete_p.set_defaults(fn="delete")
-    delete_p.add_argument("identity_name", choices=identity_names,
-                          help="name of identity to delete from {}".format(identity_names), metavar="IDENTITY_NAME")
+    p = subparsers.add_parser("delete", help="Delete an identity")
+    p.set_defaults(fn="delete")
+
+    identity_names = config.get_all_identies_names()
+
+    p.add_argument("identity_name", choices=identity_names,
+                   help="name of identity to delete from {}".format(identity_names), metavar="IDENTITY_NAME")
 
     for identity_name in identity_names:
         p = subparsers.add_parser(identity_name, help="Switch to {} identity".format(identity_name))
@@ -115,21 +119,26 @@ def add_identity_options(parser, config):
 
 def add_network_options(parser, config):
     parser.set_defaults(cmd=NetworkCommand)
-    parser.set_defaults(fn="list")
-    subparsers = parser.add_subparsers(title="networks", metavar="NETWORK")
 
-    network_names = list(
-        map(lambda x: x[len("network."):], filter(lambda x: x.startswith("network."), config.sections())))
+    subparsers = parser.add_subparsers(title="networks", metavar="NETWORK")
+    subparsers.required = True
+
+    p = subparsers.add_parser("list", help="List of networks")
+    p.set_defaults(fn="list")
+
+    p = subparsers.add_parser("create", help="Create a new network")
+    p.set_defaults(fn="create")
+    p.add_argument("network_name", help="name of network to create")
+    p.add_argument("rpc_endpoint", help="ethereum rpc endpoint")
+    p.add_argument("--default_gas_price", default=1000000000, type=int, help="default gas price for this network (in wei), default is 1000000000")
+
+
+    network_names = config.get_all_networks_names()
 
     for network_name in network_names:
         p = subparsers.add_parser(network_name, help="Switch to {} network".format(network_name))
         p.set_defaults(network_name=network_name)
         p.set_defaults(fn="set")
-
-    p = subparsers.add_parser("eth-rpc-endpoint", help="Switch to an endpoint-determined network")
-    p.set_defaults(network_name="eth_rpc_endpoint")
-    p.set_defaults(fn="set")
-    p.add_argument("eth_rpc_endpoint", help="ethereum json-rpc endpoint (should start with 'http(s)://')", metavar="ETH_RPC_ENDPOINT")
 
 
 def add_session_options(parser):
@@ -148,8 +157,8 @@ def add_set_options(parser):
 def add_unset_options(parser):
     parser.set_defaults(cmd=SessionCommand)
     parser.set_defaults(fn="unset")
-    parser.add_argument("key", choices=get_session_keys(),
-                        help="session key to unset from {}".format(get_session_keys()), metavar="KEY")
+    parser.add_argument("key", choices=get_session_network_keys_removable(),
+                        help="session key to unset from {}".format(get_session_network_keys_removable()), metavar="KEY")
 
 
 def add_contract_options(parser):
@@ -227,6 +236,7 @@ def add_contract_function_options(parser, contract_name):
 
     contract_def = get_contract_def(contract_name)
     parser.set_defaults(contract_def=contract_def)
+    parser.set_defaults(contract_name=contract_name)
 
     fns = []
     for fn in filter(lambda e: e["type"] == "function", contract_def["abi"]):

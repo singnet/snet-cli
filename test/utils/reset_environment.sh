@@ -31,34 +31,26 @@ cd ../platform-contracts
 nohup ./node_modules/.bin/ganache-cli --mnemonic 'gauge enact biology destroy normal tunnel slight slide wide sauce ladder produce' --networkId 829257324 > /dev/null &
 ./node_modules/.bin/truffle migrate --network local
 
-# III. set correct networks/*json for Registry and MultiPartyEscrow (but not for SingularityNetToken !) 
-cd ../snet-cli/
 
-# set contract addresses for our local network
-echo '{"829257324":{"events":{},"links":{},"address":"0x5c7a4290f6f8ff64c69eeffdfafc8644a4ec3a4e","transactionHash":""}}' > snet_cli/resources/contracts/networks/MultiPartyEscrow.json
-echo '{"829257324":{"events":{},"links":{},"address":"0x4e74fefa82e83e0964f0d9f53c68e03f7298a8b2","transactionHash":""}}' > snet_cli/resources/contracts/networks/Registry.json
-echo '{"829257324":{"events":{},"links":{},"address":"0x6e5f20669177f5bdf3703ec5ea9c4d4fe3aabd14","transactionHash":""}}' > snet_cli/resources/contracts/networks/SingularityNetToken.json
-
-# IV. reset snet-cli configuration
+# III. reset snet-cli configuration to default
 rm -rf ~/.snet
-
-# Configure SNET-CLI for local work
 snet || echo "we avoid error message here" > /dev/null  
 
-cat >> ~/.snet/config << EOF
-[network.local]
-default_eth_rpc_endpoint = http://localhost:8545
-EOF
+# IV. Configure SNET-CLI.
 
-sed -ie '/ipfs/,+2d' ~/.snet/config
-cat >> ~/.snet/config << EOF
-[ipfs]
-default_ipfs_endpoint = http://localhost:5002
-EOF
-
-# V. Add first ganache identity to snet 
+# Create First identity (snet-user = first ganache)
 snet identity create snet-user key --private-key 0xc71478a6d0fe44e763649de0a0deb5a080b788eefbbcf9c6f7aef0dd5dbd67e0
 snet identity snet-user
 
-# VI. switch to local network
+# Add local network and switch to it
+snet network create local http://localhost:8545
 snet network local
+
+# set correct ipfs endpoint
+snet set  default_ipfs_endpoint http://localhost:5002
+
+
+# Configure contract addresses for local network (it will not be necessary for kovan or mainnet! )
+snet set current_singularitynettoken_at 0x6e5f20669177f5bdf3703ec5ea9c4d4fe3aabd14
+snet set current_registry_at            0x4e74fefa82e83e0964f0d9f53c68e03f7298a8b2
+snet set current_multipartyescrow_at    0x5c7a4290f6f8ff64c69eeffdfafc8644a4ec3a4e
