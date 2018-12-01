@@ -1,4 +1,4 @@
-# service side
+# test deposit and transfer functions in snet client
 
 # initial balance should be 0
 MPE_BALANCE=$(snet client balance|grep MPE)

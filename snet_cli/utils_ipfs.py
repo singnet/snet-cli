@@ -8,8 +8,15 @@ import os
 # make tar from protodir/*proto, and publish this tar in ipfs
 # return base58 encoded ipfs hash
 def publish_proto_in_ipfs(ipfs_client, protodir):
-    files = glob.glob(os.path.join(protodir, "*.proto"))
     
+    if (not os.path.isdir(protodir)):
+        raise Exception("Directory %s doesn't exists"%protodir)
+
+    files = glob.glob(os.path.join(protodir, "*.proto"))
+
+    if (len(files) == 0):
+        raise Exception("Cannot find any %s files"%(os.path.join(protodir, "*.proto")) )
+
     # We are sorting files before we add them to the .tar since an archive containing the same files in a different
     # order will produce a different content hash;
     files.sort()

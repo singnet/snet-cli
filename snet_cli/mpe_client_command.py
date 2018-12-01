@@ -12,7 +12,6 @@ from web3.utils.events import get_event_data
 from snet_cli.utils import get_contract_def, abi_get_element_by_name, abi_decode_struct_to_dict
 from snet_cli.utils_proto import import_protobuf_from_dir, switch_to_json_payload_econding
 from snet_cli.utils import type_converter
-from snet_cli.utils_config import get_mpe_address
 from snet_cli.mpe_service_metadata import mpe_service_metadata_from_json, load_mpe_service_metadata
 from snet_cli.utils_ipfs import bytesuri_to_hash, get_from_ipfs_and_checkhash
 import tarfile
@@ -25,6 +24,9 @@ from snet_cli.utils_agi2cogs import cogs2stragi
 class MPEClientCommand(BlockchainCommand):
 
     # O. MultiPartyEscrow related functions
+
+    def print_account(self):
+        self._printout(self.ident.address)
 
     # print balance of ETH, AGI, and MPE wallet
     def print_agi_and_mpe_balances(self):
@@ -44,7 +46,7 @@ class MPEClientCommand(BlockchainCommand):
 
     def deposit_to_mpe(self):
         amount      = self.args.amount
-        mpe_address = get_mpe_address(self)
+        mpe_address = self.get_mpe_address()
 
         already_approved = self.call_contract_command("SingularityNetToken", "allowance", [self.ident.address, mpe_address])
         if (already_approved < amount):
@@ -70,7 +72,7 @@ class MPEClientCommand(BlockchainCommand):
 
     # we make sure that MultiPartyEscrow address from metadata is correct
     def _check_mpe_address_metadata(self, metadata):
-        mpe_address = get_mpe_address(self)
+        mpe_address = self.get_mpe_address()
         if (str(mpe_address).lower() != str(metadata["mpe_address"]).lower()):
             raise Exception("MultiPartyEscrow contract address from metadata %s do not correspond to current MultiPartyEscrow address %s"%(metadata["mpe_address"], mpe_address))
 
@@ -179,7 +181,7 @@ class MPEClientCommand(BlockchainCommand):
 
     # get persistent storage for the given channel (~/.snet/mpe_client/<mpe_address>/<my_address>/<channel-id>/)
     def _get_channel_dir(self, channel_id):
-        mpe_address = get_mpe_address(self).lower()
+        mpe_address = self.get_mpe_address().lower()
         my_address  = self.ident.address.lower()
         return self._get_persistent_dir().joinpath(mpe_address, my_address, str(channel_id))
 
@@ -250,7 +252,7 @@ class MPEClientCommand(BlockchainCommand):
         if service_metadata["encoding"] == "json":
             switch_to_json_payload_econding(call_fn, response_class)
 
-        mpe_address = get_mpe_address(self)
+        mpe_address = self.get_mpe_address()
         channel_id  = self.args.channel_id
         signature = self._sign_message(mpe_address, channel_id, nonce, amount)
         metadata = [("snet-payment-type",                 "escrow"                    ),
@@ -293,7 +295,7 @@ class MPEClientCommand(BlockchainCommand):
 
     def print_all_channels_my(self):
         # TODO: check that it is faster to use events to get all channels with the given sender (instead of using channels directly)
-        mpe_address = get_mpe_address(self)
+        mpe_address = self.get_mpe_address()
         event_signature   = self.ident.w3.sha3(text="ChannelOpen(uint256,address,address,bytes32,address,uint256,uint256)").hex()
         my_address_padded = pad_hex(self.ident.address.lower(), 256)
         logs = self.ident.w3.eth.getLogs({"fromBlock" : self.args.from_block,
@@ -335,7 +337,7 @@ class MPEClientCommand(BlockchainCommand):
         state["current_nonce"]          = int.from_bytes(response.current_nonce,         byteorder='big')
         state["current_signed_amount"]  = int.from_bytes(response.current_signed_amount, byteorder='big')
         if (state["current_signed_amount"] > 0):
-         good = self._verify_my_signature(bytes(response.current_signature), get_mpe_address(self), channel_id, state["current_nonce"], state["current_signed_amount"])
+         good = self._verify_my_signature(bytes(response.current_signature), self.get_mpe_address(), channel_id, state["current_nonce"], state["current_signed_amount"])
          if (not good):
              raise Exception("Error in _get_channel_state_from_server. My own signature from the server is not valid.")
 

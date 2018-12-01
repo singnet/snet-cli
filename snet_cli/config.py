@@ -12,29 +12,47 @@ class Config(ConfigParser):
         with open(self._config_file) as f:
             self.read_file(f)
 
-    # get identity_name of the current identity
-    def get_session_identity_name(self):
+    def safe_get_session_identity_network_names(self):
         if ("identity" not in self["session"]):
             first_identity_message_and_exit(1)
-        n = self["session"]["identity"]
-        self._check_section("identity.%s"%n)
-        return n
 
-    # get network name of the current network
-    def get_session_network_name(self):
-        n = self["session"]["network"]
-        self._check_section("network.%s"%n)
-        return n
+        session_identity = self["session"]["identity"]
+        self._check_section("identity.%s"%session_identity)
 
-    def set_session_network(self, network):
+        session_network  = self["session"]["network"]
+        self._check_section("network.%s"%session_network)
+
+        network = self._get_identity_section(session_identity).get("network")
+        if (network and network != session_network):
+            raise Exception("Your session identity '%s' is bind to network '%s', which is different from your"
+                            " session network '%s', please switch identity or network"%(session_identity, network, session_network))
+        return session_identity, session_network
+
+    def set_session_network(self, network, out_f):
+        self._set_session_network(network, out_f)
+        session_identity = self["session"]["identity"]
+        identity_network =  self._get_identity_section(session_identity).get("network")
+        if (identity_network and identity_network != network):
+            print("Your new session network '%s' is incompatible with your current session identity '%s' "
+                  "(which is bind to network '%s'), please switch your identity"%(network, session_identity, identity_network), file=out_f);
+
+    def _set_session_network(self, network, out_f):
         if (network not in self.get_all_networks_names()):
             raise Exception("Network %s is not in config"%network)
+        print("Switch to network: %s"%network, file=out_f)
         self["session"]["network"] = network
         self._persist()
 
-    def set_session_identity(self, identity):
+    def set_session_identity(self, identity, out_f):
         if (identity not in self.get_all_identies_names()):
-            raise Exception("Identity %s is not in config"%identity)
+            raise Exception('Identity "%s" is not in config'%identity)
+        network = self._get_identity_section(identity).get("network")
+        if (network):
+            print('Identity "%s" is bind to network "%s"'%(identity,network), file=out_f)
+            self._set_session_network(network, out_f)
+        else:
+            print('Identity "%s" is not bind to any network. You should switch network manually if you need.'%identity, file=out_f)
+        print("Switch to identity: %s"%(identity), file=out_f)
         self["session"]["identity"] = identity
         self._persist()
 
@@ -42,8 +60,7 @@ class Config(ConfigParser):
     # session is the union of session.identity + session.network + default_ipfs_endpoint
     # if value is presented in both session.identity and session.network we get it from session.identity (can happen only for default_eth_rpc_endpoint)
     def get_session_field(self, key, exception_if_not_found = True):
-        session_identity = self.get_session_identity_name()
-        session_network  = self["session"]["network"]
+        session_identity, session_network = self.safe_get_session_identity_network_names()
 
         rez_identity = self._get_identity_section(session_identity).get(key)
         rez_network  = self._get_network_section(session_network).get(key)
@@ -58,8 +75,7 @@ class Config(ConfigParser):
         return rez
 
     def set_session_field(self, key, value, out_f):
-        session_identity = self.get_session_identity_name()
-        session_network  = self["session"]["network"]
+        session_identity, session_network = self.safe_get_session_identity_network_names()
 
         if (key in get_session_network_keys()):
             self.set_network_field(session_network, key, value)
@@ -76,12 +92,13 @@ class Config(ConfigParser):
 
     def unset_session_field(self, key, out_f):
         if (key in get_session_network_keys_removable()):
+            print("unset %s from network %s"%(key, self["session"]["network"]), file=out_f)
             del self._get_network_section(self["session"]["network"])[key]
         self._persist()
 
     def session_to_dict(self):
-        session_identity = self.get_session_identity_name()
-        session_network  = self.get_session_network_name()
+        session_identity, session_network = self.safe_get_session_identity_network_names()
+
         show = {"session", "network.%s"%session_network, "identity.%s"%session_identity, "ipfs"}
         rez = { f:dict(self[f]) for f in show }
         return rez
@@ -104,6 +121,8 @@ class Config(ConfigParser):
         identity_section = "identity.%s"%identity_name
         if (identity_section in self):
             raise Exception("Identity section %s already exists in config"%identity_section)
+        if ("network" in identity and identity["network"] not in self.get_all_networks_names()):
+            raise Exception("Network %s is not in config"%identity["network"])
         self[identity_section] = identity
         self._persist()
 
@@ -133,9 +152,11 @@ class Config(ConfigParser):
         return [x[len("network."):] for x in self.sections() if x.startswith("network.")]
 
     def delete_identity(self, identity_name):
-        if (identity_name not in self.config.get_all_identies_names()):
+        if (identity_name not in self.get_all_identies_names()):
             raise Exception("identity_name {} does not exist".format(identity_name))
-        if (identity_name == self.get_session_identity_name()):
+
+        session_identity, _ = self.safe_get_session_identity_network_names()
+        if (identity_name == session_identity):
             raise Exception("identity_name {} is in use".format(identity_name))
         self.remove_section("identity.{}".format(identity_name))
         self._persist()

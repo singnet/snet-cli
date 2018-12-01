@@ -7,10 +7,6 @@ import web3
 import pkg_resources
 from grpc_tools.protoc import main as protoc
 
-from snet_cli.identity import RpcIdentityProvider, MnemonicIdentityProvider, TrezorIdentityProvider, \
-    LedgerIdentityProvider, KeyIdentityProvider
-
-
 class DefaultAttributeObject(object):
     def __init__(self, **kwargs):
         for k, v in kwargs.items():
@@ -46,21 +42,6 @@ class DefaultAttributeObject(object):
 
     def __str__(self):
         return self.__dict__.__str__()
-
-
-def get_identity(w3, config, args):
-    identity_type = config.get_session_field("identity_type")
-
-    if identity_type == "rpc":
-        return RpcIdentityProvider(w3, get_wallet_index(config, args))
-    if identity_type == "mnemonic":
-        return MnemonicIdentityProvider(w3, config.get_session_field("mnemonic"), get_wallet_index(config, args))
-    if identity_type == "trezor":
-        return TrezorIdentityProvider(w3, get_wallet_index(config, args))
-    if identity_type == "ledger":
-        return LedgerIdentityProvider(w3, get_wallet_index(config, args))
-    if identity_type == "key":
-        return KeyIdentityProvider(w3, config.get_session_field("private_key"))
 
 
 def get_web3(rpc_endpoint):

@@ -10,11 +10,13 @@ from rfc3986 import urlparse
 
 from snet_cli.contract import Contract
 from snet_cli.identity import get_kws_for_identity_type, get_identity_types
-from snet_cli.utils import DefaultAttributeObject, get_web3, get_identity, serializable, \
-    read_temp_tar, type_converter, get_contract_def, get_cli_version
+from snet_cli.utils import DefaultAttributeObject, get_web3, serializable, type_converter, get_contract_def, get_cli_version
 
 from snet_cli.config import get_session_identity_keys, get_session_network_keys
-from snet_cli.utils_config import get_contract_address, get_registry_address, get_gas_price
+from snet_cli.utils_config import get_contract_address, get_field_from_args_or_session
+from snet_cli.identity import RpcIdentityProvider, MnemonicIdentityProvider, TrezorIdentityProvider, \
+    LedgerIdentityProvider, KeyIdentityProvider
+
 
 class Command(object):
     def __init__(self, config, args, out_f=sys.stdout, err_f=sys.stderr):
@@ -70,8 +72,34 @@ class VersionCommand(Command):
 class BlockchainCommand(Command):
     def __init__(self, config, args, out_f=sys.stdout, err_f=sys.stderr, w3=None, ident=None):
         super(BlockchainCommand, self).__init__(config, args, out_f, err_f)
-        self.w3 = w3 or get_web3(self.config.get_session_field("default_eth_rpc_endpoint"))
-        self.ident = ident or get_identity(self.w3, self.config, self.args)
+        self.w3 = w3 or get_web3(self.get_eth_endpoint())
+        self.ident = ident or self.get_identity()
+
+    def get_eth_endpoint(self):
+        return get_field_from_args_or_session(self.config, self.args, "eth_rpc_endpoint")
+
+    def get_wallet_index(self):
+        return int(get_field_from_args_or_session(self.config, self.args, "wallet_index"))
+
+    def get_gas_price(self):
+        return int(get_field_from_args_or_session(self.config, self.args, "gas_price"))
+
+    def get_mpe_address(self):
+        return get_contract_address(self, "MultiPartyEscrow")
+
+    def get_identity(self):
+        identity_type = self.config.get_session_field("identity_type")
+
+        if identity_type == "rpc":
+            return RpcIdentityProvider(self.w3, self.get_wallet_index())
+        if identity_type == "mnemonic":
+            return MnemonicIdentityProvider(self.w3, self.config.get_session_field("mnemonic"), self.get_wallet_index())
+        if identity_type == "trezor":
+            return TrezorIdentityProvider(self.w3, self.get_wallet_index())
+        if identity_type == "ledger":
+            return LedgerIdentityProvider(self.w3, self.get_wallet_index())
+        if identity_type == "key":
+            return KeyIdentityProvider(self.w3, self.config.get_session_field("private_key"))
 
     def get_contract_argser(self, contract_address, contract_function, contract_def, **kwargs):
         def f(*positional_inputs, **named_inputs):
@@ -132,6 +160,9 @@ class IdentityCommand(Command):
             self._ensure(value is not None, "--{} is required for identity_type {}".format(kw, identity_type))
             identity[kw] = value
 
+        if (self.args.network):
+            identity["network"] = self.args.network
+        identity["default_wallet_index"] = self.args.wallet_index
         self.config.add_identity(identity_name, identity)
 
     def list(self):
@@ -153,7 +184,7 @@ class IdentityCommand(Command):
         self.config.delete_identity(self.args.identity_name)
 
     def set(self):
-        self.config.set_session_identity(self.args.identity_name)
+        self.config.set_session_identity(self.args.identity_name, self.out_f)
 
 
 class NetworkCommand(Command):
@@ -165,7 +196,7 @@ class NetworkCommand(Command):
     def create(self):
         self.config.add_network(self.args.network_name, self.args.rpc_endpoint, self.args.default_gas_price)
     def set(self):
-        self.config.set_session_network(self.args.network_name)
+        self.config.set_session_network(self.args.network_name, self.out_f)
 
 
 class SessionCommand(Command):
@@ -210,7 +241,7 @@ class ContractCommand(BlockchainCommand):
             in self.args.__dict__.items() if name.startswith("contract_named_input_")
         }
 
-        gas_price = get_gas_price(self.config, self.args)
+        gas_price = self.get_gas_price()
 
         txn = contract.build_transaction(self.args.contract_function,
                                          self.ident.get_address(),

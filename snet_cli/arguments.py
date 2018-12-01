@@ -101,7 +101,8 @@ def add_identity_options(parser, config):
                    metavar="IDENTITY_TYPE")
     p.add_argument("--mnemonic", help="bip39 mnemonic for 'mnemonic' identity_type")
     p.add_argument("--private-key", help="hex-encoded private key for 'key' identity_type")
-    p.add_argument("--eth-rpc-endpoint", help="ethereum json-rpc endpoint for 'rpc' identity_type")
+    p.add_argument("--network", help="network this identity will be bind to (obligatory for 'rpc' identity_type, optional for others)")
+    p.add_argument("--wallet-index", type=int, default=0, help="default wallet index for this account (default is 0)")
 
     p = subparsers.add_parser("delete", help="Delete an identity")
     p.set_defaults(fn="delete")
@@ -184,12 +185,16 @@ def add_organization_options(parser):
     subparsers = parser.add_subparsers(title="organization commands", metavar="COMMAND")
     subparsers.required = True
 
-    org_list_p = subparsers.add_parser("list", help="List Organizations")
-    org_list_p.set_defaults(fn="list")
+    p = subparsers.add_parser("list", help="List Organizations")
+    p.set_defaults(fn="list")
+    add_contract_identity_arguments(p, [("registry", "registry_at")])
+    add_eth_call_arguments(p)
 
-    org_info_p = subparsers.add_parser("info", help="Organization's Informations")
-    org_info_p.set_defaults(fn="info")
-    org_info_p.add_argument("name", help="Name of the Organization", metavar="ORG_NAME")
+    p = subparsers.add_parser("info", help="Organization's Informations")
+    p.set_defaults(fn="info")
+    p.add_argument("name", help="Name of the Organization", metavar="ORG_NAME")
+    add_contract_identity_arguments(p, [("registry", "registry_at")])
+    add_eth_call_arguments(p)
 
     org_create_p = subparsers.add_parser("create", help="Create an Organization")
     org_create_p.set_defaults(fn="create")
@@ -204,9 +209,11 @@ def add_organization_options(parser):
     org_delete_p.add_argument("name", help="Name of the Organization", metavar="ORG_NAME")
     _add_organization_arguments(org_delete_p)
 
-    org_list_services_p = subparsers.add_parser("list-services", help="List Organization's services")
-    org_list_services_p.set_defaults(fn="list_services")
-    org_list_services_p.add_argument("name", help="Name of the Organization", metavar="ORG_NAME")
+    p = subparsers.add_parser("list-services", help="List Organization's services")
+    p.set_defaults(fn="list_services")
+    p.add_argument("name", help="Name of the Organization", metavar="ORG_NAME")
+    add_contract_identity_arguments(p, [("registry", "registry_at")])
+    add_eth_call_arguments(p)
 
     org_change_owner_p = subparsers.add_parser("change-owner", help="Change Organization's owner")
     org_change_owner_p.set_defaults(fn="change_owner")
@@ -281,16 +288,23 @@ def add_contract_identity_arguments(parser, names_and_destinations=(("", "at"),)
                                 help=h)
 
 
+def add_eth_rpc_endpoint(parser):
+    parser.add_argument("--eth-rpc-endpoint", help="ethereum json-rpc endpoint (should start with 'http(s)://'; "
+                                                          "defaults to session.network.eth_rpc_endpoint)")
+def add_eth_call_arguments(parser):
+    p= parser.add_argument_group(title="optional call arguments")
+    add_eth_rpc_endpoint(p)
+    p.add_argument("--wallet-index", type=int,
+                   help="wallet index of account to use for calling (defaults to session.identity.default_wallet_index)")
+
+
 def add_transaction_arguments(parser):
     transaction_g = parser.add_argument_group(title="transaction arguments")
     transaction_g.add_argument("--gas-price", type=int,
                                help="ethereum gas price for transaction (defaults to session.default_gas_price)")
-    transaction_g.add_argument("--eth-rpc-endpoint", help="ethereum json-rpc endpoint (should start with 'http(s)://'; "
-                                                          "defaults to session.identity.eth_rpc_endpoint or "
-                                                          "session.default_eth_rpc_endpoint)")
+    add_eth_rpc_endpoint(transaction_g)
     transaction_g.add_argument("--wallet-index", type=int,
-                               help="wallet index of account to use for signing (defaults to session.default_wallet"
-                                    " index)")
+                               help="wallet index of account to use for signing (defaults to session.identity.default_wallet_index)")
     transaction_g.add_argument("--yes", "-y", action="store_true",
                                help="skip interactive confirmation of transaction payload", default=False)
     g = transaction_g.add_mutually_exclusive_group()
@@ -308,7 +322,7 @@ class AppendPositionalAction(argparse.Action):
 
 
 def add_p_mpe_address_opt(p):
-    p.add_argument("--multipartyescrow", "--mpe", default=None,  help="address of MultiPartyEscrow contract, if not specified we read address from \"networks\"")
+    p.add_argument("--multipartyescrow-at", "--mpe", default=None,  help="address of MultiPartyEscrow contract, if not specified we read address from \"networks\"")
 
 
 def add_p_metadata_file_opt(p):
@@ -316,7 +330,7 @@ def add_p_metadata_file_opt(p):
 
 
 def add_p_service_in_registry(p):
-    p.add_argument("--registry",  default=None, help="address of Registry contract, if not specified we read address from \"networks\"")
+    p.add_argument("--registry-at", "--registry", default=None, help="address of Registry contract, if not specified we read address from \"networks\"")
     p.add_argument("organization", help="Name of organization")
     p.add_argument("service",      help="Name of service")
 
@@ -344,7 +358,7 @@ def add_mpe_client_options(parser):
         p.add_argument("amount",     type=int, help="amount")
 
     def add_p_snt_address_opt(p):
-        p.add_argument("--singularitynettoken", "--snt", default=None,  help="address of SingularityNetToken contract, if not specified we read address from \"networks\"")
+        p.add_argument("--singularitynettoken-at", "--snt", default=None,  help="address of SingularityNetToken contract, if not specified we read address from \"networks\"")
 
     def add_p_open_channel_basic(p):
         p.add_argument("amount",         type=stragi2cogs, help="amount of AGI tokens to put in the new channel")
@@ -353,11 +367,16 @@ def add_mpe_client_options(parser):
         add_p_mpe_address_opt(p)
         add_transaction_arguments(p)
 
+    p = subparsers.add_parser("account", help="print the currect ETH account")
+    p.set_defaults(fn="print_account")
+    add_eth_call_arguments(p)
+
     p = subparsers.add_parser("balance", help="print balance of AGI tokens and balance of MPE wallet")
     p.set_defaults(fn="print_agi_and_mpe_balances")
     p.add_argument("--account", default=None, help="Account to print balance for (default is the current identity)")
     add_p_snt_address_opt(p)
     add_p_mpe_address_opt(p)
+    add_eth_call_arguments(p)
 
     p = subparsers.add_parser("deposit", help="deposit AGI tokens to MPE wallet")
     p.set_defaults(fn="deposit_to_mpe")

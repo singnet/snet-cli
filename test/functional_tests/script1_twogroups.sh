@@ -1,4 +1,13 @@
+
 # service side
+
+#should fail (not existed directory)
+snet service metadata_init ./bad_dir/ ExampleService 0x42A605c07EdE0E1f648aB054775D6D4E38496144  --encoding json --service_type jsonrpc --group_name group1 && exit 1 || echo "fail as expected"
+
+#should fail (directory doesn't contain any *.proto files)
+snet service metadata_init ./ ExampleService 0x42A605c07EdE0E1f648aB054775D6D4E38496144  --encoding json --service_type jsonrpc --group_name group1 && exit 1 || echo "fail as expected"
+
+# happy flow
 snet service metadata_init ./service_spec1/ ExampleService 0x42A605c07EdE0E1f648aB054775D6D4E38496144  --encoding json --service_type jsonrpc --group_name group1
 snet service metadata_add_group group2 0x0067b427E299Eb2A4CBafc0B04C723F77c6d8a18
 snet service metadata_add_endpoints  8.8.8.8:2020 9.8.9.8:8080 --group_name group1

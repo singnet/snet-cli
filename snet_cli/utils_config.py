@@ -1,6 +1,6 @@
 from snet_cli.utils import get_contract_def
 
-# We try to get config address from the differnt sources.
+# We try to get config address from the different sources.
 # The order of priorioty is following:
 # - command line argument (at)
 # - command line argument (<contract_name>_at)
@@ -21,9 +21,10 @@ def get_contract_address(cmd, contract_name, error_message = None):
 
     # try to get from current session configuration
     rez = cmd.config.get_session_field("current_%s_at"%(contract_name.lower()), exception_if_not_found = False)
-    if rez: return cmd.w3.toChecksumAddress(rez)
+    if rez:
+        return cmd.w3.toChecksumAddress(rez)
 
-    error_message = error_message or "Fail to read %s address from \"networks\", you should specify address by yourself via --%s parameter"%(contract_name, contract_name.lower())
+    error_message = error_message or "Fail to read %s address from \"networks\", you should specify address by yourself via --%s_at parameter"%(contract_name, contract_name.lower())
     chain_id = cmd.w3.version.network # this will raise exception if endpoint is invalid
     # try to take address from networks
     try :
@@ -38,29 +39,17 @@ def get_contract_address(cmd, contract_name, error_message = None):
 
     return contract_address
 
-def get_registry_address(cmd):
-    return get_contract_address(cmd, "Registry")
-
-def get_mpe_address(cmd):
-    return get_contract_address(cmd, "MultiPartyEscrow")
-
-def get_snt_address(cmd):
-    return get_contract_address(cmd, "SingularityNetToken")
-
-
 
 # we try to get field_name from diffent sources:
 # The order of priorioty is following:
 # - command line argument (--<field_name>)
 # - current session configuration (default_<filed_name>)
 def get_field_from_args_or_session(config, args, field_name):
-    rez = getattr(args, field_name, None) or config.get_session_field("default_%s"%field_name, exception_if_not_found=False)
-    if (not rez):
-        raise Exception("Fail to get default_%s from config, should specify %s via --%s parameter"%(field_name, field_name, field_name.replace("_","-")))
-    return rez
-
-def get_wallet_index(config, args):
-    return get_field_from_args_or_session(config, args, "wallet_index")
-
-def get_gas_price(config, args):
-    return int(get_field_from_args_or_session(config, args, "gas_price"))
+    rez = getattr(args, field_name, None)
+    #type(rez) can be int in case of wallet-index, so we cannot make simply if(rez)
+    if (rez != None):
+        return rez
+    rez = config.get_session_field("default_%s"%field_name, exception_if_not_found=False)
+    if (rez):
+        return rez
+    raise Exception("Fail to get default_%s from config, should specify %s via --%s parameter"%(field_name, field_name, field_name.replace("_","-")))
