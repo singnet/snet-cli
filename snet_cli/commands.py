@@ -207,7 +207,13 @@ class SessionCommand(Command):
         self.config.unset_session_field(self.args.key, self.out_f)
 
     def show(self):
-        self._pprint(self.config.session_to_dict())
+        rez = self.config.session_to_dict()
+
+        # we don't want to who private_key and mnemonic
+        for d in rez.values():
+            d.pop("private_key", None)
+            d.pop("mnemonic", None)
+        self._pprint(rez)
 
 
 class ContractCommand(BlockchainCommand):
