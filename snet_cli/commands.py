@@ -163,7 +163,7 @@ class IdentityCommand(Command):
         if (self.args.network):
             identity["network"] = self.args.network
         identity["default_wallet_index"] = self.args.wallet_index
-        self.config.add_identity(identity_name, identity)
+        self.config.add_identity(identity_name, identity, self.out_f)
 
     def list(self):
         for identity_section in filter(lambda x: x.startswith("identity."), self.config.sections()):
@@ -195,11 +195,11 @@ class NetworkCommand(Command):
 
     def create(self):
         # check endpoint by getting its network_id
-        w3         = get_web3(self.args.rpc_endpoint)
+        w3         = get_web3(self.args.eth_rpc_endpoint)
         network_id = w3.version.network
 
         self._printout("add network with name='%s' with networkId='%s'"%(self.args.network_name, str(network_id)))
-        self.config.add_network(self.args.network_name, self.args.rpc_endpoint, self.args.default_gas_price)
+        self.config.add_network(self.args.network_name, self.args.eth_rpc_endpoint, self.args.default_gas_price)
     def set(self):
         self.config.set_session_network(self.args.network_name, self.out_f)
 

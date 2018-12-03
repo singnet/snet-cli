@@ -32,15 +32,14 @@ nohup ./node_modules/.bin/ganache-cli --mnemonic 'gauge enact biology destroy no
 ./node_modules/.bin/truffle migrate --network local
 
 
-# III. reset snet-cli configuration to default
+# III. remove old snet-cli configuration
 rm -rf ~/.snet
-snet || echo "we avoid error message here" > /dev/null  
 
 # IV. Configure SNET-CLI.
 
 # Create First identity (snet-user = first ganache)
+# We will automatically create new configuration file with default values
 snet identity create snet-user key --private-key 0xc71478a6d0fe44e763649de0a0deb5a080b788eefbbcf9c6f7aef0dd5dbd67e0
-snet identity snet-user
 
 # Add local network and switch to it
 snet network create local http://localhost:8545

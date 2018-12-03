@@ -7,14 +7,16 @@ class Config(ConfigParser):
     def __init__(self, _snet_folder = default_snet_folder):
         super(Config, self).__init__(interpolation=ExtendedInterpolation(), delimiters=("=",))
         self._config_file = _snet_folder.joinpath("config")
-        self.create_default_if_not_exists()
+        if (self._config_file.exists()):
+            with open(self._config_file) as f:
+                self.read_file(f)
+        else:
+            self.create_default_config()
 
-        with open(self._config_file) as f:
-            self.read_file(f)
 
     def safe_get_session_identity_network_names(self):
         if ("identity" not in self["session"]):
-            first_identity_message_and_exit(1)
+            first_identity_message_and_exit()
 
         session_identity = self["session"]["identity"]
         self._check_section("identity.%s"%session_identity)
@@ -117,7 +119,7 @@ class Config(ConfigParser):
         self._get_network_section(network)[key] = str(value)
         self._persist()
 
-    def add_identity(self, identity_name, identity):
+    def add_identity(self, identity_name, identity, out_f):
         identity_section = "identity.%s"%identity_name
         if (identity_section in self):
             raise Exception("Identity section %s already exists in config"%identity_section)
@@ -125,6 +127,11 @@ class Config(ConfigParser):
             raise Exception("Network %s is not in config"%identity["network"])
         self[identity_section] = identity
         self._persist()
+        # switch to it, if it was the first identity
+        if (len(self.get_all_identies_names()) == 1):
+            print("You've just added your first identity %s. We will automatically switch to it!"%identity_name)
+            self.set_session_identity(identity_name, out_f)
+
 
     def set_identity_field(self, identity, key, value):
         self._get_identity_section(identity)[key] = str(value)
@@ -162,19 +169,17 @@ class Config(ConfigParser):
         self._persist()
 
     # create default configuration if config file is not exists
-    def create_default_if_not_exists(self):
-        if (not self._config_file.exists()):
-            self._config_file.parent.mkdir(exist_ok=True)
-            self["network.kovan"]   = {"default_eth_rpc_endpoint": "https://kovan.infura.io",   "default_gas_price" : "1000000000"}
-            self["network.mainnet"] = {"default_eth_rpc_endpoint": "https://mainnet.infura.io", "default_gas_price" : "1000000000"}
-            self["network.ropsten"] = {"default_eth_rpc_endpoint": "https://ropsten.infura.io", "default_gas_price" : "1000000000"}
-            self["network.rinkeby"] = {"default_eth_rpc_endpoint": "https://rinkeby.infura.io", "default_gas_price" : "1000000000"}
-            self["ipfs"] = {"default_ipfs_endpoint": "http://ipfs.singularitynet.io:80"}
-            self["session"] = {
-            "network": "kovan" }
-            self._persist()
-            print("We've created configuration file with dafault values in: %s"%str(self._config_file))
-            first_identity_message_and_exit()
+    def create_default_config(self):
+        self._config_file.parent.mkdir(exist_ok=True)
+        self["network.kovan"]   = {"default_eth_rpc_endpoint": "https://kovan.infura.io",   "default_gas_price" : "1000000000"}
+        self["network.mainnet"] = {"default_eth_rpc_endpoint": "https://mainnet.infura.io", "default_gas_price" : "1000000000"}
+        self["network.ropsten"] = {"default_eth_rpc_endpoint": "https://ropsten.infura.io", "default_gas_price" : "1000000000"}
+        self["network.rinkeby"] = {"default_eth_rpc_endpoint": "https://rinkeby.infura.io", "default_gas_price" : "1000000000"}
+        self["ipfs"] = {"default_ipfs_endpoint": "http://ipfs.singularitynet.io:80"}
+        self["session"] = {
+        "network": "kovan" }
+        self._persist()
+        print("We've created configuration file with default values in: %s\n"%str(self._config_file))
 
     def _check_section(self, s):
         if (s not in self):
@@ -185,8 +190,8 @@ class Config(ConfigParser):
             self.write(f)
 
 
-def first_identity_message_and_exit(exit_code=0):
-    print("\nPlease create your first identity by runing 'snet identity create'.\n\n"
+def first_identity_message_and_exit():
+    print("\nPlease create your first identity by running 'snet identity create'.\n\n"
           "The available identity types are:\n"
           "    - 'rpc' (yields to a required ethereum json-rpc endpoint for signing using a given wallet\n"
           "          index)\n"
@@ -197,7 +202,7 @@ def first_identity_message_and_exit(exit_code=0):
           "          index)\n"
           "    - 'trezor' (yields to a required trezor device for signing using a given wallet index)\n"
           "\n");
-    exit(exit_code);
+    exit(1);
 
 
 def get_session_identity_keys():

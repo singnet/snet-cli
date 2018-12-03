@@ -130,7 +130,7 @@ def add_network_options(parser, config):
     p = subparsers.add_parser("create", help="Create a new network")
     p.set_defaults(fn="create")
     p.add_argument("network_name", help="name of network to create")
-    p.add_argument("rpc_endpoint", help="ethereum rpc endpoint")
+    p.add_argument("eth_rpc_endpoint", help="ethereum rpc endpoint")
     p.add_argument("--default_gas_price", default=1000000000, type=int, help="default gas price for this network (in wei), default is 1000000000")
 
 
