@@ -10,25 +10,20 @@ from rfc3986 import urlparse
 
 from snet_cli.contract import Contract
 from snet_cli.identity import get_kws_for_identity_type, get_identity_types
-from snet_cli.session import from_config, get_session_keys
-from snet_cli.utils import DefaultAttributeObject, get_web3, get_identity, serializable, \
-    read_temp_tar, type_converter, get_contract_def, get_cli_version
+from snet_cli.utils import DefaultAttributeObject, get_web3, serializable, type_converter, get_contract_def, get_cli_version
+
+from snet_cli.config import get_session_identity_keys, get_session_network_keys
+from snet_cli.utils_config import get_contract_address, get_field_from_args_or_session
+from snet_cli.identity import RpcIdentityProvider, MnemonicIdentityProvider, TrezorIdentityProvider, \
+    LedgerIdentityProvider, KeyIdentityProvider
 
 
 class Command(object):
     def __init__(self, config, args, out_f=sys.stdout, err_f=sys.stderr):
         self.config = config
-        self.session = from_config(self.config)
         self.args = args
         self.out_f = out_f
         self.err_f = err_f
-        if self.config.getboolean("session", "init", fallback=False):
-            del self.config["session"]["init"]
-            InitCommand(self.config, self.args, self.out_f, self.err_f).init()
-            self.session = from_config(self.config)
-            if (self.args.cmd.__name__ == "IdentityCommand" and self.args.fn == "create" and
-                    self.args.identity_name == self.config["session"]["identity_name"]):
-                self.args.fn = "_nothing"
 
     def _error(self, message):
         self._printerr("ERROR: {}".format(message))
@@ -51,9 +46,9 @@ class Command(object):
                                         indent=4), "    "))
 
     def _pprint_receipt_and_events(self, receipt, events):
-        if self._getboolean("verbose"):
+        if self.args.verbose:
             self._pprint({"receipt": receipt, "events": events})
-        elif self._getboolean("quiet"):
+        elif self.args.quiet:
             self._pprint({"transactionHash": receipt["transactionHash"]})
         else:
             self._pprint({"receipt_summary": {"blockHash": receipt["blockHash"],
@@ -63,43 +58,11 @@ class Command(object):
                                               "transactionHash": receipt["transactionHash"]},
                           "event_summaries": [{"args": e["args"], "event": e["event"]} for e in events]})
 
-    def _getstring(self, name):
-        return (self.session.identity.getstring(name) or getattr(self.args, name, None) or
-                (self.session.getstring("default_{}".format(name)) or
-                 self.session.getstring("current_{}".format(name))))
-
-    def _getint(self, name):
-        return (self.session.identity.getint(name) or getattr(self.args, name, None) or
-                (self.session.getint("default_{}".format(name)) or
-                 self.session.getint("current_{}".format(name))))
-
-    def _getfloat(self, name):
-        return (self.session.identity.getfloat(name) or getattr(self.args, name, None) or
-                (self.session.getfloat("default_{}".format(name)) or
-                 self.session.getfloat("current_{}".format(name))))
-
-    def _getboolean(self, name):
-        return (self.session.identity.getboolean(name) or getattr(self.args, name, None) or
-                (self.session.getboolean("default_{}".format(name)) or
-                 self.session.getboolean("current_{}".format(name))))
-
     def _get_ipfs_client(self):
-        ipfs_endpoint = urlparse(self.config["ipfs"]["default_ipfs_endpoint"])
+        ipfs_endpoint = urlparse(self.config.get_ipfs_endpoint())
         ipfs_scheme = ipfs_endpoint.scheme if ipfs_endpoint.scheme else "http"
         ipfs_port = ipfs_endpoint.port if ipfs_endpoint.port else 5001
         return ipfsapi.connect(urljoin(ipfs_scheme, ipfs_endpoint.hostname), ipfs_port)
-
-    def _set_key(self, key, value, config=None, out_f=None, err_f=None):
-        SessionCommand(config or self.config, DefaultAttributeObject(key=key, value=value), out_f or self.out_f,
-                       err_f or self.err_f).set()
-
-    def _unset_key(self, key, config=None, out_f=None, err_f=None):
-        SessionCommand(config or self.config, DefaultAttributeObject(key=key), out_f or self.out_f,
-                       err_f or self.err_f).unset()
-
-    def _nothing(self):
-        pass
-
 
 class VersionCommand(Command):
     def show(self):
@@ -109,8 +72,35 @@ class VersionCommand(Command):
 class BlockchainCommand(Command):
     def __init__(self, config, args, out_f=sys.stdout, err_f=sys.stderr, w3=None, ident=None):
         super(BlockchainCommand, self).__init__(config, args, out_f, err_f)
-        self.w3 = w3 or get_web3(self._getstring("eth_rpc_endpoint"))
-        self.ident = ident or get_identity(self.w3, self.session, self.args)
+        self.w3 = w3 or get_web3(self.get_eth_endpoint())
+        self.ident = ident or self.get_identity()
+
+    def get_eth_endpoint(self):
+        # the only one source of eth_rpc_endpoint is the configuration file
+        return self.config.get_session_field("default_eth_rpc_endpoint")
+
+    def get_wallet_index(self):
+        return int(get_field_from_args_or_session(self.config, self.args, "wallet_index"))
+
+    def get_gas_price(self):
+        return int(get_field_from_args_or_session(self.config, self.args, "gas_price"))
+
+    def get_mpe_address(self):
+        return get_contract_address(self, "MultiPartyEscrow")
+
+    def get_identity(self):
+        identity_type = self.config.get_session_field("identity_type")
+
+        if identity_type == "rpc":
+            return RpcIdentityProvider(self.w3, self.get_wallet_index())
+        if identity_type == "mnemonic":
+            return MnemonicIdentityProvider(self.w3, self.config.get_session_field("mnemonic"), self.get_wallet_index())
+        if identity_type == "trezor":
+            return TrezorIdentityProvider(self.w3, self.get_wallet_index())
+        if identity_type == "ledger":
+            return LedgerIdentityProvider(self.w3, self.get_wallet_index())
+        if identity_type == "key":
+            return KeyIdentityProvider(self.w3, self.config.get_session_field("private_key"))
 
     def get_contract_argser(self, contract_address, contract_function, contract_def, **kwargs):
         def f(*positional_inputs, **named_inputs):
@@ -126,7 +116,7 @@ class BlockchainCommand(Command):
                 args_dict["contract_named_input_{}".format(k)] = v
             return DefaultAttributeObject(**args_dict)
         return f
-    
+
     def get_ContractCommand(self, contract_name, contract_address, contract_fn, contract_params, is_silent = True):
         contract_def = get_contract_def(contract_name)
         if (is_silent):
@@ -137,54 +127,20 @@ class BlockchainCommand(Command):
                                args  = self.get_contract_argser(
                                              contract_address  = contract_address,
                                              contract_function = contract_fn,
-                                             contract_def      = contract_def)(*contract_params),
+                                             contract_def      = contract_def,
+                                             contract_name     = contract_name)(*contract_params),
                                out_f = out_f,
                                err_f = out_f,
                                w3    = self.w3,
                                ident = self.ident)
 
-    def call_contract_command(self, contract_name, contract_address, contract_fn, contract_params, is_silent = True):
+    def call_contract_command(self, contract_name, contract_fn, contract_params, is_silent = True):
+        contract_address = get_contract_address(self, contract_name)
         return self.get_ContractCommand(contract_name, contract_address, contract_fn, contract_params, is_silent).call()
 
-    def transact_contract_command(self, contract_name, contract_address, contract_fn, contract_params, is_silent = False):
+    def transact_contract_command(self, contract_name, contract_fn, contract_params, is_silent = False):
+        contract_address = get_contract_address(self, contract_name)
         return self.get_ContractCommand(contract_name, contract_address, contract_fn, contract_params, is_silent).transact()
-
-class InitCommand(Command):
-    def init(self):
-        self._printout("Create your first identity. This will be used to authenticate and sign requests pertaining\n"
-                       "to the blockchain.\n"
-                       "\n"
-                       "The available identity types are:\n"
-                       "    - 'rpc' (yields to a required ethereum json-rpc endpoint for signing using a given wallet\n"
-                       "          index)\n"
-                       "    - 'mnemonic' (uses a required bip39 mnemonic for HDWallet/account derivation and signing\n"
-                       "          using a given wallet index)\n"
-                       "    - 'key' (uses a required hex-encoded private key for signing)\n"
-                       "    - 'ledger' (yields to a required ledger nano s device for signing using a given wallet\n"
-                       "          index)\n"
-                       "    - 'trezor' (yields to a required trezor device for signing using a given wallet index)\n"
-                       "\n"
-                       "Create additional identities by running 'snet identity create', and switch identities by \n"
-                       "running 'snet identity <identity_name>'.\n")
-        create_identity_kwargs = {}
-        identity_name = getattr(self.args, "identity_name", None) or input("Choose a name for your first identity: \n") or None
-        self._ensure(identity_name is not None, "identity name is required")
-        create_identity_kwargs["identity_name"] = identity_name
-        identity_type = getattr(self.args, "identity_type", None) or input("Select an identity type for your first"
-                                                  " identity (choose from {}): \n".format(get_identity_types())) or None
-        self._ensure(identity_type in get_identity_types(),
-                     "identity type {} not in {}".format(identity_type, get_identity_types()))
-        create_identity_kwargs["identity_type"] = identity_type
-        for kw, is_secret in get_kws_for_identity_type(identity_type):
-            kw_prompt = "{}: \n".format(" ".join(kw.capitalize().split("_")))
-            if is_secret:
-                value = getattr(self.args, kw, None) or getpass.getpass(kw_prompt) or None
-            else:
-                value = getattr(self.args, kw, None) or input(kw_prompt) or None
-            self._ensure(value is not None, "{} is required".format(kw.split("_")))
-            create_identity_kwargs[kw] = value
-        IdentityCommand(self.config, DefaultAttributeObject(**create_identity_kwargs), self.err_f, self.err_f).create()
-        self._set_key("identity_name", identity_name, out_f=self.err_f)
 
 
 class IdentityCommand(Command):
@@ -192,8 +148,7 @@ class IdentityCommand(Command):
         identity = {}
 
         identity_name = self.args.identity_name
-        self._ensure(not self.config.has_section("identity.{}".format(identity_name)),
-                     "identity_name {} already in use".format(identity_name))
+        self._ensure(not identity_name in self.config.get_all_identies_names(), "identity_name {} already exists".format(identity_name))
 
         identity_type = self.args.identity_type
         identity["identity_type"] = identity_type
@@ -206,8 +161,10 @@ class IdentityCommand(Command):
             self._ensure(value is not None, "--{} is required for identity_type {}".format(kw, identity_type))
             identity[kw] = value
 
-        self.config["identity.{}".format(identity_name)] = identity
-        self.config.persist()
+        if (self.args.network):
+            identity["network"] = self.args.network
+        identity["default_wallet_index"] = self.args.wallet_index
+        self.config.add_identity(identity_name, identity, self.out_f)
 
     def list(self):
         for identity_section in filter(lambda x: x.startswith("identity."), self.config.sections()):
@@ -225,20 +182,10 @@ class IdentityCommand(Command):
             })
 
     def delete(self):
-        identity_name = self.args.identity_name
-        self._ensure(self.config.has_section("identity.{}".format(identity_name)),
-                     "identity_name {} does not exist".format(identity_name))
-        self._ensure(self.config.get("session", "identity_name", fallback="") != identity_name,
-                     "identity_name {} is in use".format(identity_name))
-
-        self.config.remove_section("identity.{}".format(identity_name))
-        self.config.persist()
+        self.config.delete_identity(self.args.identity_name)
 
     def set(self):
-        identity_name = self.args.identity_name
-        self._ensure(self.config.has_section("identity.{}".format(identity_name)),
-                     "identity_name {} does not exist".format(identity_name))
-        self._set_key("identity_name", identity_name)
+        self.config.set_session_identity(self.args.identity_name, self.out_f)
 
 
 class NetworkCommand(Command):
@@ -247,78 +194,37 @@ class NetworkCommand(Command):
             network = self.config[network_section]
             self._pprint({network_section[len("network."):]: {k: v for k, v in network.items()}})
 
+    def create(self):
+        # check endpoint by getting its network_id
+        w3         = get_web3(self.args.eth_rpc_endpoint)
+        network_id = w3.version.network
+
+        self._printout("add network with name='%s' with networkId='%s'"%(self.args.network_name, str(network_id)))
+        self.config.add_network(self.args.network_name, self.args.eth_rpc_endpoint, self.args.default_gas_price)
     def set(self):
-        network_name = self.args.network_name
-        self._ensure(self.config.has_section("network.{}".format(network_name)) or network_name == "eth_rpc_endpoint",
-                     "network_name {} does not exist".format(network_name))
-        if network_name != "eth_rpc_endpoint":
-            for k, v in self.config["network.{}".format(network_name)].items():
-                self._set_key(k, v)
-        else:
-            self._ensure(self.args.eth_rpc_endpoint.startswith("http"), "eth rpc endpoint must start with http")
-            self._set_key("default_eth_rpc_endpoint", self.args.eth_rpc_endpoint)
+        self.config.set_session_network(self.args.network_name, self.out_f)
 
 
 class SessionCommand(Command):
     def set(self):
-        key = self.args.key
-
-        self._ensure(key in get_session_keys(), "key {} not in {}".format(key, get_session_keys()))
-
-        value = self.args.value
-
-        if key == "default_eth_rpc_endpoint":
-            self._ensure(self.session.identity.identity_type != "rpc",
-                         "cannot set default_eth_rpc_endpoint while using rpc identity_type")
-            to_delete = []
-            for k in self.config["session"]:
-                if k[-3:] == "_at":
-                    to_delete.append(k)
-            for k in to_delete:
-                del self.config["session"][k]
-                self._printerr("unset {}\n".format(k))
-
-        if key == "identity_name":
-            self._ensure(self.config.has_section("identity.{}".format(value)),
-                         "identity_name {} does not exist".format(value))
-            identity = self.config["identity.{}".format(value)]
-            for k, _ in identity.items():
-                try:
-                    del self.config["session"]["default_{}".format(k)]
-                    self._printerr("unset default_{}\n".format(k))
-                except KeyError:
-                    pass
-
-        self.config["session"][key] = value
-        self.config.persist()
-        self._printout("set {} {}\n".format(key, value))
+        self.config.set_session_field(self.args.key, self.args.value, self.out_f)
 
     def unset(self):
-        key = self.args.key
-
-        self._ensure(key in get_session_keys(), "key {} not in {}".format(key, get_session_keys()))
-
-        try:
-            del self.config["session"][key]
-            self.config.persist()
-            self._printout("unset {}\n".format(key))
-        except KeyError:
-            pass
+        self.config.unset_session_field(self.args.key, self.out_f)
 
     def show(self):
-        self._pprint({"session": dict(self.config["session"])})
+        rez = self.config.session_to_dict()
+
+        # we don't want to who private_key and mnemonic
+        for d in rez.values():
+            d.pop("private_key", None)
+            d.pop("mnemonic", None)
+        self._pprint(rez)
 
 
 class ContractCommand(BlockchainCommand):
     def call(self):
-        contract_address = self._getstring("at")
-
-        if contract_address is None:
-            networks = self.args.contract_def["networks"]
-            chain_id = self.w3.version.network
-            contract_address = networks.get(chain_id, {}).get("address", None)
-
-        self._ensure(contract_address is not None, "--at is required to specify target contract address")
+        contract_address = get_contract_address(self, self.args.contract_name, "--at is required to specify target contract address")
 
         abi = self.args.contract_def["abi"]
 
@@ -335,14 +241,7 @@ class ContractCommand(BlockchainCommand):
         return result
 
     def transact(self):
-        contract_address = self.args.at
-
-        if contract_address is None:
-            networks = self.args.contract_def["networks"]
-            chain_id = self.w3.version.network
-            contract_address = networks.get(chain_id, {}).get("address", None)
-
-        self._ensure(contract_address is not None, "--at is required to specify target contract address")
+        contract_address = get_contract_address(self, self.args.contract_name, "--at is required to specify target contract address")
 
         abi = self.args.contract_def["abi"]
 
@@ -354,8 +253,7 @@ class ContractCommand(BlockchainCommand):
             in self.args.__dict__.items() if name.startswith("contract_named_input_")
         }
 
-        gas_price = self._getint("gas_price")
-        self._ensure(gas_price is not None, "--gas-price required to transact")
+        gas_price = self.get_gas_price()
 
         txn = contract.build_transaction(self.args.contract_function,
                                          self.ident.get_address(),
@@ -379,307 +277,163 @@ class ContractCommand(BlockchainCommand):
 
 class OrganizationCommand(BlockchainCommand):
     def _getorganizationbyname(self):
-        registry_contract_def = get_contract_def("Registry")
-        registry_address = self._getstring("registry_at")
-        try:
-            return ContractCommand(
-                config=self.config,
-                args=self.get_contract_argser(
-                    contract_address=registry_address,
-                    contract_function="getOrganizationByName",
-                    contract_def=registry_contract_def)(type_converter("bytes32")(self.args.name)),
-                out_f=None,
-                err_f=None,
-                w3=self.w3,
-                ident=self.ident).call()
-
-        except Exception as e:
-            self._printerr("\nCall _getorganizationbyname() error!\nHINT: Check your identity and session.\n")
-            self._error(e)
+        return self.call_contract_command("Registry", "getOrganizationByName", [type_converter("bytes32")(self.args.name)])
 
     def list(self):
-        try:
-            registry_contract_def = get_contract_def("Registry")
-            registry_address = self._getstring("registry_at")
-            org_list = ContractCommand(
-                config=self.config,
-                args=self.get_contract_argser(
-                    contract_address=registry_address,
-                    contract_function="listOrganizations",
-                    contract_def=registry_contract_def)(),
-                out_f=None,
-                err_f=None,
-                w3=self.w3,
-                ident=self.ident).call()
+        org_list = self.call_contract_command("Registry", "listOrganizations", [])
 
-            self._printerr("\nList of Organizations:")
-            for idx, organization in enumerate(org_list):
-                self._printerr("- {}".format(organization.partition(b"\0")[0].decode("utf-8")))
-
-        except Exception as e:
-            self._printerr("\nCall error!\nHINT: Check your identity and session.\n")
-            self._error(e)
+        self._printerr("\nList of Organizations:")
+        for idx, organization in enumerate(org_list):
+            self._printerr("- {}".format(organization.partition(b"\0")[0].decode("utf-8")))
 
     def info(self):
-        try:
-            (found, name, owner, members, serviceNames, repositoryNames) = self._getorganizationbyname()
+        (found, name, owner, members, serviceNames, repositoryNames) = self._getorganizationbyname()
 
-            if found:
-                self._printerr("\nOwner:\n - {}".format(owner.lower()))
-                if members:
-                    self._printerr("\nMembers:".format(self.args.name))
-                    for idx, member in enumerate(members):
-                        self._printerr(" - {}".format(member.lower()))
-                if serviceNames:
-                    self._printerr("\nServices:".format(self.args.name))
-                    for idx, service in enumerate(serviceNames):
-                        self._printerr(" - {}".format(service.partition(b"\0")[0].decode("utf-8")))
-                if repositoryNames:
-                    self._printerr("\nRepositories:".format(self.args.name))
-                    for idx, repo in enumerate(repositoryNames):
-                        self._printerr(" - {}".format(repo.partition(b"\0")[0].decode("utf-8")))
-            else:
-                self._printerr("\n{} not registered on network.".format(self.args.name))
+        if found:
+            self._printerr("\nOwner:\n - {}".format(owner.lower()))
+            if members:
+                self._printerr("\nMembers:".format(self.args.name))
+                for idx, member in enumerate(members):
+                    self._printerr(" - {}".format(member.lower()))
+            if serviceNames:
+                self._printerr("\nServices:".format(self.args.name))
+                for idx, service in enumerate(serviceNames):
+                    self._printerr(" - {}".format(service.partition(b"\0")[0].decode("utf-8")))
+            if repositoryNames:
+                self._printerr("\nRepositories:".format(self.args.name))
+                for idx, repo in enumerate(repositoryNames):
+                    self._printerr(" - {}".format(repo.partition(b"\0")[0].decode("utf-8")))
+        else:
+            self._printerr("\n{} not registered on network.".format(self.args.name))
 
-        except Exception as e:
-            self._printerr("\nCall error!\nHINT: Check your identity and session.\n")
-            self._error(e)
 
     def create(self):
-        try:
-            # Check if Organization already exists
-            (found, _, _, _, _, _) = self._getorganizationbyname()
-            if found:
-                self._printerr("\n{} already exists!\n".format(self.args.name))
-                return
+        # Check if Organization already exists
+        (found, _, _, _, _, _) = self._getorganizationbyname()
+        if found:
+            self._printerr("\n{} already exists!\n".format(self.args.name))
+            return
 
-            members = []
-            if self.args.members:
-                members_split = self.args.members.split(',')
-                for idx, m in enumerate(members_split):
-                    members.append(str(m).replace("[", "").replace("]", "").lower())
+        members = []
+        if self.args.members:
+            members_split = self.args.members.split(',')
+            for idx, m in enumerate(members_split):
+                members.append(str(m).replace("[", "").replace("]", "").lower())
 
-            registry_contract_def = get_contract_def("Registry")
-            registry_address = self._getstring("registry_at")
-            cmd = ContractCommand(
-                config=self.config,
-                args=self.get_contract_argser(
-                    contract_address=registry_address,
-                    contract_function="createOrganization",
-                    contract_def=registry_contract_def)(type_converter("bytes32")(self.args.name),
-                                                        [type_converter("address")(member) for member in members]),
-                out_f=self.err_f,
-                err_f=self.err_f,
-                w3=self.w3,
-                ident=self.ident)
-            self._printerr("Creating transaction to create organization {}...\n".format(self.args.name))
-            try:
-                cmd.transact()
-            except Exception as e:
-                self._printerr("\nTransaction error!\nHINT: Check if {} already exists.\n".format(self.args.name))
-                self._error(e)
+        params = [type_converter("bytes32")(self.args.name), [type_converter("address")(member) for member in members]]
+        self._printerr("Creating transaction to create organization {}...\n".format(self.args.name))
+        self.transact_contract_command("Registry", "createOrganization", params)
 
-        except Exception as e:
-            self._printerr("\nTransaction error!\nHINT: Check if address is a 40-length hexadecimal.\n")
-            self._error(e)
 
     def delete(self):
+        # Check if Organization exists
+        (found, _, _, _, _, _) = self._getorganizationbyname()
+        if not found:
+            self._printerr("\n{} doesn't exist!\n".format(self.args.name))
+            return
+
+        self._printerr("Creating transaction to delete organization {}...\n".format(self.args.name))
         try:
-            # Check if Organization exists
-            (found, _, _, _, _, _) = self._getorganizationbyname()
-            if not found:
-                self._printerr("\n{} doesn't exist!\n".format(self.args.name))
-                return
-
-            registry_contract_def = get_contract_def("Registry")
-            registry_address = self._getstring("registry_at")
-            cmd = ContractCommand(
-                config=self.config,
-                args=self.get_contract_argser(
-                    contract_address=registry_address,
-                    contract_function="deleteOrganization",
-                    contract_def=registry_contract_def)(type_converter("bytes32")(self.args.name)),
-                out_f=self.err_f,
-                err_f=self.err_f,
-                w3=self.w3,
-                ident=self.ident)
-            self._printerr("Creating transaction to delete organization {}...\n".format(self.args.name))
-            try:
-                cmd.transact()
-            except Exception as e:
-                self._printerr("\nTransaction error!\nHINT: Check if {} exists and you are its owner.\n".format(self.args.name))
-                self._error(e)
-
+            self.transact_contract_command("Registry", "deleteOrganization", [type_converter("bytes32")(self.args.name)])
         except Exception as e:
-            self._printerr("\nTransaction error!\nHINT: Check ORG_NAME.\n")
-            self._error(e)
+            self._printerr("\nTransaction error!\nHINT: Check if you are the owner of {}\n".format(self.args.name))
+            raise
 
     def list_services(self):
-        try:
-            registry_contract_def = get_contract_def("Registry")
-            registry_address = self._getstring("registry_at")
-            try:
-                (found, org_service_list) = ContractCommand(
-                    config=self.config,
-                    args=self.get_contract_argser(
-                        contract_address=registry_address,
-                        contract_function="listServicesForOrganization",
-                        contract_def=registry_contract_def)(type_converter("bytes32")(self.args.name)),
-                    out_f=None,
-                    err_f=None,
-                    w3=self.w3,
-                    ident=self.ident).call()
-
-                if found:
-                    if org_service_list:
-                        self._printerr("\nList of {}'s Services:".format(self.args.name))
-                        for idx, org_service in enumerate(org_service_list):
-                            self._printerr("- {}".format(org_service.partition(b"\0")[0].decode("utf-8")))
-                    else:
-                        self._printerr("\n{} exists but has no registered services.".format(self.args.name))
-                else:
-                    self._printerr("\n{} not registered on network.".format(self.args.name))
-
-            except Exception as e:
-                self._printerr("\nCall error!\nHINT: Check your identity and session.\n")
-                self._error(e)
-
-        except Exception as e:
-            self._printerr("\nTransaction error!\nHINT: Check ORG_NAME.\n")
-            self._error(e)
+        (found, org_service_list) = self.call_contract_command("Registry", "listServicesForOrganization", [type_converter("bytes32")(self.args.name)])
+        if found:
+            if org_service_list:
+                self._printerr("\nList of {}'s Services:".format(self.args.name))
+                for idx, org_service in enumerate(org_service_list):
+                    self._printerr("- {}".format(org_service.partition(b"\0")[0].decode("utf-8")))
+            else:
+                self._printerr("\n{} exists but has no registered services.".format(self.args.name))
+        else:
+            self._printerr("\n{} not registered on network.".format(self.args.name))
 
     def change_owner(self):
+        # Check if Organization exists
+        (found, _, owner, _, _, _) = self._getorganizationbyname()
+        if not found:
+            self._printerr("\n{} doesn't exist!\n".format(self.args.name))
+            return
+
+        new_owner = self.args.owner.lower()
+        new_owner = new_owner if new_owner.startswith("0x") else "0x" + new_owner
+        if new_owner == owner:
+            self._printerr("\n{} is the owner of!\n".format(self.args.owner, self.args.name))
+            return
+
+        self._printerr("Creating transaction to change organization {}'s owner...\n".format(self.args.name))
         try:
-            # Check if Organization exists
-            (found, _, owner, _, _, _) = self._getorganizationbyname()
-            if not found:
-                self._printerr("\n{} doesn't exist!\n".format(self.args.name))
-                return
-
-            new_owner = self.args.owner.lower()
-            new_owner = new_owner if new_owner.startswith("0x") else "0x" + new_owner
-            if new_owner == owner:
-                self._printerr("\n{} is the owner of!\n".format(self.args.owner, self.args.name))
-                return
-
-            registry_contract_def = get_contract_def("Registry")
-            registry_address = self._getstring("registry_at")
-            cmd = ContractCommand(
-                config=self.config,
-                args=self.get_contract_argser(
-                    contract_address=registry_address,
-                    contract_function="changeOrganizationOwner",
-                    contract_def=registry_contract_def)(type_converter("bytes32")(self.args.name),
-                                                        type_converter("address")(self.args.owner)),
-                out_f=self.err_f,
-                err_f=self.err_f,
-                w3=self.w3,
-                ident=self.ident)
-            self._printerr("Creating transaction to change organization {}'s owner...\n".format(self.args.name))
-            try:
-                cmd.transact()
-            except Exception as e:
-                self._printerr("\nTransaction error!\nHINT: Check if {} already exists.\n".format(self.args.name))
-                self._error(e)
-
+            self.transact_contract_command("Registry", "changeOrganizationOwner", [type_converter("bytes32")(self.args.name),                                                                                  type_converter("address")(self.args.owner)])
         except Exception as e:
-            self._printerr("\nTransaction error!\nHINT: Check if address is a 40-length hexadecimal.\n")
-            self._error(e)
+            self._printerr("\nTransaction error!\nHINT: Check if you are the owner of {}\n".format(self.args.name))
+            raise
 
     def add_members(self):
+        # Check if Organization exists and member is not part of it
+        (found, _, _, members, _, _) = self._getorganizationbyname()
+        if not found:
+            self._printerr("\n{} doesn't exist!\n".format(self.args.name))
+            return
+
+        add_members = []
+        members_split = self.args.members.split(',')
+        for idx, m in enumerate(members_split):
+            member_tmp = str(m).replace("[", "").replace("]", "").lower()
+            member_tmp = member_tmp if member_tmp.startswith("0x") else "0x" + member_tmp
+            add_members.append(member_tmp)
+
+        members = [member.lower() for member in members]
+
+        for idx, add_member in enumerate(add_members[:]):
+            if add_member in members:
+                self._printerr("{} is already a member of organization {}".format(add_member, self.args.name))
+                add_members.remove(add_member)
+
+        if not add_members:
+            self._printerr("No member was added to {}!\n".format(self.args.name))
+            return
+
+        params = [type_converter("bytes32")(self.args.name),
+                 [type_converter("address")(member) for member in add_members]]
+        self._printerr("Creating transaction to add {} members into organization {}...\n".format(len(add_members), self.args.name))
         try:
-            # Check if Organization exists and member is not part of it
-            (found, _, _, members, _, _) = self._getorganizationbyname()
-            if not found:
-                self._printerr("\n{} doesn't exist!\n".format(self.args.name))
-                return
-
-            add_members = []
-            members_split = self.args.members.split(',')
-            for idx, m in enumerate(members_split):
-                member_tmp = str(m).replace("[", "").replace("]", "").lower()
-                member_tmp = member_tmp if member_tmp.startswith("0x") else "0x" + member_tmp
-                add_members.append(member_tmp)
-
-            members = [member.lower() for member in members]
-
-            for idx, add_member in enumerate(add_members[:]):
-                if add_member in members:
-                    self._printerr("{} is already a member of organization {}".format(add_member, self.args.name))
-                    add_members.remove(add_member)
-
-            if add_members:
-                registry_contract_def = get_contract_def("Registry")
-                registry_address = self._getstring("registry_at")
-                cmd = ContractCommand(
-                    config=self.config,
-                    args=self.get_contract_argser(
-                        contract_address=registry_address,
-                        contract_function="addOrganizationMembers",
-                        contract_def=registry_contract_def)(type_converter("bytes32")(self.args.name),
-                                                            [type_converter("address")(member) for member in add_members]),
-                    out_f=self.err_f,
-                    err_f=self.err_f,
-                    w3=self.w3,
-                    ident=self.ident)
-                self._printerr("Creating transaction to add {} members into organization {}...\n".format(len(add_members), self.args.name))
-                try:
-                    cmd.transact()
-                except Exception as e:
-                    self._printerr("\nTransaction error!\nHINT: Check if {} already exists and you are its owner.\n".format(self.args.name))
-                    self._error(e)
-            else:
-                self._printerr("No member was added to {}!\n".format(self.args.name))
-
+            self.transact_contract_command("Registry", "addOrganizationMembers", params)
         except Exception as e:
-            self._printerr("\nTransaction error!\nHINT: Check if address is a 40-length hexadecimal.\n")
-            self._error(e)
+            self._printerr("\nTransaction error!\nHINT: Check if you are the owner of {}\n".format(self.args.name))
+            raise
 
     def rem_members(self):
+        # Check if Organization exists and member is part of it
+        (found, _, _, members, _, _) = self._getorganizationbyname()
+        if not found:
+            self._printerr("\n{} doesn't exist!\n".format(self.args.name))
+            return
+
+        rem_members = []
+        members_split = self.args.members.split(',')
+        for idx, m in enumerate(members_split):
+            member_tmp = str(m).replace("[", "").replace("]", "").lower()
+            member_tmp = member_tmp if member_tmp.startswith("0x") else "0x" + member_tmp
+            rem_members.append(member_tmp)
+
+        members = [member.lower() for member in members]
+
+        for idx, rem_member in enumerate(rem_members[:]):
+            if rem_member not in members:
+                self._printerr("{} is not a member of organization {}".format(rem_member, self.args.name))
+                rem_members.remove(rem_member)
+
+        if not rem_members:
+            self._printerr("No member was removed from {}!\n".format(self.args.name))
+            return
+        params = [type_converter("bytes32")(self.args.name),
+                 [type_converter("address")(member) for member in rem_members]]
+        self._printerr("Creating transaction to remove {} members from organization {}...\n".format(len(rem_members), self.args.name))
         try:
-            # Check if Organization exists and member is part of it
-            (found, _, _, members, _, _) = self._getorganizationbyname()
-            if not found:
-                self._printerr("\n{} doesn't exist!\n".format(self.args.name))
-                return
-
-            rem_members = []
-            members_split = self.args.members.split(',')
-            for idx, m in enumerate(members_split):
-                member_tmp = str(m).replace("[", "").replace("]", "").lower()
-                member_tmp = member_tmp if member_tmp.startswith("0x") else "0x" + member_tmp
-                rem_members.append(member_tmp)
-
-            members = [member.lower() for member in members]
-
-            for idx, rem_member in enumerate(rem_members[:]):
-                if rem_member not in members:
-                    self._printerr("{} is not a member of organization {}".format(rem_member, self.args.name))
-                    rem_members.remove(rem_member)
-
-            if rem_members:
-                registry_contract_def = get_contract_def("Registry")
-                registry_address = self._getstring("registry_at")
-                cmd = ContractCommand(
-                    config=self.config,
-                    args=self.get_contract_argser(
-                        contract_address=registry_address,
-                        contract_function="removeOrganizationMembers",
-                        contract_def=registry_contract_def)(type_converter("bytes32")(self.args.name),
-                                                            [type_converter("address")(member) for member in rem_members]),
-                    out_f=self.err_f,
-                    err_f=self.err_f,
-                    w3=self.w3,
-                    ident=self.ident)
-                self._printerr("Creating transaction to remove {} members from organization {}...\n".format(len(rem_members), self.args.name))
-                try:
-                    cmd.transact()
-                except Exception as e:
-                    self._printerr("\nTransaction error!\nHINT: Check if {} already exists and you are its owner.\n".format(self.args.name))
-                    self._error(e)
-            else:
-                self._printerr("No member was removed from {}!\n".format(self.args.name))
-
+            self.transact_contract_command("Registry", "removeOrganizationMembers", params)
         except Exception as e:
-            self._printerr("\nTransaction error!\nHINT: Check if address is a 40-length hexadecimal.\n")
-            self._error(e)
+            self._printerr("\nTransaction error!\nHINT: Check if you are the owner of {}\n".format(self.args.name))
+            raise

@@ -1,13 +1,14 @@
 import sys
 
 from snet_cli import arguments
-from snet_cli.config import conf
+from snet_cli.config import Config
 
 __version__ = "0.1.7"
 
 
 def main():
     argv = sys.argv[1:]
+    conf   = Config()
     parser = arguments.get_root_parser(conf)
 
     try:

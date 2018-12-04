@@ -7,10 +7,6 @@ import web3
 import pkg_resources
 from grpc_tools.protoc import main as protoc
 
-from snet_cli.identity import RpcIdentityProvider, MnemonicIdentityProvider, TrezorIdentityProvider, \
-    LedgerIdentityProvider, KeyIdentityProvider
-
-
 class DefaultAttributeObject(object):
     def __init__(self, **kwargs):
         for k, v in kwargs.items():
@@ -46,22 +42,6 @@ class DefaultAttributeObject(object):
 
     def __str__(self):
         return self.__dict__.__str__()
-
-
-def get_identity(w3, session, args):
-    if session.identity is None:
-        pass
-    if session.identity.identity_type == "rpc":
-        return RpcIdentityProvider(w3, getattr(args, "wallet_index", None) or session.getint("default_wallet_index"))
-    if session.identity.identity_type == "mnemonic":
-        return MnemonicIdentityProvider(w3, session.identity.mnemonic,
-                                        getattr(args, "wallet_index", None) or session.getint("default_wallet_index"))
-    if session.identity.identity_type == "trezor":
-        return TrezorIdentityProvider(w3, getattr(args, "wallet_index", None) or session.getint("default_wallet_index"))
-    if session.identity.identity_type == "ledger":
-        return LedgerIdentityProvider(w3, getattr(args, "wallet_index", None) or session.getint("default_wallet_index"))
-    if session.identity.identity_type == "key":
-        return KeyIdentityProvider(w3, session.identity.private_key)
 
 
 def get_web3(rpc_endpoint):
@@ -183,34 +163,4 @@ def abi_get_element_by_name(abi, name):
 
 def abi_decode_struct_to_dict(abi, struct_list):
     return {el_abi["name"] : el for el_abi, el in zip(abi["outputs"], struct_list)}
-
-
-# TODO: move get_contract_address_from_args_or_networks to the new session/config logic (issue #110)
-# if arg is not None we take address from it otherwise we read the address from "networks/*json"
-def get_contract_address_from_args_or_networks(w3, contract_name, arg):
-    if (arg):
-        return w3.toChecksumAddress(arg)
-    
-    # try to take address from networks
-    try :
-        contract_def     = get_contract_def(contract_name)
-        networks         = contract_def["networks"]
-        chain_id         = w3.version.network
-        contract_address = networks.get(chain_id, {}).get("address", None)
-        if (not contract_address):
-            raise Exception()
-        contract_address = w3.toChecksumAddress(contract_address)
-    except:
-        raise Exception("Fail to read %s address from \"networks\", you should specify address by yourself via --%s parameter"%(contract_name, contract_name.lower()))
-        
-    return contract_address
-
-def get_registry_address_from_args_or_networks(w3, arg):
-    return get_contract_address_from_args_or_networks(w3, "Registry", arg)
-
-def get_mpe_address_from_args_or_networks(w3, arg):
-    return get_contract_address_from_args_or_networks(w3, "MultiPartyEscrow", arg)
-
-def get_snt_address_from_args_or_networks(w3, arg):
-    return get_contract_address_from_args_or_networks(w3, "SingularityNetToken", arg)
 

@@ -6,11 +6,11 @@ from pathlib import Path
 
 from snet_cli.commands import IdentityCommand, SessionCommand, NetworkCommand, ContractCommand, OrganizationCommand, VersionCommand
 from snet_cli.identity import get_identity_types
-from snet_cli.session import get_session_keys
 from snet_cli.utils import type_converter, get_contract_def
 from snet_cli.mpe_client_command  import MPEClientCommand
 from snet_cli.mpe_service_command import MPEServiceCommand
 from snet_cli.utils_agi2cogs import stragi2cogs
+from snet_cli.config import get_session_keys, get_session_network_keys_removable
 
 class CustomParser(argparse.ArgumentParser):
     def __init__(self, default_choice=None, *args, **kwargs):
@@ -86,26 +86,31 @@ def add_version_options(parser):
 
 def add_identity_options(parser, config):
     parser.set_defaults(cmd=IdentityCommand)
-    parser.set_defaults(fn="list")
+
     subparsers = parser.add_subparsers(title="actions", metavar="ACTION")
+    subparsers.required = True
 
-    identity_names = list(
-        map(lambda x: x[len("identity."):], filter(lambda x: x.startswith("identity."), config.sections())))
+    p = subparsers.add_parser("list", help="List of identies")
+    p.set_defaults(fn="list")
 
-    create_p = subparsers.add_parser("create", help="Create a new identity")
-    create_p.set_defaults(fn="create")
-    create_p.add_argument("identity_name", help="name of identity to create", metavar="IDENTITY_NAME")
-    create_p.add_argument("identity_type", choices=get_identity_types(),
-                          help="type of identity to create from {}".format(get_identity_types()),
-                          metavar="IDENTITY_TYPE")
-    create_p.add_argument("--mnemonic", help="bip39 mnemonic for 'mnemonic' identity_type")
-    create_p.add_argument("--private-key", help="hex-encoded private key for 'key' identity_type")
-    create_p.add_argument("--eth-rpc-endpoint", help="ethereum json-rpc endpoint for 'rpc' identity_type")
+    p = subparsers.add_parser("create", help="Create a new identity")
+    p.set_defaults(fn="create")
+    p.add_argument("identity_name", help="name of identity to create", metavar="IDENTITY_NAME")
+    p.add_argument("identity_type", choices=get_identity_types(),
+                   help="type of identity to create from {}".format(get_identity_types()),
+                   metavar="IDENTITY_TYPE")
+    p.add_argument("--mnemonic", help="bip39 mnemonic for 'mnemonic' identity_type")
+    p.add_argument("--private-key", help="hex-encoded private key for 'key' identity_type")
+    p.add_argument("--network", help="network this identity will be bind to (obligatory for 'rpc' identity_type, optional for others)")
+    p.add_argument("--wallet-index", type=int, default=0, help="default wallet index for this account (default is 0)")
 
-    delete_p = subparsers.add_parser("delete", help="Delete an identity")
-    delete_p.set_defaults(fn="delete")
-    delete_p.add_argument("identity_name", choices=identity_names,
-                          help="name of identity to delete from {}".format(identity_names), metavar="IDENTITY_NAME")
+    p = subparsers.add_parser("delete", help="Delete an identity")
+    p.set_defaults(fn="delete")
+
+    identity_names = config.get_all_identies_names()
+
+    p.add_argument("identity_name", choices=identity_names,
+                   help="name of identity to delete from {}".format(identity_names), metavar="IDENTITY_NAME")
 
     for identity_name in identity_names:
         p = subparsers.add_parser(identity_name, help="Switch to {} identity".format(identity_name))
@@ -115,21 +120,26 @@ def add_identity_options(parser, config):
 
 def add_network_options(parser, config):
     parser.set_defaults(cmd=NetworkCommand)
-    parser.set_defaults(fn="list")
-    subparsers = parser.add_subparsers(title="networks", metavar="NETWORK")
 
-    network_names = list(
-        map(lambda x: x[len("network."):], filter(lambda x: x.startswith("network."), config.sections())))
+    subparsers = parser.add_subparsers(title="networks", metavar="NETWORK")
+    subparsers.required = True
+
+    p = subparsers.add_parser("list", help="List of networks")
+    p.set_defaults(fn="list")
+
+    p = subparsers.add_parser("create", help="Create a new network")
+    p.set_defaults(fn="create")
+    p.add_argument("network_name", help="name of network to create")
+    p.add_argument("eth_rpc_endpoint", help="ethereum rpc endpoint")
+    p.add_argument("--default_gas_price", default=1000000000, type=int, help="default gas price for this network (in wei), default is 1000000000")
+
+
+    network_names = config.get_all_networks_names()
 
     for network_name in network_names:
         p = subparsers.add_parser(network_name, help="Switch to {} network".format(network_name))
         p.set_defaults(network_name=network_name)
         p.set_defaults(fn="set")
-
-    p = subparsers.add_parser("eth-rpc-endpoint", help="Switch to an endpoint-determined network")
-    p.set_defaults(network_name="eth_rpc_endpoint")
-    p.set_defaults(fn="set")
-    p.add_argument("eth_rpc_endpoint", help="ethereum json-rpc endpoint (should start with 'http(s)://')", metavar="ETH_RPC_ENDPOINT")
 
 
 def add_session_options(parser):
@@ -148,8 +158,8 @@ def add_set_options(parser):
 def add_unset_options(parser):
     parser.set_defaults(cmd=SessionCommand)
     parser.set_defaults(fn="unset")
-    parser.add_argument("key", choices=get_session_keys(),
-                        help="session key to unset from {}".format(get_session_keys()), metavar="KEY")
+    parser.add_argument("key", choices=get_session_network_keys_removable(),
+                        help="session key to unset from {}".format(get_session_network_keys_removable()), metavar="KEY")
 
 
 def add_contract_options(parser):
@@ -175,12 +185,16 @@ def add_organization_options(parser):
     subparsers = parser.add_subparsers(title="organization commands", metavar="COMMAND")
     subparsers.required = True
 
-    org_list_p = subparsers.add_parser("list", help="List Organizations")
-    org_list_p.set_defaults(fn="list")
+    p = subparsers.add_parser("list", help="List Organizations")
+    p.set_defaults(fn="list")
+    add_contract_identity_arguments(p, [("registry", "registry_at")])
+    add_eth_call_arguments(p)
 
-    org_info_p = subparsers.add_parser("info", help="Organization's Informations")
-    org_info_p.set_defaults(fn="info")
-    org_info_p.add_argument("name", help="Name of the Organization", metavar="ORG_NAME")
+    p = subparsers.add_parser("info", help="Organization's Informations")
+    p.set_defaults(fn="info")
+    p.add_argument("name", help="Name of the Organization", metavar="ORG_NAME")
+    add_contract_identity_arguments(p, [("registry", "registry_at")])
+    add_eth_call_arguments(p)
 
     org_create_p = subparsers.add_parser("create", help="Create an Organization")
     org_create_p.set_defaults(fn="create")
@@ -195,9 +209,11 @@ def add_organization_options(parser):
     org_delete_p.add_argument("name", help="Name of the Organization", metavar="ORG_NAME")
     _add_organization_arguments(org_delete_p)
 
-    org_list_services_p = subparsers.add_parser("list-services", help="List Organization's services")
-    org_list_services_p.set_defaults(fn="list_services")
-    org_list_services_p.add_argument("name", help="Name of the Organization", metavar="ORG_NAME")
+    p = subparsers.add_parser("list-services", help="List Organization's services")
+    p.set_defaults(fn="list_services")
+    p.add_argument("name", help="Name of the Organization", metavar="ORG_NAME")
+    add_contract_identity_arguments(p, [("registry", "registry_at")])
+    add_eth_call_arguments(p)
 
     org_change_owner_p = subparsers.add_parser("change-owner", help="Change Organization's owner")
     org_change_owner_p.set_defaults(fn="change_owner")
@@ -227,6 +243,7 @@ def add_contract_function_options(parser, contract_name):
 
     contract_def = get_contract_def(contract_name)
     parser.set_defaults(contract_def=contract_def)
+    parser.set_defaults(contract_name=contract_name)
 
     fns = []
     for fn in filter(lambda e: e["type"] == "function", contract_def["abi"]):
@@ -271,16 +288,18 @@ def add_contract_identity_arguments(parser, names_and_destinations=(("", "at"),)
                                 help=h)
 
 
+def add_eth_call_arguments(parser):
+    p= parser.add_argument_group(title="optional call arguments")
+    p.add_argument("--wallet-index", type=int,
+                   help="wallet index of account to use for calling (defaults to session.identity.default_wallet_index)")
+
+
 def add_transaction_arguments(parser):
     transaction_g = parser.add_argument_group(title="transaction arguments")
     transaction_g.add_argument("--gas-price", type=int,
                                help="ethereum gas price for transaction (defaults to session.default_gas_price)")
-    transaction_g.add_argument("--eth-rpc-endpoint", help="ethereum json-rpc endpoint (should start with 'http(s)://'; "
-                                                          "defaults to session.identity.eth_rpc_endpoint or "
-                                                          "session.default_eth_rpc_endpoint)")
     transaction_g.add_argument("--wallet-index", type=int,
-                               help="wallet index of account to use for signing (defaults to session.default_wallet"
-                                    " index)")
+                               help="wallet index of account to use for signing (defaults to session.identity.default_wallet_index)")
     transaction_g.add_argument("--yes", "-y", action="store_true",
                                help="skip interactive confirmation of transaction payload", default=False)
     g = transaction_g.add_mutually_exclusive_group()
@@ -298,7 +317,7 @@ class AppendPositionalAction(argparse.Action):
 
 
 def add_p_mpe_address_opt(p):
-    p.add_argument("--multipartyescrow", "--mpe", default=None,  help="address of MultiPartyEscrow contract, if not specified we read address from \"networks\"")
+    p.add_argument("--multipartyescrow-at", "--mpe", default=None,  help="address of MultiPartyEscrow contract, if not specified we read address from \"networks\"")
 
 
 def add_p_metadata_file_opt(p):
@@ -306,7 +325,7 @@ def add_p_metadata_file_opt(p):
 
 
 def add_p_service_in_registry(p):
-    p.add_argument("--registry",  default=None, help="address of Registry contract, if not specified we read address from \"networks\"")
+    p.add_argument("--registry-at", "--registry", default=None, help="address of Registry contract, if not specified we read address from \"networks\"")
     p.add_argument("organization", help="Name of organization")
     p.add_argument("service",      help="Name of service")
 
@@ -334,7 +353,7 @@ def add_mpe_client_options(parser):
         p.add_argument("amount",     type=int, help="amount")
 
     def add_p_snt_address_opt(p):
-        p.add_argument("--singularitynettoken", "--snt", default=None,  help="address of SingularityNetToken contract, if not specified we read address from \"networks\"")
+        p.add_argument("--singularitynettoken-at", "--snt", default=None,  help="address of SingularityNetToken contract, if not specified we read address from \"networks\"")
 
     def add_p_open_channel_basic(p):
         p.add_argument("amount",         type=stragi2cogs, help="amount of AGI tokens to put in the new channel")
@@ -343,11 +362,16 @@ def add_mpe_client_options(parser):
         add_p_mpe_address_opt(p)
         add_transaction_arguments(p)
 
+    p = subparsers.add_parser("account", help="print the currect ETH account")
+    p.set_defaults(fn="print_account")
+    add_eth_call_arguments(p)
+
     p = subparsers.add_parser("balance", help="print balance of AGI tokens and balance of MPE wallet")
     p.set_defaults(fn="print_agi_and_mpe_balances")
     p.add_argument("--account", default=None, help="Account to print balance for (default is the current identity)")
     add_p_snt_address_opt(p)
     add_p_mpe_address_opt(p)
+    add_eth_call_arguments(p)
 
     p = subparsers.add_parser("deposit", help="deposit AGI tokens to MPE wallet")
     p.set_defaults(fn="deposit_to_mpe")

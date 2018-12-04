@@ -268,7 +268,7 @@ def get_kws_for_identity_type(identity_type):
     PLAINTEXT = False
 
     if identity_type == "rpc":
-        return [("eth_rpc_endpoint", PLAINTEXT)]
+        return [("network", PLAINTEXT)]
     elif identity_type == "mnemonic":
         return [("mnemonic", SECRET)]
     elif identity_type == "key":
