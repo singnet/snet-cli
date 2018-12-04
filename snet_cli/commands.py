@@ -76,7 +76,8 @@ class BlockchainCommand(Command):
         self.ident = ident or self.get_identity()
 
     def get_eth_endpoint(self):
-        return get_field_from_args_or_session(self.config, self.args, "eth_rpc_endpoint")
+        # the only one source of eth_rpc_endpoint is the configuration file
+        return self.config.get_session_field("default_eth_rpc_endpoint")
 
     def get_wallet_index(self):
         return int(get_field_from_args_or_session(self.config, self.args, "wallet_index"))

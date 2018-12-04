@@ -209,7 +209,7 @@ def get_session_identity_keys():
     return ["default_wallet_index"]
 
 def get_session_network_keys():
-    return ["default_gas_price", "current_registry_at", "current_multipartyescrow_at", "current_singularitynettoken_at"]
+    return ["default_gas_price", "current_registry_at", "current_multipartyescrow_at", "current_singularitynettoken_at", "default_eth_rpc_endpoint"]
 
 def get_session_network_keys_removable():
     return ["default_gas_price", "current_registry_at", "current_multipartyescrow_at", "current_singularitynettoken_at"]

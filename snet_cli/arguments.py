@@ -288,12 +288,8 @@ def add_contract_identity_arguments(parser, names_and_destinations=(("", "at"),)
                                 help=h)
 
 
-def add_eth_rpc_endpoint(parser):
-    parser.add_argument("--eth-rpc-endpoint", help="ethereum json-rpc endpoint (should start with 'http(s)://'; "
-                                                          "defaults to session.network.eth_rpc_endpoint)")
 def add_eth_call_arguments(parser):
     p= parser.add_argument_group(title="optional call arguments")
-    add_eth_rpc_endpoint(p)
     p.add_argument("--wallet-index", type=int,
                    help="wallet index of account to use for calling (defaults to session.identity.default_wallet_index)")
 
@@ -302,7 +298,6 @@ def add_transaction_arguments(parser):
     transaction_g = parser.add_argument_group(title="transaction arguments")
     transaction_g.add_argument("--gas-price", type=int,
                                help="ethereum gas price for transaction (defaults to session.default_gas_price)")
-    add_eth_rpc_endpoint(transaction_g)
     transaction_g.add_argument("--wallet-index", type=int,
                                help="wallet index of account to use for signing (defaults to session.identity.default_wallet_index)")
     transaction_g.add_argument("--yes", "-y", action="store_true",
