@@ -283,7 +283,7 @@ def add_contract_identity_arguments(parser, names_and_destinations=(("", "at"),)
         h = "{} contract address".format(name)
         if destination != "at":
             h += " (defaults to session.current_{})".format(destination)
-        identity_g.add_argument("--{}at".format(arg_name), dest=destination, type=type_converter("address"),
+        identity_g.add_argument("--{}at".format(arg_name), dest=destination,
                                 metavar="{}ADDRESS".format(metavar_name.upper()),
                                 help=h)
 
