@@ -8,7 +8,7 @@ SingularityNET CLI
   
 These instructions are intended to facilitate the development and use of the SingularityNET CLI.
 
-### Installing (For Use)
+### Installing with pip
 
 #### Install prerequisites
 
