@@ -170,7 +170,8 @@ class Config(ConfigParser):
 
     # create default configuration if config file is not exists
     def create_default_config(self):
-        self._config_file.parent.mkdir(exist_ok=True)
+        # make config directory with the minimal possible permission
+        self._config_file.parent.mkdir(mode=0o700, exist_ok=True)
         self["network.kovan"]   = {"default_eth_rpc_endpoint": "https://kovan.infura.io",   "default_gas_price" : "1000000000"}
         self["network.mainnet"] = {"default_eth_rpc_endpoint": "https://mainnet.infura.io", "default_gas_price" : "1000000000"}
         self["network.ropsten"] = {"default_eth_rpc_endpoint": "https://ropsten.infura.io", "default_gas_price" : "1000000000"}
@@ -188,7 +189,7 @@ class Config(ConfigParser):
     def _persist(self):
         with open(self._config_file, "w") as f:
             self.write(f)
-
+        self._config_file.chmod(0o600)
 
 def first_identity_message_and_exit():
     print("\nPlease create your first identity by running 'snet identity create'.\n\n"
