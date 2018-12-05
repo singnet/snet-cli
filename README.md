@@ -1,4 +1,4 @@
-# snet-cli
+﻿# snet-cli
 
 [![CircleCI](https://circleci.com/gh/singnet/snet-cli.svg?style=svg)](https://circleci.com/gh/singnet/snet-cli)
   
@@ -10,9 +10,25 @@ These instructions are intended to facilitate the development and use of the Sin
 
 ### Installing (For Use)
 
-* Install using pip
+#### Install prerequisites
+
+You should have python with version >= 3.6.5 and pip installed.
+
+Additionally you should install the following packages:
+
+* libudev
+* libusb 1.0
+
+If you use Ubuntu (or any Linux distribution with APT package support) you should do the following:
+
 ```bash
-$ pip install snet-cli
+sudo apt-get install libudev-dev libusb-1.0-0-dev
+```
+
+#### Install snet-cli using pip
+
+```bash
+$ pip3 install snet-cli
 ```
 
 ### Commands
@@ -384,7 +400,7 @@ $ ./scripts/blockchain install
   
 * Install the package in development/editable mode  
 ```bash  
-$ pip install -e .
+$ pip3 install -e .
 ```
 
 ### Release  
