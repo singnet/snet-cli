@@ -80,10 +80,10 @@ class MPEClientCommand(BlockchainCommand):
         self._check_mpe_address_metadata(metadata)
         if (os.path.exists(channel_dir)):
             raise Exception("Directory %s already exists"%channel_dir)
-        os.makedirs(channel_dir)
+        os.makedirs(channel_dir, mode=0o700)
         try:
             spec_dir = os.path.join(channel_dir, "service_spec")
-            os.makedirs(spec_dir)
+            os.makedirs(spec_dir, mode=0o700)
             # take tar of .proto files from ipfs and extract them to channel_dir/service_spec
             spec_tar = get_from_ipfs_and_checkhash(self._get_ipfs_client(), metadata["model_ipfs_hash"])
             with tarfile.open(fileobj=io.BytesIO(spec_tar)) as f:
