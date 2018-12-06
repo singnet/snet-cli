@@ -16,6 +16,7 @@ from snet_cli.config import get_session_identity_keys, get_session_network_keys
 from snet_cli.utils_config import get_contract_address, get_field_from_args_or_session
 from snet_cli.identity import RpcIdentityProvider, MnemonicIdentityProvider, TrezorIdentityProvider, \
     LedgerIdentityProvider, KeyIdentityProvider
+import web3
 
 
 class Command(object):
@@ -279,6 +280,17 @@ class OrganizationCommand(BlockchainCommand):
     def _getorganizationbyname(self):
         return self.call_contract_command("Registry", "getOrganizationByName", [type_converter("bytes32")(self.args.name)])
 
+    #TODO: It would be better to have standard nargs="+" in argparse.
+    #      But we keep comma separated members for backward compatibility
+    def get_members_from_args(self):
+        if (not self.args.members):
+            return []
+        members = [m.replace("[", "").replace("]", "") for m in self.args.members.split(',')]
+        for m in members:
+            if not web3.eth.is_checksum_address(m):
+                raise Exception("Member account %s is not a valid Ethereum checksum address"%m)
+        return members
+
     def list(self):
         org_list = self.call_contract_command("Registry", "listOrganizations", [])
 
@@ -290,11 +302,11 @@ class OrganizationCommand(BlockchainCommand):
         (found, name, owner, members, serviceNames, repositoryNames) = self._getorganizationbyname()
 
         if found:
-            self._printerr("\nOwner:\n - {}".format(owner.lower()))
+            self._printerr("\nOwner:\n - {}".format(owner))
             if members:
                 self._printerr("\nMembers:".format(self.args.name))
                 for idx, member in enumerate(members):
-                    self._printerr(" - {}".format(member.lower()))
+                    self._printerr(" - {}".format(member))
             if serviceNames:
                 self._printerr("\nServices:".format(self.args.name))
                 for idx, service in enumerate(serviceNames):
@@ -311,16 +323,11 @@ class OrganizationCommand(BlockchainCommand):
         # Check if Organization already exists
         (found, _, _, _, _, _) = self._getorganizationbyname()
         if found:
-            self._printerr("\n{} already exists!\n".format(self.args.name))
-            return
+            raise Exception("\n{} already exists!\n".format(self.args.name))
 
-        members = []
-        if self.args.members:
-            members_split = self.args.members.split(',')
-            for idx, m in enumerate(members_split):
-                members.append(str(m).replace("[", "").replace("]", "").lower())
+        members = self.get_members_from_args()
 
-        params = [type_converter("bytes32")(self.args.name), [type_converter("address")(member) for member in members]]
+        params = [type_converter("bytes32")(self.args.name), members]
         self._printerr("Creating transaction to create organization {}...\n".format(self.args.name))
         self.transact_contract_command("Registry", "createOrganization", params)
 
@@ -329,8 +336,7 @@ class OrganizationCommand(BlockchainCommand):
         # Check if Organization exists
         (found, _, _, _, _, _) = self._getorganizationbyname()
         if not found:
-            self._printerr("\n{} doesn't exist!\n".format(self.args.name))
-            return
+            raise Exception("\n{} doesn't exist!\n".format(self.args.name))
 
         self._printerr("Creating transaction to delete organization {}...\n".format(self.args.name))
         try:
@@ -355,18 +361,18 @@ class OrganizationCommand(BlockchainCommand):
         # Check if Organization exists
         (found, _, owner, _, _, _) = self._getorganizationbyname()
         if not found:
-            self._printerr("\n{} doesn't exist!\n".format(self.args.name))
-            return
+            raise Exception("\n{} doesn't exist!\n".format(self.args.name))
 
-        new_owner = self.args.owner.lower()
-        new_owner = new_owner if new_owner.startswith("0x") else "0x" + new_owner
-        if new_owner == owner:
-            self._printerr("\n{} is the owner of!\n".format(self.args.owner, self.args.name))
-            return
+        new_owner = self.args.owner
+        if not web3.eth.is_checksum_address(new_owner):
+            raise Exception("New owner account %s is not a valid Ethereum checksum address"%new_owner)
+
+        if new_owner.lower() == owner.lower():
+            raise Exception("\n{} is the owner of {}!\n".format(new_owner, self.args.name))
 
         self._printerr("Creating transaction to change organization {}'s owner...\n".format(self.args.name))
         try:
-            self.transact_contract_command("Registry", "changeOrganizationOwner", [type_converter("bytes32")(self.args.name),                                                                                  type_converter("address")(self.args.owner)])
+            self.transact_contract_command("Registry", "changeOrganizationOwner", [type_converter("bytes32")(self.args.name), self.args.owner])
         except Exception as e:
             self._printerr("\nTransaction error!\nHINT: Check if you are the owner of {}\n".format(self.args.name))
             raise
@@ -375,29 +381,21 @@ class OrganizationCommand(BlockchainCommand):
         # Check if Organization exists and member is not part of it
         (found, _, _, members, _, _) = self._getorganizationbyname()
         if not found:
-            self._printerr("\n{} doesn't exist!\n".format(self.args.name))
-            return
-
-        add_members = []
-        members_split = self.args.members.split(',')
-        for idx, m in enumerate(members_split):
-            member_tmp = str(m).replace("[", "").replace("]", "").lower()
-            member_tmp = member_tmp if member_tmp.startswith("0x") else "0x" + member_tmp
-            add_members.append(member_tmp)
+            raise Exception("\n{} doesn't exist!\n".format(self.args.name))
 
         members = [member.lower() for member in members]
-
-        for idx, add_member in enumerate(add_members[:]):
-            if add_member in members:
+        add_members = []
+        for add_member in self.get_members_from_args():
+            if add_member.lower() in members:
                 self._printerr("{} is already a member of organization {}".format(add_member, self.args.name))
-                add_members.remove(add_member)
+            else:
+                add_members.append(add_member)
 
         if not add_members:
             self._printerr("No member was added to {}!\n".format(self.args.name))
             return
 
-        params = [type_converter("bytes32")(self.args.name),
-                 [type_converter("address")(member) for member in add_members]]
+        params = [type_converter("bytes32")(self.args.name), add_members]
         self._printerr("Creating transaction to add {} members into organization {}...\n".format(len(add_members), self.args.name))
         try:
             self.transact_contract_command("Registry", "addOrganizationMembers", params)
@@ -409,28 +407,21 @@ class OrganizationCommand(BlockchainCommand):
         # Check if Organization exists and member is part of it
         (found, _, _, members, _, _) = self._getorganizationbyname()
         if not found:
-            self._printerr("\n{} doesn't exist!\n".format(self.args.name))
-            return
-
-        rem_members = []
-        members_split = self.args.members.split(',')
-        for idx, m in enumerate(members_split):
-            member_tmp = str(m).replace("[", "").replace("]", "").lower()
-            member_tmp = member_tmp if member_tmp.startswith("0x") else "0x" + member_tmp
-            rem_members.append(member_tmp)
+            raise Exception("\n{} doesn't exist!\n".format(self.args.name))
 
         members = [member.lower() for member in members]
-
-        for idx, rem_member in enumerate(rem_members[:]):
-            if rem_member not in members:
+        rem_members = []
+        for rem_member in self.get_members_from_args():
+            if rem_member.lower() not in members:
                 self._printerr("{} is not a member of organization {}".format(rem_member, self.args.name))
-                rem_members.remove(rem_member)
+            else:
+                rem_members.append(rem_member)
 
         if not rem_members:
             self._printerr("No member was removed from {}!\n".format(self.args.name))
             return
-        params = [type_converter("bytes32")(self.args.name),
-                 [type_converter("address")(member) for member in rem_members]]
+
+        params = [type_converter("bytes32")(self.args.name), rem_members]
         self._printerr("Creating transaction to remove {} members from organization {}...\n".format(len(rem_members), self.args.name))
         try:
             self.transact_contract_command("Registry", "removeOrganizationMembers", params)

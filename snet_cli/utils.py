@@ -59,6 +59,11 @@ def serializable(o):
     else:
         return o.__dict__
 
+def safe_address_converter(a):
+    if not web3.eth.is_checksum_address(a):
+        raise Exception("%s is not is not a valid Ethereum checksum address"%a)
+    return a
+
 
 def type_converter(t):
     if t.endswith("[]"):
@@ -71,7 +76,7 @@ def type_converter(t):
         elif "byte" in t:
             return lambda x: web3.Web3.toBytes(text=x) if not x.startswith("0x") else web3.Web3.toBytes(hexstr=x)
         elif "address" in t:
-            return web3.Web3.toChecksumAddress
+            return safe_address_converter
         else:
             return str
 
