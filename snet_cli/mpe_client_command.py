@@ -121,7 +121,7 @@ class MPEClientCommand(BlockchainCommand):
     def _open_channel_for_service(self, metadata):
         group_id    = metadata.get_group_id(self.args.group_name)
         recipient   = metadata.get_payment_address(self.args.group_name)
-        rez = self.transact_contract_command("MultiPartyEscrow", "openChannel", [recipient, self.args.amount, self.args.expiration, group_id, self.ident.address])
+        rez = self.transact_contract_command("MultiPartyEscrow", "openChannel", [self.ident.address, recipient, group_id, self.args.amount, self.args.expiration])
 
         if (len(rez[1]) != 1 or rez[1][0]["event"] != "ChannelOpen"):
             raise Exception("We've expected only one ChannelOpen event after openChannel. Make sure that you use correct MultiPartyEscrow address")
