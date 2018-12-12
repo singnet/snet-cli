@@ -132,6 +132,7 @@ def add_network_options(parser, config):
     p.add_argument("network_name", help="name of network to create")
     p.add_argument("eth_rpc_endpoint", help="ethereum rpc endpoint")
     p.add_argument("--default_gas_price", default=1000000000, type=int, help="default gas price for this network (in wei), default is 1000000000")
+    p.add_argument("--skip-check", action="store_true", help="skip check that eth_rpc_endpoint is valid")
 
 
     network_names = config.get_all_networks_names()

@@ -196,9 +196,11 @@ class NetworkCommand(Command):
             self._pprint({network_section[len("network."):]: {k: v for k, v in network.items()}})
 
     def create(self):
-        # check endpoint by getting its network_id
-        w3         = get_web3(self.args.eth_rpc_endpoint)
-        network_id = w3.version.network
+        network_id = None
+        if (not self.args.skip_check):
+            # check endpoint by getting its network_id
+            w3         = get_web3(self.args.eth_rpc_endpoint)
+            network_id = w3.version.network
 
         self._printout("add network with name='%s' with networkId='%s'"%(self.args.network_name, str(network_id)))
         self.config.add_network(self.args.network_name, self.args.eth_rpc_endpoint, self.args.default_gas_price)
