@@ -81,6 +81,10 @@ def type_converter(t):
             return str
 
 
+def bytes32_to_str(b):
+    return b.partition(b"\0")[0].decode("utf-8")
+
+
 def _add_next_paths(path, entry_path, seen_paths, next_paths):
     with open(path) as f:
         for line in f:
