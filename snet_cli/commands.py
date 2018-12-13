@@ -10,13 +10,16 @@ from rfc3986 import urlparse
 
 from snet_cli.contract import Contract
 from snet_cli.identity import get_kws_for_identity_type, get_identity_types
-from snet_cli.utils import DefaultAttributeObject, get_web3, serializable, type_converter, get_contract_def, get_cli_version
+from snet_cli.utils import DefaultAttributeObject, get_web3, serializable, type_converter, get_contract_def, get_cli_version, bytes32_to_str
 
 from snet_cli.config import get_session_identity_keys, get_session_network_keys
 from snet_cli.utils_config import get_contract_address, get_field_from_args_or_session
 from snet_cli.identity import RpcIdentityProvider, MnemonicIdentityProvider, TrezorIdentityProvider, \
     LedgerIdentityProvider, KeyIdentityProvider
 import web3
+import secrets
+import string
+
 
 
 class Command(object):
@@ -123,7 +126,7 @@ class BlockchainCommand(Command):
         if (is_silent):
             out_f = None
         else:
-            out_f = self.err_f
+            out_f = self.out_f
         return ContractCommand(config= self.config,
                                args  = self.get_contract_argser(
                                              contract_address  = contract_address,
@@ -279,10 +282,13 @@ class ContractCommand(BlockchainCommand):
 
 
 class OrganizationCommand(BlockchainCommand):
-    def _getorganizationbyname(self):
-        return self.call_contract_command("Registry", "getOrganizationByName", [type_converter("bytes32")(self.args.name)])
+    def _getorganizationbyid(self, org_id):
+        org_id_bytes32 = type_converter("bytes32")(org_id)
+        if (len(org_id_bytes32) > 32):
+            raise Exception("Your org_id is too long: len(org_id_bytes32)=%i"%(len(org_id_bytes32)))
+        return self.call_contract_command("Registry", "getOrganizationById", [org_id_bytes32])
 
-    #TODO: It would be better to have standard nargs="+" in argparse.
+    #TODO: It would be better to have standard nargs="+" in argparse for members.
     #      But we keep comma separated members for backward compatibility
     def get_members_from_args(self):
         if (not self.args.members):
@@ -296,137 +302,158 @@ class OrganizationCommand(BlockchainCommand):
     def list(self):
         org_list = self.call_contract_command("Registry", "listOrganizations", [])
 
-        self._printerr("\nList of Organizations:")
-        for idx, organization in enumerate(org_list):
-            self._printerr("- {}".format(organization.partition(b"\0")[0].decode("utf-8")))
+        self._printout("# OrgId")
+        for idx, org_id in enumerate(org_list):
+            self._printout(bytes32_to_str(org_id))
+
+    def list_orgnames(self):
+        org_list = self.call_contract_command("Registry", "listOrganizations", [])
+
+        self._printout("# OrgName OrgId")
+        for idx, org_id in enumerate(org_list):
+            rez = self.call_contract_command("Registry", "getOrganizationById", [org_id])
+            if (not rez[0]):
+                raise Exception("Internal Error in Registry");
+            org_name = rez[2]
+            self._printout("%s  %s"%(org_name, bytes32_to_str(org_id)))
+
+    def error_organization_not_found(self, org_id, found):
+        if not found:
+            raise Exception("Organization with id={} doesn't exist!\n".format(org_id))
 
     def info(self):
-        (found, name, owner, members, serviceNames, repositoryNames) = self._getorganizationbyname()
+        org_id = self.args.org_id
+        (found, org_id, org_name, owner, members, serviceNames, repositoryNames) = self._getorganizationbyid(org_id)
+        self.error_organization_not_found(org_id, found)
 
-        if found:
-            self._printerr("\nOwner:\n - {}".format(owner))
-            if members:
-                self._printerr("\nMembers:".format(self.args.name))
-                for idx, member in enumerate(members):
-                    self._printerr(" - {}".format(member))
-            if serviceNames:
-                self._printerr("\nServices:".format(self.args.name))
-                for idx, service in enumerate(serviceNames):
-                    self._printerr(" - {}".format(service.partition(b"\0")[0].decode("utf-8")))
-            if repositoryNames:
-                self._printerr("\nRepositories:".format(self.args.name))
-                for idx, repo in enumerate(repositoryNames):
-                    self._printerr(" - {}".format(repo.partition(b"\0")[0].decode("utf-8")))
-        else:
-            self._printerr("\n{} not registered on network.".format(self.args.name))
-
+        self._printout("\nOrganization Name:\n - %s"%org_name)
+        self._printout("\nOrganization Id:\n - %s"%bytes32_to_str(org_id))
+        self._printout("\nOwner:\n - {}".format(owner))
+        if members:
+            self._printout("\nMembers:")
+            for idx, member in enumerate(members):
+                self._printout(" - {}".format(member))
+        if serviceNames:
+            self._printout("\nServices:")
+            for idx, service in enumerate(serviceNames):
+                self._printout(" - {}".format(bytes32_to_str(service)))
+        if repositoryNames:
+            self._printout("\nRepositories:")
+            for idx, repo in enumerate(repositoryNames):
+                self._printout(" - {}".format(bytes32_to_str(repo)))
 
     def create(self):
+        org_id = self.args.org_id
+        # create unique uuid if org_id haven't been specified manualy
+        if (not org_id):
+            alphabet = string.ascii_letters + string.digits
+            org_id   = ''.join(secrets.choice(alphabet) for i in range(32))
+
         # Check if Organization already exists
-        (found, _, _, _, _, _) = self._getorganizationbyname()
+        found = self._getorganizationbyid(org_id)[0]
         if found:
-            raise Exception("\n{} already exists!\n".format(self.args.name))
+            raise Exception("\nOrganization with id={} already exists!\n".format(org_id))
 
         members = self.get_members_from_args()
-
-        params = [type_converter("bytes32")(self.args.name), members]
-        self._printerr("Creating transaction to create organization {}...\n".format(self.args.name))
+        params = [type_converter("bytes32")(org_id), self.args.org_name, members]
+        self._printout("Creating transaction to create organization name={} id={}\n".format(self.args.org_name, org_id))
         self.transact_contract_command("Registry", "createOrganization", params)
-
+        self._printout("id:\n%s"%org_id)
 
     def delete(self):
+        org_id = self.args.org_id
+        print(org_id)
         # Check if Organization exists
-        (found, _, _, _, _, _) = self._getorganizationbyname()
-        if not found:
-            raise Exception("\n{} doesn't exist!\n".format(self.args.name))
+        (found,_,org_name,_,_,_,_) = self._getorganizationbyid(org_id)
+        self.error_organization_not_found(org_id, found)
 
-        self._printerr("Creating transaction to delete organization {}...\n".format(self.args.name))
+        self._printout("Creating transaction to delete organization with name={} id={}".format(org_name, org_id))
         try:
-            self.transact_contract_command("Registry", "deleteOrganization", [type_converter("bytes32")(self.args.name)])
+            self.transact_contract_command("Registry", "deleteOrganization", [type_converter("bytes32")(org_id)])
         except Exception as e:
-            self._printerr("\nTransaction error!\nHINT: Check if you are the owner of {}\n".format(self.args.name))
+            self._printerr("\nTransaction error!\nHINT: Check if you are the owner of organization with id={}\n".format(org_id))
             raise
 
     def list_services(self):
-        (found, org_service_list) = self.call_contract_command("Registry", "listServicesForOrganization", [type_converter("bytes32")(self.args.name)])
-        if found:
-            if org_service_list:
-                self._printerr("\nList of {}'s Services:".format(self.args.name))
-                for idx, org_service in enumerate(org_service_list):
-                    self._printerr("- {}".format(org_service.partition(b"\0")[0].decode("utf-8")))
-            else:
-                self._printerr("\n{} exists but has no registered services.".format(self.args.name))
+        org_id = self.args.org_id
+        (found, org_service_list) = self.call_contract_command("Registry", "listServicesForOrganization", [type_converter("bytes32")(org_id)])
+        self.error_organization_not_found(org_id, found)
+        if org_service_list:
+            self._printout("\nList of {}'s Services:".format(org_id))
+            for idx, org_service in enumerate(org_service_list):
+                self._printout("- {}".format(bytes32_to_str(org_service)))
         else:
-            self._printerr("\n{} not registered on network.".format(self.args.name))
+            self._printout("Organization with id={} exists but has no registered services.".format(org_id))
 
     def change_owner(self):
+        org_id = self.args.org_id
         # Check if Organization exists
-        (found, _, owner, _, _, _) = self._getorganizationbyname()
-        if not found:
-            raise Exception("\n{} doesn't exist!\n".format(self.args.name))
+        (found, _, _, owner, _, _, _) = self._getorganizationbyid(org_id)
+        self.error_organization_not_found(org_id, found)
 
         new_owner = self.args.owner
         if not web3.eth.is_checksum_address(new_owner):
             raise Exception("New owner account %s is not a valid Ethereum checksum address"%new_owner)
 
         if new_owner.lower() == owner.lower():
-            raise Exception("\n{} is the owner of {}!\n".format(new_owner, self.args.name))
+            raise Exception("\n{} is the owner of Organization with id={}!\n".format(new_owner, org_id))
 
-        self._printerr("Creating transaction to change organization {}'s owner...\n".format(self.args.name))
+        self._printout("Creating transaction to change organization {}'s owner...\n".format(org_id))
         try:
-            self.transact_contract_command("Registry", "changeOrganizationOwner", [type_converter("bytes32")(self.args.name), self.args.owner])
+            self.transact_contract_command("Registry", "changeOrganizationOwner", [type_converter("bytes32")(org_id), self.args.owner])
         except Exception as e:
-            self._printerr("\nTransaction error!\nHINT: Check if you are the owner of {}\n".format(self.args.name))
+            self._printerr("\nTransaction error!\nHINT: Check if you are the owner of {}\n".format(org_id))
             raise
 
     def add_members(self):
+        org_id = self.args.org_id
         # Check if Organization exists and member is not part of it
-        (found, _, _, members, _, _) = self._getorganizationbyname()
-        if not found:
-            raise Exception("\n{} doesn't exist!\n".format(self.args.name))
+        (found, _, _, _, members, _, _) = self._getorganizationbyid(org_id)
+        self.error_organization_not_found(org_id, found)
 
         members = [member.lower() for member in members]
+        print(members)
         add_members = []
         for add_member in self.get_members_from_args():
             if add_member.lower() in members:
-                self._printerr("{} is already a member of organization {}".format(add_member, self.args.name))
+                self._printout("{} is already a member of organization {}".format(add_member, org_id))
             else:
                 add_members.append(add_member)
 
         if not add_members:
-            self._printerr("No member was added to {}!\n".format(self.args.name))
+            self._printout("No member was added to {}!\n".format(org_id))
             return
 
-        params = [type_converter("bytes32")(self.args.name), add_members]
-        self._printerr("Creating transaction to add {} members into organization {}...\n".format(len(add_members), self.args.name))
+        params = [type_converter("bytes32")(org_id), add_members]
+        self._printout("Creating transaction to add {} members into organization {}...\n".format(len(add_members), org_id))
         try:
             self.transact_contract_command("Registry", "addOrganizationMembers", params)
         except Exception as e:
-            self._printerr("\nTransaction error!\nHINT: Check if you are the owner of {}\n".format(self.args.name))
+            self._printerr("\nTransaction error!\nHINT: Check if you are the owner of {}\n".format(org_id))
             raise
 
     def rem_members(self):
+        org_id = self.args.org_id
         # Check if Organization exists and member is part of it
-        (found, _, _, members, _, _) = self._getorganizationbyname()
-        if not found:
-            raise Exception("\n{} doesn't exist!\n".format(self.args.name))
+        (found, _, _, _, members, _, _) = self._getorganizationbyid(org_id)
+        self.error_organization_not_found(org_id, found)
 
         members = [member.lower() for member in members]
         rem_members = []
         for rem_member in self.get_members_from_args():
             if rem_member.lower() not in members:
-                self._printerr("{} is not a member of organization {}".format(rem_member, self.args.name))
+                self._printout("{} is not a member of organization {}".format(rem_member, org_id))
             else:
                 rem_members.append(rem_member)
 
         if not rem_members:
-            self._printerr("No member was removed from {}!\n".format(self.args.name))
+            self._printout("No member was removed from {}!\n".format(org_id))
             return
 
-        params = [type_converter("bytes32")(self.args.name), rem_members]
-        self._printerr("Creating transaction to remove {} members from organization {}...\n".format(len(rem_members), self.args.name))
+        params = [type_converter("bytes32")(org_id), rem_members]
+        self._printout("Creating transaction to remove {} members from organization with id={}...\n".format(len(rem_members), org_id))
         try:
             self.transact_contract_command("Registry", "removeOrganizationMembers", params)
         except Exception as e:
-            self._printerr("\nTransaction error!\nHINT: Check if you are the owner of {}\n".format(self.args.name))
+            self._printerr("\nTransaction error!\nHINT: Check if you are the owner of {}\n".format(org_id))
             raise
