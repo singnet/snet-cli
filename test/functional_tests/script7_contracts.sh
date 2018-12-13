@@ -1,7 +1,7 @@
 # Test "snet contracts"
 
-snet contract Registry --at 0x4e74fefa82e83e0964f0d9f53c68e03f7298a8b2 createOrganization ExampleOrganization1 '["0x3b2b3C2e2E7C93db335E69D827F3CC4bC2A2A2cB"]' --transact -y
-snet contract Registry createOrganization ExampleOrganization2 '["0x3b2b3C2e2E7C93db335E69D827F3CC4bC2A2A2cB","0x0067b427E299Eb2A4CBafc0B04C723F77c6d8a18"]' --transact -y
+snet contract Registry --at 0x4e74fefa82e83e0964f0d9f53c68e03f7298a8b2 createOrganization ExampleOrganization1 ExampleOrganization1 '["0x3b2b3C2e2E7C93db335E69D827F3CC4bC2A2A2cB"]' --transact -y
+snet contract Registry createOrganization ExampleOrganization2 ExampleOrganization2 '["0x3b2b3C2e2E7C93db335E69D827F3CC4bC2A2A2cB","0x0067b427E299Eb2A4CBafc0B04C723F77c6d8a18"]' --transact -y
 snet organization list 2>&1 | grep ExampleOrganization1
 snet organization list 2>&1 | grep ExampleOrganization2
 

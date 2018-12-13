@@ -27,7 +27,7 @@ echo '{"829257324":{"events":{},"links":{},"address":"0x6e5f20669177f5bdf3703ec5
 
 # this should work
 snet client balance 
-snet organization create testo -y -q
+snet organization create testo --org-id testo -y -q
 snet organization delete testo -y -q
 
 # this should fail (addresses are INVALID)
@@ -45,8 +45,8 @@ snet organization create testo -y -q  && exit 1 || echo "fail as expected"
 
 # this should work because command line has more priority
 snet client balance --snt 0x6e5f20669177f5bdf3703ec5ea9c4d4fe3aabd14 --mpe 0x5c7a4290f6f8ff64c69eeffdfafc8644a4ec3a4e
-snet organization create testo -y -q --registry-at 0x4e74fefa82e83e0964f0d9f53c68e03f7298a8b2
-snet organization delete testo -y -q --registry-at 0x4e74fefa82e83e0964f0d9f53c68e03f7298a8b2
+snet organization create testo --org-id testo -y -q --registry-at 0x4e74fefa82e83e0964f0d9f53c68e03f7298a8b2
+snet organization delete testo                -y -q --registry-at 0x4e74fefa82e83e0964f0d9f53c68e03f7298a8b2
 
 
 # set INVALID networks
@@ -65,7 +65,7 @@ snet set current_multipartyescrow_at    0x5c7a4290f6f8ff64c69eeffdfafc8644a4ec3a
 
 # this should work
 snet client balance 
-snet organization create testo -y -q
+snet organization create testo --org-id testo -y -q
 snet organization delete testo -y -q
 
 # set INVALID addresses
@@ -79,5 +79,5 @@ snet organization create testo -y -q  && exit 1 || echo "fail as expected"
 
 # this should work because command line has more priority
 snet client balance --snt 0x6e5f20669177f5bdf3703ec5ea9c4d4fe3aabd14 --mpe 0x5c7a4290f6f8ff64c69eeffdfafc8644a4ec3a4e
-snet organization create testo -y -q --registry-at 0x4e74fefa82e83e0964f0d9f53c68e03f7298a8b2
-snet organization delete testo -y -q --registry-at 0x4e74fefa82e83e0964f0d9f53c68e03f7298a8b2
+snet organization create testo --org-id testo -y -q --registry-at 0x4e74fefa82e83e0964f0d9f53c68e03f7298a8b2
+snet organization delete testo                -y -q --registry-at 0x4e74fefa82e83e0964f0d9f53c68e03f7298a8b2

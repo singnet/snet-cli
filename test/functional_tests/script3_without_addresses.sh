@@ -28,7 +28,7 @@ ipfs cat $IPFS_HASH > service_metadata2.json
 # compare service_metadata.json and service_metadata2.json
 cmp <(jq -S . service_metadata.json) <(jq -S . service_metadata2.json)
 
-snet organization create testo -y -q --registry-at 0x4e74fefa82e83e0964f0d9f53c68e03f7298a8b2
+snet organization create testo --org-id testo -y -q --registry-at 0x4e74fefa82e83e0964f0d9f53c68e03f7298a8b2
 snet service publish testo tests -y -q --registry-at 0x4e74fefa82e83e0964f0d9f53c68e03f7298a8b2
 snet service update_add_tags testo tests tag1 tag2 tag3 -y -q --registry-at 0x4e74fefa82e83e0964f0d9f53c68e03f7298a8b2
 snet service update_remove_tags testo tests tag2 tag1 -y -q --registry-at 0x4e74fefa82e83e0964f0d9f53c68e03f7298a8b2
