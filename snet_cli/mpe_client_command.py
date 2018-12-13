@@ -61,10 +61,10 @@ class MPEClientCommand(BlockchainCommand):
 
     #TODO: this function is copy paste from mpe_service_command.py
     def _get_service_metadata_from_registry(self):
-        params = [type_converter("bytes32")(self.args.organization), type_converter("bytes32")(self.args.service)]
-        rez = self.call_contract_command("Registry", "getServiceRegistrationByName", params)
+        params = [type_converter("bytes32")(self.args.org_id), type_converter("bytes32")(self.args.service_id)]
+        rez = self.call_contract_command("Registry", "getServiceRegistrationById", params)
         if (rez[0] == False):
-            raise Exception("Cannot find Service %s in Organization %s"%(self.args.service, self.args.organization))
+            raise Exception("Cannot find Service with id=%s in Organization with id=%s"%(self.args.service_id, self.args.org_id))
         metadata_hash = bytesuri_to_hash(rez[2])
         metadata_json = get_from_ipfs_and_checkhash(self._get_ipfs_client(), metadata_hash)
         metadata      = mpe_service_metadata_from_json(metadata_json)
