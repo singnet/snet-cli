@@ -65,17 +65,17 @@ class MPEServiceCommand(BlockchainCommand):
     def publish_service_with_metadata(self):
         metadata_uri     = hash_to_bytesuri( self._publish_metadata_in_ipfs(self.args.metadata_file))
         tags             = self._get_converted_tags()
-        params           = [type_converter("bytes32")(self.args.organization), type_converter("bytes32")(self.args.service), metadata_uri, tags]
+        params           = [type_converter("bytes32")(self.args.org_id), type_converter("bytes32")(self.args.service_id), metadata_uri, tags]
         self.transact_contract_command("Registry", "createServiceRegistration", params)
 
     def publish_metadata_in_ipfs_and_update_registration(self):
         metadata_uri     = hash_to_bytesuri( self._publish_metadata_in_ipfs(self.args.metadata_file))
-        params           = [type_converter("bytes32")(self.args.organization), type_converter("bytes32")(self.args.service), metadata_uri]
+        params           = [type_converter("bytes32")(self.args.org_id), type_converter("bytes32")(self.args.service_id), metadata_uri]
         self.transact_contract_command("Registry", "updateServiceRegistration", params)
 
     def _get_params_for_tags_update(self):
         tags             = self._get_converted_tags()
-        params           = [type_converter("bytes32")(self.args.organization), type_converter("bytes32")(self.args.service), tags]
+        params           = [type_converter("bytes32")(self.args.org_id), type_converter("bytes32")(self.args.service_id), tags]
         return params
     
     def update_registration_add_tags(self):
@@ -87,10 +87,10 @@ class MPEServiceCommand(BlockchainCommand):
         self.transact_contract_command("Registry", "removeTagsFromServiceRegistration", params)
         
     def _get_service_registration(self):
-        params = [type_converter("bytes32")(self.args.organization), type_converter("bytes32")(self.args.service)]
-        rez = self.call_contract_command("Registry", "getServiceRegistrationByName", params)
+        params = [type_converter("bytes32")(self.args.org_id), type_converter("bytes32")(self.args.service_id)]
+        rez = self.call_contract_command("Registry", "getServiceRegistrationById", params)
         if (rez[0] == False):
-            raise Exception("Cannot find Service %s in Organization %s"%(self.args.service, self.args.organization))
+            raise Exception("Cannot find Service with id=%s in Organization with id=%s"%(self.args.service_id, self.args.org_id))
         return rez
         
     def print_service_metadata_from_registry(self):
@@ -108,5 +108,5 @@ class MPEServiceCommand(BlockchainCommand):
         self._printout(" ".join(tags))
 
     def delete_service_registration(self):
-        params = [type_converter("bytes32")(self.args.organization), type_converter("bytes32")(self.args.service)]
+        params = [type_converter("bytes32")(self.args.org_id), type_converter("bytes32")(self.args.service_id)]
         self.transact_contract_command("Registry", "deleteServiceRegistration", params)
