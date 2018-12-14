@@ -200,6 +200,11 @@ def add_organization_options(parser):
     add_contract_identity_arguments(p, [("registry", "registry_at")])
     add_eth_call_arguments(p)
 
+    p = subparsers.add_parser("list-my", help="Print organization which has the current identity as the owner or as a member")
+    p.set_defaults(fn="list_my")
+    add_contract_identity_arguments(p, [("registry", "registry_at")])
+    add_eth_call_arguments(p)
+
     p = subparsers.add_parser("info", help="Organization's Informations")
     p.set_defaults(fn="info")
     add_p_org_id(p)
