@@ -14,7 +14,7 @@ snet unset current_multipartyescrow_at || echo "could fail if hasn't been set (i
 
 # this should fail without addresses
 snet client balance && exit 1 || echo "fail as expected"
-snet organization create testo -y -q  && exit 1 || echo "fail as expected"
+snet organization create testo --org-id testo -y -q  && exit 1 || echo "fail as expected"
 
 
 snet service metadata_init ./service_spec1/ ExampleService 0x42A605c07EdE0E1f648aB054775D6D4E38496144  --encoding json --service_type jsonrpc --group_name group1 --mpe 0x5c7a4290f6f8ff64c69eeffdfafc8644a4ec3a4e
