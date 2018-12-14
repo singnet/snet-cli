@@ -209,8 +209,9 @@ def add_organization_options(parser):
     p = subparsers.add_parser("create", help="Create an Organization")
     p.set_defaults(fn="create")
     p.add_argument("org_name", help="Name of the Organization", metavar="ORG_NAME")
-    p.add_argument("--org-id", default=None, help="Unique organization Id (by default random id is generated)")
-
+    pm = p.add_mutually_exclusive_group(required=True)
+    pm.add_argument("--org-id", default=None, help="Unique organization Id")
+    pm.add_argument("--auto",   action='store_true', help="Generate organization Id (by default random id is generated)")
     p.add_argument("--members", help="List of members to be added to the organization", metavar="ORG_MEMBERS[]")
     _add_organization_arguments(p)
 
