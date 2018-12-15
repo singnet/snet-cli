@@ -28,10 +28,23 @@ snet service print_tags  testo tests
 # it should have only tag3 now
 cmp <(echo "tag3") <(snet service print_tags testo tests)
 
-snet service print_metadata  testo tests |grep -v "We must check that hash in IPFS is correct" > service_metadata3.json
+snet service print_metadata  testo tests > service_metadata3.json
 
 # compare service_metadata.json and service_metadata3.json
 cmp <(jq -S . service_metadata.json) <(jq -S . service_metadata3.json)
+
+# test get_api_registry and
+snet service get_api_registry testo tests _d1
+snet service get_api_metadata --metadata_file service_metadata3.json _d2
+
+# as usual, by default it is metatada_file=service_metadata.json
+snet service get_api_metadata _d3
+
+cmp ./service_spec1/ExampleService.proto _d1/ExampleService.proto
+cmp ./service_spec1/ExampleService.proto _d2/ExampleService.proto
+cmp ./service_spec1/ExampleService.proto _d3/ExampleService.proto
+
+rm -r _d1 _d2 _d3
 
 # client side
 snet client balance 
