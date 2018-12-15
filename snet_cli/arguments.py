@@ -489,6 +489,8 @@ def add_mpe_service_options(parser):
     p.add_argument("--encoding", default = "proto", choices=['proto', 'json'], help="Service encoding")
     p.add_argument("--service_type", default = "grpc", choices=['grpc', 'jsonrpc', 'process'], help="Service type")
     p.add_argument("--payment_expiration_threshold", type=int, default = 40320, help="Service expiration threshold in blocks (default is 40320 ~ one week with 15s/block)")
+    p.add_argument("--endpoints", default=[], nargs='*', help="endpoints for the first group")
+    p.add_argument("--fixed_price",type=stragi2cogs, help="set fixed price in AGI token for all methods")
 
     p = subparsers.add_parser("metadata_set_fixed_price", help="Set pricing model as fixed price for all methods")
     p.set_defaults(fn="metadata_set_fixed_price")
