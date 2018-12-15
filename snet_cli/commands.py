@@ -124,8 +124,10 @@ class BlockchainCommand(Command):
         contract_def = get_contract_def(contract_name)
         if (is_silent):
             out_f = None
+            err_f = None
         else:
             out_f = self.out_f
+            err_f = self.err_f
         return ContractCommand(config= self.config,
                                args  = self.get_contract_argser(
                                              contract_address  = contract_address,
@@ -133,7 +135,7 @@ class BlockchainCommand(Command):
                                              contract_def      = contract_def,
                                              contract_name     = contract_name)(*contract_params),
                                out_f = out_f,
-                               err_f = out_f,
+                               err_f = err_f,
                                w3    = self.w3,
                                ident = self.ident)
 
