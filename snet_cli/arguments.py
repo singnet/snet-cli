@@ -478,12 +478,9 @@ def add_mpe_service_options(parser):
     subparsers = parser.add_subparsers(title="Commands", metavar="COMMAND")
     subparsers.required = True
 
-    def add_p_protodir(p):
-        p.add_argument("protodir",     help="Directory which contains protobuf files")
-
     p = subparsers.add_parser("metadata_init", help="Init metadata file with providing protobuf directory (which we publish in IPFS) and display_name (optionally encoding, service_type and payment_expiration_threshold)")
     p.set_defaults(fn="publish_proto_metadata_init")
-    add_p_protodir(p)
+    p.add_argument("protodir",     help="Directory which contains protobuf files")
     add_p_metadata_file_opt(p)
     add_p_mpe_address_opt(p)
     p.add_argument("display_name", help="Service display name")
@@ -546,6 +543,19 @@ def add_mpe_service_options(parser):
     p = subparsers.add_parser("print_tags", help="Print tags for given service from registry")
     p.set_defaults(fn="print_service_tags_from_registry")
     add_p_service_in_registry(p)
+
+    def add_p_protodir_to_extract(p):
+        p.add_argument("protodir",     help="Directory to which extract api (model)")
+
+    p = subparsers.add_parser("get_api_metadata", help="Extract service api (model) to the given protodir. Get model_ipfs_hash from metadata")
+    p.set_defaults(fn="extract_service_api_from_metadata")
+    add_p_protodir_to_extract(p)
+    add_p_metadata_file_opt(p)
+
+    p = subparsers.add_parser("get_api_registry", help="Extract service api (model) to the given protodir. Get metadata from registry")
+    p.set_defaults(fn="extract_service_api_from_registry")
+    add_p_service_in_registry(p)
+    add_p_protodir_to_extract(p)
 
     p = subparsers.add_parser("delete", help="Delete service registration from registry")
     p.set_defaults(fn="delete_service_registration")
