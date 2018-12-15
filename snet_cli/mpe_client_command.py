@@ -291,7 +291,7 @@ class MPEClientCommand(BlockchainCommand):
     def print_all_channels_my(self):
         # TODO: check that it is faster to use events to get all channels with the given sender (instead of using channels directly)
         mpe_address = self.get_mpe_address()
-        event_signature   = self.ident.w3.sha3(text="ChannelOpen(uint256,address,address,bytes32,address,uint256,uint256)").hex()
+        event_signature   = self.ident.w3.sha3(text="ChannelOpen(uint256,uint256,address,address,address,bytes32,uint256,uint256)").hex()
         my_address_padded = pad_hex(self.ident.address.lower(), 256)
         logs = self.ident.w3.eth.getLogs({"fromBlock" : self.args.from_block,
                                           "address"   : mpe_address,

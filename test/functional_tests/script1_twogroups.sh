@@ -61,8 +61,11 @@ snet client open_init_channel_metadata 42 1 --group_name group1 -y  -q
 snet client channel_claim_timeout 0 -y -q
 snet client channel_extend_add 0 --expiration 10000 --amount 42 -y  -q
 snet client open_init_channel_registry  testo tests 1 1000000  --group_name group2 -y -q
-snet client print_initialized_channels
-snet client print_all_channels
+
+# test print_initialized_channels and print_all_channels. We should have channels openned for specific identity
+snet client print_initialized_channels | grep 0x42A605c07EdE0E1f648aB054775D6D4E38496144
+snet client print_all_channels |grep 0x42A605c07EdE0E1f648aB054775D6D4E38496144
+
 rm -rf ~/.snet/mpe_client/
 snet client init_channel_metadata 0
 snet client init_channel_registry testo tests 1 
