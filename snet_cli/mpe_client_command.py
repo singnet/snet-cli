@@ -146,6 +146,9 @@ class MPEClientCommand(BlockchainCommand):
         self._open_init_channel_from_metadata(metadata)
 
     def channel_claim_timeout(self):
+        rez = self._get_channel_state_from_blockchain(self.args.channel_id)
+        if (rez["value"] == 0):
+            raise Exception("Channel has 0 value. There is nothing to claim")
         self.transact_contract_command("MultiPartyEscrow", "channelClaimTimeout", [self.args.channel_id])
 
     def channel_extend_and_add_funds(self):

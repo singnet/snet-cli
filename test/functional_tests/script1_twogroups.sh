@@ -59,6 +59,9 @@ snet client transfer 0x0067b427E299Eb2A4CBafc0B04C723F77c6d8a18 42 -y -q
 snet client withdraw 1 -y -q
 snet client open_init_channel_metadata 42 1 --group_name group1 -y  -q
 snet client channel_claim_timeout 0 -y -q
+# we do not send transaction second time
+snet client channel_claim_timeout 0 -y -q && exit 1 || echo "fail as expected"
+
 snet client channel_extend_add 0 --expiration 10000 --amount 42 -y  -q
 snet client open_init_channel_registry  testo tests 1 1000000  --group_name group2 -y -q
 
