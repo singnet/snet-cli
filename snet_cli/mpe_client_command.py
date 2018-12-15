@@ -13,9 +13,7 @@ from snet_cli.utils import get_contract_def, abi_get_element_by_name, abi_decode
 from snet_cli.utils_proto import import_protobuf_from_dir, switch_to_json_payload_econding
 from snet_cli.utils import type_converter
 from snet_cli.mpe_service_metadata import mpe_service_metadata_from_json, load_mpe_service_metadata
-from snet_cli.utils_ipfs import bytesuri_to_hash, get_from_ipfs_and_checkhash
-import tarfile
-import io
+from snet_cli.utils_ipfs import bytesuri_to_hash, get_from_ipfs_and_checkhash, safe_extract_proto_from_ipfs
 import shutil
 import tempfile
 from snet_cli.utils_agi2cogs import cogs2stragi
@@ -84,10 +82,7 @@ class MPEClientCommand(BlockchainCommand):
         try:
             spec_dir = os.path.join(channel_dir, "service_spec")
             os.makedirs(spec_dir, mode=0o700)
-            # take tar of .proto files from ipfs and extract them to channel_dir/service_spec
-            spec_tar = get_from_ipfs_and_checkhash(self._get_ipfs_client(), metadata["model_ipfs_hash"])
-            with tarfile.open(fileobj=io.BytesIO(spec_tar)) as f:
-                f.extractall(spec_dir)
+            safe_extract_proto_from_ipfs(self._get_ipfs_client(), metadata["model_ipfs_hash"], spec_dir)
 
             # compile .proto files
             if (not compile_proto(Path(spec_dir), channel_dir)):
