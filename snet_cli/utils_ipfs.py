@@ -3,7 +3,7 @@ import tarfile
 import glob
 import io
 import os
-
+import sys
 
 # make tar from protodir/*proto, and publish this tar in ipfs
 # return base58 encoded ipfs hash
@@ -32,7 +32,7 @@ def publish_proto_in_ipfs(ipfs_client, protodir):
 # We must check the hash becasue we cannot believe that ipfs_client wasn't been compromise
 def get_from_ipfs_and_checkhash(ipfs_client, ipfs_hash_base58):
     data  = ipfs_client.cat(ipfs_hash_base58)
-    print("!!! We must check that hash in IPFS is correct (we cannot be sure that ipfs is not compromized) !!! Please implement it !!!")
+    print("!!! We must check that hash in IPFS is correct (we cannot be sure that ipfs is not compromized) !!! Please implement it !!!", file=sys.stderr)
     return data
 
 # Convert in and from bytes uri format used in Registry contract
