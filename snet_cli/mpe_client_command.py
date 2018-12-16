@@ -23,40 +23,6 @@ class MPEClientCommand(BlockchainCommand):
 
     # O. MultiPartyEscrow related functions
 
-    def print_account(self):
-        self._printout(self.ident.address)
-
-    # print balance of ETH, AGI, and MPE wallet
-    def print_agi_and_mpe_balances(self):
-        if (self.args.account):
-            account = self.args.account
-        else:
-            account = self.ident.address
-        eth_wei  = self.w3.eth.getBalance(account)
-        agi_cogs = self.call_contract_command("SingularityNetToken", "balanceOf", [account])
-        mpe_cogs = self.call_contract_command("MultiPartyEscrow",    "balances",  [account])
-
-        # we cannot use _pprint here because it doesn't conserve order yet
-        self._printout("    account: %s"%account)
-        self._printout("    ETH: %s"%self.w3.fromWei(eth_wei, 'ether'))
-        self._printout("    AGI: %s"%cogs2stragi(agi_cogs))
-        self._printout("    MPE: %s"%cogs2stragi(mpe_cogs))
-
-    def deposit_to_mpe(self):
-        amount      = self.args.amount
-        mpe_address = self.get_mpe_address()
-
-        already_approved = self.call_contract_command("SingularityNetToken", "allowance", [self.ident.address, mpe_address])
-        if (already_approved < amount):
-            self.transact_contract_command("SingularityNetToken", "approve", [mpe_address, amount])
-        self.transact_contract_command("MultiPartyEscrow", "deposit", [amount])
-
-    def withdraw_from_mpe(self):
-        self.transact_contract_command("MultiPartyEscrow", "withdraw", [self.args.amount])
-
-    def transfer_in_mpe(self):
-        self.transact_contract_command("MultiPartyEscrow", "transfer", [self.args.receiver, self.args.amount])
-
     #TODO: this function is copy paste from mpe_service_command.py
     def _get_service_metadata_from_registry(self):
         params = [type_converter("bytes32")(self.args.org_id), type_converter("bytes32")(self.args.service_id)]

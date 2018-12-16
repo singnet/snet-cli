@@ -8,6 +8,7 @@ from snet_cli.commands import IdentityCommand, SessionCommand, NetworkCommand, C
 from snet_cli.identity import get_identity_types
 from snet_cli.utils import type_converter, get_contract_def
 from snet_cli.mpe_client_command  import MPEClientCommand
+from snet_cli.mpe_account_command  import MPEAccountCommand
 from snet_cli.mpe_service_command import MPEServiceCommand
 from snet_cli.utils_agi2cogs import stragi2cogs
 from snet_cli.config import get_session_keys, get_session_network_keys_removable
@@ -72,6 +73,8 @@ def add_root_options(parser, config):
     organization_p = subparsers.add_parser("organization", help="Interact with SingularityNET Organizations")
     add_organization_options(organization_p)
 
+    p = subparsers.add_parser("account", help="AGI account")
+    add_mpe_account_options(p)
     mpe_client_p = subparsers.add_parser("client", help="Interact with SingularityNET services")
     add_mpe_client_options(mpe_client_p)
 
@@ -342,39 +345,15 @@ def add_p_service_in_registry(p):
     p.add_argument("service_id",      help="Id of service")
 
 
-def add_mpe_client_options(parser):
-    parser.set_defaults(cmd=MPEClientCommand)
+def add_mpe_account_options(parser):
+    parser.set_defaults(cmd=MPEAccountCommand)
     subparsers = parser.add_subparsers(title="Commands", metavar="COMMAND")
     subparsers.required = True
-
-    def add_p_channel_id(p):
-        # int is ok here because in python3 int is unlimited
-        p.add_argument("channel_id", type=int, help="channel_id")
-    def add_p_endpoint(p):
-        p.add_argument("endpoint",             help="service endpoint")
-    def add_p_full_service_for_call(p):
-        add_p_endpoint(p)
-        p.add_argument("--service", default=None, help="name of protobuf service to call. It should be specified in case of method name conflict.")
-        p.add_argument("method",                  help="target service's method name to call")
-        p.add_argument("params", nargs='?',       help="json-serialized parameters object or path containing "
-                                                "json-serialized parameters object (leave emtpy to read from stdin)")
-    def add_p_full_message(p):
-        add_p_mpe_address_opt(p)
-        add_p_channel_id(p)
-        p.add_argument("nonce",      type=int, help="nonce of the channel")
-        p.add_argument("amount",     type=int, help="amount")
 
     def add_p_snt_address_opt(p):
         p.add_argument("--singularitynettoken-at", "--snt", default=None,  help="address of SingularityNetToken contract, if not specified we read address from \"networks\"")
 
-    def add_p_open_channel_basic(p):
-        p.add_argument("amount",         type=stragi2cogs, help="amount of AGI tokens to put in the new channel")
-        p.add_argument("expiration",     type=int, help="expiration time (in blocks) for the new channel (one block ~ 15 seconds)")
-        p.add_argument("--group-name", default=None, help="name of payment group for which we want to open the channel. Parameter should be specified only for services with several payment groups")
-        add_p_mpe_address_opt(p)
-        add_transaction_arguments(p)
-
-    p = subparsers.add_parser("account", help="print the currect ETH account")
+    p = subparsers.add_parser("print", help="print the currect ETH account")
     p.set_defaults(fn="print_account")
     add_eth_call_arguments(p)
 
@@ -404,6 +383,36 @@ def add_mpe_client_options(parser):
     p.add_argument("amount",   type=stragi2cogs, help="amount of AGI tokens to be transfered to another account inside MPE wallet")
     add_p_mpe_address_opt(p)
     add_transaction_arguments(p)
+
+
+def add_mpe_client_options(parser):
+    parser.set_defaults(cmd=MPEClientCommand)
+    subparsers = parser.add_subparsers(title="Commands", metavar="COMMAND")
+    subparsers.required = True
+
+    def add_p_channel_id(p):
+        # int is ok here because in python3 int is unlimited
+        p.add_argument("channel_id", type=int, help="channel_id")
+    def add_p_endpoint(p):
+        p.add_argument("endpoint",             help="service endpoint")
+    def add_p_full_service_for_call(p):
+        add_p_endpoint(p)
+        p.add_argument("--service", default=None, help="name of protobuf service to call. It should be specified in case of method name conflict.")
+        p.add_argument("method",                  help="target service's method name to call")
+        p.add_argument("params", nargs='?',       help="json-serialized parameters object or path containing "
+                                                "json-serialized parameters object (leave emtpy to read from stdin)")
+    def add_p_full_message(p):
+        add_p_mpe_address_opt(p)
+        add_p_channel_id(p)
+        p.add_argument("nonce",      type=int, help="nonce of the channel")
+        p.add_argument("amount",     type=int, help="amount")
+
+    def add_p_open_channel_basic(p):
+        p.add_argument("amount",         type=stragi2cogs, help="amount of AGI tokens to put in the new channel")
+        p.add_argument("expiration",     type=int, help="expiration time (in blocks) for the new channel (one block ~ 15 seconds)")
+        p.add_argument("--group-name", default=None, help="name of payment group for which we want to open the channel. Parameter should be specified only for services with several payment groups")
+        add_p_mpe_address_opt(p)
+        add_transaction_arguments(p)
 
     p = subparsers.add_parser("init_channel_metadata", help="Initialize channel using service metadata")
     p.set_defaults(fn="init_channel_from_metadata")
