@@ -7,8 +7,6 @@ import web3
 
 class MPEServiceCommand(BlockchainCommand):
 
-    # I. Low level functions
-
     # publis proto files in ipfs and print hash
     def publish_proto_in_ipfs(self):
         ipfs_hash_base58 = utils_ipfs.publish_proto_in_ipfs(self._get_ipfs_client(), self.args.protodir)
