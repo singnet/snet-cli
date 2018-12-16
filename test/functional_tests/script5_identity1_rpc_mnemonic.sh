@@ -13,6 +13,8 @@ assert_mpe_balance () {
 # this should fail because snet-user should be in use now
 snet identity delete snet-user && exit 1 || echo "fail as expected"
 
+snet identity create key0 key --private-key 0xc71478a6d0fe44e763649de0a0deb5a080b788eefbbcf9c6f7aef0dd5dbd67e0 --network local
+
 snet identity create rpc0 rpc --network local
 snet identity rpc0
 
@@ -56,6 +58,11 @@ snet identity rpc0
 # A0 -> M1 0.1
 snet account transfer $M1 0.1 -y
 assert_mpe_balance $M1 0.1
+
+# A0 -> M1 0.2
+snet identity key0
+snet account transfer $M1 0.1 -y
+assert_mpe_balance $M1 0.2
 
 snet identity snet-user
 snet identity delete rpc0

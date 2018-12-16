@@ -36,14 +36,14 @@ nohup ./node_modules/.bin/ganache-cli --mnemonic 'gauge enact biology destroy no
 rm -rf ~/.snet
 
 # IV. Configure SNET-CLI.
+# Add local network and switch to it
+snet network create local http://localhost:8545
 
 # Create First identity (snet-user = first ganache)
 # We will automatically create new configuration file with default values
-snet identity create snet-user key --private-key 0xc71478a6d0fe44e763649de0a0deb5a080b788eefbbcf9c6f7aef0dd5dbd67e0
+snet identity create snet-user rpc --network local
 
-# Add local network and switch to it
-snet network create local http://localhost:8545
-snet network local
+snet identity snet-user
 
 # set correct ipfs endpoint
 snet set  default_ipfs_endpoint http://localhost:5002

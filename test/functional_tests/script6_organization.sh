@@ -44,8 +44,6 @@ snet organization change-owner test2 0x3b2b3C2e2E7C93db335E69D827F3CC4bC2A2A2cB 
 snet organization change-owner test2 0x3b2b3C2e2E7C93db335E69D827F3CC4bC2A2A2cB -y && exit 1 || echo "fail as expected"
 snet organization add-members test2 0x32267d505B1901236508DcDa64C1D0d5B9DF639a -y && exit 1 || echo "fail as expected"
 
-snet identity create __rpc_user rpc --network local
-snet identity __rpc_user
 # this should work because owner is the second account
 snet organization add-members test2 0x32267d505B1901236508DcDa64C1D0d5B9DF639a --wallet-index 1 -y
 
