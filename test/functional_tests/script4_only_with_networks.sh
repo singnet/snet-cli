@@ -15,7 +15,7 @@ snet unset current_registry_at            || echo "could fail if hasn't been set
 snet unset current_multipartyescrow_at    || echo "could fail if hasn't been set (it is ok)"
 
 # this should fail without addresses
-snet client balance && exit 1 || echo "fail as expected"
+snet account balance && exit 1 || echo "fail as expected"
 snet organization create testo --org-id testo -y -q  && exit 1 || echo "fail as expected"
 
 
@@ -26,25 +26,25 @@ echo '{"829257324":{"events":{},"links":{},"address":"0x6e5f20669177f5bdf3703ec5
 
 
 # this should work
-snet client balance 
+snet account balance
 snet organization create testo --org-id testo -y -q
 snet organization delete testo -y -q
 
 # this should fail (addresses are INVALID)
 snet organization create testo --org-id testo -y -q --registry-at 0x1e74fefa82e83e0964f0d9f53c68e03f7298a8b2 && exit 1 || echo "fail as expected"
-snet client balance --snt 0x1e5f20669177f5bdf3703ec5ea9c4d4fe3aabd14 --mpe 0x5c7a4290f6f8ff64c69eeffdfafc8644a4ec3a4e && exit 1 || echo "fail as expected"
+snet account balance --snt 0x1e5f20669177f5bdf3703ec5ea9c4d4fe3aabd14 --mpe 0x5c7a4290f6f8ff64c69eeffdfafc8644a4ec3a4e && exit 1 || echo "fail as expected"
 
 # set INVALID addresses
 snet set current_singularitynettoken_at 0x1e5f20669177f5bdf3703ec5ea9c4d4fe3aabd14
 snet set current_registry_at            0x1e74fefa82e83e0964f0d9f53c68e03f7298a8b2
 snet set current_multipartyescrow_at    0x1c7a4290f6f8ff64c69eeffdfafc8644a4ec3a4e
 
-# this should fail because INVALID address 
-snet client balance && exit 1 || echo "fail as expected"
+# this should fail because INVALID address
+snet account balance && exit 1 || echo "fail as expected"
 snet organization create testo --org-id testo -y -q  && exit 1 || echo "fail as expected"
 
 # this should work because command line has more priority
-snet client balance --snt 0x6e5f20669177f5bdf3703ec5ea9c4d4fe3aabd14 --mpe 0x5c7a4290f6f8ff64c69eeffdfafc8644a4ec3a4e
+snet account balance --snt 0x6e5f20669177f5bdf3703ec5ea9c4d4fe3aabd14 --mpe 0x5c7a4290f6f8ff64c69eeffdfafc8644a4ec3a4e
 snet organization create testo --org-id testo -y -q --registry-at 0x4e74fefa82e83e0964f0d9f53c68e03f7298a8b2
 snet organization delete testo                -y -q --registry-at 0x4e74fefa82e83e0964f0d9f53c68e03f7298a8b2
 
@@ -55,7 +55,7 @@ echo '{"829257324":{"events":{},"links":{},"address":"0x1e74fefa82e83e0964f0d9f5
 echo '{"829257324":{"events":{},"links":{},"address":"0x1e5f20669177f5bdf3703ec5ea9c4d4fe3aabd14","transactionHash":""}}' > ../../snet_cli/resources/contracts/networks/SingularityNetToken.json
 
 # this should fail (because addresses in networks are invalid )
-snet client balance && exit 1 || echo "fail as expected"
+snet account balance && exit 1 || echo "fail as expected"
 snet organization create testo --org-id testo -y -q  && exit 1 || echo "fail as expected"
 
 # set VALID session
@@ -64,7 +64,7 @@ snet set current_registry_at            0x4e74fefa82e83e0964f0d9f53c68e03f7298a8
 snet set current_multipartyescrow_at    0x5c7a4290f6f8ff64c69eeffdfafc8644a4ec3a4e
 
 # this should work
-snet client balance 
+snet account balance
 snet organization create testo --org-id testo -y -q
 snet organization delete testo -y -q
 
@@ -74,10 +74,10 @@ snet set current_registry_at            0x1e74fefa82e83e0964f0d9f53c68e03f7298a8
 snet set current_multipartyescrow_at    0x1c7a4290f6f8ff64c69eeffdfafc8644a4ec3a4e
 
 # this should fail (because addresses in networks are invalid )
-snet client balance && exit 1 || echo "fail as expected"
+snet account balance && exit 1 || echo "fail as expected"
 snet organization create testo --org-id testo -y -q  && exit 1 || echo "fail as expected"
 
 # this should work because command line has more priority
-snet client balance --snt 0x6e5f20669177f5bdf3703ec5ea9c4d4fe3aabd14 --mpe 0x5c7a4290f6f8ff64c69eeffdfafc8644a4ec3a4e
+snet account balance --snt 0x6e5f20669177f5bdf3703ec5ea9c4d4fe3aabd14 --mpe 0x5c7a4290f6f8ff64c69eeffdfafc8644a4ec3a4e
 snet organization create testo --org-id testo -y -q --registry-at 0x4e74fefa82e83e0964f0d9f53c68e03f7298a8b2
 snet organization delete testo                -y -q --registry-at 0x4e74fefa82e83e0964f0d9f53c68e03f7298a8b2

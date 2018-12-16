@@ -52,10 +52,10 @@ cmp ./service_spec1/ExampleService.proto _d3/ExampleService.proto
 rm -r _d1 _d2 _d3
 
 # client side
-snet client balance 
-snet client deposit 12345 -y -q
-snet client transfer 0x0067b427E299Eb2A4CBafc0B04C723F77c6d8a18 42 -y -q
-snet client withdraw 1 -y -q
+snet account balance
+snet account deposit 12345 -y -q
+snet account transfer 0x0067b427E299Eb2A4CBafc0B04C723F77c6d8a18 42 -y -q
+snet account withdraw 1 -y -q
 snet client open_init_channel_metadata 42 1 --group-name group1 -y  -q
 snet client channel_claim_timeout 0 -y -q
 # we do not send transaction second time
@@ -70,7 +70,7 @@ snet client print_all_channels |grep 0x42A605c07EdE0E1f648aB054775D6D4E38496144
 
 rm -rf ~/.snet/mpe_client/
 snet client init_channel_metadata 0
-snet client init_channel_registry testo tests 1 
+snet client init_channel_registry testo tests 1
 snet client print_initialized_channels
 snet client print_all_channels
 snet service delete testo tests -y -q

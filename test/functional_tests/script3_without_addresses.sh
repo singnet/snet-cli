@@ -13,7 +13,7 @@ snet unset current_multipartyescrow_at || echo "could fail if hasn't been set (i
 # now snet-cli will work only if we pass contract addresses as commandline arguments
 
 # this should fail without addresses
-snet client balance && exit 1 || echo "fail as expected"
+snet account balance && exit 1 || echo "fail as expected"
 snet organization create testo --org-id testo -y -q  && exit 1 || echo "fail as expected"
 
 
@@ -43,10 +43,10 @@ snet service print_metadata  testo tests --registry-at 0x4e74fefa82e83e0964f0d9f
 cmp <(jq -S . service_metadata.json) <(jq -S . service_metadata3.json)
 
 # client side
-snet client balance --snt 0x6e5f20669177f5bdf3703ec5ea9c4d4fe3aabd14 --mpe 0x5c7a4290f6f8ff64c69eeffdfafc8644a4ec3a4e
-snet client deposit 12345 -y -q --snt 0x6e5f20669177f5bdf3703ec5ea9c4d4fe3aabd14 --mpe 0x5c7a4290f6f8ff64c69eeffdfafc8644a4ec3a4e
-snet client transfer 0x0067b427E299Eb2A4CBafc0B04C723F77c6d8a18 42 -y -q --mpe 0x5c7a4290f6f8ff64c69eeffdfafc8644a4ec3a4e
-snet client withdraw 1 -y -q --mpe 0x5c7a4290f6f8ff64c69eeffdfafc8644a4ec3a4e
+snet account balance --snt 0x6e5f20669177f5bdf3703ec5ea9c4d4fe3aabd14 --mpe 0x5c7a4290f6f8ff64c69eeffdfafc8644a4ec3a4e
+snet account deposit 12345 -y -q --snt 0x6e5f20669177f5bdf3703ec5ea9c4d4fe3aabd14 --mpe 0x5c7a4290f6f8ff64c69eeffdfafc8644a4ec3a4e
+snet account transfer 0x0067b427E299Eb2A4CBafc0B04C723F77c6d8a18 42 -y -q --mpe 0x5c7a4290f6f8ff64c69eeffdfafc8644a4ec3a4e
+snet account withdraw 1 -y -q --mpe 0x5c7a4290f6f8ff64c69eeffdfafc8644a4ec3a4e
 snet client open_init_channel_metadata 42 1 --group-name group1 -y  -q --mpe 0x5c7a4290f6f8ff64c69eeffdfafc8644a4ec3a4e
 snet client channel_claim_timeout 0 -y -q  --mpe 0x5c7a4290f6f8ff64c69eeffdfafc8644a4ec3a4e
 snet client channel_extend_add 0 --expiration 10000 --amount 42 -y  -q  --mpe 0x5c7a4290f6f8ff64c69eeffdfafc8644a4ec3a4e
