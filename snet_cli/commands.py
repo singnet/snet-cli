@@ -325,7 +325,7 @@ class OrganizationCommand(BlockchainCommand):
     def info(self):
         org_id = self.args.org_id
         (found, org_id, org_name, owner, members, serviceNames, repositoryNames) = self._getorganizationbyid(org_id)
-        self.error_organization_not_found(org_id, found)
+        self.error_organization_not_found(self.args.org_id, found)
 
         self._printout("\nOrganization Name:\n - %s"%org_name)
         self._printout("\nOrganization Id:\n - %s"%bytes32_to_str(org_id))
