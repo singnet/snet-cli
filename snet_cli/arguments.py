@@ -413,6 +413,7 @@ def add_p_group_name(p):
 def add_p_open_channel_basic(p):
     p.add_argument("amount",         type=stragi2cogs, help="amount of AGI tokens to put in the new channel")
     p.add_argument("expiration",     type=int, help="expiration time (in blocks) for the new channel (one block ~ 15 seconds)")
+    p.add_argument("--signer", default=None, help="Signer for the channel (by default is equal to the sender)")
     add_p_group_name(p)
     add_p_mpe_address_opt(p)
     add_transaction_arguments(p)

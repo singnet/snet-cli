@@ -100,7 +100,12 @@ class MPEChannelCommand(MPEServiceCommand):
         group_id    = metadata.get_group_id(self.args.group_name)
         recipient   = metadata.get_payment_address(self.args.group_name)
 
-        channel_info = {"sender": self.ident.address, "signer": self.ident.address, "recipient": recipient, "groupId" : group_id}
+        if (self.args.signer):
+            signer = self.args.signer
+        else:
+            signer = self.ident.address
+
+        channel_info = {"sender": self.ident.address, "signer": signer, "recipient": recipient, "groupId" : group_id}
         params = [channel_info["signer"], channel_info["recipient"], channel_info["groupId"], self.args.amount, self.args.expiration]
         rez = self.transact_contract_command("MultiPartyEscrow", "openChannel", params)
 
