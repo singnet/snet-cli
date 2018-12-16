@@ -68,7 +68,46 @@ snet channel open-init  testo tests 1 1000000  --group-name group2 -y -q
 snet channel print-initialized | grep 0x42A605c07EdE0E1f648aB054775D6D4E38496144
 snet channel print-all-filter-sender |grep 0x42A605c07EdE0E1f648aB054775D6D4E38496144
 
+# we have two initilized channels one for group1 and anther for group1 (recipient=0x42A605c07EdE0E1f648aB054775D6D4E38496144)
+
+snet service metadata-init ./service_spec1/ ExampleService 0x52653A9091b5d5021bed06c5118D24b23620c529  --fixed-price 0.0001 --endpoints 8.8.8.8:2020 --metadata-file service_metadata2.json
+snet service publish testo tests2 -y -q --metadata-file service_metadata2.json
+
+snet channel open-init testo tests2 42 1 -y  -q --signer 0x3b2b3C2e2E7C93db335E69D827F3CC4bC2A2A2cB
+
+snet channel print-initialized-filter-group testo tests2
+snet channel print-initialized-filter-group testo tests2 |grep 0x52653A9091b5d5021bed06c5118D24b23620c529
+snet channel print-initialized-filter-group testo tests2 |grep 0x42A605c07EdE0E1f648aB054775D6D4E38496144 && exit 1 || echo "fail as expected"
+
+snet channel print-initialized
+snet channel print-initialized | grep 0x52653A9091b5d5021bed06c5118D24b23620c529
+snet channel print-initialized | grep 0x42A605c07EdE0E1f648aB054775D6D4E38496144
+
+snet channel print-initialized --only-id
+snet channel print-initialized --only-id | grep 0x42A605c07EdE0E1f648aB054775D6D4E38496144 && exit 1 || echo "fail as expected"
+
+snet channel print-initialized --filter-signer | grep 0x52653A9091b5d5021bed06c5118D24b23620c529 && exit 1 || echo "fail as expected"
+snet channel print-initialized --filter-signer --wallet-index 1 | grep 0x52653A9091b5d5021bed06c5118D24b23620c529
+
+snet channel  print-initialized-filter-group testo tests2
+snet channel  print-initialized-filter-group testo tests2 |grep 0x52653A9091b5d5021bed06c5118D24b23620c529
+
 rm -rf ~/.snet/mpe_client/
+
+snet channel print-all-filter-sender
+snet channel print-all-filter-sender | grep 0x52653A9091b5d5021bed06c5118D24b23620c529
+
+snet channel print-all-filter-recipient | grep 0x52653A9091b5d5021bed06c5118D24b23620c529 && exit 1 || echo "fail as expected"
+snet channel print-all-filter-recipient --wallet-index 9 |grep 0x52653A9091b5d5021bed06c5118D24b23620c529
+
+snet channel print-all-filter-group testo tests2 | grep 0x52653A9091b5d5021bed06c5118D24b23620c529
+snet channel print-all-filter-group testo tests2 | grep 0x42A605c07EdE0E1f648aB054775D6D4E38496144 && exit 1 || echo "fail as expected"
+
+snet channel print-all-filter-group testo tests --group-name group2 |grep 0x0067b427E299Eb2A4CBafc0B04C723F77c6d8a18
+
+snet channel print-all-filter-group-sender testo tests2 | grep 0x52653A9091b5d5021bed06c5118D24b23620c529
+snet channel print-all-filter-group-sender testo tests2 | grep 0x42A605c07EdE0E1f648aB054775D6D4E38496144 && exit 1 || echo "fail as expected"
+
 snet channel init-metadata 0
 snet channel init testo tests 1
 snet channel print-initialized
