@@ -131,7 +131,7 @@ def add_network_options(parser, config):
     p.set_defaults(fn="create")
     p.add_argument("network_name", help="name of network to create")
     p.add_argument("eth_rpc_endpoint", help="ethereum rpc endpoint")
-    p.add_argument("--default_gas_price", default=1000000000, type=int, help="default gas price for this network (in wei), default is 1000000000")
+    p.add_argument("--default-gas-price", default=1000000000, type=int, help="default gas price for this network (in wei), default is 1000000000")
     p.add_argument("--skip-check", action="store_true", help="skip check that eth_rpc_endpoint is valid")
 
 
@@ -333,7 +333,7 @@ def add_p_mpe_address_opt(p):
 
 
 def add_p_metadata_file_opt(p):
-    p.add_argument("--metadata_file", default="service_metadata.json", help="Service metadata json file (default service_metadata.json)")
+    p.add_argument("--metadata-file", default="service_metadata.json", help="Service metadata json file (default service_metadata.json)")
 
 
 def add_p_service_in_registry(p):
@@ -370,7 +370,7 @@ def add_mpe_client_options(parser):
     def add_p_open_channel_basic(p):
         p.add_argument("amount",         type=stragi2cogs, help="amount of AGI tokens to put in the new channel")
         p.add_argument("expiration",     type=int, help="expiration time (in blocks) for the new channel (one block ~ 15 seconds)")
-        p.add_argument("--group_name", default=None, help="name of payment group for which we want to open the channel. Parameter should be specified only for services with several payment groups")
+        p.add_argument("--group-name", default=None, help="name of payment group for which we want to open the channel. Parameter should be specified only for services with several payment groups")
         add_p_mpe_address_opt(p)
         add_transaction_arguments(p)
 
@@ -460,7 +460,7 @@ def add_mpe_client_options(parser):
     p = subparsers.add_parser("print_all_channels", help="Print all channels related to the current identity. It may take a long time.")
     p.set_defaults(fn="print_all_channels_my")
     add_p_mpe_address_opt(p)
-    p.add_argument("--from_block", type=int, default=0, help="Start searching from this block")
+    p.add_argument("--from-block", type=int, default=0, help="Start searching from this block")
 
     p = subparsers.add_parser("print_initialized_channels", help="Print initialized channels related to the current identity.")
     p.set_defaults(fn="print_initialized_channels_my")
@@ -485,12 +485,12 @@ def add_mpe_service_options(parser):
     add_p_mpe_address_opt(p)
     p.add_argument("display_name", help="Service display name")
     p.add_argument("payment_address", help="payment_address for the first payment group")
-    p.add_argument("--group_name", default="default_group", help="name of the first payment group")
+    p.add_argument("--group-name", default="default_group", help="name of the first payment group")
     p.add_argument("--encoding", default = "proto", choices=['proto', 'json'], help="Service encoding")
-    p.add_argument("--service_type", default = "grpc", choices=['grpc', 'jsonrpc', 'process'], help="Service type")
-    p.add_argument("--payment_expiration_threshold", type=int, default = 40320, help="Service expiration threshold in blocks (default is 40320 ~ one week with 15s/block)")
+    p.add_argument("--service-type", default = "grpc", choices=['grpc', 'jsonrpc', 'process'], help="Service type")
+    p.add_argument("--payment-expiration-threshold", type=int, default = 40320, help="Service expiration threshold in blocks (default is 40320 ~ one week with 15s/block)")
     p.add_argument("--endpoints", default=[], nargs='*', help="endpoints for the first group")
-    p.add_argument("--fixed_price",type=stragi2cogs, help="set fixed price in AGI token for all methods")
+    p.add_argument("--fixed-price",type=stragi2cogs, help="set fixed price in AGI token for all methods")
 
     p = subparsers.add_parser("metadata_set_fixed_price", help="Set pricing model as fixed price for all methods")
     p.set_defaults(fn="metadata_set_fixed_price")
@@ -506,7 +506,7 @@ def add_mpe_service_options(parser):
     p = subparsers.add_parser("metadata_add_endpoints", help="Add endpoints to the groups")
     p.set_defaults(fn="metadata_add_endpoints")
     p.add_argument("endpoints", nargs="+",  help="endpoints")
-    p.add_argument("--group_name", default=None, help="name of the payment group to which we want to add endpoints. Parameter should be specified in case of several payment groups")
+    p.add_argument("--group-name", default=None, help="name of the payment group to which we want to add endpoints. Parameter should be specified in case of several payment groups")
     add_p_metadata_file_opt(p)
 
     p = subparsers.add_parser("publish_in_ipfs", help="Publish metadata only in IPFS, without publising in Registry")

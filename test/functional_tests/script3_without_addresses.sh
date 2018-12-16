@@ -17,10 +17,10 @@ snet client balance && exit 1 || echo "fail as expected"
 snet organization create testo --org-id testo -y -q  && exit 1 || echo "fail as expected"
 
 
-snet service metadata_init ./service_spec1/ ExampleService 0x42A605c07EdE0E1f648aB054775D6D4E38496144  --encoding json --service_type jsonrpc --group_name group1 --mpe 0x5c7a4290f6f8ff64c69eeffdfafc8644a4ec3a4e
+snet service metadata_init ./service_spec1/ ExampleService 0x42A605c07EdE0E1f648aB054775D6D4E38496144  --encoding json --service-type jsonrpc --group-name group1 --mpe 0x5c7a4290f6f8ff64c69eeffdfafc8644a4ec3a4e
 snet service metadata_add_group group2 0x0067b427E299Eb2A4CBafc0B04C723F77c6d8a18
-snet service metadata_add_endpoints  8.8.8.8:2020 9.8.9.8:8080 --group_name group1
-snet service metadata_add_endpoints  8.8.8.8:22   1.2.3.4:8080 --group_name group2
+snet service metadata_add_endpoints  8.8.8.8:2020 9.8.9.8:8080 --group-name group1
+snet service metadata_add_endpoints  8.8.8.8:22   1.2.3.4:8080 --group-name group2
 snet service metadata_set_fixed_price 0.0001
 IPFS_HASH=$(snet service publish_in_ipfs)
 ipfs cat $IPFS_HASH > service_metadata2.json
@@ -47,10 +47,10 @@ snet client balance --snt 0x6e5f20669177f5bdf3703ec5ea9c4d4fe3aabd14 --mpe 0x5c7
 snet client deposit 12345 -y -q --snt 0x6e5f20669177f5bdf3703ec5ea9c4d4fe3aabd14 --mpe 0x5c7a4290f6f8ff64c69eeffdfafc8644a4ec3a4e
 snet client transfer 0x0067b427E299Eb2A4CBafc0B04C723F77c6d8a18 42 -y -q --mpe 0x5c7a4290f6f8ff64c69eeffdfafc8644a4ec3a4e
 snet client withdraw 1 -y -q --mpe 0x5c7a4290f6f8ff64c69eeffdfafc8644a4ec3a4e
-snet client open_init_channel_metadata 42 1 --group_name group1 -y  -q --mpe 0x5c7a4290f6f8ff64c69eeffdfafc8644a4ec3a4e
+snet client open_init_channel_metadata 42 1 --group-name group1 -y  -q --mpe 0x5c7a4290f6f8ff64c69eeffdfafc8644a4ec3a4e
 snet client channel_claim_timeout 0 -y -q  --mpe 0x5c7a4290f6f8ff64c69eeffdfafc8644a4ec3a4e
 snet client channel_extend_add 0 --expiration 10000 --amount 42 -y  -q  --mpe 0x5c7a4290f6f8ff64c69eeffdfafc8644a4ec3a4e
-snet client open_init_channel_registry  testo tests 1 1000000  --group_name group2 -y -q  --mpe 0x5c7a4290f6f8ff64c69eeffdfafc8644a4ec3a4e --registry 0x4e74fefa82e83e0964f0d9f53c68e03f7298a8b2
+snet client open_init_channel_registry  testo tests 1 1000000  --group-name group2 -y -q  --mpe 0x5c7a4290f6f8ff64c69eeffdfafc8644a4ec3a4e --registry 0x4e74fefa82e83e0964f0d9f53c68e03f7298a8b2
 snet client print_initialized_channels --mpe 0x5c7a4290f6f8ff64c69eeffdfafc8644a4ec3a4e
 snet client print_all_channels --mpe 0x5c7a4290f6f8ff64c69eeffdfafc8644a4ec3a4e
 rm -rf ~/.snet/mpe_client/

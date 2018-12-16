@@ -19,7 +19,7 @@ snet organization add-members test2 0x5c1011aB3C7f46EC5E78073D61DF6d002983F04a,0
 snet organization add-members test2 0x5c1011aB3C7f46EC5E78073D61DF6d002983F04a,0x42A605c07EdE0E1f648aB054775D6D4E38496144 -y | grep "No member was added"
 snet organization add-members test2 0x5c1011aB3C7f46EC5E78073D61DF6d002983F04a,0x42A605c07EdE0E1f648aB054775D6D4E38496144,0xc990EEAad8c943E3C6bA4cbcd8a54a949Fb83f78 -y
 
-snet service metadata_init ./service_spec1/ ExampleService 0x42A605c07EdE0E1f648aB054775D6D4E38496144  --encoding json --service_type jsonrpc --group_name group1
+snet service metadata_init ./service_spec1/ ExampleService 0x42A605c07EdE0E1f648aB054775D6D4E38496144  --encoding json --service-type jsonrpc --group-name group1
 snet service metadata_add_endpoints  8.8.8.8:22  1.2.3.4:8080
 snet service metadata_set_fixed_price 0.0001
 snet service publish test2 tests -y -q
