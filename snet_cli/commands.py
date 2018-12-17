@@ -286,7 +286,7 @@ class OrganizationCommand(BlockchainCommand):
     def _getorganizationbyid(self, org_id):
         org_id_bytes32 = type_converter("bytes32")(org_id)
         if (len(org_id_bytes32) > 32):
-            raise Exception("Your org_id is too long: len(org_id_bytes32)=%i"%(len(org_id_bytes32)))
+            raise Exception("Your org_id is too long, it should be 32 bytes or less. len(org_id_bytes32)=%i"%(len(org_id_bytes32)))
         return self.call_contract_command("Registry", "getOrganizationById", [org_id_bytes32])
 
     #TODO: It would be better to have standard nargs="+" in argparse for members.
@@ -363,7 +363,6 @@ class OrganizationCommand(BlockchainCommand):
 
     def delete(self):
         org_id = self.args.org_id
-        print(org_id)
         # Check if Organization exists
         (found,_,org_name,_,_,_,_) = self._getorganizationbyid(org_id)
         self.error_organization_not_found(org_id, found)
@@ -413,7 +412,6 @@ class OrganizationCommand(BlockchainCommand):
         self.error_organization_not_found(org_id, found)
 
         members = [member.lower() for member in members]
-        print(members)
         add_members = []
         for add_member in self.get_members_from_args():
             if add_member.lower() in members:

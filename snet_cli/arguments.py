@@ -453,7 +453,7 @@ def add_mpe_channel_options(parser):
     add_p_mpe_address_opt(p)
     add_transaction_arguments(p)
 
-    p = subparsers.add_parser("extend-add", help="Set new exporation for the channel and add funds")
+    p = subparsers.add_parser("extend-add", help="Set new expiration for the channel and add funds")
     p.set_defaults(fn="channel_extend_and_add_funds")
     add_p_channel_id(p)
     expiration_amount_g = p.add_argument_group(title="Expiration and amount")
