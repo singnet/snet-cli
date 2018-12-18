@@ -7,8 +7,10 @@ from pathlib import Path
 from snet_cli.commands import IdentityCommand, SessionCommand, NetworkCommand, ContractCommand, OrganizationCommand, VersionCommand
 from snet_cli.identity import get_identity_types
 from snet_cli.utils import type_converter, get_contract_def
-from snet_cli.mpe_client_command  import MPEClientCommand
+from snet_cli.mpe_account_command import MPEAccountCommand
 from snet_cli.mpe_service_command import MPEServiceCommand
+from snet_cli.mpe_channel_command import MPEChannelCommand
+from snet_cli.mpe_client_command  import MPEClientCommand
 from snet_cli.utils_agi2cogs import stragi2cogs
 from snet_cli.config import get_session_keys, get_session_network_keys_removable
 
@@ -72,6 +74,12 @@ def add_root_options(parser, config):
     organization_p = subparsers.add_parser("organization", help="Interact with SingularityNET Organizations")
     add_organization_options(organization_p)
 
+    p = subparsers.add_parser("account", help="AGI account")
+    add_mpe_account_options(p)
+
+    p = subparsers.add_parser("channel", help="Interact with SingularityNET payment channels")
+    add_mpe_channel_options(p)
+
     mpe_client_p = subparsers.add_parser("client", help="Interact with SingularityNET services")
     add_mpe_client_options(mpe_client_p)
 
@@ -131,7 +139,8 @@ def add_network_options(parser, config):
     p.set_defaults(fn="create")
     p.add_argument("network_name", help="name of network to create")
     p.add_argument("eth_rpc_endpoint", help="ethereum rpc endpoint")
-    p.add_argument("--default_gas_price", default=1000000000, type=int, help="default gas price for this network (in wei), default is 1000000000")
+    p.add_argument("--default-gas-price", default=1000000000, type=int, help="default gas price for this network (in wei), default is 1000000000")
+    p.add_argument("--skip-check", action="store_true", help="skip check that eth_rpc_endpoint is valid")
 
 
     network_names = config.get_all_networks_names()
@@ -179,63 +188,74 @@ def _add_organization_arguments(parser):
     add_contract_identity_arguments(parser, [("registry", "registry_at")])
 
 
+def add_p_org_id(p):
+    p.add_argument("org_id", help="Id of the Organization")
+
+
 def add_organization_options(parser):
     parser.set_defaults(cmd=OrganizationCommand)
 
     subparsers = parser.add_subparsers(title="organization commands", metavar="COMMAND")
     subparsers.required = True
 
-    p = subparsers.add_parser("list", help="List Organizations")
+    p = subparsers.add_parser("list", help="List of Organizations Ids")
     p.set_defaults(fn="list")
+    add_contract_identity_arguments(p, [("registry", "registry_at")])
+    add_eth_call_arguments(p)
+
+    p = subparsers.add_parser("list-org-names", help="List Organizations Names and Ids")
+    p.set_defaults(fn="list_orgnames")
+    add_contract_identity_arguments(p, [("registry", "registry_at")])
+    add_eth_call_arguments(p)
+
+    p = subparsers.add_parser("list-my", help="Print organization which has the current identity as the owner or as a member")
+    p.set_defaults(fn="list_my")
     add_contract_identity_arguments(p, [("registry", "registry_at")])
     add_eth_call_arguments(p)
 
     p = subparsers.add_parser("info", help="Organization's Informations")
     p.set_defaults(fn="info")
-    p.add_argument("name", help="Name of the Organization", metavar="ORG_NAME")
+    add_p_org_id(p)
     add_contract_identity_arguments(p, [("registry", "registry_at")])
     add_eth_call_arguments(p)
 
-    org_create_p = subparsers.add_parser("create", help="Create an Organization")
-    org_create_p.set_defaults(fn="create")
-    org_create_p.add_argument("name", help="Name of the Organization", metavar="ORG_NAME")
-    org_create_p.add_argument("--members",
-                              help="List of members to be added to the organization",
-                              metavar="ORG_MEMBERS[]")
-    _add_organization_arguments(org_create_p)
+    p = subparsers.add_parser("create", help="Create an Organization")
+    p.set_defaults(fn="create")
+    p.add_argument("org_name", help="Name of the Organization", metavar="ORG_NAME")
+    pm = p.add_mutually_exclusive_group(required=True)
+    pm.add_argument("--org-id", default=None, help="Unique organization Id")
+    pm.add_argument("--auto",   action='store_true', help="Generate organization Id (by default random id is generated)")
+    p.add_argument("--members", help="List of members to be added to the organization", metavar="ORG_MEMBERS[]")
+    _add_organization_arguments(p)
 
-    org_delete_p = subparsers.add_parser("delete", help="Delete an Organization")
-    org_delete_p.set_defaults(fn="delete")
-    org_delete_p.add_argument("name", help="Name of the Organization", metavar="ORG_NAME")
-    _add_organization_arguments(org_delete_p)
+    p = subparsers.add_parser("delete", help="Delete an Organization")
+    p.set_defaults(fn="delete")
+    add_p_org_id(p)
+    _add_organization_arguments(p)
 
     p = subparsers.add_parser("list-services", help="List Organization's services")
     p.set_defaults(fn="list_services")
-    p.add_argument("name", help="Name of the Organization", metavar="ORG_NAME")
+    add_p_org_id(p)
     add_contract_identity_arguments(p, [("registry", "registry_at")])
     add_eth_call_arguments(p)
 
-    org_change_owner_p = subparsers.add_parser("change-owner", help="Change Organization's owner")
-    org_change_owner_p.set_defaults(fn="change_owner")
-    org_change_owner_p.add_argument("name", help="Name of the Organization", metavar="ORG_NAME")
-    org_change_owner_p.add_argument("owner", help="Address of the new Organization's owner", metavar="OWNER_ADDRESS")
-    _add_organization_arguments(org_change_owner_p)
+    p = subparsers.add_parser("change-owner", help="Change Organization's owner")
+    p.set_defaults(fn="change_owner")
+    add_p_org_id(p)
+    p.add_argument("owner", help="Address of the new Organization's owner", metavar="OWNER_ADDRESS")
+    _add_organization_arguments(p)
 
-    org_add_members_p = subparsers.add_parser("add-members", help="Add members to Organization")
-    org_add_members_p.set_defaults(fn="add_members")
-    org_add_members_p.add_argument("name", help="Name of the Organization", metavar="ORG_NAME")
-    org_add_members_p.add_argument("members",
-                                   help="List of members to be added to the organization",
-                                   metavar="ORG_MEMBERS[]")
-    _add_organization_arguments(org_add_members_p)
+    p = subparsers.add_parser("add-members", help="Add members to Organization")
+    p.set_defaults(fn="add_members")
+    add_p_org_id(p)
+    p.add_argument("members", help="List of members to be added to the organization", metavar="ORG_MEMBERS[]")
+    _add_organization_arguments(p)
 
-    org_rm_members_p = subparsers.add_parser("rem-members", help="Remove members from Organization")
-    org_rm_members_p.set_defaults(fn="rem_members")
-    org_rm_members_p.add_argument("name", help="Name of the Organization", metavar="ORG_NAME")
-    org_rm_members_p.add_argument("members",
-                                  help="List of members to be removed from the organization",
-                                  metavar="ORG_MEMBERS[]")
-    _add_organization_arguments(org_rm_members_p)
+    p = subparsers.add_parser("rem-members", help="Remove members from Organization")
+    p.set_defaults(fn="rem_members")
+    add_p_org_id(p)
+    p.add_argument("members", help="List of members to be removed from the organization", metavar="ORG_MEMBERS[]")
+    _add_organization_arguments(p)
 
 
 def add_contract_function_options(parser, contract_name):
@@ -321,48 +341,24 @@ def add_p_mpe_address_opt(p):
 
 
 def add_p_metadata_file_opt(p):
-    p.add_argument("--metadata_file", default="service_metadata.json", help="Service metadata json file (default service_metadata.json)")
+    p.add_argument("--metadata-file", default="service_metadata.json", help="Service metadata json file (default service_metadata.json)")
 
 
 def add_p_service_in_registry(p):
     p.add_argument("--registry-at", "--registry", default=None, help="address of Registry contract, if not specified we read address from \"networks\"")
-    p.add_argument("organization", help="Name of organization")
-    p.add_argument("service",      help="Name of service")
+    add_p_org_id(p)
+    p.add_argument("service_id",      help="Id of service")
 
 
-def add_mpe_client_options(parser):
-    parser.set_defaults(cmd=MPEClientCommand)
+def add_mpe_account_options(parser):
+    parser.set_defaults(cmd=MPEAccountCommand)
     subparsers = parser.add_subparsers(title="Commands", metavar="COMMAND")
     subparsers.required = True
-
-    def add_p_channel_id(p):
-        # int is ok here because in python3 int is unlimited
-        p.add_argument("channel_id", type=int, help="channel_id")
-    def add_p_endpoint(p):        
-        p.add_argument("endpoint",             help="service endpoint")
-    def add_p_full_service_for_call(p):
-        add_p_endpoint(p)
-        p.add_argument("--service", default=None, help="name of protobuf service to call. It should be specified in case of method name conflict.")
-        p.add_argument("method",                  help="target service's method name to call")
-        p.add_argument("params", nargs='?',       help="json-serialized parameters object or path containing "
-                                                "json-serialized parameters object (leave emtpy to read from stdin)")        
-    def add_p_full_message(p):
-        add_p_mpe_address_opt(p)
-        add_p_channel_id(p)
-        p.add_argument("nonce",      type=int, help="nonce of the channel")
-        p.add_argument("amount",     type=int, help="amount")
 
     def add_p_snt_address_opt(p):
         p.add_argument("--singularitynettoken-at", "--snt", default=None,  help="address of SingularityNetToken contract, if not specified we read address from \"networks\"")
 
-    def add_p_open_channel_basic(p):
-        p.add_argument("amount",         type=stragi2cogs, help="amount of AGI tokens to put in the new channel")
-        p.add_argument("expiration",     type=int, help="expiration time (in blocks) for the new channel (one block ~ 15 seconds)")
-        p.add_argument("--group_name", default=None, help="name of payment group for which we want to open the channel. Parameter should be specified only for services with several payment groups")
-        add_p_mpe_address_opt(p)
-        add_transaction_arguments(p)
-
-    p = subparsers.add_parser("account", help="print the currect ETH account")
+    p = subparsers.add_parser("print", help="print the currect ETH account")
     p.set_defaults(fn="print_account")
     add_eth_call_arguments(p)
 
@@ -393,35 +389,71 @@ def add_mpe_client_options(parser):
     add_p_mpe_address_opt(p)
     add_transaction_arguments(p)
 
-    p = subparsers.add_parser("init_channel_metadata", help="Initialize channel using service metadata")
-    p.set_defaults(fn="init_channel_from_metadata")
-    add_p_metadata_file_opt(p)
+
+def add_p_channel_id(p):
+    # int is ok here because in python3 int is unlimited
+    p.add_argument("channel_id", type=int, help="channel_id")
+def add_p_endpoint(p):
+    p.add_argument("endpoint",             help="service endpoint")
+def add_p_full_service_for_call(p):
+    add_p_endpoint(p)
+    p.add_argument("--service", default=None, help="name of protobuf service to call. It should be specified in case of method name conflict.")
+    p.add_argument("method",                  help="target service's method name to call")
+    p.add_argument("params", nargs='?',       help="json-serialized parameters object or path containing "
+                                                "json-serialized parameters object (leave emtpy to read from stdin)")
+def add_p_full_message(p):
     add_p_mpe_address_opt(p)
     add_p_channel_id(p)
+    p.add_argument("nonce",      type=int, help="nonce of the channel")
+    p.add_argument("amount",     type=int, help="amount")
 
-    p = subparsers.add_parser("init_channel_registry", help="Initialize channel taking service metadata from Registry")
+def add_p_group_name(p):
+    p.add_argument("--group-name", default=None, help="name of the payment group. Parameter should be specified only for services with several payment groups")
+
+def add_p_open_channel_basic(p):
+    p.add_argument("amount",         type=stragi2cogs, help="amount of AGI tokens to put in the new channel")
+    p.add_argument("expiration",     type=int, help="expiration time (in blocks) for the new channel (one block ~ 15 seconds)")
+    p.add_argument("--signer", default=None, help="Signer for the channel (by default is equal to the sender)")
+    add_p_group_name(p)
+    add_p_mpe_address_opt(p)
+    add_transaction_arguments(p)
+
+
+def add_mpe_channel_options(parser):
+    parser.set_defaults(cmd=MPEChannelCommand)
+    subparsers = parser.add_subparsers(title="Commands", metavar="COMMAND")
+    subparsers.required = True
+
+    p = subparsers.add_parser("init", help="Initialize channel taking service metadata from Registry")
     p.set_defaults(fn="init_channel_from_registry")
     add_p_service_in_registry(p)
     add_p_mpe_address_opt(p)
     add_p_channel_id(p)
 
-    p = subparsers.add_parser("open_init_channel_metadata", help="Open and initilize channel using service metadata")
+    p = subparsers.add_parser("init-metadata", help="Initialize channel using service metadata")
+    p.set_defaults(fn="init_channel_from_metadata")
+    add_p_metadata_file_opt(p)
+    add_p_mpe_address_opt(p)
+    add_p_channel_id(p)
+    add_eth_call_arguments(p)
+
+    p = subparsers.add_parser("open-init", help="Open and initilize channel using metadata from Registry")
+    p.set_defaults(fn="open_init_channel_from_registry")
+    add_p_service_in_registry(p)
+    add_p_open_channel_basic(p)
+
+    p = subparsers.add_parser("open-init-metadata", help="Open and initilize channel using service metadata")
     p.set_defaults(fn="open_init_channel_from_metadata")
     add_p_open_channel_basic(p)
     add_p_metadata_file_opt(p)
 
-    p = subparsers.add_parser("open_init_channel_registry", help="Open and initilize channel using metadata from Registry")
-    p.set_defaults(fn="open_init_channel_from_registry")
-    add_p_service_in_registry(p)
-    add_p_open_channel_basic(p)
-    
-    p = subparsers.add_parser("channel_claim_timeout", help="Claim timeout of the channel")
+    p = subparsers.add_parser("claim-timeout", help="Claim timeout of the channel")
     p.set_defaults(fn="channel_claim_timeout")
     add_p_channel_id(p)
     add_p_mpe_address_opt(p)
     add_transaction_arguments(p)
 
-    p = subparsers.add_parser("channel_extend_add", help="Set new exporation for the channel and add funds")
+    p = subparsers.add_parser("extend-add", help="Set new expiration for the channel and add funds")
     p.set_defaults(fn="channel_extend_and_add_funds")
     add_p_channel_id(p)
     expiration_amount_g = p.add_argument_group(title="Expiration and amount")
@@ -430,75 +462,134 @@ def add_mpe_client_options(parser):
     add_p_mpe_address_opt(p)
     add_transaction_arguments(p)
 
+    p = subparsers.add_parser("block-number", help="Print the last ethereum block number")
+    p.set_defaults(fn="print_block_number")
+
+    def add_p_only_id(p):
+        p.add_argument("--only-id",     action='store_true', help="Print only id of channels")
+
+    def add_p_only_sender_signer(p):
+        pm = p.add_mutually_exclusive_group(required=False)
+        pm.add_argument("--filter-sender", action='store_true', help="Print only channels in which current identity is sender")
+        pm.add_argument("--filter-signer", action='store_true', help="Print only channels in which current identity is signer")
+        pm.add_argument("--filter-my",     action='store_true', help="Print only channels in which current identity is sender or signer")
+
+    p = subparsers.add_parser("print-initialized", help="Print initialized channels.")
+    p.set_defaults(fn="print_initialized_channels")
+    add_p_only_id(p)
+    add_p_only_sender_signer(p)
+    add_p_mpe_address_opt(p)
+    add_eth_call_arguments(p)
+
+    p = subparsers.add_parser("print-initialized-filter-group", help="Print initialized channels for the given service (given payment group).")
+    p.set_defaults(fn="print_initialized_channels_filter_group")
+    add_p_service_in_registry(p)
+    add_p_only_id(p)
+    add_p_only_sender_signer(p)
+    add_p_mpe_address_opt(p)
+    add_eth_call_arguments(p)
+    add_p_group_name(p)
+
+    def add_p_from_block(p):
+        p.add_argument("--from-block", type=int, default=0, help="Start searching from this block")
+
+    p = subparsers.add_parser("print-all-filter-sender", help="Print all channels for the given sender.")
+    p.set_defaults(fn="print_all_channels_filter_sender")
+    add_p_only_id(p)
+    add_p_mpe_address_opt(p)
+    add_p_from_block(p)
+    add_eth_call_arguments(p)
+
+    p = subparsers.add_parser("print-all-filter-recipient", help="Print all channels for the given recipient.")
+    p.set_defaults(fn="print_all_channels_filter_recipient")
+    add_p_only_id(p)
+    add_p_mpe_address_opt(p)
+    add_p_from_block(p)
+    add_eth_call_arguments(p)
+
+    p = subparsers.add_parser("print-all-filter-group", help="Print all channels for the given service.")
+    p.set_defaults(fn="print_all_channels_filter_group")
+    add_p_service_in_registry(p)
+    add_p_group_name(p)
+    add_p_only_id(p)
+    add_p_mpe_address_opt(p)
+    add_p_from_block(p)
+    add_eth_call_arguments(p)
+
+    p = subparsers.add_parser("print-all-filter-group-sender", help="Print all channels for the given group and sender.")
+    p.set_defaults(fn="print_all_channels_filter_group_sender")
+    add_p_service_in_registry(p)
+    add_p_group_name(p)
+    add_p_only_id(p)
+    add_p_mpe_address_opt(p)
+    add_p_from_block(p)
+    add_eth_call_arguments(p)
+
+
+def add_mpe_client_options(parser):
+    parser.set_defaults(cmd=MPEClientCommand)
+    subparsers = parser.add_subparsers(title="Commands", metavar="COMMAND")
+    subparsers.required = True
+
     p = subparsers.add_parser("call", help="call server in stateless manner. We ask state of the channel from the server. Channel should be already initialized.")
     p.set_defaults(fn="call_server_statelessly")
     add_p_channel_id(p)
     p.add_argument("price",     type=stragi2cogs, help="price for this call in AGI tokens")
-    add_p_full_service_for_call(p)                                                
+    add_p_full_service_for_call(p)
     add_p_mpe_address_opt(p)
-    
-    p = subparsers.add_parser("call_lowlevel", help="Low level function for calling the server. Channel should be already initialized.")
+    add_eth_call_arguments(p)
+
+    p = subparsers.add_parser("call-lowlevel", help="Low level function for calling the server. Channel should be already initialized.")
     p.set_defaults(fn="call_server_lowlevel")
     add_p_full_message(p)
     add_p_full_service_for_call(p)
-    
-    p = subparsers.add_parser("block_number", help="Print the last ethereum block number")
-    p.set_defaults(fn="print_block_number")
+    add_eth_call_arguments(p)
 
-    p = subparsers.add_parser("print_all_channels", help="Print all channels related to the current identity. It may take a long time.")
-    p.set_defaults(fn="print_all_channels_my")
-    add_p_mpe_address_opt(p)
-    p.add_argument("--from_block", type=int, default=0, help="Start searching from this block")
-
-    p = subparsers.add_parser("print_initialized_channels", help="Print initialized channels related to the current identity.")
-    p.set_defaults(fn="print_initialized_channels_my")
-    add_p_mpe_address_opt(p)
-
-    p = subparsers.add_parser("get_channel_state", help="Get channel state in stateless manner")
+    p = subparsers.add_parser("get-channel-state", help="Get channel state in stateless manner")
     p.set_defaults(fn="print_channel_state_statelessly")
     add_p_mpe_address_opt(p)
     add_p_channel_id(p)
     add_p_endpoint(p)
+    add_eth_call_arguments(p)
 
 
 def add_mpe_service_options(parser):
     parser.set_defaults(cmd=MPEServiceCommand)
     subparsers = parser.add_subparsers(title="Commands", metavar="COMMAND")
     subparsers.required = True
-    
-    def add_p_protodir(p):
-        p.add_argument("protodir",     help="Directory which contains protobuf files")
 
-    p = subparsers.add_parser("metadata_init", help="Init metadata file with providing protobuf directory (which we publish in IPFS) and display_name (optionally encoding, service_type and payment_expiration_threshold)")
+    p = subparsers.add_parser("metadata-init", help="Init metadata file with providing protobuf directory (which we publish in IPFS) and display_name (optionally encoding, service_type and payment_expiration_threshold)")
     p.set_defaults(fn="publish_proto_metadata_init")
-    add_p_protodir(p)
+    p.add_argument("protodir",     help="Directory which contains protobuf files")
     add_p_metadata_file_opt(p)
     add_p_mpe_address_opt(p)
     p.add_argument("display_name", help="Service display name")
     p.add_argument("payment_address", help="payment_address for the first payment group")
-    p.add_argument("--group_name", default="default_group", help="name of the first payment group")
+    p.add_argument("--group-name", default="default_group", help="name of the first payment group")
     p.add_argument("--encoding", default = "proto", choices=['proto', 'json'], help="Service encoding")
-    p.add_argument("--service_type", default = "grpc", choices=['grpc', 'jsonrpc', 'process'], help="Service type")
-    p.add_argument("--payment_expiration_threshold", type=int, default = 40320, help="Service expiration threshold in blocks (default is 40320 ~ one week with 15s/block)")
+    p.add_argument("--service-type", default = "grpc", choices=['grpc', 'jsonrpc', 'process'], help="Service type")
+    p.add_argument("--payment-expiration-threshold", type=int, default = 40320, help="Service expiration threshold in blocks (default is 40320 ~ one week with 15s/block)")
+    p.add_argument("--endpoints", default=[], nargs='*', help="endpoints for the first group")
+    p.add_argument("--fixed-price",type=stragi2cogs, help="set fixed price in AGI token for all methods")
 
-    p = subparsers.add_parser("metadata_set_fixed_price", help="Set pricing model as fixed price for all methods")
+    p = subparsers.add_parser("metadata-set-fixed-price", help="Set pricing model as fixed price for all methods")
     p.set_defaults(fn="metadata_set_fixed_price")
     p.add_argument("price", type = stragi2cogs, help="set fixed price in AGI token for all methods")
     add_p_metadata_file_opt(p)
 
-    p = subparsers.add_parser("metadata_add_group", help="Add new group of replicas")
+    p = subparsers.add_parser("metadata-add-group", help="Add new group of replicas")
     p.set_defaults(fn="metadata_add_group")
     add_p_metadata_file_opt(p)
     p.add_argument("group_name", help="name of the new payment group")
     p.add_argument("payment_address", help="payment_address for this group")
- 
-    p = subparsers.add_parser("metadata_add_endpoints", help="Add endpoints to the groups")
+
+    p = subparsers.add_parser("metadata-add-endpoints", help="Add endpoints to the groups")
     p.set_defaults(fn="metadata_add_endpoints")
     p.add_argument("endpoints", nargs="+",  help="endpoints")
-    p.add_argument("--group_name", default=None, help="name of the payment group to which we want to add endpoints. Parameter should be specified in case of several payment groups")
+    p.add_argument("--group-name", default=None, help="name of the payment group to which we want to add endpoints. Parameter should be specified in case of several payment groups")
     add_p_metadata_file_opt(p)
- 
-    p = subparsers.add_parser("publish_in_ipfs", help="Publish metadata only in IPFS, without publising in Registry")
+
+    p = subparsers.add_parser("publish-in-ipfs", help="Publish metadata only in IPFS, without publising in Registry")
     p.set_defaults(fn="publish_metadata_in_ipfs")
     add_p_metadata_file_opt(p)
 
@@ -509,31 +600,44 @@ def add_mpe_service_options(parser):
     p.add_argument("--tags", nargs="*", default=[], help="tags for service")
     add_transaction_arguments(p)
 
-    p = subparsers.add_parser("update_metadata", help="Publish metadata in IPFS and update existed service")
+    p = subparsers.add_parser("update-metadata", help="Publish metadata in IPFS and update existed service")
     p.set_defaults(fn="publish_metadata_in_ipfs_and_update_registration")
     add_p_service_in_registry(p)
     add_p_metadata_file_opt(p)
     add_transaction_arguments(p)
 
-    p = subparsers.add_parser("update_add_tags", help="Add tags to existed service registration")
+    p = subparsers.add_parser("update-add-tags", help="Add tags to existed service registration")
     p.set_defaults(fn="update_registration_add_tags")
     add_p_service_in_registry(p)
     p.add_argument("tags", nargs="+", default=[], help="tags which will be add")
     add_transaction_arguments(p)
 
-    p = subparsers.add_parser("update_remove_tags", help="Remove tags from existed service registration")
+    p = subparsers.add_parser("update-remove-tags", help="Remove tags from existed service registration")
     p.set_defaults(fn="update_registration_remove_tags")
     add_p_service_in_registry(p)
     p.add_argument("tags", nargs="+", default=[], help="tags which will be removed")
     add_transaction_arguments(p)
 
-    p = subparsers.add_parser("print_metadata", help="Print service metadata from registry")
+    p = subparsers.add_parser("print-metadata", help="Print service metadata from registry")
     p.set_defaults(fn="print_service_metadata_from_registry")
     add_p_service_in_registry(p)
 
-    p = subparsers.add_parser("print_tags", help="Print tags for given service from registry")
+    p = subparsers.add_parser("print-tags", help="Print tags for given service from registry")
     p.set_defaults(fn="print_service_tags_from_registry")
     add_p_service_in_registry(p)
+
+    def add_p_protodir_to_extract(p):
+        p.add_argument("protodir",     help="Directory to which extract api (model)")
+
+    p = subparsers.add_parser("get-api-metadata", help="Extract service api (model) to the given protodir. Get model_ipfs_hash from metadata")
+    p.set_defaults(fn="extract_service_api_from_metadata")
+    add_p_protodir_to_extract(p)
+    add_p_metadata_file_opt(p)
+
+    p = subparsers.add_parser("get-api-registry", help="Extract service api (model) to the given protodir. Get metadata from registry")
+    p.set_defaults(fn="extract_service_api_from_registry")
+    add_p_service_in_registry(p)
+    add_p_protodir_to_extract(p)
 
     p = subparsers.add_parser("delete", help="Delete service registration from registry")
     p.set_defaults(fn="delete_service_registration")

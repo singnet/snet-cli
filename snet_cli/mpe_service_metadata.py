@@ -66,7 +66,7 @@ class MPEServiceMetadata:
                  
     # return new group_id in base64
     def add_group(self, group_name, payment_address):
-        if (self._is_group_present(group_name)):
+        if (self.is_group_name_exists(group_name)):
             raise Exception("the group \"%s\" is already present"%str(group_name))
         group_id_base64 = base64.b64encode(secrets.token_bytes(32))
         self.m["groups"] += [{"group_name"      : group_name , 
@@ -75,19 +75,28 @@ class MPEServiceMetadata:
         return group_id_base64
     
     def add_endpoint(self, group_name, endpoint):
-        if (not self._is_group_present(group_name)):
+        if (not self.is_group_name_exists(group_name)):
             raise Exception("the group %s is not present"%str(group_name))
         if (endpoint in self.get_all_endpoints()):
             raise Exception("the endpoint %s is already present"%str(endpoint))
         self.m["endpoints"] += [{"group_name" : group_name, "endpoint"   : endpoint}]
     
-    # check if group is already present
-    def _is_group_present(self, group_name):
+    # check if group with given name is already exists
+    def is_group_name_exists(self, group_name):
         groups = self.m["groups"]
         for g in groups:
             if (g["group_name"] == group_name):
                 return True
         return False
+
+    # return group with given group_id (return None if doesn't exists)
+    def get_group_by_group_id(self, group_id):
+        group_id_base64 = base64.b64encode(group_id).decode('ascii')
+        groups = self.m["groups"]
+        for g in groups:
+            if (g["group_id"] == group_id_base64):
+                return g
+        return None
 
     def get_json(self):
         return json.dumps(self.m)

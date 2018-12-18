@@ -3,7 +3,7 @@ import tarfile
 import glob
 import io
 import os
-
+import sys
 
 # make tar from protodir/*proto, and publish this tar in ipfs
 # return base58 encoded ipfs hash
@@ -32,7 +32,7 @@ def publish_proto_in_ipfs(ipfs_client, protodir):
 # We must check the hash becasue we cannot believe that ipfs_client wasn't been compromise
 def get_from_ipfs_and_checkhash(ipfs_client, ipfs_hash_base58):
     data  = ipfs_client.cat(ipfs_hash_base58)
-    print("!!! We must check that hash in IPFS is correct (we cannot be sure that ipfs is not compromized) !!! Please implement it !!!")
+    print("!!! We must check that hash in IPFS is correct (we cannot be sure that ipfs is not compromized) !!! Please implement it !!!", file=sys.stderr)
     return data
 
 # Convert in and from bytes uri format used in Registry contract
@@ -46,3 +46,20 @@ def bytesuri_to_hash(s):
     if (not s.startswith("ipfs://")):
         raise Exception("We support only ipfs uri in Registry")
     return s[7:]
+
+# tar files might be dangerous (see https://bugs.python.org/issue21109,
+# and https://docs.python.org/3/library/tarfile.html, TarFile.extractall warning)
+# we extract only simple files
+def safe_extract_proto_from_ipfs(ipfs_client, ipfs_hash, protodir):
+    spec_tar = get_from_ipfs_and_checkhash(ipfs_client, ipfs_hash)
+    with tarfile.open(fileobj=io.BytesIO(spec_tar)) as f:
+        for m in f.getmembers():
+            if (os.path.dirname(m.name) != ""):
+                raise Exception("tarball has directories. We do not support it.")
+            if (not m.isfile()):
+                raise Exception("tarball contains %s which is not a files"%m.name)
+            fullname = os.path.join(protodir, m.name)
+            if (os.path.exists(fullname)):
+                raise Exception("%s already exists."%fullname)
+        # now it is safe to call extractall
+        f.extractall(protodir)

@@ -1,7 +1,7 @@
 # Test "snet contracts"
 
-snet contract Registry --at 0x4e74fefa82e83e0964f0d9f53c68e03f7298a8b2 createOrganization ExampleOrganization1 '["0x3b2b3C2e2E7C93db335E69D827F3CC4bC2A2A2cB"]' --transact -y
-snet contract Registry createOrganization ExampleOrganization2 '["0x3b2b3C2e2E7C93db335E69D827F3CC4bC2A2A2cB","0x0067b427E299Eb2A4CBafc0B04C723F77c6d8a18"]' --transact -y
+snet contract Registry --at 0x4e74fefa82e83e0964f0d9f53c68e03f7298a8b2 createOrganization ExampleOrganization1 ExampleOrganization1 '["0x3b2b3C2e2E7C93db335E69D827F3CC4bC2A2A2cB"]' --transact -y
+snet contract Registry createOrganization ExampleOrganization2 ExampleOrganization2 '["0x3b2b3C2e2E7C93db335E69D827F3CC4bC2A2A2cB","0x0067b427E299Eb2A4CBafc0B04C723F77c6d8a18"]' --transact -y
 snet organization list 2>&1 | grep ExampleOrganization1
 snet organization list 2>&1 | grep ExampleOrganization2
 
@@ -21,8 +21,8 @@ REZ=`snet contract  MultiPartyEscrow --at 0x5c7a4290f6f8ff64c69eeffdfafc8644a4ec
 test $REZ = 2000000
 
 # We set expiration as current_block - 1
-EXPIRATION=$((`snet client block_number` - 1))
-snet contract MultiPartyEscrow --at 0x5c7a4290f6f8ff64c69eeffdfafc8644a4ec3a4e openChannel  0x3b2b3C2e2E7C93db335E69D827F3CC4bC2A2A2cB 420000 $EXPIRATION 0 0x3b2b3C2e2E7C93db335E69D827F3CC4bC2A2A2cB --transact -y
+EXPIRATION=$((`snet channel block-number` - 1))
+snet contract MultiPartyEscrow --at 0x5c7a4290f6f8ff64c69eeffdfafc8644a4ec3a4e openChannel  0x3b2b3C2e2E7C93db335E69D827F3CC4bC2A2A2cB 0x0067b427E299Eb2A4CBafc0B04C723F77c6d8a18 0 420000 $EXPIRATION --transact -y
 
 REZ=`snet contract MultiPartyEscrow nextChannelId`
 test $REZ = 1

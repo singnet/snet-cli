@@ -24,8 +24,8 @@ Functional tests are excecuted in the following environment (see
 * local ethereum network (ganache-cli with mnemonics "gauge enact biology destroy normal tunnel
 slight slide wide sauce ladder produce") is running, and snet-cli is
 configured to use it by default
-* There is already one identity in snet-cli. It is "private-key" identity
-called "snet-user", which corresponds to the first ganache identity.
+* There is already one identity in snet-cli. It is "rcp" identity
+called "snet-user", which by default corresponds to the first ganache identity.
 * snet-cli already know correct addreses for SingularityNetToken, Registry and MultiPartyEscrow contracts, so you shoundn't set them manualy
 
 Examples of tests can be found here: [functional_tests](functional_tests). You should add your tests in
