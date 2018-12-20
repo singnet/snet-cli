@@ -595,14 +595,19 @@ def add_mpe_service_options(parser):
     p.add_argument("--group-name", default=None, help="name of the payment group to which we want to add endpoints. Parameter should be specified in case of several payment groups")
     add_p_metadata_file_opt(p)
 
+    def add_p_publish_params(p):
+        add_p_metadata_file_opt(p)
+        p.add_argument("--update-mpe-address" , action='store_true', help="Update mpe_address in metadata before publishing them")
+        add_p_mpe_address_opt(p)
+
     p = subparsers.add_parser("publish-in-ipfs", help="Publish metadata only in IPFS, without publising in Registry")
     p.set_defaults(fn="publish_metadata_in_ipfs")
-    add_p_metadata_file_opt(p)
+    add_p_publish_params(p)
 
     p = subparsers.add_parser("publish", help="Publish service with given metadata")
     p.set_defaults(fn="publish_service_with_metadata")
+    add_p_publish_params(p)
     add_p_service_in_registry(p)
-    add_p_metadata_file_opt(p)
     p.add_argument("--tags", nargs="*", default=[], help="tags for service")
     add_transaction_arguments(p)
 
