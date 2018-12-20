@@ -13,6 +13,10 @@ class Config(ConfigParser):
         else:
             self.create_default_config()
 
+    def get_session_network_name(self):
+        session_network  = self["session"]["network"]
+        self._check_section("network.%s"%session_network)
+        return session_network
 
     def safe_get_session_identity_network_names(self):
         if ("identity" not in self["session"]):
@@ -21,8 +25,7 @@ class Config(ConfigParser):
         session_identity = self["session"]["identity"]
         self._check_section("identity.%s"%session_identity)
 
-        session_network  = self["session"]["network"]
-        self._check_section("network.%s"%session_network)
+        session_network  = self.get_session_network_name()
 
         network = self._get_identity_section(session_identity).get("network")
         if (network and network != session_network):
@@ -32,11 +35,12 @@ class Config(ConfigParser):
 
     def set_session_network(self, network, out_f):
         self._set_session_network(network, out_f)
-        session_identity = self["session"]["identity"]
-        identity_network =  self._get_identity_section(session_identity).get("network")
-        if (identity_network and identity_network != network):
-            print("Your new session network '%s' is incompatible with your current session identity '%s' "
-                  "(which is bind to network '%s'), please switch your identity"%(network, session_identity, identity_network), file=out_f);
+        if ("identity" in self["session"]):
+            session_identity = self["session"]["identity"]
+            identity_network =  self._get_identity_section(session_identity).get("network")
+            if (identity_network and identity_network != network):
+                print("Your new session network '%s' is incompatible with your current session identity '%s' "
+                      "(which is bind to network '%s'), please switch your identity"%(network, session_identity, identity_network), file=out_f);
 
     def _set_session_network(self, network, out_f):
         if (network not in self.get_all_networks_names()):
@@ -77,17 +81,17 @@ class Config(ConfigParser):
         return rez
 
     def set_session_field(self, key, value, out_f):
-        session_identity, session_network = self.safe_get_session_identity_network_names()
-
-        if (key in get_session_network_keys()):
+        if (key == "default_ipfs_endpoint"):
+            self.set_ipfs_endpoint(value)
+            print("set default_ipfs_endpoint=%s"%value, file=out_f)
+        elif (key in get_session_network_keys()):
+            session_network = self.get_session_network_name();
             self.set_network_field(session_network, key, value)
             print("set {}={} for network={}".format(key, value, session_network),  file=out_f)
         elif (key in get_session_identity_keys()):
+            session_identity, _ = self.safe_get_session_identity_network_names()
             self.set_identity_field(session_identity, key, value)
             print("set {}={} for identity={}".format(key, value, session_identity), file=out_f)
-        elif (key == "default_ipfs_endpoint"):
-            self.set_ipfs_endpoint(value)
-            print("set default_ipfs_endpoint=%s"%value, file=out_f)
         else:
             all_keys = get_session_network_keys() + get_session_identity_keys() + ["default_ipfs_endpoint"]
             raise Exception("key {} not in {}".format(key, all_keys))
