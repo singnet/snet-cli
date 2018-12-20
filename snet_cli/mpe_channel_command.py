@@ -218,13 +218,20 @@ class MPEChannelCommand(MPEServiceCommand):
         channels_ids  = [get_event_data(event_abi, l)["args"]["channelId"] for l in logs]
         return channels_ids
 
+    def get_address_from_arg_or_ident(self, arg):
+        if (arg):
+            return arg
+        return self.ident.address
+
     def print_all_channels_filter_sender(self):
-        address_padded = pad_hex(self.ident.address.lower(), 256)
+        address = self.get_address_from_arg_or_ident(self.args.sender)
+        address_padded = pad_hex(address.lower(), 256)
         channels_ids = self._get_all_filtered_channels([address_padded])
         self._print_channels_from_blockchain(channels_ids)
 
     def print_all_channels_filter_recipient(self):
-        address_padded = pad_hex(self.ident.address.lower(), 256)
+        address = self.get_address_from_arg_or_ident(self.args.recipient)
+        address_padded = pad_hex(address.lower(), 256)
         channels_ids = self._get_all_filtered_channels([None,address_padded])
         self._print_channels_from_blockchain(channels_ids)
 
@@ -236,7 +243,8 @@ class MPEChannelCommand(MPEServiceCommand):
         self._print_channels_from_blockchain(channels_ids)
 
     def print_all_channels_filter_group_sender(self):
-        address_padded = pad_hex(self.ident.address.lower(), 256)
+        address = self.get_address_from_arg_or_ident(self.args.sender)
+        address_padded = pad_hex(address.lower(), 256)
         metadata = self._get_service_metadata_from_registry()
         group_id = metadata.get_group_id(self.args.group_name)
         group_id_hex = "0x" + group_id.hex()

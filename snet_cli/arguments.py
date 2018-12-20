@@ -493,12 +493,16 @@ def add_mpe_channel_options(parser):
     def add_p_from_block(p):
         p.add_argument("--from-block", type=int, default=0, help="Start searching from this block")
 
+    def add_p_sender(p):
+        p.add_argument("--sender", default=None, help="Account to set as sender (by default we use the current identity)")
+
     p = subparsers.add_parser("print-all-filter-sender", help="Print all channels for the given sender.")
     p.set_defaults(fn="print_all_channels_filter_sender")
     add_p_only_id(p)
     add_p_mpe_address_opt(p)
     add_p_from_block(p)
     add_eth_call_arguments(p)
+    add_p_sender(p)
 
     p = subparsers.add_parser("print-all-filter-recipient", help="Print all channels for the given recipient.")
     p.set_defaults(fn="print_all_channels_filter_recipient")
@@ -506,6 +510,7 @@ def add_mpe_channel_options(parser):
     add_p_mpe_address_opt(p)
     add_p_from_block(p)
     add_eth_call_arguments(p)
+    p.add_argument("--recipient", default=None, help="Account to set as recipient (by default we use the current identity)")
 
     p = subparsers.add_parser("print-all-filter-group", help="Print all channels for the given service.")
     p.set_defaults(fn="print_all_channels_filter_group")
@@ -524,6 +529,7 @@ def add_mpe_channel_options(parser):
     add_p_mpe_address_opt(p)
     add_p_from_block(p)
     add_eth_call_arguments(p)
+    add_p_sender(p)
 
 
 def add_mpe_client_options(parser):
