@@ -10,7 +10,9 @@ import shutil
 import tempfile
 from snet_cli.utils_agi2cogs import cogs2stragi
 import pickle
-from snet_cli.contract import Contract
+from web3.utils.encoding import pad_hex
+from web3.utils.events import get_event_data
+
 
 # we inherit MPEServiceCommand because we need _get_service_metadata_from_registry
 class MPEChannelCommand(MPEServiceCommand):
@@ -206,33 +208,47 @@ class MPEChannelCommand(MPEServiceCommand):
         self._print_channels_from_blockchain(good_ids)
 
     # function for get all filtered chanels from blockchain logs
-    def _get_all_filtered_channels(self, argument_filters, from_block):
-        mpe_address = self.get_mpe_address()
-        abi = get_contract_def("MultiPartyEscrow")["abi"]
-        contract = Contract(self.w3, mpe_address, abi)
-        contract = contract.contract
-        filter = contract.events.ChannelOpen.createFilter(fromBlock=from_block, argument_filters=argument_filters)
-        events = filter.get_all_entries()
-        return [e["args"]["channelId"] for e in events]
+    def _get_all_filtered_channels(self, topics_without_signature):
+        mpe_address     = self.get_mpe_address()
+        event_signature = self.ident.w3.sha3(text="ChannelOpen(uint256,uint256,address,address,address,bytes32,uint256,uint256)").hex()
+        topics = [event_signature] + topics_without_signature
+        logs = self.ident.w3.eth.getLogs({"fromBlock" : self.args.from_block, "address"   : mpe_address, "topics"    : topics})
+        abi           = get_contract_def("MultiPartyEscrow")
+        event_abi     = abi_get_element_by_name(abi, "ChannelOpen")
+        channels_ids  = [get_event_data(event_abi, l)["args"]["channelId"] for l in logs]
+        return channels_ids
+
+    def get_address_from_arg_or_ident(self, arg):
+        if (arg):
+            return arg
+        return self.ident.address
 
     def print_all_channels_filter_sender(self):
-        channels_ids = self._get_all_filtered_channels({"sender":self.ident.address}, self.args.from_block)
+        address = self.get_address_from_arg_or_ident(self.args.sender)
+        address_padded = pad_hex(address.lower(), 256)
+        channels_ids = self._get_all_filtered_channels([address_padded])
         self._print_channels_from_blockchain(channels_ids)
 
     def print_all_channels_filter_recipient(self):
-        channels_ids = self._get_all_filtered_channels({"recipient":self.ident.address}, self.args.from_block)
+        address = self.get_address_from_arg_or_ident(self.args.recipient)
+        address_padded = pad_hex(address.lower(), 256)
+        channels_ids = self._get_all_filtered_channels([None,address_padded])
         self._print_channels_from_blockchain(channels_ids)
 
     def print_all_channels_filter_group(self):
         metadata = self._get_service_metadata_from_registry()
         group_id = metadata.get_group_id(self.args.group_name)
-        channels_ids = self._get_all_filtered_channels({"groupId": group_id}, self.args.from_block)
+        group_id_hex = "0x" + group_id.hex()
+        channels_ids = self._get_all_filtered_channels([None, None, group_id_hex])
         self._print_channels_from_blockchain(channels_ids)
 
     def print_all_channels_filter_group_sender(self):
+        address = self.get_address_from_arg_or_ident(self.args.sender)
+        address_padded = pad_hex(address.lower(), 256)
         metadata = self._get_service_metadata_from_registry()
         group_id = metadata.get_group_id(self.args.group_name)
-        channels_ids = self._get_all_filtered_channels({"groupId": group_id, "sender": self.ident.address}, self.args.from_block)
+        group_id_hex = "0x" + group_id.hex()
+        channels_ids = self._get_all_filtered_channels([address_padded, None, group_id_hex])
         self._print_channels_from_blockchain(channels_ids)
 
     #Auxilary functions

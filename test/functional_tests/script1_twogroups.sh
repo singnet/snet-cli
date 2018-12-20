@@ -99,6 +99,7 @@ snet channel print-all-filter-sender | grep 0x52653A9091b5d5021bed06c5118D24b236
 
 snet channel print-all-filter-recipient | grep 0x52653A9091b5d5021bed06c5118D24b23620c529 && exit 1 || echo "fail as expected"
 snet channel print-all-filter-recipient --wallet-index 9 |grep 0x52653A9091b5d5021bed06c5118D24b23620c529
+snet channel print-all-filter-recipient --recipient 0x52653A9091b5d5021bed06c5118D24b23620c529 |grep 0x52653A9091b5d5021bed06c5118D24b23620c529
 
 snet channel print-all-filter-group testo tests2 | grep 0x52653A9091b5d5021bed06c5118D24b23620c529
 snet channel print-all-filter-group testo tests2 | grep 0x42A605c07EdE0E1f648aB054775D6D4E38496144 && exit 1 || echo "fail as expected"
@@ -114,3 +115,12 @@ snet channel print-initialized
 snet channel print-all-filter-sender
 snet service delete testo tests -y -q
 snet organization list-services testo
+
+# open channel with sender=signer=0x32267d505B1901236508DcDa64C1D0d5B9DF639a
+
+snet account transfer 0x32267d505B1901236508DcDa64C1D0d5B9DF639a 1 -y -q
+snet channel open-init testo tests2 1 314156700003452 -y  -q --wallet-index 3
+snet channel print-all-filter-sender --sender 0x32267d505B1901236508DcDa64C1D0d5B9DF639a |grep 314156700003452
+snet channel print-all-filter-sender |grep 314156700003452 && exit 1 || echo "fail as expected"
+
+snet channel print-all-filter-group-sender testo tests2 --sender 0x32267d505B1901236508DcDa64C1D0d5B9DF639a |grep 314156700003452
