@@ -22,14 +22,14 @@ snet service metadata-add-group group2 0x0067b427E299Eb2A4CBafc0B04C723F77c6d8a1
 snet service metadata-add-endpoints  8.8.8.8:2020 9.8.9.8:8080 --group-name group1
 snet service metadata-add-endpoints  8.8.8.8:22   1.2.3.4:8080 --group-name group2
 snet service metadata-set-fixed-price 0.0001
-IPFS_HASH=$(snet service publish-in-ipfs)
+IPFS_HASH=$(snet service publish-in-ipfs --mpe 0x5c7a4290f6f8ff64c69eeffdfafc8644a4ec3a4e)
 ipfs cat $IPFS_HASH > service_metadata2.json
 
 # compare service_metadata.json and service_metadata2.json
 cmp <(jq -S . service_metadata.json) <(jq -S . service_metadata2.json)
 
 snet organization create testo --org-id testo -y -q --registry-at 0x4e74fefa82e83e0964f0d9f53c68e03f7298a8b2
-snet service publish testo tests -y -q --registry-at 0x4e74fefa82e83e0964f0d9f53c68e03f7298a8b2
+snet service publish testo tests -y -q --registry-at 0x4e74fefa82e83e0964f0d9f53c68e03f7298a8b2 --mpe 0x5c7a4290f6f8ff64c69eeffdfafc8644a4ec3a4e
 snet service update-add-tags testo tests tag1 tag2 tag3 -y -q --registry-at 0x4e74fefa82e83e0964f0d9f53c68e03f7298a8b2
 snet service update-remove-tags testo tests tag2 tag1 -y -q --registry-at 0x4e74fefa82e83e0964f0d9f53c68e03f7298a8b2
 snet service print-tags  testo tests --registry-at 0x4e74fefa82e83e0964f0d9f53c68e03f7298a8b2

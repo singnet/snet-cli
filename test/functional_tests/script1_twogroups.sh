@@ -124,3 +124,26 @@ snet channel print-all-filter-sender --sender 0x32267d505B1901236508DcDa64C1D0d5
 snet channel print-all-filter-sender |grep 314156700003452 && exit 1 || echo "fail as expected"
 
 snet channel print-all-filter-group-sender testo tests2 --sender 0x32267d505B1901236508DcDa64C1D0d5B9DF639a |grep 314156700003452
+
+# test migration to different network
+
+# get service metadata from registry and set mpe_address to wrong value
+snet service print-metadata  testo tests2 | jq '.mpe_address = "0x52653A9091b5d5021bed06c5118D24b23620c529"' > service_metadata.json
+
+# this should fail because of wrong mpe_address
+snet service publish-in-ipfs && exit 1 || echo "fail as expected"
+
+snet service publish-in-ipfs --multipartyescrow-at 0x52653A9091b5d5021bed06c5118D24b23620c529
+snet service publish-in-ipfs && exit 1 || echo "fail as expected"
+snet service publish-in-ipfs --update-mpe-address
+snet service publish-in-ipfs
+
+snet service print-metadata  testo tests2 | jq '.mpe_address = "0x52653A9091b5d5021bed06c5118D24b23620c529"' > service_metadata.json
+
+# this should fail because of wrong mpe_address
+snet service publish testo tests4 && exit 1 || echo "fail as expected"
+
+snet service publish testo tests4 --multipartyescrow-at 0x52653A9091b5d5021bed06c5118D24b23620c529 -yq
+snet service publish testo tests5 -yq && exit 1 || echo "fail as expected"
+snet service publish testo tests6 --update-mpe-address -yq
+snet service publish testo tests7 -yq

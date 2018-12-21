@@ -55,6 +55,16 @@ class MPEServiceCommand(BlockchainCommand):
 
     def _publish_metadata_in_ipfs(self, metadata_file):
         metadata = load_mpe_service_metadata(metadata_file)
+        mpe_address = self.get_mpe_address()
+        if (self.args.update_mpe_address):
+            metadata.set_simple_field("mpe_address",  mpe_address)
+            metadata.save_pretty(self.args.metadata_file)
+
+        if (mpe_address.lower() != metadata["mpe_address"].lower()):
+            raise Exception("\n\nmpe_address in metadata does not correspond to the current MultiPartyEscrow contract address\n" +
+                            "You have two possibilities:\n" +
+                            "1. You can use --multipartyescrow-at to set current mpe address\n" +
+                            "2. You can use --update-mpe-address parameter to update mpe_address in metadata before publishing it\n")
         return self._get_ipfs_client().add_bytes(metadata.get_json().encode("utf-8"))
 
     # publish metadata in ipfs and print hash
