@@ -4,6 +4,7 @@ from snet_cli.mpe_service_metadata import MPEServiceMetadata, load_mpe_service_m
 from snet_cli.utils import type_converter, bytes32_to_str
 from snet_cli.utils_ipfs import hash_to_bytesuri, bytesuri_to_hash, get_from_ipfs_and_checkhash, safe_extract_proto_from_ipfs
 import web3
+import json
 
 class MPEServiceCommand(BlockchainCommand):
 
@@ -51,6 +52,12 @@ class MPEServiceCommand(BlockchainCommand):
         group_name = metadata.get_group_name_nonetrick(self.args.group_name)
         for endpoint in self.args.endpoints:
             metadata.add_endpoint(group_name, endpoint)
+        metadata.save_pretty(self.args.metadata_file)
+
+    # metadata add description
+    def metadata_add_description_json(self):
+        metadata = load_mpe_service_metadata(self.args.metadata_file)
+        metadata.set_simple_field("service_description", json.loads(self.args.json))
         metadata.save_pretty(self.args.metadata_file)
 
     def _publish_metadata_in_ipfs(self, metadata_file):

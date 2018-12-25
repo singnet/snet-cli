@@ -595,6 +595,11 @@ def add_mpe_service_options(parser):
     p.add_argument("--group-name", default=None, help="name of the payment group to which we want to add endpoints. Parameter should be specified in case of several payment groups")
     add_p_metadata_file_opt(p)
 
+    p = subparsers.add_parser("metadata-add-description-json", help="Add service description")
+    p.set_defaults(fn="metadata_add_description_json")
+    p.add_argument("json", default=None, help="Service description in json")
+    add_p_metadata_file_opt(p)
+
     def add_p_publish_params(p):
         add_p_metadata_file_opt(p)
         p.add_argument("--update-mpe-address" , action='store_true', help="Update mpe_address in metadata before publishing them")
