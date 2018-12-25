@@ -8,6 +8,7 @@ snet service metadata-init ./ ExampleService 0x42A605c07EdE0E1f648aB054775D6D4E3
 
 # happy flow
 snet service metadata-init ./service_spec1/ ExampleService 0x42A605c07EdE0E1f648aB054775D6D4E38496144  --encoding json --service-type jsonrpc --group-name group1
+snet service metadata-add-description-json '{"description_string":"string1","description_int":1,"description_dict":{"a":1,"b":"s"}}'
 snet service metadata-add-group group2 0x0067b427E299Eb2A4CBafc0B04C723F77c6d8a18
 snet service metadata-add-endpoints  8.8.8.8:2020 9.8.9.8:8080 --group-name group1
 snet service metadata-add-endpoints  8.8.8.8:22   1.2.3.4:8080 --group-name group2
