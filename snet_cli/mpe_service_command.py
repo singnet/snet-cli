@@ -48,7 +48,6 @@ class MPEServiceCommand(BlockchainCommand):
     # metadata add endpoint to the group
     def metadata_add_endpoints(self):
         metadata = load_mpe_service_metadata(self.args.metadata_file)
-        metadata.load(self.args.metadata_file)
         group_name = metadata.get_group_name_nonetrick(self.args.group_name)
         for endpoint in self.args.endpoints:
             metadata.add_endpoint(group_name, endpoint)
