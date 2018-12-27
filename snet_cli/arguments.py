@@ -11,6 +11,7 @@ from snet_cli.mpe_account_command import MPEAccountCommand
 from snet_cli.mpe_service_command import MPEServiceCommand
 from snet_cli.mpe_channel_command import MPEChannelCommand
 from snet_cli.mpe_client_command  import MPEClientCommand
+from snet_cli.mpe_treasurer_command import MPETreasurerCommand
 from snet_cli.utils_agi2cogs import stragi2cogs
 from snet_cli.config import get_session_keys, get_session_network_keys_removable
 
@@ -85,6 +86,9 @@ def add_root_options(parser, config):
 
     mpe_server_p = subparsers.add_parser("service", help="Create, publish, register, and update SingularityNET services")
     add_mpe_service_options(mpe_server_p)
+
+    p = subparsers.add_parser("treasurer", help="Treasurer logic")
+    add_mpe_treasurer_options(p)
 
 
 def add_version_options(parser):
@@ -653,4 +657,34 @@ def add_mpe_service_options(parser):
     p = subparsers.add_parser("delete", help="Delete service registration from registry")
     p.set_defaults(fn="delete_service_registration")
     add_p_service_in_registry(p)
+    add_transaction_arguments(p)
+
+def add_mpe_treasurer_options(parser):
+    parser.set_defaults(cmd=MPETreasurerCommand)
+    subparsers = parser.add_subparsers(title="Commands", metavar="COMMAND")
+    subparsers.required = True
+
+    def add_p_endpoint(p):
+        p.add_argument("--endpoint", required=True, help="daemon endpoint")
+
+
+    p = subparsers.add_parser("print-unclaimed", help="Print unclaimed payments")
+    p.set_defaults(fn="print_unclaimed")
+    add_p_endpoint(p)
+
+    p = subparsers.add_parser("claim", help="Claim given channels. We also claim all pending 'payments in progress' in case we 'lost' some payments.")
+    p.set_defaults(fn="claim_channels")
+    p.add_argument("channels", type=int, nargs="+", help="channels to claim")
+    add_p_endpoint(p)
+    add_transaction_arguments(p)
+
+    p = subparsers.add_parser("claim-all", help="Claim all channels. We also claim all pending 'payments in progress' in case we 'lost' some payments.")
+    p.set_defaults(fn="claim_all_channels")
+    add_p_endpoint(p)
+    add_transaction_arguments(p)
+
+    p = subparsers.add_parser("claim-expired", help="Claim all channels which are close to expiration date. We also claim all pending 'payments in progress' in case we 'lost' some payments.")
+    p.set_defaults(fn="claim_almost_expired_channels")
+    p.add_argument("--expiration-threshold", type=int, default = 34560, help="Service expiration threshold in blocks (default is 34560 ~ 6 days with 15s/block)")
+    add_p_endpoint(p)
     add_transaction_arguments(p)
