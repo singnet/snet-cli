@@ -173,3 +173,6 @@ def abi_get_element_by_name(abi, name):
 def abi_decode_struct_to_dict(abi, struct_list):
     return {el_abi["name"] : el for el_abi, el in zip(abi["outputs"], struct_list)}
 
+
+def int4bytes_big(b):
+    return int.from_bytes(b, byteorder='big')
