@@ -598,7 +598,7 @@ def add_mpe_service_options(parser):
     p = subparsers.add_parser("metadata-add-description", help="Add service description")
     p.set_defaults(fn="metadata_add_description")
     p.add_argument("--json",        default=None,  help="Service description in json")
-    p.add_argument("--uri",         default=None,  help="URI to provide more details of the service")
+    p.add_argument("--url",         default=None,  help="URL to provide more details of the service")
     p.add_argument("--description", default=None,  help="Some description of what the service does")
     add_p_metadata_file_opt(p)
 

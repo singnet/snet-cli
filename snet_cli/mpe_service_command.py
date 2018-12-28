@@ -58,10 +58,10 @@ class MPEServiceCommand(BlockchainCommand):
         service_description = {}
         if (self.args.json):
             service_description = json.loads(self.args.json)
-        if (self.args.uri):
-            if "uri" in service_description:
-                raise Exception("json service description already contains uri field")
-            service_description["uri"] = self.args.uri
+        if (self.args.url):
+            if "url" in service_description:
+                raise Exception("json service description already contains url field")
+            service_description["url"] = self.args.url
         if (self.args.description):
             if "description" in service_description:
                 raise Exception("json service description already contains description field")
