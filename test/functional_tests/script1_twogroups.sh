@@ -9,12 +9,12 @@ snet service metadata-init ./ ExampleService 0x42A605c07EdE0E1f648aB054775D6D4E3
 # happy flow
 snet service metadata-init ./service_spec1/ ExampleService 0x42A605c07EdE0E1f648aB054775D6D4E38496144  --encoding json --service-type jsonrpc --group-name group1
 snet service metadata-add-description --json '{"description_string":"string1","description_int":1,"description_dict":{"a":1,"b":"s"}}'
-snet service metadata-add-description --json '{"description_string":"string1","description_int":1,"description_dict":{"a":1,"b":"s"}}' --description "description" --uri "http://127.0.0.1"
-cat service_metadata.json | jq '.service_description.uri' |grep "http://127.0.0.1"
-snet service metadata-add-description --uri "http://127.0.0.2"
-cat service_metadata.json | jq '.service_description.uri' |grep "http://127.0.0.2"
+snet service metadata-add-description --json '{"description_string":"string1","description_int":1,"description_dict":{"a":1,"b":"s"}}' --description "description" --url "http://127.0.0.1"
+cat service_metadata.json | jq '.service_description.url' |grep "http://127.0.0.1"
+snet service metadata-add-description --url "http://127.0.0.2"
+cat service_metadata.json | jq '.service_description.url' |grep "http://127.0.0.2"
 snet service metadata-add-description --json '{"description":"s"}' --description "description" && exit 1 || echo "fail as expected"
-snet service metadata-add-description --json '{"uri":"http://127.0.0.1"}' --uri "http://127.0.0.2" && exit 1 || echo "fail as expected"
+snet service metadata-add-description --json '{"url":"http://127.0.0.1"}' --url "http://127.0.0.2" && exit 1 || echo "fail as expected"
 
 
 snet service metadata-add-group group2 0x0067b427E299Eb2A4CBafc0B04C723F77c6d8a18
