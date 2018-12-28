@@ -8,4 +8,4 @@ snet_cli/resources/contracts/networks
 snet_cli/resources/proto/*.py
 build/
 dist/
-
+client_libraries/
