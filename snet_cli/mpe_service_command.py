@@ -54,9 +54,23 @@ class MPEServiceCommand(BlockchainCommand):
         metadata.save_pretty(self.args.metadata_file)
 
     # metadata add description
-    def metadata_add_description_json(self):
+    def metadata_add_description(self):
+        service_description = {}
+        if (self.args.json):
+            service_description = json.loads(self.args.json)
+        if (self.args.uri):
+            if "uri" in service_description:
+                raise Exception("json service description already contains uri field")
+            service_description["uri"] = self.args.uri
+        if (self.args.description):
+            if "description" in service_description:
+                raise Exception("json service description already contains description field")
+            service_description["description"] = self.args.description
         metadata = load_mpe_service_metadata(self.args.metadata_file)
-        metadata.set_simple_field("service_description", json.loads(self.args.json))
+        # merge with old service_description if necessary
+        if ("service_description" in metadata):
+            service_description = {**metadata["service_description"], **service_description}
+        metadata.set_simple_field("service_description", service_description)
         metadata.save_pretty(self.args.metadata_file)
 
     def _publish_metadata_in_ipfs(self, metadata_file):
