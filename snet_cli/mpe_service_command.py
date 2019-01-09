@@ -4,6 +4,7 @@ from snet_cli.mpe_service_metadata import MPEServiceMetadata, load_mpe_service_m
 from snet_cli.utils import type_converter, bytes32_to_str
 from snet_cli.utils_ipfs import hash_to_bytesuri, bytesuri_to_hash, get_from_ipfs_and_checkhash, safe_extract_proto_from_ipfs
 import web3
+import json
 
 class MPEServiceCommand(BlockchainCommand):
 
@@ -47,10 +48,29 @@ class MPEServiceCommand(BlockchainCommand):
     # metadata add endpoint to the group
     def metadata_add_endpoints(self):
         metadata = load_mpe_service_metadata(self.args.metadata_file)
-        metadata.load(self.args.metadata_file)
         group_name = metadata.get_group_name_nonetrick(self.args.group_name)
         for endpoint in self.args.endpoints:
             metadata.add_endpoint(group_name, endpoint)
+        metadata.save_pretty(self.args.metadata_file)
+
+    # metadata add description
+    def metadata_add_description(self):
+        service_description = {}
+        if (self.args.json):
+            service_description = json.loads(self.args.json)
+        if (self.args.url):
+            if "url" in service_description:
+                raise Exception("json service description already contains url field")
+            service_description["url"] = self.args.url
+        if (self.args.description):
+            if "description" in service_description:
+                raise Exception("json service description already contains description field")
+            service_description["description"] = self.args.description
+        metadata = load_mpe_service_metadata(self.args.metadata_file)
+        # merge with old service_description if necessary
+        if ("service_description" in metadata):
+            service_description = {**metadata["service_description"], **service_description}
+        metadata.set_simple_field("service_description", service_description)
         metadata.save_pretty(self.args.metadata_file)
 
     def _publish_metadata_in_ipfs(self, metadata_file):
