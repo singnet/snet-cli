@@ -671,6 +671,7 @@ def add_mpe_treasurer_options(parser):
     p = subparsers.add_parser("print-unclaimed", help="Print unclaimed payments")
     p.set_defaults(fn="print_unclaimed")
     add_p_endpoint(p)
+    add_eth_call_arguments(p)
 
     p = subparsers.add_parser("claim", help="Claim given channels. We also claim all pending 'payments in progress' in case we 'lost' some payments.")
     p.set_defaults(fn="claim_channels")
