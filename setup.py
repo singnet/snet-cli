@@ -22,7 +22,7 @@ setup(
         'ecdsa==0.13',
         'trezor==0.9.1',
         'rlp==0.6.0',
-        'PyYAML==3.12',
+        'pyyaml>=4.2b1',
         'ipfsapi==0.4.2.post1',
         'rfc3986==1.1.0',
         'hidapi>=0.7.99',  # _vendor/ledgerblue
