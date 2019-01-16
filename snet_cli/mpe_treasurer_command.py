@@ -1,10 +1,7 @@
 from snet_cli.mpe_channel_command import MPEChannelCommand
 from snet_cli.utils import compile_proto
 from pathlib import Path
-import sys
-import os
 import grpc
-from eth_account.messages import defunct_hash_message
 from snet_cli.utils_proto import import_protobuf_from_dir
 from snet_cli.utils import int4bytes_big
 from snet_cli.utils_agi2cogs import cogs2stragi
