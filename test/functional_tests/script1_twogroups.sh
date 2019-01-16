@@ -159,3 +159,8 @@ snet service publish testo tests4 --multipartyescrow-at 0x52653A9091b5d5021bed06
 snet service publish testo tests5 -yq && exit 1 || echo "fail as expected"
 snet service publish testo tests6 --update-mpe-address -yq
 snet service publish testo tests7 -yq
+
+# test snet service update-metadata
+snet service metadata-add-group group2 0x0067b427E299Eb2A4CBafc0B04C723F77c6d8a18
+snet service metadata-add-endpoints 8.8.8.8:22  1.2.3.4:8080 --group-name group2
+snet service update-metadata testo tests7 -y
