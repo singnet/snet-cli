@@ -624,8 +624,8 @@ def add_mpe_service_options(parser):
 
     p = subparsers.add_parser("update-metadata", help="Publish metadata in IPFS and update existed service")
     p.set_defaults(fn="publish_metadata_in_ipfs_and_update_registration")
+    add_p_publish_params(p)
     add_p_service_in_registry(p)
-    add_p_metadata_file_opt(p)
     add_transaction_arguments(p)
 
     p = subparsers.add_parser("update-add-tags", help="Add tags to existed service registration")
