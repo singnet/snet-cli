@@ -8,6 +8,9 @@ snet service metadata-init ./ ExampleService 0x42A605c07EdE0E1f648aB054775D6D4E3
 
 # happy flow
 snet service metadata-init ./service_spec1/ ExampleService 0x42A605c07EdE0E1f648aB054775D6D4E38496144  --encoding json --service-type jsonrpc --group-name group1
+jq .model_ipfs_hash=1 service_metadata.json > tmp.txt
+mv -f tmp.txt service_metadata.json
+snet service metadata-set-model ./service_spec1/
 snet service metadata-add-description --json '{"description_string":"string1","description_int":1,"description_dict":{"a":1,"b":"s"}}'
 snet service metadata-add-description --json '{"description_string":"string1","description_int":1,"description_dict":{"a":1,"b":"s"}}' --description "description" --url "http://127.0.0.1"
 cat service_metadata.json | jq '.service_description.url' |grep "http://127.0.0.1"
