@@ -8,6 +8,9 @@ snet service metadata-init ./ ExampleService 0x42A605c07EdE0E1f648aB054775D6D4E3
 
 # happy flow
 snet service metadata-init ./service_spec1/ ExampleService 0x42A605c07EdE0E1f648aB054775D6D4E38496144  --encoding json --service-type jsonrpc --group-name group1
+jq .model_ipfs_hash=1 service_metadata.json > tmp.txt
+mv -f tmp.txt service_metadata.json
+snet service metadata-set-model ./service_spec1/
 snet service metadata-add-description --json '{"description_string":"string1","description_int":1,"description_dict":{"a":1,"b":"s"}}'
 snet service metadata-add-description --json '{"description_string":"string1","description_int":1,"description_dict":{"a":1,"b":"s"}}' --description "description" --url "http://127.0.0.1"
 cat service_metadata.json | jq '.service_description.url' |grep "http://127.0.0.1"
@@ -156,3 +159,8 @@ snet service publish testo tests4 --multipartyescrow-at 0x52653A9091b5d5021bed06
 snet service publish testo tests5 -yq && exit 1 || echo "fail as expected"
 snet service publish testo tests6 --update-mpe-address -yq
 snet service publish testo tests7 -yq
+
+# test snet service update-metadata
+snet service metadata-add-group group2 0x0067b427E299Eb2A4CBafc0B04C723F77c6d8a18
+snet service metadata-add-endpoints 8.8.8.8:22  1.2.3.4:8080 --group-name group2
+snet service update-metadata testo tests7 -y

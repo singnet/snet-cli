@@ -582,6 +582,11 @@ def add_mpe_service_options(parser):
     p.add_argument("--endpoints", default=[], nargs='*', help="endpoints for the first group")
     p.add_argument("--fixed-price",type=stragi2cogs, help="set fixed price in AGI token for all methods")
 
+    p = subparsers.add_parser("metadata-set-model", help="publish protobuf model in ipfs and update existed metadata file")
+    p.set_defaults(fn="publish_proto_metadata_update")
+    p.add_argument("protodir",     help="Directory which contains protobuf files")
+    add_p_metadata_file_opt(p)
+
     p = subparsers.add_parser("metadata-set-fixed-price", help="Set pricing model as fixed price for all methods")
     p.set_defaults(fn="metadata_set_fixed_price")
     p.add_argument("price", type = stragi2cogs, help="set fixed price in AGI token for all methods")
@@ -624,8 +629,8 @@ def add_mpe_service_options(parser):
 
     p = subparsers.add_parser("update-metadata", help="Publish metadata in IPFS and update existed service")
     p.set_defaults(fn="publish_metadata_in_ipfs_and_update_registration")
+    add_p_publish_params(p)
     add_p_service_in_registry(p)
-    add_p_metadata_file_opt(p)
     add_transaction_arguments(p)
 
     p = subparsers.add_parser("update-add-tags", help="Add tags to existed service registration")

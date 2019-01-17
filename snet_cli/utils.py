@@ -1,4 +1,3 @@
-import _md5
 import json
 import os
 from pathlib import Path
