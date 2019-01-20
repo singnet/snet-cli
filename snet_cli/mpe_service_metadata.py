@@ -37,6 +37,30 @@ endpoints[] - address in the off-chain network to provide a service
 import json
 import base64
 import secrets
+from urllib.parse import urlparse
+
+
+def is_url(url):
+    """
+    Just ensures the url has a scheme (http/https), and a net location (IP or domain name).
+    Can make more advanced or do on-network tests if needed, but this is really just to catch obvious errors.
+    >>> is_url("https://34.216.72.29:6206")
+    True
+    >>> is_url("blahblah")
+    False
+    >>> is_url("blah://34.216.72.29")
+    False
+    >>> is_url("http://34.216.72.29:%%%")
+    False
+    """
+    try:
+        result = urlparse(url)
+        if result.port:
+            _port = int(result.port)
+        return all([result.scheme, result.netloc]) and result.scheme in ['http', 'https']
+    except ValueError:
+        return False
+
 
 # TODO: we should use some standard solution here
 class MPEServiceMetadata:
@@ -78,6 +102,8 @@ class MPEServiceMetadata:
         return group_id_base64
 
     def add_endpoint(self, group_name, endpoint):
+        if not is_url(endpoint):
+            raise Exception("Endpoint is not a valid URL")
         if (not self.is_group_name_exists(group_name)):
             raise Exception("the group %s is not present"%str(group_name))
         if (endpoint in self.get_all_endpoints()):
