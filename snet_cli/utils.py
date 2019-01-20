@@ -161,8 +161,8 @@ def compile_proto(entry_path, codegen_dir, proto_file=None):
     except Exception as e:
         return False
 
-# return element of abi (return None if fails to find)
 def abi_get_element_by_name(abi, name):
+    """ Return element of abi (return None if fails to find) """
     if (abi and "abi" in abi):
         for a in abi["abi"]:
             if ("name" in a and a["name"] == name):

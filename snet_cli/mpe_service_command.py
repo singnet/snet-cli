@@ -8,8 +8,8 @@ import json
 
 class MPEServiceCommand(BlockchainCommand):
 
-    # publis proto files in ipfs and print hash
     def publish_proto_in_ipfs(self):
+        """ Publish proto files in ipfs and print hash """
         ipfs_hash_base58 = utils_ipfs.publish_proto_in_ipfs(self._get_ipfs_client(), self.args.protodir)
         self._printout(ipfs_hash_base58)
 
@@ -30,8 +30,8 @@ class MPEServiceCommand(BlockchainCommand):
             metadata.set_fixed_price_in_cogs(self.args.fixed_price)
         metadata.save_pretty(self.args.metadata_file)
 
-    # publish protobuf model in ipfs and update existed metadata file
     def publish_proto_metadata_update(self):
+        """ Publish protobuf model in ipfs and update existing metadata file """
         metadata = load_mpe_service_metadata(self.args.metadata_file)
         ipfs_hash_base58 = utils_ipfs.publish_proto_in_ipfs(self._get_ipfs_client(), self.args.protodir)
         metadata.set_simple_field("model_ipfs_hash", ipfs_hash_base58)
@@ -52,16 +52,16 @@ class MPEServiceCommand(BlockchainCommand):
         self._metadata_add_group(metadata)
         metadata.save_pretty(self.args.metadata_file)
 
-    # metadata add endpoint to the group
     def metadata_add_endpoints(self):
+        """ Metadata: add endpoint to the group """
         metadata = load_mpe_service_metadata(self.args.metadata_file)
         group_name = metadata.get_group_name_nonetrick(self.args.group_name)
         for endpoint in self.args.endpoints:
             metadata.add_endpoint(group_name, endpoint)
         metadata.save_pretty(self.args.metadata_file)
 
-    # metadata add description
     def metadata_add_description(self):
+        """ Metadata: add description """
         service_description = {}
         if (self.args.json):
             service_description = json.loads(self.args.json)
@@ -94,8 +94,8 @@ class MPEServiceCommand(BlockchainCommand):
                             "2. You can use --update-mpe-address parameter to update mpe_address in metadata before publishing it\n")
         return self._get_ipfs_client().add_bytes(metadata.get_json().encode("utf-8"))
 
-    # publish metadata in ipfs and print hash
     def publish_metadata_in_ipfs(self):
+        """ Publish metadata in ipfs and print hash """
         self._printout( self._publish_metadata_in_ipfs(self.args.metadata_file) )
 
     def _get_converted_tags(self):

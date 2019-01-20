@@ -1,13 +1,15 @@
-# utils related to ipfs
+""" Utilities related to ipfs """
 import tarfile
 import glob
 import io
 import os
 import sys
 
-# make tar from protodir/*proto, and publish this tar in ipfs
-# return base58 encoded ipfs hash
 def publish_proto_in_ipfs(ipfs_client, protodir):
+    """
+    make tar from protodir/*proto, and publish this tar in ipfs
+    return base58 encoded ipfs hash
+    """
     
     if (not os.path.isdir(protodir)):
         raise Exception("Directory %s doesn't exists"%protodir)
@@ -28,16 +30,20 @@ def publish_proto_in_ipfs(ipfs_client, protodir):
     tar.close()
     return ipfs_client.add_bytes(tarbytes.getvalue())
 
-# get file from ipfs
-# We must check the hash becasue we cannot believe that ipfs_client wasn't been compromise
 def get_from_ipfs_and_checkhash(ipfs_client, ipfs_hash_base58):
+    """
+    Get file from ipfs
+    We must check the hash becasue we cannot believe that ipfs_client wasn't been compromise
+    """
     data  = ipfs_client.cat(ipfs_hash_base58)
     print("!!! We must check that hash in IPFS is correct (we cannot be sure that ipfs is not compromized) !!! Please implement it !!!", file=sys.stderr)
     return data
 
-# Convert in and from bytes uri format used in Registry contract
-# TODO: we should pad string with zeros till closest 32 bytes word because of a bug in processReceipt (in snet_cli.contract.process_receipt)
 def hash_to_bytesuri(s):
+    """
+    Convert in and from bytes uri format used in Registry contract
+    """
+    # TODO: we should pad string with zeros till closest 32 bytes word because of a bug in processReceipt (in snet_cli.contract.process_receipt)
     s = "ipfs://" + s
     return s.encode("ascii").ljust(32 * (len(s)//32 + 1), b"\0")
 
@@ -47,10 +53,12 @@ def bytesuri_to_hash(s):
         raise Exception("We support only ipfs uri in Registry")
     return s[7:]
 
-# tar files might be dangerous (see https://bugs.python.org/issue21109,
-# and https://docs.python.org/3/library/tarfile.html, TarFile.extractall warning)
-# we extract only simple files
 def safe_extract_proto_from_ipfs(ipfs_client, ipfs_hash, protodir):
+    """
+    Tar files might be dangerous (see https://bugs.python.org/issue21109,
+    and https://docs.python.org/3/library/tarfile.html, TarFile.extractall warning)
+    we extract only simple files
+    """
     spec_tar = get_from_ipfs_and_checkhash(ipfs_client, ipfs_hash)
     with tarfile.open(fileobj=io.BytesIO(spec_tar)) as f:
         for m in f.getmembers():

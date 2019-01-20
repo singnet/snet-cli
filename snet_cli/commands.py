@@ -457,8 +457,8 @@ class OrganizationCommand(BlockchainCommand):
             self._printerr("\nTransaction error!\nHINT: Check if you are the owner of {}\n".format(org_id))
             raise
 
-    # find organization with have the current identity as the owner or as the membmer
     def list_my(self):
+        """ Find organization that has the current identity as the owner or as the member """
         org_list = self.call_contract_command("Registry", "listOrganizations", [])
 
         rez_owner  = []
