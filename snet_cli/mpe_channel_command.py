@@ -71,7 +71,7 @@ class MPEChannelCommand(MPEServiceCommand):
     def _check_channel_is_mine(self, channel):
         if (channel["sender"].lower() != self.ident.address.lower() and
             channel["signer"].lower() != self.ident.address.lower()):
-                raise Exception("Channel %i does not correspond to the current Ethereum identity "%channel_id +
+                raise Exception("Channel does not correspond to the current Ethereum identity " +
                                  "(address=%s sender=%s signer=%s)"%(self.ident.address.lower(), channel["sender"].lower(), channel["signer"].lower()))
 
     def _try_init_channel_from_metadata(self, metadata):
