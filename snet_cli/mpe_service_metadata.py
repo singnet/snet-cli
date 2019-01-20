@@ -37,27 +37,71 @@ endpoints[] - address in the off-chain network to provide a service
 import json
 import base64
 import secrets
+import ipaddress
 from urllib.parse import urlparse
 
 
-def is_url(url):
+def is_private_endpoint(endpoint):
+    """
+    >>> is_private_endpoint("192.168.0.2")
+    True
+    >>> is_private_endpoint("192.168.0.2:1234")
+    True
+    >>> is_private_endpoint("http://localhost")
+    True
+    >>> is_private_endpoint("http://192.168.0.2:9999")
+    True
+    """
+    p = urlparse(endpoint)
+    # urlparse needs a scheme otherwise it assigns netloc to path
+    if p.scheme:
+        netloc = p.netloc
+    else:
+        netloc = p.path
+    if netloc == 'localhost' or netloc.endswith(".local"):
+        return True
+    try:
+        # remove port
+        num_colons = netloc.count(":")
+        if num_colons > 1:
+            # ipv6
+            if netloc.startswith('['):
+                netloc = netloc.rsplit(':', 1)[0]
+        elif num_colons == 1:
+            netloc = netloc.rsplit(':', 1)[0]
+
+        ip = ipaddress.ip_address(netloc)
+        if ip.is_private:
+            return True
+    except ValueError:
+        pass
+    
+    return False
+
+
+def is_valid_endpoint(url):
     """
     Just ensures the url has a scheme (http/https), and a net location (IP or domain name).
     Can make more advanced or do on-network tests if needed, but this is really just to catch obvious errors.
-    >>> is_url("https://34.216.72.29:6206")
+    >>> is_valid_endpoint("https://34.216.72.29:6206")
     True
-    >>> is_url("blahblah")
+    >>> is_valid_endpoint("blahblah")
     False
-    >>> is_url("blah://34.216.72.29")
+    >>> is_valid_endpoint("blah://34.216.72.29")
     False
-    >>> is_url("http://34.216.72.29:%%%")
+    >>> is_valid_endpoint("http://34.216.72.29:%%%")
     False
+    >>> is_valid_endpoint("http://192.168.0.2:9999")
+    True
     """
     try:
         result = urlparse(url)
         if result.port:
             _port = int(result.port)
-        return all([result.scheme, result.netloc]) and result.scheme in ['http', 'https']
+        return (
+            all([result.scheme, result.netloc]) and
+            result.scheme in ['http', 'https']            
+        )
     except ValueError:
         return False
 
@@ -102,8 +146,10 @@ class MPEServiceMetadata:
         return group_id_base64
 
     def add_endpoint(self, group_name, endpoint):
-        if not is_url(endpoint):
+        if not is_valid_endpoint(endpoint):
             raise Exception("Endpoint is not a valid URL")
+        if is_private_endpoint(endpoint):
+            print("Warning: %s is a private network address!" % str(endpoint))
         if (not self.is_group_name_exists(group_name)):
             raise Exception("the group %s is not present"%str(group_name))
         if (endpoint in self.get_all_endpoints()):
