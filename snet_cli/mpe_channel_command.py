@@ -170,7 +170,7 @@ class MPEChannelCommand(MPEServiceCommand):
             self._printout("#channelId")
             [self._printout(str(i)) for i in channels_ids]
             return
-        self._printout("#channelId  nonce  recipient  groupId(base64) value(AGI)  expiration(blocks)")
+        self._printout("#channelId nonce recipient groupId(base64) value(AGI) expiration(blocks)")
         for i in channels_ids:
             channel = self._get_channel_state_from_blockchain(i)
             value_agi = cogs2stragi(channel["value"])
