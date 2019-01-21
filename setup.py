@@ -33,7 +33,7 @@ setup(
         'ecpy>=0.8.1',  # _vendor/ledgerblue
         'pillow>=3.4.0',  # _vendor/ledgerblue
         'python-u2flib-host>=3.0.2',  # _vendor/ledgerblue
-        'multihash==0.1.1'
+        'pymultihash==0.8.2'
     ],
     include_package_data=True,
     entry_points={
