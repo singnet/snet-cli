@@ -20,7 +20,6 @@ import secrets
 import string
 
 
-
 class Command(object):
     def __init__(self, config, args, out_f=sys.stdout, err_f=sys.stderr):
         self.config = config
@@ -39,16 +38,24 @@ class Command(object):
     def _printout(self, message):
         if self.out_f is not None:
             try:
-                print(message, file=self.out_f)
-            except UnicodeEncodeError:
-                sys.stdout.buffer.write((message + "\n").encode("utf-8"))
+                message += "\n"
+                self.out_f.write(message)
+            except UnicodeEncodeError as e:
+                if isinstance(self.out_f, type(sys.stdout)):
+                    self.out_f.buffer.write(message.encode("utf-8"))
+                else:
+                    self._error(e)
 
     def _printerr(self, message):
         if self.err_f is not None:
             try:
-                print(message, file=self.err_f)
-            except UnicodeEncodeError:
-                sys.stderr.buffer.write((message + "\n").encode("utf-8"))
+                message += "\n"
+                self.err_f.write(message)
+            except UnicodeEncodeError as e:
+                if isinstance(self.err_f, type(sys.stderr)):
+                    self.err_f.buffer.write(message.encode("utf-8"))
+                else:
+                    self._error(e)
 
     def _pprint(self, item):
         self._printout(indent(yaml.dump(json.loads(json.dumps(item, default=serializable)), default_flow_style=False,
@@ -72,6 +79,7 @@ class Command(object):
         ipfs_scheme = ipfs_endpoint.scheme if ipfs_endpoint.scheme else "http"
         ipfs_port = ipfs_endpoint.port if ipfs_endpoint.port else 5001
         return ipfsapi.connect(urljoin(ipfs_scheme, ipfs_endpoint.hostname), ipfs_port)
+
 
 class VersionCommand(Command):
     def show(self):
