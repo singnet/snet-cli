@@ -8,6 +8,9 @@ import sys
 import base58
 import multihash
 
+from snet_cli.proto.unixfs_pb2 import Data
+from snet_cli.proto.merckledag_pb2 import MerkleNode
+
 # make tar from protodir/*proto, and publish this tar in ipfs
 # return base58 encoded ipfs hash
 def publish_proto_in_ipfs(ipfs_client, protodir):
@@ -33,23 +36,27 @@ def publish_proto_in_ipfs(ipfs_client, protodir):
 
 # get file from ipfs
 # We must check the hash becasue we cannot believe that ipfs_client wasn't been compromise
-def get_from_ipfs_and_checkhash(ipfs_client, ipfs_hash_base58):
-    data  = ipfs_client.cat(ipfs_hash_base58)
-    validate = False
+def get_from_ipfs_and_checkhash(ipfs_client, ipfs_hash_base58, validate=True):
     if validate:
+        # No nice Python library to parse ipfs blocks, so do it ourselves.
         block_data = ipfs_client.block_get(ipfs_hash_base58)
-        # multihash is old and has a badly registered base58 codec, overwrite it...
+        mn = MerkleNode()
+        mn.ParseFromString(block_data)
+        unixfs_data = Data()
+        unixfs_data.ParseFromString(mn.Data)
+        assert unixfs_data.Type == unixfs_data.DataType.Value('File'), "IPFS hash must be a file"
+        data = unixfs_data.Data
+        
+        # multihash has a badly registered base58 codec, overwrite it...
         multihash.CodecReg.register('base58', base58.b58encode, base58.b58decode)
-        # create a multihash object
+        # create a multihash object from our ipfs hash
         mh = multihash.decode(ipfs_hash_base58.encode('ascii'), 'base58')
         
-        # Debugging
-        print(mh.encode('base58')) # Ensure this gives us the same as the input
-        # Just see what hash we get from the block_data...
-        print(multihash.digest(block_data, 'sha2_256').encode('base58'))
-        # Convenience method lets us load a multihash and use it to verify data
+        # Convenience method lets us directly use a multihash to verify data
         if not mh.verify(block_data):
             raise Exception("IPFS hash mismatch with data")
+    else:
+        data = ipfs_client.cat(ipfs_hash_base58)
     return data
 
 # Convert in and from bytes uri format used in Registry contract
