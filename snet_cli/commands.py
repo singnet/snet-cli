@@ -20,7 +20,6 @@ import secrets
 import string
 
 
-
 class Command(object):
     def __init__(self, config, args, out_f=sys.stdout, err_f=sys.stderr):
         self.config = config
@@ -36,13 +35,24 @@ class Command(object):
         if not condition:
             self._error(message)
 
+    @staticmethod
+    def _print(message, fd):
+        message = str(message) + "\n"
+        try:
+            fd.write(message)
+        except UnicodeEncodeError:
+            if hasattr(fd, "buffer"):
+                fd.buffer.write(message.encode("utf-8"))
+            else:
+                raise
+
     def _printout(self, message):
         if self.out_f is not None:
-            print(message, file=self.out_f)
+            self._print(message, self.out_f)
 
     def _printerr(self, message):
         if self.err_f is not None:
-            print(message, file=self.err_f)
+            self._print(message, self.err_f)
 
     def _pprint(self, item):
         self._printout(indent(yaml.dump(json.loads(json.dumps(item, default=serializable)), default_flow_style=False,
@@ -66,6 +76,7 @@ class Command(object):
         ipfs_scheme = ipfs_endpoint.scheme if ipfs_endpoint.scheme else "http"
         ipfs_port = ipfs_endpoint.port if ipfs_endpoint.port else 5001
         return ipfsapi.connect(urljoin(ipfs_scheme, ipfs_endpoint.hostname), ipfs_port)
+
 
 class VersionCommand(Command):
     def show(self):
