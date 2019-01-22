@@ -35,27 +35,24 @@ class Command(object):
         if not condition:
             self._error(message)
 
+    @staticmethod
+    def _print(message, fd):
+        message = str(message) + "\n"
+        try:
+            fd.write(message)
+        except UnicodeEncodeError:
+            if hasattr(fd, "buffer"):
+                fd.buffer.write(message.encode("utf-8"))
+            else:
+                raise
+
     def _printout(self, message):
         if self.out_f is not None:
-            try:
-                message = str(message) + "\n"
-                self.out_f.write(message)
-            except UnicodeEncodeError as e:
-                if isinstance(self.out_f, type(sys.stdout)):
-                    self.out_f.buffer.write(message.encode("utf-8"))
-                else:
-                    self._error(e)
+            self._print(message, self.out_f)
 
     def _printerr(self, message):
         if self.err_f is not None:
-            try:
-                message = str(message) + "\n"
-                self.err_f.write(message)
-            except UnicodeEncodeError as e:
-                if isinstance(self.err_f, type(sys.stderr)):
-                    self.err_f.buffer.write(message.encode("utf-8"))
-                else:
-                    self._error(e)
+            self._print(message, self.err_f)
 
     def _pprint(self, item):
         self._printout(indent(yaml.dump(json.loads(json.dumps(item, default=serializable)), default_flow_style=False,
