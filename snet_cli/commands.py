@@ -38,11 +38,17 @@ class Command(object):
 
     def _printout(self, message):
         if self.out_f is not None:
-            print(message, file=self.out_f)
+            try:
+                print(message, file=self.out_f)
+            except UnicodeEncodeError:
+                sys.stdout.buffer.write((message + "\n").encode("utf-8"))
 
     def _printerr(self, message):
         if self.err_f is not None:
-            print(message, file=self.err_f)
+            try:
+                print(message, file=self.err_f)
+            except UnicodeEncodeError:
+                sys.stderr.buffer.write((message + "\n").encode("utf-8"))
 
     def _pprint(self, item):
         self._printout(indent(yaml.dump(json.loads(json.dumps(item, default=serializable)), default_flow_style=False,
