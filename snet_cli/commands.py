@@ -38,7 +38,7 @@ class Command(object):
     def _printout(self, message):
         if self.out_f is not None:
             try:
-                message += "\n"
+                message = str(message) + "\n"
                 self.out_f.write(message)
             except UnicodeEncodeError as e:
                 if isinstance(self.out_f, type(sys.stdout)):
@@ -49,7 +49,7 @@ class Command(object):
     def _printerr(self, message):
         if self.err_f is not None:
             try:
-                message += "\n"
+                message = str(message) + "\n"
                 self.err_f.write(message)
             except UnicodeEncodeError as e:
                 if isinstance(self.err_f, type(sys.stderr)):
