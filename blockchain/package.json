@@ -1,6 +1,6 @@
 {
   "dependencies": {
-    "singularitynet-platform-contracts": "https://github.com/singnet/platform-contracts/releases/download/v0.2.5/singularitynet-platform-contracts-0.2.5.tgz",
-    "singularitynet-token-contracts": "2.0.0"
+    "singularitynet-platform-contracts": "0.2.6",
+    "singularitynet-token-contracts": "2.0.1"
   }
 }
