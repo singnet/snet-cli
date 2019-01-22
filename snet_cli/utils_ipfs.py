@@ -8,9 +8,6 @@ import sys
 import base58
 import multihash
 
-from snet_cli.proto.unixfs_pb2 import Data
-from snet_cli.proto.merckledag_pb2 import MerkleNode
-
 # make tar from protodir/*proto, and publish this tar in ipfs
 # return base58 encoded ipfs hash
 def publish_proto_in_ipfs(ipfs_client, protodir):
@@ -38,6 +35,9 @@ def publish_proto_in_ipfs(ipfs_client, protodir):
 # We must check the hash becasue we cannot believe that ipfs_client wasn't been compromise
 def get_from_ipfs_and_checkhash(ipfs_client, ipfs_hash_base58, validate=True):
     if validate:
+        from snet_cli.resources.proto.unixfs_pb2 import Data
+        from snet_cli.resources.proto.merckledag_pb2 import MerkleNode
+
         # No nice Python library to parse ipfs blocks, so do it ourselves.
         block_data = ipfs_client.block_get(ipfs_hash_base58)
         mn = MerkleNode()

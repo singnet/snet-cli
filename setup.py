@@ -1,5 +1,33 @@
 from setuptools import setup, find_packages
+from setuptools.command.develop import develop as _develop
+from setuptools.command.install import install as _install
 import re
+
+
+def compile_proto():
+    import snet_cli
+    from snet_cli.utils import compile_proto
+    from pathlib import Path
+    import glob
+    proto_dir = Path(__file__).absolute().parent.joinpath("snet_cli", "resources", "proto")
+    dest_dir = Path(snet_cli.__file__).absolute().parent.joinpath("resources", "proto")
+    print(proto_dir, "->", dest_dir)
+    for fn in proto_dir.glob('*.proto'):
+        print(fn)
+        compile_proto(proto_dir, dest_dir, proto_file=fn)
+
+class develop(_develop):
+    """Post-installation for development mode."""
+    def run(self):
+        _develop.run(self)
+        self.execute(compile_proto, (), msg="Compile protocol buffers")
+
+class install(_install):
+    """Post-installation for installation mode."""
+    def run(self):
+        _install.run(self)
+        self.execute(compile_proto, (), msg="Compile protocol buffers")
+
 
 with open('snet_cli/__init__.py', 'rt', encoding='utf8') as f:
     version = re.search(r'__version__ = "(.*?)"', f.read()).group(1)
@@ -36,6 +64,10 @@ setup(
         'pymultihash==0.8.2',
         'base58==1.0.2',
     ],
+    cmdclass={
+        'develop': develop,
+        'install': install,
+    },
     include_package_data=True,
     entry_points={
         'console_scripts': [

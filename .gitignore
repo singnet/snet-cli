@@ -5,6 +5,7 @@ blockchain/node_modules/
 __pycache__/
 snet_cli/resources/contracts/abi
 snet_cli/resources/contracts/networks
+snet_cli/resources/proto/*.py
 build/
 dist/
 
