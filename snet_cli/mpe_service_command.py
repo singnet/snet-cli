@@ -25,7 +25,10 @@ class MPEServiceCommand(BlockchainCommand):
         metadata.set_simple_field("payment_expiration_threshold", self.args.payment_expiration_threshold)
         self._metadata_add_group(metadata)
         for endpoint in self.args.endpoints:
-            metadata.add_endpoint(self.args.group_name, endpoint)
+            try:
+                metadata.add_endpoint(self.args.group_name, endpoint)
+            except Warning as e:
+                self._printerr("Warning:", str(e))
         if (self.args.fixed_price):
             metadata.set_fixed_price_in_cogs(self.args.fixed_price)
         metadata.save_pretty(self.args.metadata_file)
