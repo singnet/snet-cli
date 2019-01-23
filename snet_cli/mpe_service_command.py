@@ -57,7 +57,10 @@ class MPEServiceCommand(BlockchainCommand):
         metadata = load_mpe_service_metadata(self.args.metadata_file)
         group_name = metadata.get_group_name_nonetrick(self.args.group_name)
         for endpoint in self.args.endpoints:
-            metadata.add_endpoint(group_name, endpoint)
+            try:
+                metadata.add_endpoint(group_name, endpoint)
+            except Warning as e:
+                self._printerr("Warning:", str(e))
         metadata.save_pretty(self.args.metadata_file)
 
     def metadata_add_description(self):

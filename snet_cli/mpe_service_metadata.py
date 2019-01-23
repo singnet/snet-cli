@@ -38,7 +38,6 @@ import re
 import json
 import base64
 import secrets
-import ipaddress
 
 from snet_cli.utils import is_private_endpoint, is_valid_endpoint
 
@@ -88,13 +87,13 @@ class MPEServiceMetadata:
             endpoint = 'http://' + endpoint
         if not is_valid_endpoint(endpoint):
             raise Exception("Endpoint is not a valid URL")
-        if is_private_endpoint(endpoint):
-            print("Warning: %s is a private network address!" % str(endpoint))
         if (not self.is_group_name_exists(group_name)):
             raise Exception("the group %s is not present"%str(group_name))
         if (endpoint in self.get_all_endpoints()):
             raise Exception("the endpoint %s is already present"%str(endpoint))
         self.m["endpoints"] += [{"group_name" : group_name, "endpoint"   : endpoint}]
+        if is_private_endpoint(endpoint):
+            raise Warning("%s is a private network address!" % str(endpoint))
 
     def is_group_name_exists(self, group_name):
         """ check if group with given name is already exists """
