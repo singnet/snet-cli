@@ -28,7 +28,7 @@ class MPEServiceCommand(BlockchainCommand):
             try:
                 metadata.add_endpoint(self.args.group_name, endpoint)
             except Warning as e:
-                self._printerr("Warning:", str(e))
+                self._printerr("Warning: %s" % str(e))
         if (self.args.fixed_price):
             metadata.set_fixed_price_in_cogs(self.args.fixed_price)
         metadata.save_pretty(self.args.metadata_file)
@@ -63,7 +63,7 @@ class MPEServiceCommand(BlockchainCommand):
             try:
                 metadata.add_endpoint(group_name, endpoint)
             except Warning as e:
-                self._printerr("Warning:", str(e))
+                self._printerr("Warning: %s" % str(e))
         metadata.save_pretty(self.args.metadata_file)
 
     def metadata_add_description(self):
