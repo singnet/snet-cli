@@ -1,10 +1,12 @@
 import json
 import os
+from urllib.parse import urlparse
 from pathlib import Path
 
 import web3
 import pkg_resources
 from grpc_tools.protoc import main as protoc
+
 
 class DefaultAttributeObject(object):
     def __init__(self, **kwargs):
@@ -175,3 +177,70 @@ def abi_decode_struct_to_dict(abi, struct_list):
 
 def int4bytes_big(b):
     return int.from_bytes(b, byteorder='big')
+
+
+def is_private_endpoint(endpoint):
+    """
+    >>> is_private_endpoint("192.168.0.2")
+    True
+    >>> is_private_endpoint("192.168.0.2:1234")
+    True
+    >>> is_private_endpoint("http://localhost")
+    True
+    >>> is_private_endpoint("http://192.168.0.2:9999")
+    True
+    """
+    p = urlparse(endpoint)
+    # urlparse needs a scheme otherwise it assigns netloc to path
+    if p.scheme:
+        netloc = p.netloc
+    else:
+        netloc = p.path
+    if netloc == 'localhost' or netloc.endswith(".local"):
+        return True
+    try:
+        # remove port
+        num_colons = netloc.count(":")
+        if num_colons > 1:
+            # ipv6
+            if netloc.startswith('['):
+                netloc = netloc.rsplit(':', 1)[0]
+        elif num_colons == 1:
+            netloc = netloc.rsplit(':', 1)[0]
+
+        ip = ipaddress.ip_address(netloc)
+        if ip.is_private:
+            return True
+    except ValueError:
+        pass
+    
+    return False
+
+
+def is_valid_endpoint(url):
+    """
+    Just ensures the url has a scheme (http/https), and a net location (IP or domain name).
+    Can make more advanced or do on-network tests if needed, but this is really just to catch obvious errors.
+    >>> is_valid_endpoint("https://34.216.72.29:6206")
+    True
+    >>> is_valid_endpoint("blahblah")
+    False
+    >>> is_valid_endpoint("blah://34.216.72.29")
+    False
+    >>> is_valid_endpoint("http://34.216.72.29:%%%")
+    False
+    >>> is_valid_endpoint("http://192.168.0.2:9999")
+    True
+    """
+    try:
+        result = urlparse(url)
+        if result.port:
+            _port = int(result.port)
+        return (
+            all([result.scheme, result.netloc]) and
+            result.scheme in ['http', 'https']
+        )
+    except ValueError:
+        return False
+
+
