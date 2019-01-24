@@ -180,44 +180,6 @@ def int4bytes_big(b):
     return int.from_bytes(b, byteorder='big')
 
 
-def is_private_endpoint(endpoint):
-    """
-    >>> is_private_endpoint("192.168.0.2")
-    True
-    >>> is_private_endpoint("192.168.0.2:1234")
-    True
-    >>> is_private_endpoint("http://localhost")
-    True
-    >>> is_private_endpoint("http://192.168.0.2:9999")
-    True
-    """
-    p = urlparse(endpoint)
-    # urlparse needs a scheme otherwise it assigns netloc to path
-    if p.scheme:
-        netloc = p.netloc
-    else:
-        netloc = p.path
-    if netloc == 'localhost' or netloc.endswith(".local"):
-        return True
-    try:
-        # remove port
-        num_colons = netloc.count(":")
-        if num_colons > 1:
-            # ipv6
-            if netloc.startswith('['):
-                netloc = netloc.rsplit(':', 1)[0]
-        elif num_colons == 1:
-            netloc = netloc.rsplit(':', 1)[0]
-
-        ip = ipaddress.ip_address(netloc)
-        if ip.is_private:
-            return True
-    except ValueError:
-        pass
-    
-    return False
-
-
 def is_valid_endpoint(url):
     """
     Just ensures the url has a scheme (http/https), and a net location (IP or domain name).

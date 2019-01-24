@@ -92,8 +92,6 @@ class MPEServiceMetadata:
         if (endpoint in self.get_all_endpoints()):
             raise Exception("the endpoint %s is already present"%str(endpoint))
         self.m["endpoints"] += [{"group_name" : group_name, "endpoint"   : endpoint}]
-        if is_private_endpoint(endpoint):
-            raise Warning("%s is a private network address!" % str(endpoint))
 
     def is_group_name_exists(self, group_name):
         """ check if group with given name is already exists """
