@@ -6,7 +6,7 @@ SingularityNET CLI
   
 ## Getting Started  
   
-These instructions are intended to facilitate the development and use of the SingularityNET CLI.
+These instructions are for the development and use of the SingularityNET CLI.
 
 ### Installing with pip
 
