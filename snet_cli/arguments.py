@@ -541,6 +541,11 @@ def add_mpe_client_options(parser):
     subparsers = parser.add_subparsers(title="Commands", metavar="COMMAND")
     subparsers.required = True
 
+    def add_p_deal_with_response(p):
+        p.add_argument("--save-response", default=None, help="save response in the file", metavar="FILENAME")
+        p.add_argument("--save-field",    default=None, nargs=2, help="save specific field in the file (two arguments 'field' and 'file_name' should be specified)")
+
+
     p = subparsers.add_parser("call", help="call server in stateless manner. We ask state of the channel from the server. Channel should be already initialized.")
     p.set_defaults(fn="call_server_statelessly")
     add_p_channel_id(p)
@@ -548,12 +553,14 @@ def add_mpe_client_options(parser):
     add_p_full_service_for_call(p)
     add_p_mpe_address_opt(p)
     add_eth_call_arguments(p)
+    add_p_deal_with_response(p)
 
     p = subparsers.add_parser("call-lowlevel", help="Low level function for calling the server. Channel should be already initialized.")
     p.set_defaults(fn="call_server_lowlevel")
     add_p_full_message(p)
     add_p_full_service_for_call(p)
     add_eth_call_arguments(p)
+    add_p_deal_with_response(p)
 
     p = subparsers.add_parser("get-channel-state", help="Get channel state in stateless manner")
     p.set_defaults(fn="print_channel_state_statelessly")

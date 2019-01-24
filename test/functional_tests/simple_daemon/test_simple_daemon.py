@@ -50,7 +50,7 @@ class ExampleService(ExampleService_pb2_grpc.ExampleServiceServicer):
         signature  = metadata["snet-payment-channel-signature-bin"]        
         payment = {"channel_id": channel_id, "nonce": nonce, "amount": amount, "signature": signature}
         payments_unclaimed[channel_id] = payment
-        return ExampleService_pb2.ClassifyResponse(predictions=["prediction1", "prediction2" ], confidences=[0.42, 0.43])
+        return ExampleService_pb2.ClassifyResponse(predictions=["prediction1", "prediction2" ], confidences=[0.42, 0.43], binary_field = int(12345**5).to_bytes(10,byteorder='big'))
 
 
 class PaymentChannelStateService(state_service_pb2_grpc.PaymentChannelStateServiceServicer):    

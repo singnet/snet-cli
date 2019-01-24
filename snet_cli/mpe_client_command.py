@@ -118,13 +118,29 @@ class MPEClientCommand(MPEChannelCommand):
             raise Exception("Channel %i is not initilized"%self.args.channel_id)
         return load_mpe_service_metadata(self.get_channel_dir().joinpath("service_metadata.json"))
 
+    def _deal_with_call_response(self, response):
+        if (self.args.save_response):
+            with open(self.args.save_response, "wb") as f:
+                f.write(response.SerializeToString())
+        elif (self.args.save_field):
+            field = getattr(response, self.args.save_field[0])
+            file_name = self.args.save_field[1]
+            if (type(field) == bytes):
+                with open(file_name, "wb") as f:
+                    f.write(field)
+            else:
+                with open(file_name, "w") as f:
+                    f.write(str(field))
+        else:
+            self._printout(response)
+
     def call_server_lowlevel(self):
         params           = self._get_call_params()
         grpc_channel     = grpc.insecure_channel(self.args.endpoint)
         service_metadata = self._get_service_metadata_for_channel()
 
         response = self._call_server_via_grpc_channel(grpc_channel, self.args.nonce, self.args.amount, params, service_metadata)
-        self._printout(response)
+        self._deal_with_call_response(response)
 
     # III. Stateless client related functions
     def _get_channel_state_from_server(self, grpc_channel, channel_id):
@@ -198,5 +214,4 @@ class MPEClientCommand(MPEChannelCommand):
         current_nonce, current_amount, unspent_amount = self._get_channel_state_statelessly(grpc_channel, self.args.channel_id)
         self._printout("unspent_amount_in_cogs before call (None means that we cannot get it now):%s"%str(unspent_amount))
         response = self._call_server_via_grpc_channel(grpc_channel, current_nonce, current_amount + self.args.price, params, service_metadata)
-        self._printout(response)
-
+        self._deal_with_call_response(response)
