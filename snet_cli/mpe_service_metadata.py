@@ -39,7 +39,7 @@ import json
 import base64
 import secrets
 
-from snet_cli.utils import is_private_endpoint, is_valid_endpoint
+from snet_cli.utils import is_valid_endpoint
 
 
 # TODO: we should use some standard solution here
