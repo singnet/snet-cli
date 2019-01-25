@@ -1,8 +1,10 @@
 import abc
+import json
 import hashlib
 import struct
 import time
 
+from ethereum.tools.keys import decode_keystore_json
 from pycoin.key.BIP32Node import BIP32Node
 import ecdsa
 import rlp
@@ -32,7 +34,6 @@ class IdentityProvider(abc.ABC):
     def sign_message_after_soliditySha3(self, message):
         raise NotImplementedError()
 
-
 class KeyIdentityProvider(IdentityProvider):
     def __init__(self, w3, private_key):
         self.w3 = w3
@@ -57,6 +58,33 @@ class KeyIdentityProvider(IdentityProvider):
     def sign_message_after_soliditySha3(self, message):
         h = defunct_hash_message(message)
         return self.w3.eth.account.signHash(h, self.private_key).signature
+
+class KeyStoreIdentity(IdentityProvider):
+    def __init__(self, w3, path_to_keystore, password):
+        self.w3 = w3
+        try:
+            self.private_key = decode_keystore_json(json.load(open('filename.json')), password)
+        except CommException:
+            raise RuntimeError("Error decrypting your keystore. Are you sure it is the correct path and/or password?")
+       
+        public_key = ecdsa.SigningKey.from_string(string=self.private_key,
+                                                  curve=ecdsa.SECP256k1,
+                                                  hashfunc=hashlib.sha256).get_verifying_key()
+
+        self.address = self.w3.toChecksumAddress("0x" + self.w3.sha3(hexstr=public_key.to_string().hex())[12:].hex())
+
+    def get_address(self):
+        return self.address
+
+    def transact(self, transaction, out_f):
+        raw_transaction = self.w3.eth.account.signTransaction(transaction, self.private_key).rawTransaction
+        return send_and_wait_for_transaction(raw_transaction, self.w3, out_f)
+    
+    def sign_message_after_soliditySha3(self, message):
+        h = defunct_hash_message(message)
+        return self.w3.eth.account.signHash(h, self.private_key).signature
+
+
 
 class RpcIdentityProvider(IdentityProvider):
     def __init__(self, w3, index):
@@ -103,7 +131,6 @@ class MnemonicIdentityProvider(IdentityProvider):
         h = defunct_hash_message(message)
         return self.w3.eth.account.signHash(h, self.private_key).signature
 
-
 class TrezorIdentityProvider(IdentityProvider):
     def __init__(self, w3, index):
         self.w3 = w3
@@ -144,37 +171,6 @@ class TrezorIdentityProvider(IdentityProvider):
                                         0,
                                         self.index])
         return self.client.call(proto.EthereumSignMessage(address_n=n, message=message)).signature
-
-def send_and_wait_for_transaction_receipt(txn_hash, w3):
-    # Wait for transaction to be mined
-    receipt = dict()
-    while not receipt:
-        time.sleep(1)
-        receipt = w3.eth.getTransactionReceipt(txn_hash)
-        if receipt and "blockHash" in receipt and receipt["blockHash"] is None:
-            receipt = dict()
-    return receipt
-
-
-def send_and_wait_for_transaction(raw_transaction, w3, out_f):
-    print("Submitting transaction...\n", file=out_f)
-    txn_hash = w3.eth.sendRawTransaction(raw_transaction)
-    return send_and_wait_for_transaction_receipt(txn_hash, w3)
-
-
-def parse_bip32_path(path):
-    if len(path) == 0:
-        return b""
-    result = b""
-    elements = path.split('/')
-    for pathElement in elements:
-        element = pathElement.split('\'')
-        if len(element) == 1:
-            result = result + struct.pack(">I", int(element[0]))
-        else:
-            result = result + struct.pack(">I", BIP32_HARDEN | int(element[0]))
-    return result
-
 
 class LedgerIdentityProvider(IdentityProvider):
     GET_ADDRESS_OP = b"\xe0\x02\x00\x00"
@@ -261,7 +257,36 @@ class LedgerIdentityProvider(IdentityProvider):
                                "Ethereum app is running?")
 
         return result[1:] + result[0:1]
+  
+def send_and_wait_for_transaction_receipt(txn_hash, w3):
+    # Wait for transaction to be mined
+    receipt = dict()
+    while not receipt:
+        time.sleep(1)
+        receipt = w3.eth.getTransactionReceipt(txn_hash)
+        if receipt and "blockHash" in receipt and receipt["blockHash"] is None:
+            receipt = dict()
+    return receipt
 
+
+def send_and_wait_for_transaction(raw_transaction, w3, out_f):
+    print("Submitting transaction...\n", file=out_f)
+    txn_hash = w3.eth.sendRawTransaction(raw_transaction)
+    return send_and_wait_for_transaction_receipt(txn_hash, w3)
+
+
+def parse_bip32_path(path):
+    if len(path) == 0:
+        return b""
+    result = b""
+    elements = path.split('/')
+    for pathElement in elements:
+        element = pathElement.split('\'')
+        if len(element) == 1:
+            result = result + struct.pack(">I", int(element[0]))
+        else:
+            result = result + struct.pack(">I", BIP32_HARDEN | int(element[0]))
+    return result
 
 def get_kws_for_identity_type(identity_type):
     SECRET = True
@@ -277,9 +302,11 @@ def get_kws_for_identity_type(identity_type):
         return []
     elif identity_type == "ledger":
         return []
+    elif identity_type == "keystore/json":
+        return [("private_key", SECRET)]
     else:
         raise RuntimeError("unrecognized identity_type {}".format(identity_type))
 
 
 def get_identity_types():
-    return ["rpc", "mnemonic", "key", "trezor", "ledger"]
+    return ["rpc", "mnemonic", "key", "trezor", "ledger", "keystore/json"]

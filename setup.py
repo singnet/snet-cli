@@ -49,7 +49,7 @@ setup(
         'pycoin>=0.80',
         'ecdsa==0.13',
         'trezor==0.9.1',
-        'rlp==0.6.0',
+        'rlp==1.0.1',
         'pyyaml>=4.2b1',
         'ipfsapi==0.4.2.post1',
         'rfc3986==1.1.0',
@@ -63,6 +63,7 @@ setup(
         'python-u2flib-host>=3.0.2',  # _vendor/ledgerblue
         'pymultihash==0.8.2',
         'base58==1.0.2',
+        'ethereum==2.3.2'
     ],
     cmdclass={
         'develop': develop,
