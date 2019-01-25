@@ -207,3 +207,8 @@ def is_valid_endpoint(url):
         return False
 
 
+def remove_http_https_prefix(endpoint):
+    """remove http:// or https:// prefix if presented in endpoint"""
+    endpoint = endpoint.replace("https://","")
+    endpoint = endpoint.replace("http://","")
+    return endpoint

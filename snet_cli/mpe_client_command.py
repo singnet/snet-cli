@@ -10,6 +10,7 @@ from eth_account.messages import defunct_hash_message
 from snet_cli.utils_proto import import_protobuf_from_dir, switch_to_json_payload_econding
 from snet_cli.mpe_service_metadata import load_mpe_service_metadata
 from snet_cli.utils_agi2cogs import cogs2stragi
+from snet_cli.utils import remove_http_https_prefix
 
 
 # we inherit MPEChannelCommand because client needs channels
@@ -136,7 +137,7 @@ class MPEClientCommand(MPEChannelCommand):
 
     def call_server_lowlevel(self):
         params           = self._get_call_params()
-        grpc_channel     = grpc.insecure_channel(self.args.endpoint)
+        grpc_channel     = grpc.insecure_channel(remove_http_https_prefix(self.args.endpoint))
         service_metadata = self._get_service_metadata_for_channel()
 
         response = self._call_server_via_grpc_channel(grpc_channel, self.args.nonce, self.args.amount, params, service_metadata)
@@ -205,7 +206,7 @@ class MPEClientCommand(MPEChannelCommand):
 
     def call_server_statelessly(self):
         params           = self._get_call_params()
-        grpc_channel     = grpc.insecure_channel(self.args.endpoint)
+        grpc_channel     = grpc.insecure_channel(remove_http_https_prefix(self.args.endpoint))
         service_metadata = self._get_service_metadata_for_channel()
 
         self._call_check_price(service_metadata)

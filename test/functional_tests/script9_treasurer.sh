@@ -25,8 +25,8 @@ snet channel open-init-metadata 1 $EXPIRATION0 -yq
 snet channel open-init-metadata 1 $EXPIRATION1 -yq
 snet channel open-init-metadata 1 $EXPIRATION2 -yq
 
-snet client call 0 0.0001 127.0.0.1:50051 classify {}
-snet client call 0 0.0001 127.0.0.1:50051 classify {} --save-response response.pb
+snet client call 0 0.0001 http://127.0.0.1:50051 classify {}
+snet client call 0 0.0001 https://127.0.0.1:50051 classify {} --save-response response.pb
 snet client call 1 0.0001 127.0.0.1:50051 classify {} --save-field binary_field out.bin
 snet client call 2 0.0001 127.0.0.1:50051 classify {} --save-field predictions out.txt
 rm -f response.pb out.bin out.txt
