@@ -1,14 +1,17 @@
-# utils related to protobuf
+""" Utils related to protobuf """
 import sys
 from pathlib import Path
 import os
 from google.protobuf import json_format
 
-# dynamical import grpc-protobuf from given directory (proto_dir)
-# service_name should be provided only in the case of conflicting method names (two methods with the same name in difference services).
-# return stub_class, request_class, response_class
-# ! We need response_class only for json payload encoding !
+
 def import_protobuf_from_dir(proto_dir, method_name, service_name = None):
+    """
+    Dynamic import of grpc-protobuf from given directory (proto_dir)
+    service_name should be provided only in the case of conflicting method names (two methods with the same name in difference services).
+    Return stub_class, request_class, response_class
+    ! We need response_class only for json payload encoding !
+    """
     proto_dir = Path(proto_dir)
     # <SERVICE>_pb2_grpc.py import <SERVICE>_pb2.py so we are forced to add proto_dir to path
     sys.path.append(str(proto_dir))    
@@ -27,11 +30,13 @@ def import_protobuf_from_dir(proto_dir, method_name, service_name = None):
             raise Exception("Error while loading protobuf. Found method %s in multiply .proto files. You could try to specify service_name."%method_name)
     return good_rez[0]
 
-# helper function which try to import method from the given _pb2_grpc.py file
-# service_name should be provided only in case of name conflict
-# return (False, None)  in case of failure
-# return (True, (stub_class, request_class, response_class)) in case of success
 def _import_protobuf_from_file(grpc_pyfile, method_name, service_name = None):
+    """
+    helper function which try to import method from the given _pb2_grpc.py file
+    service_name should be provided only in case of name conflict
+    return (False, None)  in case of failure
+    return (True, (stub_class, request_class, response_class)) in case of success
+    """
     
     prefix = grpc_pyfile[:-12]
     pb2      = __import__("%s_pb2"%prefix)
@@ -63,8 +68,8 @@ def _import_protobuf_from_file(grpc_pyfile, method_name, service_name = None):
                         " You should specify service_name."%(method_name, ", ".join(found_services)))
     return True, (stub_class, request_class, response_class)
 
-# switch payload encoding to JSON for GRPC call
 def switch_to_json_payload_econding(call_fn, response_class):
+    """ Switch payload encoding to JSON for GRPC call """
     def json_serializer(*args, **kwargs):
         return bytes(json_format.MessageToJson(args[0], True, preserving_proto_field_name=True), "utf-8")
     def json_deserializer(*args, **kwargs):

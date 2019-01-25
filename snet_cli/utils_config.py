@@ -1,12 +1,14 @@
 from snet_cli.utils import get_contract_def
 
-# We try to get config address from the different sources.
-# The order of priorioty is following:
-# - command line argument (at)
-# - command line argument (<contract_name>_at)
-# - current session configuration (current_<contract_name>_at)
-# - networks/*json
 def get_contract_address(cmd, contract_name, error_message = None):
+    """
+    We try to get config address from the different sources.
+    The order of priorioty is following:
+    - command line argument (at)
+    - command line argument (<contract_name>_at)
+    - current session configuration (current_<contract_name>_at)
+    - networks/*json
+    """
 
     # try to get from command line argument at or contractname_at
     a = "at"
@@ -40,11 +42,13 @@ def get_contract_address(cmd, contract_name, error_message = None):
     return contract_address
 
 
-# we try to get field_name from diffent sources:
-# The order of priorioty is following:
-# - command line argument (--<field_name>)
-# - current session configuration (default_<filed_name>)
 def get_field_from_args_or_session(config, args, field_name):
+    """
+    We try to get field_name from diffent sources:
+    The order of priorioty is following:
+    - command line argument (--<field_name>)
+    - current session configuration (default_<filed_name>)
+    """
     rez = getattr(args, field_name, None)
     #type(rez) can be int in case of wallet-index, so we cannot make simply if(rez)
     if (rez != None):

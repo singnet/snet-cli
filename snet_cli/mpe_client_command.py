@@ -62,9 +62,12 @@ class MPEClientCommand(MPEChannelCommand):
 
         return params
 
-    # possible modifiers: file, b64encode, b64decode
-    # format:             modifier1@modifier2@...modifierN@k_final
+    
     def _transform_call_params(self, params):
+        """
+        possible modifiers: file, b64encode, b64decode
+        format:             modifier1@modifier2@...modifierN@k_final
+        """
         rez = {}
         for k, v in params.items():
             # k = modifier1@modifier2@...modifierN@k_final
@@ -167,10 +170,12 @@ class MPEClientCommand(MPEChannelCommand):
 
         return state
 
-    # we get state of the channel (nonce, amount, unspent_amount)
-    # We do it by securely combine information from the server and blockchain
-    # https://github.com/singnet/wiki/blob/master/multiPartyEscrowContract/MultiPartyEscrow_stateless_client.md
     def _get_channel_state_statelessly(self, grpc_channel, channel_id):
+        """
+        We get state of the channel (nonce, amount, unspent_amount)
+        We do it by securely combine information from the server and blockchain
+        https://github.com/singnet/wiki/blob/master/multiPartyEscrowContract/MultiPartyEscrow_stateless_client.md
+        """
         server     = self._get_channel_state_from_server    (grpc_channel, channel_id)
         blockchain = self._get_channel_state_from_blockchain(              channel_id)
 

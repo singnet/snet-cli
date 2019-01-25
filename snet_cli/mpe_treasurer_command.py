@@ -8,8 +8,8 @@ from snet_cli.utils_agi2cogs import cogs2stragi
 import web3
 
 
-# we inherit MPEChannelCommand because we need _get_channel_state_from_blockchain
 class MPETreasurerCommand(MPEChannelCommand):
+    """ We inherit MPEChannelCommand because we need _get_channel_state_from_blockchain """
 
     def _sign_message_list_unclaimed(self, mpe_address, current_block):
         message =  self.w3.soliditySha3(
@@ -28,8 +28,8 @@ class MPETreasurerCommand(MPEChannelCommand):
                         ["__start_claim", mpe_address,   channel_id,   channel_nonce])
         return self.ident.sign_message_after_soliditySha3(message)
 
-    # import protobuf and return stub and request class
     def _get_stub_and_request_classes(self, service_name):
+        """ import protobuf and return stub and request class """
         # Compile protobuf if needed
         codegen_dir = Path.home().joinpath(".snet", "mpe_client", "control_service")
         proto_dir   = Path(__file__).absolute().parent.joinpath("resources", "proto")
@@ -100,8 +100,8 @@ class MPETreasurerCommand(MPEChannelCommand):
             params     = [channel_id, amount, v , r, s, False]
             self.transact_contract_command("MultiPartyEscrow", "channelClaim", params)
 
-    # safely run StartClaim for given channels
     def _start_claim_channels(self, grpc_channel, channels_ids):
+        """ Safely run StartClaim for given channels """
         unclaimed_payments = self._call_GetListUnclaimed(grpc_channel)
         unclaimed_payments_dict = {p["channel_id"] : p for p in unclaimed_payments}
 
@@ -119,8 +119,8 @@ class MPETreasurerCommand(MPEChannelCommand):
         payments = [self._call_StartClaim(grpc_channel, channel_id, nonce) for channel_id, nonce in to_claim]
         return payments
 
-    # we claim all 'pending' payments in progress and after we claim given channels
     def _claim_in_progress_and_claim_channels(self, grpc_channel, channels):
+        """ Claim all 'pending' payments in progress and after we claim given channels """
         # first we get the list of all 'payments in progress' in case we 'lost' some payments.
         payments = self._call_GetListInProgress(grpc_channel)
         if (len(payments) > 0):

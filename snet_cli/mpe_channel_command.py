@@ -17,12 +17,12 @@ from web3.utils.events import get_event_data
 # we inherit MPEServiceCommand because we need _get_service_metadata_from_registry
 class MPEChannelCommand(MPEServiceCommand):
 
-    # get persistent storage for mpe
     def _get_persistent_mpe_dir(self):
+        """ get persistent storage for mpe """
         return Path.home().joinpath(".snet", "mpe_client")
 
-    # get persistent storage for the given channel (~/.snet/mpe_client/<mpe_address>/<channel-id>/)
     def _get_channel_dir(self, channel_id):
+        """ get persistent storage for the given channel (~/.snet/mpe_client/<mpe_address>/<channel-id>/) """
         mpe_address = self.get_mpe_address().lower()
         return self._get_persistent_mpe_dir().joinpath(mpe_address, str(channel_id))
 
@@ -37,8 +37,8 @@ class MPEChannelCommand(MPEServiceCommand):
         fn = os.path.join(self._get_channel_dir(channel_id), "channel_info.pickle")
         return pickle.load( open( fn, "rb" ) )
 
-    # we make sure that MultiPartyEscrow address from metadata is correct
     def _check_mpe_address_metadata(self, metadata):
+        """ we make sure that MultiPartyEscrow address from metadata is correct """
         mpe_address = self.get_mpe_address()
         if (str(mpe_address).lower() != str(metadata["mpe_address"]).lower()):
             raise Exception("MultiPartyEscrow contract address from metadata %s do not correspond to current MultiPartyEscrow address %s"%(metadata["mpe_address"], mpe_address))
@@ -71,7 +71,7 @@ class MPEChannelCommand(MPEServiceCommand):
     def _check_channel_is_mine(self, channel):
         if (channel["sender"].lower() != self.ident.address.lower() and
             channel["signer"].lower() != self.ident.address.lower()):
-                raise Exception("Channel %i does not correspond to the current Ethereum identity "%channel_id +
+                raise Exception("Channel does not correspond to the current Ethereum identity " +
                                  "(address=%s sender=%s signer=%s)"%(self.ident.address.lower(), channel["sender"].lower(), channel["signer"].lower()))
 
     def _try_init_channel_from_metadata(self, metadata):
@@ -116,7 +116,7 @@ class MPEChannelCommand(MPEServiceCommand):
         return rez[1][0]["args"]["channelId"], channel_info
 
     def _open_init_channel_from_metadata(self, metadata):
-        # try to initilize channel without actually open it (we check metadata and we compile .proto files)
+        """ try to initialize channel without actually open it (we check metadata and we compile .proto files) """
         tmp_dir = tempfile.mkdtemp()
         shutil.rmtree(tmp_dir)
         self._init_channel_from_metadata(tmp_dir, metadata, {})
@@ -127,7 +127,7 @@ class MPEChannelCommand(MPEServiceCommand):
         self._printout("#channel_id")
         self._printout(channel_id)
 
-        # initilize new channel
+        # initialize new channel
         self._init_channel_from_metadata(self._get_channel_dir(channel_id), metadata, channel_info)
 
     def open_init_channel_from_metadata(self):
@@ -147,8 +147,8 @@ class MPEChannelCommand(MPEServiceCommand):
     def channel_extend_and_add_funds(self):
         self.transact_contract_command("MultiPartyEscrow", "channelExtendAndAddFunds", [self.args.channel_id, self.args.expiration, self.args.amount])
 
-    # return list of tuples (channel_id, channel_info)
     def _get_all_initilized_channels(self):
+        """ return list of tuples (channel_id, channel_info) """
         channels = []
         for channel_dir in self._get_channel_dir(0).parent.glob("*"):
             if (channel_dir.name.isdigit()):
@@ -170,7 +170,7 @@ class MPEChannelCommand(MPEServiceCommand):
             self._printout("#channelId")
             [self._printout(str(i)) for i in channels_ids]
             return
-        self._printout("#channelId  nonce  recipient  groupId(base64) value(AGI)  expiration(blocks)")
+        self._printout("#channelId nonce recipient groupId(base64) value(AGI) expiration(blocks)")
         for i in channels_ids:
             channel = self._get_channel_state_from_blockchain(i)
             value_agi = cogs2stragi(channel["value"])
@@ -207,8 +207,8 @@ class MPEChannelCommand(MPEServiceCommand):
         good_ids = self._filter_channels_sender_signer(channels)
         self._print_channels_from_blockchain(good_ids)
 
-    # function for get all filtered chanels from blockchain logs
     def _get_all_filtered_channels(self, topics_without_signature):
+        """ get all filtered chanels from blockchain logs """
         mpe_address     = self.get_mpe_address()
         event_signature = self.ident.w3.sha3(text="ChannelOpen(uint256,uint256,address,address,address,bytes32,uint256,uint256)").hex()
         topics = [event_signature] + topics_without_signature

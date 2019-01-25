@@ -141,12 +141,12 @@ class Config(ConfigParser):
         self._get_identity_section(identity)[key] = str(value)
         self._persist()
 
-    # return section for network or identity
     def _get_network_section(self, network):
+        """ return section for network or identity """
         return self[ "network.%s"%network ]
 
-    # return section for the specific identity
     def _get_identity_section(self, identity):
+        """ return section for the specific identity """
         return self[ "identity.%s"%identity ]
 
     def get_ipfs_endpoint(self):
@@ -172,8 +172,8 @@ class Config(ConfigParser):
         self.remove_section("identity.{}".format(identity_name))
         self._persist()
 
-    # create default configuration if config file is not exists
     def create_default_config(self):
+        """ Create default configuration if config file does not exist """
         # make config directory with the minimal possible permission
         self._config_file.parent.mkdir(mode=0o700, exist_ok=True)
         self["network.kovan"]   = {"default_eth_rpc_endpoint": "https://kovan.infura.io",   "default_gas_price" : "1000000000"}
@@ -206,8 +206,8 @@ def first_identity_message_and_exit():
           "    - 'ledger' (yields to a required ledger nano s device for signing using a given wallet\n"
           "          index)\n"
           "    - 'trezor' (yields to a required trezor device for signing using a given wallet index)\n"
-          "\n");
-    exit(1);
+          "\n")
+    exit(1)
 
 
 def get_session_identity_keys():
