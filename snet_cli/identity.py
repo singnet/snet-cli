@@ -302,11 +302,11 @@ def get_kws_for_identity_type(identity_type):
         return []
     elif identity_type == "ledger":
         return []
-    elif identity_type == "keystore/json":
+    elif identity_type == "keystore":
         return [("private_key", SECRET)]
     else:
         raise RuntimeError("unrecognized identity_type {}".format(identity_type))
 
 
 def get_identity_types():
-    return ["rpc", "mnemonic", "key", "trezor", "ledger", "keystore/json"]
+    return ["rpc", "mnemonic", "key", "trezor", "ledger", "keystore"]
