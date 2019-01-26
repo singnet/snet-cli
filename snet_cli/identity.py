@@ -4,7 +4,6 @@ import hashlib
 import struct
 import time
 
-from ethereum.tools.keys import decode_keystore_json
 from pycoin.key.BIP32Node import BIP32Node
 import ecdsa
 import rlp
@@ -17,6 +16,8 @@ from trezorlib.transport_hid import HidTransport
 
 from snet_cli._vendor.ledgerblue.comm import getDongle
 from snet_cli._vendor.ledgerblue.commException import CommException
+
+from snet_cli.utils_keystore import decode_keystore_json
 
 BIP32_HARDEN = 0x80000000
 
@@ -59,11 +60,11 @@ class KeyIdentityProvider(IdentityProvider):
         h = defunct_hash_message(message)
         return self.w3.eth.account.signHash(h, self.private_key).signature
 
-class KeyStoreIdentity(IdentityProvider):
+class KeyStoreIdentityProvider(IdentityProvider):
     def __init__(self, w3, path_to_keystore, password):
         self.w3 = w3
         try:
-            self.private_key = decode_keystore_json(json.load(open('filename.json')), password)
+            self.private_key = decode_keystore_json(json.load(open(path_to_keystore)), password)
         except CommException:
             raise RuntimeError("Error decrypting your keystore. Are you sure it is the correct path and/or password?")
        
@@ -83,8 +84,6 @@ class KeyStoreIdentity(IdentityProvider):
     def sign_message_after_soliditySha3(self, message):
         h = defunct_hash_message(message)
         return self.w3.eth.account.signHash(h, self.private_key).signature
-
-
 
 class RpcIdentityProvider(IdentityProvider):
     def __init__(self, w3, index):
@@ -303,7 +302,7 @@ def get_kws_for_identity_type(identity_type):
     elif identity_type == "ledger":
         return []
     elif identity_type == "keystore":
-        return [("private_key", SECRET)]
+        return [("keystore_password", SECRET), ("keystore_path", PLAINTEXT)]
     else:
         raise RuntimeError("unrecognized identity_type {}".format(identity_type))
 

@@ -15,6 +15,15 @@ from Crypto.Hash import SHA256
 from Crypto.Util import Counter
 
 # TODO: make it compatible!
+try:
+    scrypt = __import__('scrypt')
+except ImportError:
+    sys.stderr.write("""
+Failed to import scrypt. This is not a fatal error but does
+mean that you cannot create or decrypt privkey jsons that use
+scrypt
+""")
+    scrypt = None
 
 
 SCRYPT_CONSTANTS = {
@@ -83,13 +92,20 @@ def pbkdf2_hash(val, params):
                          SHA256).read(params["dklen"])
 
 
-
 kdfs = {
     "pbkdf2": {
         "calc": pbkdf2_hash,
         "mkparams": mk_pbkdf2_params
     }
 }
+
+
+if scrypt is not None:
+    kdfs["scrypt"] = {
+        "calc": scrypt_hash,
+        "mkparams": mk_scrypt_params
+    }
+
 
 ciphers = {
     "aes-128-ctr": {
@@ -108,6 +124,7 @@ if sys.version_info.major == 2:
             value /= 256
         s = ''.join(reversed(cs))
         return s
+
     def big_endian_to_int(value):
         if len(value) == 1:
             return ord(value)
@@ -115,7 +132,6 @@ if sys.version_info.major == 2:
             return struct.unpack('>Q', value.rjust(8, b'\x00'))[0]
         else:
             return int(encode_hex(value), 16)
-
 
 if sys.version_info.major == 3:
 
@@ -127,13 +143,13 @@ if sys.version_info.major == 3:
         return int.from_bytes(value, byteorder='big')
 
 
-
 # Utility functions (done separately from utils so as to make this a
 # standalone file)
 def sha3_256(x): return keccak.new(digest_bits=256, data=x)
 
+
 def sha3(seed):
-  return sha3_256(seed).digest()
+    return sha3_256(seed).digest()
 
 
 def decode_keystore_json(jsondata, pw):
