@@ -48,6 +48,8 @@ snet identity
 ```
 snet identity create IDENTITY_NAME IDENTITY TYPE [--mnemonic MNEMONIC]
                                                  [--private-key PRIVATE_KEY]
+                                                 [--keystore-path KEYSTORE_PATH]
+                                                 [--keystore-password KEYSTORE_PASSWORD]
                                                  [--eth-rpc-endpoint ETH_RPC_ENDPOINT]
 ```
 
@@ -57,6 +59,8 @@ snet identity create IDENTITY_NAME IDENTITY TYPE [--mnemonic MNEMONIC]
   * `MNEMONIC`: required only for `mnemonic` identity type;
 [bip39](https://github.com/bitcoin/bips/blob/master/bip-0039.mediawiki) mnemonic for wallet derivation
   * `PRIVATE_KEY`: required only for `key` identity type; hex-encoded private Ethereum key
+  * `KEYSTORE_PATH`: required only for `keystore` identity type; local path of the encrypted JSON file
+  * `KEYSTORE_PASSWORD`: required only for `keystore` identity type; password to unlock the the encrypted JSON file
   * `ETH_RPC_ENDPOINT`: required only for `rpc` identity type; Ethereum JSON-RPC endpoint that manages target account
 
 ---

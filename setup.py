@@ -45,7 +45,6 @@ setup(
         'grpcio-tools==1.14.1',
         'jsonrpcclient==2.5.2',
         'web3==4.2.1',
-        'bitcoin==1.0',
         'mnemonic==0.18',
         'pycoin>=0.80',
         'ecdsa==0.13',
