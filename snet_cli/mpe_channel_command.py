@@ -104,7 +104,7 @@ class MPEChannelCommand(MPEServiceCommand):
         We allow the following types of expirations
          1. "<int>" simple integer defines absolute expiration in blocks
          2. "+<int>blocks", where <int> is integer sets expiration as: current_block + <int>
-         3. "+<int>days", where <int> is integer sets expiration as: current_block + N*4*60*24 (we assume 15 sec/block here)
+         3. "+<int>days", where <int> is integer sets expiration as: current_block + <int>*4*60*24 (we assume 15 sec/block here)
 
         If expiration > current_block + 1036800 (~6 month) we generate an exception if "--force" flag haven't been set
         """
