@@ -414,9 +414,17 @@ def add_p_full_message(p):
 def add_p_group_name(p):
     p.add_argument("--group-name", default=None, help="name of the payment group. Parameter should be specified only for services with several payment groups")
 
+def add_p_expiration(p, is_optional):
+    h = "expiration time in blocks (<int>), or in blocks related to the current_block (+<int>blocks), or in days related to the current_block and assuming 15 sec/block (+<int>days)"
+    if (is_optional):
+        p.add_argument("--expiration", required=True,  help=h)
+    else:
+        p.add_argument("expiration",  help=h)
+    p.add_argument("--force", action="store_true", help="Skip check for very high (>6 month) expiration time")
+
 def add_p_open_channel_basic(p):
     p.add_argument("amount",         type=stragi2cogs, help="amount of AGI tokens to put in the new channel")
-    p.add_argument("expiration",     type=int, help="expiration time (in blocks) for the new channel (one block ~ 15 seconds)")
+    add_p_expiration(p, is_optional = False)
     p.add_argument("--signer", default=None, help="Signer for the channel (by default is equal to the sender)")
     add_p_group_name(p)
     add_p_mpe_address_opt(p)
@@ -461,7 +469,7 @@ def add_mpe_channel_options(parser):
     p.set_defaults(fn="channel_extend_and_add_funds")
     add_p_channel_id(p)
     expiration_amount_g = p.add_argument_group(title="Expiration and amount")
-    expiration_amount_g.add_argument("--expiration", type=int,         required=True, help="New expiration for the channel (should be bigger then old one)")
+    add_p_expiration(expiration_amount_g, is_optional = True)
     expiration_amount_g.add_argument("--amount",     type=stragi2cogs, required=True, help="Amount of AGI tokens to add to the channel")
     add_p_mpe_address_opt(p)
     add_transaction_arguments(p)
