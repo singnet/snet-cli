@@ -69,6 +69,7 @@ class KeyStoreIdentityProvider(IdentityProvider):
                 encrypted_key = keyfile.read()
                 self.address = self.w3.toChecksumAddress(json.loads(encrypted_key)["address"])
                 self.path_to_keystore = path_to_keystore
+                self.private_key = None
         except CommException:
             raise RuntimeError(
                 "Error decrypting your keystore. Are you sure it is the correct path?")
@@ -79,22 +80,18 @@ class KeyStoreIdentityProvider(IdentityProvider):
 
     def transact(self, transaction, out_f):
 
-        password = getpass.getpass("Password:") or ""
-        with open(self.path_to_keystore) as keyfile:
-            encrypted_key = keyfile.read()
-            private_key = self.w3.eth.account.decrypt(encrypted_key, password)
-    
-        raw_transaction = sign_transaction_with_private_key(self.w3, private_key, transaction)
+        if self.private_key == None :
+            self.private_key = unlock_keystore_with_password(self.w3, self.path_to_keystore)
+
+        raw_transaction = sign_transaction_with_private_key(self.w3, self.private_key, transaction)
         return send_and_wait_for_transaction(raw_transaction, self.w3, out_f)
 
     def sign_message_after_soliditySha3(self, message):
 
-        password = getpass.getpass("Password:") or ""
-        with open(self.path_to_keystore) as keyfile:
-            encrypted_key = keyfile.read()
-            private_key = w3.eth.account.decrypt(encrypted_key, password)
+        if self.private_key == None :
+            self.private_key = unlock_keystore_with_password(self.w3, self.path_to_keystore)
 
-        return sign_message_with_private_key(self.w3, private_key, message)
+        return sign_message_with_private_key(self.w3, self.private_key, message)
 
 
 class RpcIdentityProvider(IdentityProvider):
@@ -345,3 +342,10 @@ def sign_transaction_with_private_key(w3, private_key, transaction):
 def sign_message_with_private_key(w3, private_key, message):
     h = defunct_hash_message(message)
     return w3.eth.account.signHash(h, private_key).signature
+
+def unlock_keystore_with_password(w3, path_to_keystore):
+    password = getpass.getpass("Password : ") or ""
+    with open(path_to_keystore) as keyfile:
+        encrypted_key = keyfile.read()
+        return w3.eth.account.decrypt(encrypted_key, password)
+    
