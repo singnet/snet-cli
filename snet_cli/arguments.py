@@ -114,7 +114,6 @@ def add_identity_options(parser, config):
     p.add_argument("--mnemonic", help="bip39 mnemonic for 'mnemonic' identity_type")
     p.add_argument("--private-key", help="hex-encoded private key for 'key' identity_type")
     p.add_argument("--keystore-path", help="Path of the JSON encrypted file for 'keystore' identity_type")
-    p.add_argument("--keystore-password", help="Optional: Password to unlock the JSON encrypted file for 'keystore' identity_type")    
     p.add_argument("--network", help="network this identity will be bind to (obligatory for 'rpc' identity_type, optional for others)")
     p.add_argument("--wallet-index", type=int, default=0, help="default wallet index for this account (default is 0)")
 
