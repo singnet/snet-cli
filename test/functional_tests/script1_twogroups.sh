@@ -73,8 +73,16 @@ snet channel claim-timeout 0 -y -q
 # we do not send transaction second time
 snet channel claim-timeout 0 -y -q && exit 1 || echo "fail as expected"
 
-snet channel extend-add 0 --expiration 10000 --amount 42 -y  -q
-snet channel open-init  testo tests 1 1000000  --group-name group2 -y -q
+snet channel extend-add 0 --expiration 10000         --amount 42 -y  -q
+snet channel extend-add 0 --expiration +10000blocks  --amount 0  -y  -q
+snet channel extend-add 0 --expiration +10000days    --amount 0  -y  -q && exit 1 || echo "fail as expected"
+snet channel extend-add 0 --expiration +10000days --force  --amount 0  -y  -q
+snet channel extend-add 0 --expiration 57600000 --force  --amount 0  -y  -q && exit 1 || echo "fail as expected"
+
+EXPIRATION1=$((`snet channel block-number` + 57600000))
+snet channel extend-add 0 --expiration $EXPIRATION1 --force  --amount 0  -y  -q
+
+snet channel open-init  testo tests 1 +14days  --group-name group2 -y -q
 
 # test print_initialized_channels and print_all_channels. We should have channels openned for specific identity
 snet channel print-initialized | grep 0x42A605c07EdE0E1f648aB054775D6D4E38496144
@@ -131,7 +139,7 @@ snet organization list-services testo
 # open channel with sender=signer=0x32267d505B1901236508DcDa64C1D0d5B9DF639a
 
 snet account transfer 0x32267d505B1901236508DcDa64C1D0d5B9DF639a 1 -y -q
-snet channel open-init testo tests2 1 314156700003452 -y  -q --wallet-index 3
+snet channel open-init testo tests2 1 314156700003452 --force -y  -q --wallet-index 3
 snet channel print-all-filter-sender --sender 0x32267d505B1901236508DcDa64C1D0d5B9DF639a |grep 314156700003452
 snet channel print-all-filter-sender |grep 314156700003452 && exit 1 || echo "fail as expected"
 

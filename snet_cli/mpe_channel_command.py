@@ -98,6 +98,30 @@ class MPEChannelCommand(MPEServiceCommand):
         metadata      = self._get_service_metadata_from_registry()
         self._try_init_channel_from_metadata(metadata)
 
+    def _get_expiration_from_args(self):
+        """
+        read expiration from args.
+        We allow the following types of expirations
+         1. "<int>" simple integer defines absolute expiration in blocks
+         2. "+<int>blocks", where <int> is integer sets expiration as: current_block + <int>
+         3. "+<int>days", where <int> is integer sets expiration as: current_block + <int>*4*60*24 (we assume 15 sec/block here)
+
+        If expiration > current_block + 1036800 (~6 month) we generate an exception if "--force" flag haven't been set
+        """
+        current_block = self.ident.w3.eth.blockNumber
+        s = self.args.expiration
+        if (s.startswith("+") and s.endswith("days")):
+            rez = current_block + int(s[1:-4]) * 4 * 60 * 24
+        elif (s.startswith("+") and s.endswith("blocks")):
+            rez = current_block + int(s[1:-6])
+        else:
+            rez = int(s)
+        if (rez > current_block + 1036800 and not self.args.force):
+            d = (rez - current_block) // (4 * 60 * 24)
+            raise Exception("You try to set expiration time too far in the future: approximately %i days. "%d +
+                            "Set --force parameter if your really want to do it.")
+        return rez
+
     def _open_channel_for_service(self, metadata):
         group_id    = metadata.get_group_id(self.args.group_name)
         recipient   = metadata.get_payment_address(self.args.group_name)
@@ -108,7 +132,8 @@ class MPEChannelCommand(MPEServiceCommand):
             signer = self.ident.address
 
         channel_info = {"sender": self.ident.address, "signer": signer, "recipient": recipient, "groupId" : group_id}
-        params = [channel_info["signer"], channel_info["recipient"], channel_info["groupId"], self.args.amount, self.args.expiration]
+        expiration = self._get_expiration_from_args()
+        params = [channel_info["signer"], channel_info["recipient"], channel_info["groupId"], self.args.amount, expiration]
         rez = self.transact_contract_command("MultiPartyEscrow", "openChannel", params)
 
         if (len(rez[1]) != 1 or rez[1][0]["event"] != "ChannelOpen"):
@@ -145,7 +170,8 @@ class MPEChannelCommand(MPEServiceCommand):
         self.transact_contract_command("MultiPartyEscrow", "channelClaimTimeout", [self.args.channel_id])
 
     def channel_extend_and_add_funds(self):
-        self.transact_contract_command("MultiPartyEscrow", "channelExtendAndAddFunds", [self.args.channel_id, self.args.expiration, self.args.amount])
+        expiration = self._get_expiration_from_args()
+        self.transact_contract_command("MultiPartyEscrow", "channelExtendAndAddFunds", [self.args.channel_id, expiration, self.args.amount])
 
     def _get_all_initilized_channels(self):
         """ return list of tuples (channel_id, channel_info) """
