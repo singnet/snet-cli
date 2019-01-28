@@ -14,7 +14,7 @@ from snet_cli.utils import DefaultAttributeObject, get_web3, serializable, type_
 
 from snet_cli.utils_config import get_contract_address, get_field_from_args_or_session
 from snet_cli.identity import RpcIdentityProvider, MnemonicIdentityProvider, TrezorIdentityProvider, \
-    LedgerIdentityProvider, KeyIdentityProvider
+    LedgerIdentityProvider, KeyIdentityProvider, KeyStoreIdentityProvider
 import web3
 import secrets
 import string
@@ -115,6 +115,8 @@ class BlockchainCommand(Command):
             return LedgerIdentityProvider(self.w3, self.get_wallet_index())
         if identity_type == "key":
             return KeyIdentityProvider(self.w3, self.config.get_session_field("private_key"))
+        if identity_type == "keystore":
+            return KeyStoreIdentityProvider(self.w3, self.config.get_session_field("keystore_path"))
 
     def get_contract_argser(self, contract_address, contract_function, contract_def, **kwargs):
         def f(*positional_inputs, **named_inputs):
