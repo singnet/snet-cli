@@ -80,7 +80,7 @@ class KeyStoreIdentityProvider(IdentityProvider):
 
     def transact(self, transaction, out_f):
 
-        if self.private_key == None :
+        if self.private_key is None:
             self.private_key = unlock_keystore_with_password(self.w3, self.path_to_keystore)
 
         raw_transaction = sign_transaction_with_private_key(self.w3, self.private_key, transaction)
@@ -88,7 +88,7 @@ class KeyStoreIdentityProvider(IdentityProvider):
 
     def sign_message_after_soliditySha3(self, message):
 
-        if self.private_key == None :
+        if self.private_key is None:
             self.private_key = unlock_keystore_with_password(self.w3, self.path_to_keystore)
 
         return sign_message_with_private_key(self.w3, self.private_key, message)
