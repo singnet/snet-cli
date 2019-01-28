@@ -3,6 +3,7 @@ import json
 import hashlib
 import struct
 import time
+import getpass
 
 from pycoin.key.BIP32Node import BIP32Node
 import ecdsa
@@ -16,9 +17,7 @@ from trezorlib.transport_hid import HidTransport
 
 from snet_cli._vendor.ledgerblue.comm import getDongle
 from snet_cli._vendor.ledgerblue.commException import CommException
-
-from snet_cli.utils_keystore import decode_keystore_json
-
+      
 BIP32_HARDEN = 0x80000000
 
 
@@ -35,6 +34,7 @@ class IdentityProvider(abc.ABC):
     def sign_message_after_soliditySha3(self, message):
         raise NotImplementedError()
 
+
 class KeyIdentityProvider(IdentityProvider):
     def __init__(self, w3, private_key):
         self.w3 = w3
@@ -47,43 +47,59 @@ class KeyIdentityProvider(IdentityProvider):
                                                   curve=ecdsa.SECP256k1,
                                                   hashfunc=hashlib.sha256).get_verifying_key()
 
-        self.address = self.w3.toChecksumAddress("0x" + self.w3.sha3(hexstr=public_key.to_string().hex())[12:].hex())
+        self.address = self.w3.toChecksumAddress(
+            "0x" + self.w3.sha3(hexstr=public_key.to_string().hex())[12:].hex())
 
     def get_address(self):
         return self.address
 
     def transact(self, transaction, out_f):
-        raw_transaction = self.w3.eth.account.signTransaction(transaction, self.private_key).rawTransaction
+        raw_transaction = self.w3.eth.account.signTransaction(
+            transaction, self.private_key).rawTransaction
         return send_and_wait_for_transaction(raw_transaction, self.w3, out_f)
-    
+
     def sign_message_after_soliditySha3(self, message):
         h = defunct_hash_message(message)
         return self.w3.eth.account.signHash(h, self.private_key).signature
+
 
 class KeyStoreIdentityProvider(IdentityProvider):
-    def __init__(self, w3, path_to_keystore, password):
+    def __init__(self, w3, path_to_keystore):
         self.w3 = w3
         try:
-            self.private_key = decode_keystore_json(json.load(open(path_to_keystore)), password)
+            with open(path_to_keystore) as keyfile:
+                encrypted_key = keyfile.read()
+                self.address = self.w3.toChecksumAddress(json.loads(encrypted_key)["address"])
+                self.path_to_keystore = path_to_keystore
         except CommException:
-            raise RuntimeError("Error decrypting your keystore. Are you sure it is the correct path and/or password?")
-       
-        public_key = ecdsa.SigningKey.from_string(string=self.private_key,
-                                                  curve=ecdsa.SECP256k1,
-                                                  hashfunc=hashlib.sha256).get_verifying_key()
+            raise RuntimeError(
+                "Error decrypting your keystore. Are you sure it is the correct path and/or password?")
 
-        self.address = self.w3.toChecksumAddress("0x" + self.w3.sha3(hexstr=public_key.to_string().hex())[12:].hex())
 
     def get_address(self):
         return self.address
 
     def transact(self, transaction, out_f):
-        raw_transaction = self.w3.eth.account.signTransaction(transaction, self.private_key).rawTransaction
-        return send_and_wait_for_transaction(raw_transaction, self.w3, out_f)
+
+        password = getpass.getpass("Password:") or ""
+        with open(self.path_to_keystore) as keyfile:
+            encrypted_key = keyfile.read()
+            private_key = self.w3.eth.account.decrypt(encrypted_key, password)
     
+        raw_transaction = self.w3.eth.account.signTransaction(
+            transaction, private_key).rawTransaction
+        return send_and_wait_for_transaction(raw_transaction, self.w3, out_f)
+
     def sign_message_after_soliditySha3(self, message):
         h = defunct_hash_message(message)
+
+        password = getpass.getpass("Password:") or ""
+        with open(self.path_to_keystore) as keyfile:
+            encrypted_key = keyfile.read()
+            private_key = w3.eth.account.decrypt(encrypted_key, password)
+
         return self.w3.eth.account.signHash(h, self.private_key).signature
+
 
 class RpcIdentityProvider(IdentityProvider):
     def __init__(self, w3, index):
@@ -101,10 +117,12 @@ class RpcIdentityProvider(IdentityProvider):
     def sign_message_after_soliditySha3(self, message):
         return self.w3.eth.sign(self.get_address(), message)
 
+
 class MnemonicIdentityProvider(IdentityProvider):
     def __init__(self, w3, mnemonic, index):
         self.w3 = w3
-        master_key = BIP32Node.from_master_secret(Mnemonic("english").to_seed(mnemonic))
+        master_key = BIP32Node.from_master_secret(
+            Mnemonic("english").to_seed(mnemonic))
         purpose_subtree = master_key.subkey(i=44, is_hardened=True)
         coin_type_subtree = purpose_subtree.subkey(i=60, is_hardened=True)
         account_subtree = coin_type_subtree.subkey(i=0, is_hardened=True)
@@ -123,12 +141,14 @@ class MnemonicIdentityProvider(IdentityProvider):
         return self.address
 
     def transact(self, transaction, out_f):
-        raw_transaction = self.w3.eth.account.signTransaction(transaction, self.private_key).rawTransaction
+        raw_transaction = self.w3.eth.account.signTransaction(
+            transaction, self.private_key).rawTransaction
         return send_and_wait_for_transaction(raw_transaction, self.w3, out_f)
 
     def sign_message_after_soliditySha3(self, message):
         h = defunct_hash_message(message)
         return self.w3.eth.account.signHash(h, self.private_key).signature
+
 
 class TrezorIdentityProvider(IdentityProvider):
     def __init__(self, w3, index):
@@ -151,12 +171,14 @@ class TrezorIdentityProvider(IdentityProvider):
                                                  nonce=transaction["nonce"],
                                                  gas_price=transaction["gasPrice"],
                                                  gas_limit=transaction["gas"],
-                                                 to=bytearray.fromhex(transaction["to"][2:]),
+                                                 to=bytearray.fromhex(
+                                                     transaction["to"][2:]),
                                                  value=transaction["value"],
                                                  data=bytearray.fromhex(transaction["data"][2:]))
 
         transaction.pop("from")
-        unsigned_transaction = serializable_unsigned_transaction_from_dict(transaction)
+        unsigned_transaction = serializable_unsigned_transaction_from_dict(
+            transaction)
         raw_transaction = encode_transaction(unsigned_transaction,
                                              vrs=(signature[0],
                                                   int(signature[1].hex(), 16),
@@ -171,6 +193,7 @@ class TrezorIdentityProvider(IdentityProvider):
                                         self.index])
         return self.client.call(proto.EthereumSignMessage(address_n=n, message=message)).signature
 
+
 class LedgerIdentityProvider(IdentityProvider):
     GET_ADDRESS_OP = b"\xe0\x02\x00\x00"
     SIGN_TX_OP = b"\xe0\x04\x00\x00"
@@ -182,10 +205,12 @@ class LedgerIdentityProvider(IdentityProvider):
         try:
             self.dongle = getDongle(False)
         except CommException:
-            raise RuntimeError("Received commException from ledger. Are you sure your device is plugged in?")
+            raise RuntimeError(
+                "Received commException from ledger. Are you sure your device is plugged in?")
         self.dongle_path = parse_bip32_path("44'/60'/0'/0/{}".format(index))
         apdu = LedgerIdentityProvider.GET_ADDRESS_OP
-        apdu += bytearray([len(self.dongle_path) + 1, int(len(self.dongle_path) / 4)]) + self.dongle_path
+        apdu += bytearray([len(self.dongle_path) + 1,
+                           int(len(self.dongle_path) / 4)]) + self.dongle_path
         try:
             result = self.dongle.exchange(apdu)
         except CommException:
@@ -214,10 +239,12 @@ class LedgerIdentityProvider(IdentityProvider):
         overflow = len(self.dongle_path) + 1 + len(encoded_tx) - 255
 
         if overflow > 0:
-            encoded_tx, remaining_tx = encoded_tx[:-overflow], encoded_tx[-overflow:]
+            encoded_tx, remaining_tx = encoded_tx[:-
+                                                  overflow], encoded_tx[-overflow:]
 
         apdu = LedgerIdentityProvider.SIGN_TX_OP
-        apdu += bytearray([len(self.dongle_path) + 1 + len(encoded_tx), int(len(self.dongle_path) / 4)])
+        apdu += bytearray([len(self.dongle_path) + 1 +
+                           len(encoded_tx), int(len(self.dongle_path) / 4)])
         apdu += self.dongle_path + encoded_tx
         try:
             print("Sending transaction to ledger for signature...\n", file=out_f)
@@ -227,7 +254,8 @@ class LedgerIdentityProvider(IdentityProvider):
                 overflow = len(encoded_tx) - 255
 
                 if overflow > 0:
-                    encoded_tx, remaining_tx = encoded_tx[:-overflow], encoded_tx[-overflow:]
+                    encoded_tx, remaining_tx = encoded_tx[:-
+                                                          overflow], encoded_tx[-overflow:]
 
                 apdu = LedgerIdentityProvider.SIGN_TX_OP_CONT
                 apdu += bytearray([len(encoded_tx)])
@@ -238,16 +266,19 @@ class LedgerIdentityProvider(IdentityProvider):
                                "Ethereum app is running?")
 
         transaction.pop("from")
-        unsigned_transaction = serializable_unsigned_transaction_from_dict(transaction)
+        unsigned_transaction = serializable_unsigned_transaction_from_dict(
+            transaction)
         raw_transaction = encode_transaction(unsigned_transaction,
                                              vrs=(result[0],
-                                                  int.from_bytes(result[1:33], byteorder="big"),
+                                                  int.from_bytes(
+                                                      result[1:33], byteorder="big"),
                                                   int.from_bytes(result[33:65], byteorder="big")))
         return send_and_wait_for_transaction(raw_transaction, self.w3, out_f)
 
     def sign_message_after_soliditySha3(self, message):
         apdu = LedgerIdentityProvider.SIGN_MESSAGE_OP
-        apdu += bytearray([len(self.dongle_path) + 1 + len(message) + 4, int(len(self.dongle_path) / 4)])
+        apdu += bytearray([len(self.dongle_path) + 1 +
+                           len(message) + 4, int(len(self.dongle_path) / 4)])
         apdu += self.dongle_path + struct.pack(">I", len(message)) + message
         try:
             result = self.dongle.exchange(apdu)
@@ -256,7 +287,8 @@ class LedgerIdentityProvider(IdentityProvider):
                                "Ethereum app is running?")
 
         return result[1:] + result[0:1]
-  
+
+
 def send_and_wait_for_transaction_receipt(txn_hash, w3):
     # Wait for transaction to be mined
     receipt = dict()
@@ -287,6 +319,7 @@ def parse_bip32_path(path):
             result = result + struct.pack(">I", BIP32_HARDEN | int(element[0]))
     return result
 
+
 def get_kws_for_identity_type(identity_type):
     SECRET = True
     PLAINTEXT = False
@@ -302,9 +335,10 @@ def get_kws_for_identity_type(identity_type):
     elif identity_type == "ledger":
         return []
     elif identity_type == "keystore":
-        return [("keystore_password", SECRET), ("keystore_path", PLAINTEXT)]
+        return [("keystore_path", PLAINTEXT)]
     else:
-        raise RuntimeError("unrecognized identity_type {}".format(identity_type))
+        raise RuntimeError(
+            "unrecognized identity_type {}".format(identity_type))
 
 
 def get_identity_types():

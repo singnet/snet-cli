@@ -116,7 +116,7 @@ class BlockchainCommand(Command):
         if identity_type == "key":
             return KeyIdentityProvider(self.w3, self.config.get_session_field("private_key"))
         if identity_type == "keystore":
-            return KeyStoreIdentityProvider(self.w3, self.config.get_session_field("keystore_path"), self.config.get_session_field("keystore_password"))
+            return KeyStoreIdentityProvider(self.w3, self.config.get_session_field("keystore_path"))
 
     def get_contract_argser(self, contract_address, contract_function, contract_def, **kwargs):
         def f(*positional_inputs, **named_inputs):
