@@ -54,13 +54,11 @@ class KeyIdentityProvider(IdentityProvider):
         return self.address
 
     def transact(self, transaction, out_f):
-        raw_transaction = self.w3.eth.account.signTransaction(
-            transaction, self.private_key).rawTransaction
+        raw_transaction = sign_transaction_with_private_key(self.w3, self.private_key, transaction)
         return send_and_wait_for_transaction(raw_transaction, self.w3, out_f)
 
     def sign_message_after_soliditySha3(self, message):
-        h = defunct_hash_message(message)
-        return self.w3.eth.account.signHash(h, self.private_key).signature
+        return sign_message_with_private_key(self.w3, self.private_key, message)
 
 
 class KeyStoreIdentityProvider(IdentityProvider):
@@ -73,7 +71,7 @@ class KeyStoreIdentityProvider(IdentityProvider):
                 self.path_to_keystore = path_to_keystore
         except CommException:
             raise RuntimeError(
-                "Error decrypting your keystore. Are you sure it is the correct path and/or password?")
+                "Error decrypting your keystore. Are you sure it is the correct path?")
 
 
     def get_address(self):
@@ -86,19 +84,17 @@ class KeyStoreIdentityProvider(IdentityProvider):
             encrypted_key = keyfile.read()
             private_key = self.w3.eth.account.decrypt(encrypted_key, password)
     
-        raw_transaction = self.w3.eth.account.signTransaction(
-            transaction, private_key).rawTransaction
+        raw_transaction = sign_transaction_with_private_key(self.w3, private_key, transaction)
         return send_and_wait_for_transaction(raw_transaction, self.w3, out_f)
 
     def sign_message_after_soliditySha3(self, message):
-        h = defunct_hash_message(message)
 
         password = getpass.getpass("Password:") or ""
         with open(self.path_to_keystore) as keyfile:
             encrypted_key = keyfile.read()
             private_key = w3.eth.account.decrypt(encrypted_key, password)
 
-        return self.w3.eth.account.signHash(h, self.private_key).signature
+        return sign_message_with_private_key(self.w3, private_key, message)
 
 
 class RpcIdentityProvider(IdentityProvider):
@@ -141,13 +137,11 @@ class MnemonicIdentityProvider(IdentityProvider):
         return self.address
 
     def transact(self, transaction, out_f):
-        raw_transaction = self.w3.eth.account.signTransaction(
-            transaction, self.private_key).rawTransaction
+        raw_transaction = sign_transaction_with_private_key(self.w3, self.private_key, transaction)
         return send_and_wait_for_transaction(raw_transaction, self.w3, out_f)
 
     def sign_message_after_soliditySha3(self, message):
-        h = defunct_hash_message(message)
-        return self.w3.eth.account.signHash(h, self.private_key).signature
+        return sign_message_with_private_key(self.w3, self.private_key, message)
 
 
 class TrezorIdentityProvider(IdentityProvider):
@@ -343,3 +337,11 @@ def get_kws_for_identity_type(identity_type):
 
 def get_identity_types():
     return ["rpc", "mnemonic", "key", "trezor", "ledger", "keystore"]
+
+
+def sign_transaction_with_private_key(w3, private_key, transaction):
+    return w3.eth.account.signTransaction(transaction, private_key).rawTransaction
+
+def sign_message_with_private_key(w3, private_key, message):
+    h = defunct_hash_message(message)
+    return w3.eth.account.signHash(h, private_key).signature
