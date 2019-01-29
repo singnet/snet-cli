@@ -63,7 +63,7 @@ class MPEClientCommand(MPEChannelCommand):
 
         return params
 
-    
+
     def _transform_call_params(self, params):
         """
         possible modifiers: file, b64encode, b64decode
@@ -204,15 +204,17 @@ class MPEClientCommand(MPEChannelCommand):
         if (self.ident.address != channel_info["signer"]):
             raise Exception("You are not the signer of the channel %i"%self.args.channel_id)
 
-    def call_server_statelessly(self):
-        params           = self._get_call_params()
+    def call_server_statelessly_with_params(self, params):
         grpc_channel     = grpc.insecure_channel(remove_http_https_prefix(self.args.endpoint))
         service_metadata = self._get_service_metadata_for_channel()
-
         self._call_check_price(service_metadata)
         self._call_check_signer()
-
         current_nonce, current_amount, unspent_amount = self._get_channel_state_statelessly(grpc_channel, self.args.channel_id)
         self._printout("unspent_amount_in_cogs before call (None means that we cannot get it now):%s"%str(unspent_amount))
         response = self._call_server_via_grpc_channel(grpc_channel, current_nonce, current_amount + self.args.price, params, service_metadata)
+        return response
+
+    def call_server_statelessly(self):
+        params           = self._get_call_params()
+        response = self.call_server_statelessly_with_params(params)
         self._deal_with_call_response(response)
