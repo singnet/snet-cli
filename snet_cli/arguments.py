@@ -764,7 +764,6 @@ def add_sdk_options(parser):
     p.add_argument("language", choices=supported_languages,
                    help="choose target language for the generated client library from {}".format(supported_languages),
                    metavar="LANGUAGE")
-    p.add_argument("org_id", help="Id of the target service organization in the SingularityNET Registry", metavar="ORGANIZATION_ID")
-    p.add_argument("service_id", help="Id of the target service in the SingularityNET Registry", metavar="SERVICE_ID")
+    add_p_service_in_registry(p)
     p.add_argument("protodir", nargs="?", help="Directory where to output the generated client libraries", metavar="PROTODIR")
     add_eth_call_arguments(p)
