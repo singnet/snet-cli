@@ -26,7 +26,7 @@ class MPEServiceCommand(BlockchainCommand):
         self._metadata_add_group(metadata)
         for endpoint in self.args.endpoints:
             metadata.add_endpoint(self.args.group_name, endpoint)
-        if (self.args.fixed_price):
+        if (self.args.fixed_price is not None):
             metadata.set_fixed_price_in_cogs(self.args.fixed_price)
         metadata.save_pretty(self.args.metadata_file)
 
