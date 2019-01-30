@@ -27,7 +27,7 @@ def import_protobuf_from_dir(proto_dir, method_name, service_name = None):
         raise Exception("Error while loading protobuf. We found methods %s in multiply services [%s]."
                         " You should specify service_name."%(method_name, ", ".join(found_services)))
 
-    return all_services[found_services[0][method_name]]
+    return all_services[found_services[0]][method_name]
 
 
 def import_protobuf_from_dir_get_all(proto_dir):
