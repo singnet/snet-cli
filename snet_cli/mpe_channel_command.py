@@ -123,6 +123,10 @@ class MPEChannelCommand(MPEServiceCommand):
         return rez
 
     def _open_channel_for_service(self, metadata):
+        mpe_cogs = self.call_contract_command("MultiPartyEscrow",    "balances",  [self.ident.address])
+        if (mpe_cogs < self.args.amount):
+            raise Exception("insufficient funds. You MPE balance is %s AGI "%cogs2stragi(mpe_cogs))
+
         group_id    = metadata.get_group_id(self.args.group_name)
         recipient   = metadata.get_payment_address(self.args.group_name)
 
