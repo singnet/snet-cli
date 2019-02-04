@@ -57,9 +57,10 @@ def _import_protobuf_from_file(grpc_pyfile, method_name, service_name = None):
         service_descriptor =  getattr(pb2, "DESCRIPTOR").services_by_name[service_name]
         for method in service_descriptor.methods:
             if(method.name == method_name):
-                request_class      = getattr(pb2, method.input_type.name)
-                response_class     = getattr(pb2, method.output_type.name)
+                request_class      = method.input_type._concrete_class
+                response_class     = method.output_type._concrete_class
                 stub_class         = getattr(pb2_grpc, "%sStub"%service_name)
+                
                 found_services.append(service_name)
     if (len(found_services) == 0):
         return False, None
