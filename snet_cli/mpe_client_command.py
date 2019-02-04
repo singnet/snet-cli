@@ -71,20 +71,24 @@ class MPEClientCommand(MPEChannelCommand):
         """
         rez = {}
         for k, v in params.items():
-            # k = modifier1@modifier2@...modifierN@k_final
-            k_split = k.split("@")
-            k_final = k_split[-1]
-            k_mods  = k_split[:-1]
-            for m in k_mods:
-                if (m == "file"):
-                    with open(v, 'rb') as f:
-                        v = f.read()
-                elif (m == "b64encode"):
-                    v = base64.b64encode(v)
-                elif (m == "b64decode"):
-                    v = base64.b64decode(v)
-                else:
-                    raise Exception("Unknow modifier ('%s') in call parameters. Possible modifiers: file, b64encode, b64decode"%m)
+            if isinstance(v, dict):
+                v = self._transform_call_params(v)
+                k_final = k
+            else:
+                # k = modifier1@modifier2@...modifierN@k_final
+                k_split = k.split("@")
+                k_final = k_split[-1]
+                k_mods  = k_split[:-1]
+                for m in k_mods:
+                    if (m == "file"):
+                        with open(v, 'rb') as f:
+                            v = f.read()
+                    elif (m == "b64encode"):
+                        v = base64.b64encode(v)
+                    elif (m == "b64decode"):
+                        v = base64.b64decode(v)
+                    else:
+                        raise Exception("Unknown modifier ('%s') in call parameters. Possible modifiers: file, b64encode, b64decode"%m)
             rez[k_final] = v
         return rez
 
@@ -110,7 +114,6 @@ class MPEClientCommand(MPEChannelCommand):
                     ("snet-payment-channel-nonce",         str(nonce)       ),
                     ("snet-payment-channel-amount",        str(amount)      ),
                     ("snet-payment-channel-signature-bin", bytes(signature))]
-
         response = call_fn(request, metadata=metadata)
         return response
 
