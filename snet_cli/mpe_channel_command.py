@@ -1,3 +1,4 @@
+
 from snet_cli.mpe_service_command import MPEServiceCommand
 from snet_cli.utils import compile_proto
 import base64
@@ -12,30 +13,38 @@ from snet_cli.utils_agi2cogs import cogs2stragi
 import pickle
 from web3.utils.encoding import pad_hex
 from web3.utils.events import get_event_data
-
+from collections import defaultdict
+import json
 
 # we inherit MPEServiceCommand because we need _get_service_metadata_from_registry
 class MPEChannelCommand(MPEServiceCommand):
 
     def _get_persistent_mpe_dir(self):
         """ get persistent storage for mpe """
-        return Path.home().joinpath(".snet", "mpe_client")
+        mpe_address      = self.get_mpe_address().lower()
+        registry_address = self.get_registry_address().lower()
+        return Path.home().joinpath(".snet", "mpe_client", "%s_%s"%(mpe_address, registry_address))
 
-    def _get_channel_dir(self, channel_id):
-        """ get persistent storage for the given channel (~/.snet/mpe_client/<mpe_address>/<channel-id>/) """
-        mpe_address = self.get_mpe_address().lower()
-        return self._get_persistent_mpe_dir().joinpath(mpe_address, str(channel_id))
+    def _get_service_base_dir(self, org_id, service_id):
+        """ get persistent storage for the given service (~/.snet/mpe_client/<mpe_address>_<registry_address>/<org_id>/<service_id>/) """
+        return self._get_persistent_mpe_dir().joinpath(org_id, service_id)
 
-    def get_channel_dir(self):
-        return self._get_channel_dir(self.args.channel_id)
+    def get_service_spec_dir(self, org_id, service_id):
+        """ get persistent storage for the given service (~/.snet/mpe_client/<mpe_address>/<org_id>/<service_id>/service/) """
+        return self._get_service_base_dir(org_id, service_id).joinpath("service")
 
-    def _save_channel_info_dir(self, channel_dir, channel_info):
+    def get_channel_dir(self, org_id, service_id, channel_id):
+        return self._get_service_base_dir(org_id, service_id).joinpath("channels", str(channel_id))
+
+    def _save_channel_info(self, channel_dir, channel_info):
         fn = os.path.join(channel_dir, "channel_info.pickle")
         pickle.dump( channel_info, open( fn, "wb" ) )
 
-    def _read_channel_info(self, channel_id):
-        fn = os.path.join(self._get_channel_dir(channel_id), "channel_info.pickle")
-        return pickle.load( open( fn, "rb" ) )
+    def _read_channel_info(self, org_id, service_id, channel_id):
+        fn = os.path.join(self.get_channel_dir(org_id, service_id, channel_id), "channel_info.pickle")
+        channel_info = pickle.load( open( fn, "rb" ) )
+        channel_info["channelId"] = channel_id
+        return channel_info
 
     def _check_mpe_address_metadata(self, metadata):
         """ we make sure that MultiPartyEscrow address from metadata is correct """
@@ -43,30 +52,45 @@ class MPEChannelCommand(MPEServiceCommand):
         if (str(mpe_address).lower() != str(metadata["mpe_address"]).lower()):
             raise Exception("MultiPartyEscrow contract address from metadata %s do not correspond to current MultiPartyEscrow address %s"%(metadata["mpe_address"], mpe_address))
 
-    def _init_channel_from_metadata(self, channel_dir, metadata, channel_info):
+    def _init_new_service_from_metadata(self, service_dir, metadata):
         self._check_mpe_address_metadata(metadata)
-        if (os.path.exists(channel_dir)):
-            raise Exception("Directory %s already exists"%channel_dir)
+        if (os.path.exists(service_dir)):
+            raise Exception("Directory %s already exists"%service_dir)
 
-        os.makedirs(channel_dir, mode=0o700)
+        os.makedirs(service_dir, mode=0o700)
         try:
-            spec_dir = os.path.join(channel_dir, "service_spec")
+            spec_dir = os.path.join(service_dir, "service_spec")
             os.makedirs(spec_dir, mode=0o700)
             safe_extract_proto_from_ipfs(self._get_ipfs_client(), metadata["model_ipfs_hash"], spec_dir)
 
             # compile .proto files
-            if (not compile_proto(Path(spec_dir), channel_dir)):
+            if (not compile_proto(Path(spec_dir), service_dir)):
                 raise Exception("Fail to compile %s/*.proto"%spec_dir)
 
             # save service_metadata.json in channel_dir
-            metadata.save_pretty(os.path.join(channel_dir, "service_metadata.json"))
-
-            # save channel_info (we need sender and signer)
-            self._save_channel_info_dir(channel_dir, channel_info)
+            metadata.save_pretty(os.path.join(service_dir, "service_metadata.json"))
         except:
             # it is secure to remove channel_dir, because we've created it
-            shutil.rmtree(channel_dir)
+            shutil.rmtree(service_dir)
             raise
+
+    def _init_or_update_service_from_metadata(self, metadata):
+        tmp_dir = tempfile.mkdtemp()
+        shutil.rmtree(tmp_dir)
+        self._init_new_service_from_metadata(tmp_dir, metadata)
+
+        service_dir = self.get_service_spec_dir(self.args.org_id, self.args.service_id)
+        # it is relatevely safe to remove service_dir because we know that service_dir = self.get_service_spec_dir() so it is not a normal dir
+        if (os.path.exists(service_dir)):
+            shutil.rmtree(service_dir)
+        shutil.move(tmp_dir, service_dir)
+
+    def _init_channel_dir(self, channel_id, channel_info):
+        channel_dir = self.get_channel_dir(self.args.org_id, self.args.service_id, channel_id)
+        if (not os.path.exists(channel_dir)):
+            os.makedirs(channel_dir, mode=0o700)
+        # save channel info
+        self._save_channel_info(channel_dir, channel_info)
 
     def _check_channel_is_mine(self, channel):
         if (channel["sender"].lower() != self.ident.address.lower() and
@@ -74,29 +98,27 @@ class MPEChannelCommand(MPEServiceCommand):
                 raise Exception("Channel does not correspond to the current Ethereum identity " +
                                  "(address=%s sender=%s signer=%s)"%(self.ident.address.lower(), channel["sender"].lower(), channel["signer"].lower()))
 
-    def _try_init_channel_from_metadata(self, metadata):
-        channel = self._get_channel_state_from_blockchain(self.args.channel_id)
+    def _init_channel_from_metadata(self, metadata):
         channel_id = self.args.channel_id
-        if (channel["sender"].lower() != self.ident.address.lower() and
-            channel["signer"].lower() != self.ident.address.lower()):
-                raise Exception("Channel %i does not correspond to the current Ethereum identity "%channel_id +
-                                "(address=%s sender=%s signer=%s)"%(self.ident.address.lower(), channel["sender"].lower(), channel["signer"].lower()))
-        group_name = metadata.get_group_by_group_id(channel["groupId"])
-        if (not group_name):
+        channel = self._get_channel_state_from_blockchain(channel_id)
+        self._check_channel_is_mine(channel)
+        group = metadata.get_group_by_group_id(channel["groupId"])
+        if (group is None):
             group_id_base64 = base64.b64encode(channel["groupId"]).decode('ascii')
             raise Exception("Channel %i does not correspond to the given metadata.\n"%channel_id +
-                             "We canot find the following group_id in metadata: " + group_id_base64)
+                             "We canont find the following group_id in metadata: " + group_id_base64)
         self._printout("#group_name")
-        self._printout(group_name["group_name"])
-        self._init_channel_from_metadata(self.get_channel_dir(), metadata, channel)
+        self._printout(group["group_name"])
+        self._init_or_update_service_from_metadata(metadata)
+        self._init_channel_dir(channel_id, channel)
 
     def init_channel_from_metadata(self):
         metadata  = load_mpe_service_metadata(self.args.metadata_file)
-        self._try_init_channel_from_metadata(metadata)
+        self._init_channel_from_metadata(metadata)
 
     def init_channel_from_registry(self):
         metadata      = self._get_service_metadata_from_registry()
-        self._try_init_channel_from_metadata(metadata)
+        self._init_channel_from_metadata(metadata)
 
     def _get_expiration_from_args(self):
         """
@@ -130,10 +152,7 @@ class MPEChannelCommand(MPEServiceCommand):
         group_id    = metadata.get_group_id(self.args.group_name)
         recipient   = metadata.get_payment_address(self.args.group_name)
 
-        if (self.args.signer):
-            signer = self.args.signer
-        else:
-            signer = self.ident.address
+        signer = self.get_address_from_arg_or_ident(self.args.signer)
 
         channel_info = {"sender": self.ident.address, "signer": signer, "recipient": recipient, "groupId" : group_id}
         expiration = self._get_expiration_from_args()
@@ -144,20 +163,41 @@ class MPEChannelCommand(MPEServiceCommand):
             raise Exception("We've expected only one ChannelOpen event after openChannel. Make sure that you use correct MultiPartyEscrow address")
         return rez[1][0]["args"]["channelId"], channel_info
 
+    def _find_already_opened_channel(self, metadata):
+        sender    = self.ident.address
+        signer    = self.get_address_from_arg_or_ident(self.args.signer)
+        group_id  = metadata.get_group_id(self.args.group_name)
+
+        channels_ids = self._get_all_channels_filter_group_sender(group_id, sender)
+        for i in channels_ids:
+            channel = self._get_channel_state_from_blockchain(i)
+            if (channel["signer"].lower() == signer.lower()):
+                return i, channel
+        return None, None
+
     def _open_init_channel_from_metadata(self, metadata):
-        """ try to initialize channel without actually open it (we check metadata and we compile .proto files) """
+
+        # first we simply try to initialize service without open channel (we check metadata and we compile .proto files) """
         tmp_dir = tempfile.mkdtemp()
         shutil.rmtree(tmp_dir)
-        self._init_channel_from_metadata(tmp_dir, metadata, {})
+        self._init_new_service_from_metadata(tmp_dir, metadata)
         shutil.rmtree(tmp_dir)
 
-        # open payment channel
-        channel_id, channel_info = self._open_channel_for_service(metadata)
-        self._printout("#channel_id")
-        self._printout(channel_id)
+        # first we try to find channel for this service
+        if (not self.args.open_new_anyway):
+            channel_id, channel_info = self._find_already_opened_channel(metadata)
+        if (not self.args.open_new_anyway and channel_id is not None):
+            self._printout("Channel with given sender, signer and group_id is already exists we simply initilize it")
+            self._printout("Please run 'snet channel extend-add %i --expiration <EXPIRATION> --amount <AMOUNT>' if necessary"%channel_id)
+        else:
+            # open payment channel
+            channel_id, channel_info = self._open_channel_for_service(metadata)
+            self._printout("#channel_id")
+            self._printout(channel_id)
 
         # initialize new channel
-        self._init_channel_from_metadata(self._get_channel_dir(channel_id), metadata, channel_info)
+        self._init_or_update_service_from_metadata(metadata)
+        self._init_channel_dir(channel_id, channel_info)
 
     def open_init_channel_from_metadata(self):
         metadata  = load_mpe_service_metadata(self.args.metadata_file)
@@ -178,13 +218,25 @@ class MPEChannelCommand(MPEServiceCommand):
         self.transact_contract_command("MultiPartyEscrow", "channelExtendAndAddFunds", [self.args.channel_id, expiration, self.args.amount])
 
     def _get_all_initilized_channels(self):
-        """ return list of tuples (channel_id, channel_info) """
-        channels = []
-        for channel_dir in self._get_channel_dir(0).parent.glob("*"):
-            if (channel_dir.name.isdigit()):
+        """ return dict of lists  rez[(<org_id>, <service_id>)] = [(channel_id, channel_info)] """
+        channels_dict = defaultdict(list)
+
+        for channel_dir in self._get_persistent_mpe_dir().glob("*/*/*/*"):
+            if (channel_dir.name.isdigit() and channel_dir.parent.name == "channels"):
+                org_id = channel_dir.parent.parent.parent.name
+                service_id = channel_dir.parent.parent.name
                 channel_id    = int(channel_dir.name)
-                channel_info  = self._read_channel_info(channel_id)
-                channels.append((channel_id, channel_info))
+                channel_info  = self._read_channel_info(org_id, service_id, channel_id)
+                channels_dict[(org_id, service_id)].append(channel_info)
+        return channels_dict
+
+    def _get_initilized_channels_for_service(self, org_id, service_id):
+        channels = []
+        for channel_dir in self._get_service_base_dir(org_id, service_id).glob("*/*"):
+            if (channel_dir.name.isdigit() and channel_dir.parent.name == "channels"):
+                channel_id    = int(channel_dir.name)
+                channel_info  = self._read_channel_info(org_id, service_id, channel_id)
+                channels.append(channel_info)
         return channels
 
     def _get_channel_state_from_blockchain(self, channel_id):
@@ -193,6 +245,12 @@ class MPEChannelCommand(MPEServiceCommand):
         channel     = self.call_contract_command("MultiPartyEscrow",  "channels", [channel_id])
         channel     = abi_decode_struct_to_dict(channel_abi, channel)
         return channel
+
+    def _read_metadata_for_service(self, org_id, service_id):
+        sdir = self.get_service_spec_dir(org_id, service_id)
+        if (not os.path.exists(sdir)):
+            raise Exception("Service with org_id=%s and service_id=%s is not initilized"%(org_id, service_id))
+        return load_mpe_service_metadata(sdir.joinpath("service_metadata.json"))
 
     def _print_channels_from_blockchain(self, channels_ids):
         channels_ids = sorted(channels_ids)
@@ -206,36 +264,52 @@ class MPEChannelCommand(MPEServiceCommand):
             value_agi = cogs2stragi(channel["value"])
             group_id_base64 = base64.b64encode(channel["groupId"]).decode("ascii")
             self._printout("%i %i %s %s %s %i"%(i, channel["nonce"], channel["recipient"], group_id_base64,
-                                                   value_agi, channel["expiration"]))
+                                                value_agi, channel["expiration"]))
 
-    def _filter_channels_sender_signer(self, channels):
-        good_id = []
-        for channel_id, channel_info in channels:
-            not_sender = channel_info["sender"] != self.ident.address
-            not_signer = channel_info["signer"] != self.ident.address
+    def _print_channels_dict_from_blockchain(self, channels_dict):
+        # print only caption
+        if (self.args.only_id):
+            self._printout("#organization_id service_id channelId")
+        else:
+            self._printout("#organization_id service_id group_name channel_id nonce value(AGI) expiration(blocks)")
+        for org_id, service_id in channels_dict:
+            channels = self._filter_channels_sender_or_signer(channels_dict[org_id, service_id])
+            metadata = self._read_metadata_for_service(org_id, service_id)
+            for channel in channels:
+                channel_id = channel["channelId"]
+                group = metadata.get_group_by_group_id(channel["groupId"])
+                if (group is None):
+                    group_name = "UNDIFINED"
+                else:
+                    group_name = group["group_name"]
+                if (self.args.only_id):
+                    self._printout("%s %s %s %i"%(org_id, service_id, group_name, channel_id))
+                else:
+                    channel_blockchain = self._get_channel_state_from_blockchain(channel_id)
+                    value_agi  = cogs2stragi(channel_blockchain["value"])
+                    self._printout("%s %s %s %i %i %s %i"%(org_id, service_id, group_name, channel_id, channel_blockchain["nonce"], value_agi, channel_blockchain["expiration"]))
+
+    def _filter_channels_sender_or_signer(self, channels):
+        good_channels = []
+        for channel in channels:
+            not_sender = channel["sender"] != self.ident.address
+            not_signer = channel["signer"] != self.ident.address
             if (self.args.filter_sender and not_sender):
                 continue
             if (self.args.filter_signer and not_signer):
                 continue
             if (self.args.filter_my and not_sender and not_signer):
                 continue
-            good_id.append(channel_id)
-        return good_id
+            good_channels.append(channel)
+        return good_channels
 
     def print_initialized_channels(self):
-        channels = self._get_all_initilized_channels()
-        good_ids = self._filter_channels_sender_signer(channels)
-        self._print_channels_from_blockchain(good_ids)
+        channels_dict = self._get_all_initilized_channels()
+        self._print_channels_dict_from_blockchain(channels_dict)
 
-    def print_initialized_channels_filter_group(self):
-        channels = self._get_all_initilized_channels()
-        metadata = self._get_service_metadata_from_registry()
-        group_id = metadata.get_group_id(self.args.group_name)
-
-        # filter channels for specific group_id
-        channels = [(cid, cinfo) for cid, cinfo in channels if (cinfo["groupId"] == group_id)]
-        good_ids = self._filter_channels_sender_signer(channels)
-        self._print_channels_from_blockchain(good_ids)
+    def print_initialized_channels_filter_service(self):
+        channels = self._get_initilized_channels_for_service(self.args.org_id, self.args.service_id)
+        self._print_channels_dict_from_blockchain({(self.args.org_id, self.args.service_id):channels})
 
     def _get_all_filtered_channels(self, topics_without_signature):
         """ get all filtered chanels from blockchain logs """
@@ -272,15 +346,17 @@ class MPEChannelCommand(MPEServiceCommand):
         channels_ids = self._get_all_filtered_channels([None, None, group_id_hex])
         self._print_channels_from_blockchain(channels_ids)
 
+    def _get_all_channels_filter_group_sender(self, group_id, sender):
+        address_padded = pad_hex(sender.lower(), 256)
+        group_id_hex = "0x" + group_id.hex()
+        return self._get_all_filtered_channels([address_padded, None, group_id_hex])
+
     def print_all_channels_filter_group_sender(self):
         address = self.get_address_from_arg_or_ident(self.args.sender)
-        address_padded = pad_hex(address.lower(), 256)
         metadata = self._get_service_metadata_from_registry()
         group_id = metadata.get_group_id(self.args.group_name)
-        group_id_hex = "0x" + group_id.hex()
-        channels_ids = self._get_all_filtered_channels([address_padded, None, group_id_hex])
+        channels_ids = self._get_all_channels_filter_group_sender(group_id, address)
         self._print_channels_from_blockchain(channels_ids)
-
     #Auxilary functions
     def print_block_number(self):
          self._printout(self.ident.w3.eth.blockNumber)

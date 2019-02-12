@@ -348,11 +348,13 @@ def add_p_mpe_address_opt(p):
 def add_p_metadata_file_opt(p):
     p.add_argument("--metadata-file", default="service_metadata.json", help="Service metadata json file (default service_metadata.json)")
 
-
-def add_p_service_in_registry(p):
-    p.add_argument("--registry-at", "--registry", default=None, help="address of Registry contract, if not specified we read address from \"networks\"")
+def add_p_org_id_service_id(p):
     add_p_org_id(p)
     p.add_argument("service_id",      help="Id of service")
+
+def add_p_service_in_registry(p):
+    add_p_org_id_service_id(p)
+    p.add_argument("--registry-at", "--registry", default=None, help="address of Registry contract, if not specified we read address from \"networks\"")
 
 
 def add_mpe_account_options(parser):
@@ -430,7 +432,11 @@ def add_p_open_channel_basic(p):
     add_p_group_name(p)
     add_p_mpe_address_opt(p)
     add_transaction_arguments(p)
+    p.add_argument("--open-new-anyway", action="store_true", help="skip check that channel already exists and open new channel anyway")
+    add_p_from_block(p)
 
+def add_p_from_block(p):
+        p.add_argument("--from-block", type=int, default=0, help="Start searching from this block")
 
 def add_mpe_channel_options(parser):
     parser.set_defaults(cmd=MPEChannelCommand)
@@ -445,6 +451,7 @@ def add_mpe_channel_options(parser):
 
     p = subparsers.add_parser("init-metadata", help="Initialize channel using service metadata")
     p.set_defaults(fn="init_channel_from_metadata")
+    add_p_org_id_service_id(p)
     add_p_metadata_file_opt(p)
     add_p_mpe_address_opt(p)
     add_p_channel_id(p)
@@ -455,8 +462,10 @@ def add_mpe_channel_options(parser):
     add_p_service_in_registry(p)
     add_p_open_channel_basic(p)
 
+
     p = subparsers.add_parser("open-init-metadata", help="Open and initilize channel using service metadata")
     p.set_defaults(fn="open_init_channel_from_metadata")
+    add_p_org_id_service_id(p)
     add_p_open_channel_basic(p)
     add_p_metadata_file_opt(p)
 
@@ -494,17 +503,13 @@ def add_mpe_channel_options(parser):
     add_p_mpe_address_opt(p)
     add_eth_call_arguments(p)
 
-    p = subparsers.add_parser("print-initialized-filter-group", help="Print initialized channels for the given service (given payment group).")
-    p.set_defaults(fn="print_initialized_channels_filter_group")
+    p = subparsers.add_parser("print-initialized-filter-service", help="Print initialized channels for the given service (all payment group).")
+    p.set_defaults(fn="print_initialized_channels_filter_service")
     add_p_service_in_registry(p)
     add_p_only_id(p)
     add_p_only_sender_signer(p)
     add_p_mpe_address_opt(p)
     add_eth_call_arguments(p)
-    add_p_group_name(p)
-
-    def add_p_from_block(p):
-        p.add_argument("--from-block", type=int, default=0, help="Start searching from this block")
 
     def add_p_sender(p):
         p.add_argument("--sender", default=None, help="Account to set as sender (by default we use the current identity)")
