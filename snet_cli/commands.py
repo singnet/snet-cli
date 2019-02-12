@@ -102,6 +102,9 @@ class BlockchainCommand(Command):
     def get_mpe_address(self):
         return get_contract_address(self, "MultiPartyEscrow")
 
+    def get_registry_address(self):
+        return get_contract_address(self, "Registry")
+
     def get_identity(self):
         identity_type = self.config.get_session_field("identity_type")
 
