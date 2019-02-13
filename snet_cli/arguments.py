@@ -344,17 +344,22 @@ class AppendPositionalAction(argparse.Action):
 def add_p_mpe_address_opt(p):
     p.add_argument("--multipartyescrow-at", "--mpe", default=None,  help="address of MultiPartyEscrow contract, if not specified we read address from \"networks\"")
 
+def add_p_registry_address_opt(p):
+    p.add_argument("--registry-at", "--registry", default=None, help="address of Registry contract, if not specified we read address from \"networks\"")
+
 
 def add_p_metadata_file_opt(p):
     p.add_argument("--metadata-file", default="service_metadata.json", help="Service metadata json file (default service_metadata.json)")
+
 
 def add_p_org_id_service_id(p):
     add_p_org_id(p)
     p.add_argument("service_id",      help="Id of service")
 
+
 def add_p_service_in_registry(p):
     add_p_org_id_service_id(p)
-    p.add_argument("--registry-at", "--registry", default=None, help="address of Registry contract, if not specified we read address from \"networks\"")
+    add_p_registry_address_opt(p)
 
 
 def add_mpe_account_options(parser):
@@ -402,17 +407,6 @@ def add_p_channel_id(p):
     p.add_argument("channel_id", type=int, help="channel_id")
 def add_p_endpoint(p):
     p.add_argument("endpoint",             help="service endpoint")
-def add_p_full_service_for_call(p):
-    add_p_endpoint(p)
-    p.add_argument("--service", default=None, help="name of protobuf service to call. It should be specified in case of method name conflict.")
-    p.add_argument("method",                  help="target service's method name to call")
-    p.add_argument("params", nargs='?',       help="json-serialized parameters object or path containing "
-                                                "json-serialized parameters object (leave emtpy to read from stdin)")
-def add_p_full_message(p):
-    add_p_mpe_address_opt(p)
-    add_p_channel_id(p)
-    p.add_argument("nonce",      type=int, help="nonce of the channel")
-    p.add_argument("amount",     type=int, help="amount")
 
 def add_p_group_name(p):
     p.add_argument("--group-name", default=None, help="name of the payment group. Parameter should be specified only for services with several payment groups")
@@ -451,7 +445,7 @@ def add_mpe_channel_options(parser):
 
     p = subparsers.add_parser("init-metadata", help="Initialize channel using service metadata")
     p.set_defaults(fn="init_channel_from_metadata")
-    add_p_org_id_service_id(p)
+    add_p_service_in_registry(p)
     add_p_metadata_file_opt(p)
     add_p_mpe_address_opt(p)
     add_p_channel_id(p)
@@ -465,7 +459,7 @@ def add_mpe_channel_options(parser):
 
     p = subparsers.add_parser("open-init-metadata", help="Open and initilize channel using service metadata")
     p.set_defaults(fn="open_init_channel_from_metadata")
-    add_p_org_id_service_id(p)
+    add_p_service_in_registry(p)
     add_p_open_channel_basic(p)
     add_p_metadata_file_opt(p)
 
@@ -502,6 +496,8 @@ def add_mpe_channel_options(parser):
     add_p_only_sender_signer(p)
     add_p_mpe_address_opt(p)
     add_eth_call_arguments(p)
+    add_p_registry_address_opt(p)
+
 
     p = subparsers.add_parser("print-initialized-filter-service", help="Print initialized channels for the given service (all payment group).")
     p.set_defaults(fn="print_initialized_channels_filter_service")
@@ -555,26 +551,33 @@ def add_mpe_client_options(parser):
     subparsers = parser.add_subparsers(title="Commands", metavar="COMMAND")
     subparsers.required = True
 
-    def add_p_deal_with_response(p):
+    def add_p_set1_for_call(p):
+        p.add_argument("--service", default=None, help="name of protobuf service to call. It should be specified in case of method name conflict.")
+        p.add_argument("method",                  help="target service's method name to call")
+        p.add_argument("params", nargs='?',       help="json-serialized parameters object or path containing "
+                                                "json-serialized parameters object (leave emtpy to read from stdin)")
+        add_eth_call_arguments(p)
+        add_p_mpe_address_opt(p)
         p.add_argument("--save-response", default=None, help="save response in the file", metavar="FILENAME")
         p.add_argument("--save-field",    default=None, nargs=2, help="save specific field in the file (two arguments 'field' and 'file_name' should be specified)")
+        p.add_argument("--endpoint",             help="service endpoint (by default we read it from metadata)")
+        add_p_group_name(p)
 
-
-    p = subparsers.add_parser("call", help="call server in stateless manner. We ask state of the channel from the server. Channel should be already initialized.")
+    # call: testo tests method params --endpoint --group-name
+    p = subparsers.add_parser("call", help="call server. We ask state of the channel from the server if needed. Channel should be already initialized.")
     p.set_defaults(fn="call_server_statelessly")
-    add_p_channel_id(p)
-    p.add_argument("price",     type=stragi2cogs, help="price for this call in AGI tokens")
-    add_p_full_service_for_call(p)
-    add_p_mpe_address_opt(p)
-    add_eth_call_arguments(p)
-    add_p_deal_with_response(p)
+    add_p_org_id_service_id(p)
+    add_p_set1_for_call(p)
+    p.add_argument("--channel-id", type=int, help="channel_id (only in case of multiply initilized channels for the same payment group)")
 
-    p = subparsers.add_parser("call-lowlevel", help="Low level function for calling the server. Channel should be already initialized.")
+
+    p = subparsers.add_parser("call-lowlevel", help="Low level function for calling the server. Service should be already initilized.")
     p.set_defaults(fn="call_server_lowlevel")
-    add_p_full_message(p)
-    add_p_full_service_for_call(p)
-    add_eth_call_arguments(p)
-    add_p_deal_with_response(p)
+    add_p_org_id_service_id(p)
+    add_p_channel_id(p)
+    p.add_argument("nonce",              type=int, help="nonce of the channel")
+    p.add_argument("amount_in_cogs",     type=int, help="amount in cogs")
+    add_p_set1_for_call(p)
 
     p = subparsers.add_parser("get-channel-state", help="Get channel state in stateless manner")
     p.set_defaults(fn="print_channel_state_statelessly")
