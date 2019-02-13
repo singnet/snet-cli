@@ -44,7 +44,7 @@ from snet_cli.utils import is_valid_endpoint
 
 # TODO: we should use some standard solution here
 class MPEServiceMetadata:
-    
+
     def __init__(self):
         """ init with modelIPFSHash """
         self.m = {"version"        : 1,
@@ -164,6 +164,10 @@ class MPEServiceMetadata:
 
     def get_all_endpoints(self):
         return [e["endpoint"] for e in self.m["endpoints"]]
+
+    def get_endpoints_for_group(self, group_name = None):
+        group_name = self.get_group_name_nonetrick(group_name)
+        return [e["endpoint"] for e in self.m["endpoints"] if e["group_name"] == group_name]
 
 def load_mpe_service_metadata(f):
     metadata = MPEServiceMetadata()
