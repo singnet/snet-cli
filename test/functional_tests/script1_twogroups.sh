@@ -67,10 +67,10 @@ rm -r _d1 _d2 _d3
 
 # client side
 snet account balance
-snet account deposit 12345 -y -q
+snet account deposit 123456 -y -q
 snet account transfer 0x0067b427E299Eb2A4CBafc0B04C723F77c6d8a18 42 -y -q
 snet account withdraw 1 -y -q
-snet channel open-init-metadata 42 1 --group-name group1 -y  -q
+snet channel open-init-metadata testo metadata-tests 42 1 --group-name group1 -y  -q
 snet channel claim-timeout 0 -y -q
 # we do not send transaction second time
 snet channel claim-timeout 0 -y -q && exit 1 || echo "fail as expected"
@@ -84,10 +84,10 @@ snet channel extend-add 0 --expiration 57600000 --force  --amount 0  -y  -q && e
 EXPIRATION1=$((`snet channel block-number` + 57600000))
 snet channel extend-add 0 --expiration $EXPIRATION1 --force  --amount 0  -y  -q
 
-snet channel open-init  testo tests 1 +14days  --group-name group2 -y -q
+snet channel open-init  testo tests 9712.1234 +14days  --group-name group2 -y -q
 
 # test print_initialized_channels and print_all_channels. We should have channels openned for specific identity
-snet channel print-initialized | grep 0x42A605c07EdE0E1f648aB054775D6D4E38496144
+snet channel print-initialized | grep 9712.1234
 snet channel print-all-filter-sender |grep 0x42A605c07EdE0E1f648aB054775D6D4E38496144
 
 # we have two initilized channels one for group1 and anther for group1 (recipient=0x42A605c07EdE0E1f648aB054775D6D4E38496144)
@@ -95,26 +95,43 @@ snet channel print-all-filter-sender |grep 0x42A605c07EdE0E1f648aB054775D6D4E384
 snet service metadata-init ./service_spec1/ ExampleService 0x52653A9091b5d5021bed06c5118D24b23620c529  --fixed-price 0.0001 --endpoints 8.8.8.8:2020 --metadata-file service_metadata2.json
 snet service publish testo tests2 -y -q --metadata-file service_metadata2.json
 
-snet channel open-init testo tests2 42 1 -y  -q --signer 0x3b2b3C2e2E7C93db335E69D827F3CC4bC2A2A2cB
+snet channel open-init testo tests2 7234.345 1 -y  -q --signer 0x3b2b3C2e2E7C93db335E69D827F3CC4bC2A2A2cB
 
-snet channel print-initialized-filter-group testo tests2
-snet channel print-initialized-filter-group testo tests2 |grep 0x52653A9091b5d5021bed06c5118D24b23620c529
-snet channel print-initialized-filter-group testo tests2 |grep 0x42A605c07EdE0E1f648aB054775D6D4E38496144 && exit 1 || echo "fail as expected"
+snet channel print-initialized-filter-service testo tests2
+snet channel print-initialized-filter-service testo tests2 |grep 7234.345
+snet channel print-initialized-filter-service testo tests2 |grep 9712.1234 && exit 1 || echo "fail as expected"
 
 snet channel print-initialized
-snet channel print-initialized | grep 0x52653A9091b5d5021bed06c5118D24b23620c529
-snet channel print-initialized | grep 0x42A605c07EdE0E1f648aB054775D6D4E38496144
+snet channel print-initialized | grep 9712.1234
+snet channel print-initialized | grep 7234.345
 
 snet channel print-initialized --only-id
-snet channel print-initialized --only-id | grep 0x42A605c07EdE0E1f648aB054775D6D4E38496144 && exit 1 || echo "fail as expected"
+snet channel print-initialized --only-id | grep 7234.345 && exit 1 || echo "fail as expected"
 
-snet channel print-initialized --filter-signer | grep 0x52653A9091b5d5021bed06c5118D24b23620c529 && exit 1 || echo "fail as expected"
-snet channel print-initialized --filter-signer --wallet-index 1 | grep 0x52653A9091b5d5021bed06c5118D24b23620c529
+snet channel print-initialized --filter-signer | grep 7234.345 && exit 1 || echo "fail as expected"
+snet channel print-initialized --filter-signer --wallet-index 1 | grep 7234.345
 
-snet channel  print-initialized-filter-group testo tests2
-snet channel  print-initialized-filter-group testo tests2 |grep 0x52653A9091b5d5021bed06c5118D24b23620c529
+snet channel  print-initialized-filter-service testo tests2
+snet channel  print-initialized-filter-service testo tests2 |grep 7234.345
 
 rm -rf ~/.snet/mpe_client/
+
+# snet shoundn't try to open new channels. He simply should reinitilize old ones
+snet channel open-init  testo tests  0 0  --group-name group1
+snet channel open-init  testo tests  0 0  --group-name group2
+snet channel open-init  testo tests2 0 0 --signer 0x3b2b3C2e2E7C93db335E69D827F3CC4bC2A2A2cB
+snet channel print-initialized  | grep 7234.345
+snet channel print-initialized  | grep 9712.1234
+snet channel open-init-metadata  testo tests-metadata 0 0  --group-name group2
+
+
+rm -rf ~/.snet/mpe_client/
+# this should open new channel instead of using old one
+snet channel open-init  testo tests  1 1  --group-name group2 --open-new-anyway -yq
+snet channel print-initialized  | grep 9712.1234 && exit 1 || echo "fail as expected"
+
+rm -rf ~/.snet/mpe_client/
+
 
 snet channel print-all-filter-sender
 snet channel print-all-filter-sender | grep 0x52653A9091b5d5021bed06c5118D24b23620c529
@@ -131,7 +148,11 @@ snet channel print-all-filter-group testo tests --group-name group2 |grep 0x0067
 snet channel print-all-filter-group-sender testo tests2 | grep 0x52653A9091b5d5021bed06c5118D24b23620c529
 snet channel print-all-filter-group-sender testo tests2 | grep 0x42A605c07EdE0E1f648aB054775D6D4E38496144 && exit 1 || echo "fail as expected"
 
-snet channel init-metadata 0
+# should fail because of wrong groupId
+snet channel init-metadata testo metadata-tests 0 --metadata-file service_metadata2.json  && exit 1 || echo "fail as expected"
+snet channel init testo tests2 1 && exit 1 || echo "fail as expected"
+
+snet channel init-metadata testo metadata-tests 0
 snet channel init testo tests 1
 snet channel print-initialized
 snet channel print-all-filter-sender
