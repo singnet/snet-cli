@@ -164,11 +164,12 @@ class MPEChannelCommand(MPEServiceCommand):
         return rez[1][0]["args"]["channelId"], channel_info
 
     def _find_already_opened_channel(self, metadata):
-        sender    = self.ident.address
-        signer    = self.get_address_from_arg_or_ident(self.args.signer)
+        sender = self.ident.address
+        signer = self.get_address_from_arg_or_ident(self.args.signer)
         group_id  = metadata.get_group_id(self.args.group_name)
+        recipient = metadata.get_group(self.args.group_name)["payment_address"]
 
-        channels_ids = self._get_all_channels_filter_group_sender(group_id, sender)
+        channels_ids = self._get_all_channels_filter_sender_recipeint_group(sender, recipient, group_id)
         for i in channels_ids:
             channel = self._get_channel_state_from_blockchain(i)
             if (channel["signer"].lower() == signer.lower()):
@@ -187,7 +188,7 @@ class MPEChannelCommand(MPEServiceCommand):
         if (not self.args.open_new_anyway):
             channel_id, channel_info = self._find_already_opened_channel(metadata)
         if (not self.args.open_new_anyway and channel_id is not None):
-            self._printout("Channel with given sender, signer and group_id is already exists we simply initilize it")
+            self._printout("Channel with given sender, signer and group_id is already exists we simply initilize it (channel_id = %i)"%channel_id)
             self._printout("Please run 'snet channel extend-add %i --expiration <EXPIRATION> --amount <AMOUNT>' if necessary"%channel_id)
         else:
             # open payment channel
@@ -346,17 +347,21 @@ class MPEChannelCommand(MPEServiceCommand):
         channels_ids = self._get_all_filtered_channels([None, None, group_id_hex])
         self._print_channels_from_blockchain(channels_ids)
 
-    def _get_all_channels_filter_group_sender(self, group_id, sender):
-        address_padded = pad_hex(sender.lower(), 256)
-        group_id_hex = "0x" + group_id.hex()
-        return self._get_all_filtered_channels([address_padded, None, group_id_hex])
-
     def print_all_channels_filter_group_sender(self):
-        address = self.get_address_from_arg_or_ident(self.args.sender)
+        address        = self.get_address_from_arg_or_ident(self.args.sender)
+        address_padded = pad_hex(address.lower(), 256)
         metadata = self._get_service_metadata_from_registry()
         group_id = metadata.get_group_id(self.args.group_name)
-        channels_ids = self._get_all_channels_filter_group_sender(group_id, address)
+        group_id_hex = "0x" + group_id.hex()
+        channels_ids = self._get_all_filtered_channels([address_padded, None, group_id_hex])
         self._print_channels_from_blockchain(channels_ids)
+
+    def _get_all_channels_filter_sender_recipeint_group(self, sender, recipient, group_id):
+        sender_padded    = pad_hex(sender.lower(),    256)
+        recipient_padded = pad_hex(recipient.lower(), 256)
+        group_id_hex = "0x" + group_id.hex()
+        return self._get_all_filtered_channels([sender_padded, recipient_padded, group_id_hex])
+
     #Auxilary functions
     def print_block_number(self):
          self._printout(self.ident.w3.eth.blockNumber)
