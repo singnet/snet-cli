@@ -14,7 +14,6 @@ import pickle
 from web3.utils.encoding import pad_hex
 from web3.utils.events import get_event_data
 from collections import defaultdict
-import json
 
 # we inherit MPEServiceCommand because we need _get_service_metadata_from_registry
 class MPEChannelCommand(MPEServiceCommand):

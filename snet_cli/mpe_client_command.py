@@ -4,11 +4,9 @@ import base64
 from pathlib import Path
 import json
 import sys
-import os
 import grpc
 from eth_account.messages import defunct_hash_message
 from snet_cli.utils_proto import import_protobuf_from_dir, switch_to_json_payload_econding
-from snet_cli.mpe_service_metadata import load_mpe_service_metadata
 from snet_cli.utils_agi2cogs import cogs2stragi
 from snet_cli.utils import remove_http_https_prefix
 

@@ -3,7 +3,6 @@ import tarfile
 import glob
 import io
 import os
-import sys
 
 import base58
 import multihash
