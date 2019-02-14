@@ -60,7 +60,7 @@ assert_balance 0.0006
 snet treasurer claim 1 2 --endpoint 127.0.0.1:50051  --wallet-index 9 -yq
 assert_balance 0.0008
 
-snet client call testo tests0 classify {} --yes
+echo y | snet client call testo tests0 classify {}
 snet client call testo tests0 classify {} --channel-id 0 -y
 snet client call testo tests1 classify {} --channel-id 1 -y
 snet client call testo tests1 classify {} --channel-id 2 -y
