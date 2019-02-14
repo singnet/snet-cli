@@ -475,14 +475,22 @@ def add_mpe_channel_options(parser):
     add_transaction_arguments(p)
     add_p_from_block(p)
 
+    def add_p_set_for_extend_add(p):
+        expiration_amount_g = p.add_argument_group(title="Expiration and amount")
+        add_p_expiration(expiration_amount_g, is_optional = True)
+        expiration_amount_g.add_argument("--amount",     type=stragi2cogs, required=True, help="Amount of AGI tokens to add to the channel")
+        add_p_mpe_address_opt(p)
+        add_transaction_arguments(p)
+
     p = subparsers.add_parser("extend-add", help="Set new expiration for the channel and add funds")
     p.set_defaults(fn="channel_extend_and_add_funds")
     add_p_channel_id(p)
-    expiration_amount_g = p.add_argument_group(title="Expiration and amount")
-    add_p_expiration(expiration_amount_g, is_optional = True)
-    expiration_amount_g.add_argument("--amount",     type=stragi2cogs, required=True, help="Amount of AGI tokens to add to the channel")
-    add_p_mpe_address_opt(p)
-    add_transaction_arguments(p)
+    add_p_set_for_extend_add(p)
+
+    p = subparsers.add_parser("extend-add-for-service", help="Set new expiration for the channel which was initilized for the given service")
+    p.set_defaults(fn="channel_extend_and_add_funds_for_service")
+    add_p_service_in_registry(p)
+    add_p_set_for_extend_add(p)
 
     p = subparsers.add_parser("block-number", help="Print the last ethereum block number")
     p.set_defaults(fn="print_block_number")

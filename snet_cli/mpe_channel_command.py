@@ -225,6 +225,18 @@ class MPEChannelCommand(MPEServiceCommand):
         expiration = self._get_expiration_from_args()
         self.transact_contract_command("MultiPartyEscrow", "channelExtendAndAddFunds", [self.args.channel_id, expiration, self.args.amount])
 
+    def channel_extend_and_add_funds_for_service(self):
+        expiration = self._get_expiration_from_args()
+        channels = self._get_initilized_channels_for_service(self.args.org_id, self.args.service_id)
+        channels = [c for c in channels if c["sender"].lower() == self.ident.address.lower()]
+        if (len(channels) == 0):
+            raise Exception("Cannot find initilized channel for service with org_id=%s service_id=%s and sender=%s"%(self.args.org_id, self.args.service_id, self.ident.adress))
+        if (len(channels) > 1):
+            channel_ids = [channel["channelId"] for channel in channels]
+            raise Exception("We have several initilized channel: %s. You should use 'snet channel extend-add' for selected channel"%str(channel_ids))
+        channel_id = channels[0]["channelId"]
+        self.transact_contract_command("MultiPartyEscrow", "channelExtendAndAddFunds", [channel_id, expiration, self.args.amount])
+
     def _get_all_initilized_channels(self):
         """ return dict of lists  rez[(<org_id>, <service_id>)] = [(channel_id, channel_info)] """
         channels_dict = defaultdict(list)
