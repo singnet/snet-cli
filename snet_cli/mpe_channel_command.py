@@ -214,6 +214,13 @@ class MPEChannelCommand(MPEServiceCommand):
             raise Exception("Channel has 0 value. There is nothing to claim")
         self.transact_contract_command("MultiPartyEscrow", "channelClaimTimeout", [self.args.channel_id])
 
+    def channel_claim_timeout_all(self):
+        channels_ids = self._get_all_channels_filter_sender(self.ident.address)
+        for channel_id in channels_ids:
+            rez = self._get_channel_state_from_blockchain(channel_id)
+            if (rez["value"] > 0 and rez["expiration"] < self.ident.w3.eth.blockNumber):
+                self.transact_contract_command("MultiPartyEscrow", "channelClaimTimeout", [channel_id])
+
     def channel_extend_and_add_funds(self):
         expiration = self._get_expiration_from_args()
         self.transact_contract_command("MultiPartyEscrow", "channelExtendAndAddFunds", [self.args.channel_id, expiration, self.args.amount])
@@ -330,8 +337,7 @@ class MPEChannelCommand(MPEServiceCommand):
 
     def print_all_channels_filter_sender(self):
         address = self.get_address_from_arg_or_ident(self.args.sender)
-        address_padded = pad_hex(address.lower(), 256)
-        channels_ids = self._get_all_filtered_channels([address_padded])
+        channels_ids = self._get_all_channels_filter_sender(address)
         self._print_channels_from_blockchain(channels_ids)
 
     def print_all_channels_filter_recipient(self):
@@ -355,6 +361,11 @@ class MPEChannelCommand(MPEServiceCommand):
         group_id_hex = "0x" + group_id.hex()
         channels_ids = self._get_all_filtered_channels([address_padded, None, group_id_hex])
         self._print_channels_from_blockchain(channels_ids)
+
+    def _get_all_channels_filter_sender(self, sender):
+        sender_padded = pad_hex(sender.lower(), 256)
+        channels_ids = self._get_all_filtered_channels([sender_padded])
+        return channels_ids
 
     def _get_all_channels_filter_sender_recipeint_group(self, sender, recipient, group_id):
         sender_padded    = pad_hex(sender.lower(),    256)

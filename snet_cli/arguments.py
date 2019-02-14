@@ -469,6 +469,12 @@ def add_mpe_channel_options(parser):
     add_p_mpe_address_opt(p)
     add_transaction_arguments(p)
 
+    p = subparsers.add_parser("claim-timeout-all", help="Claim timeout for all channels which have current identity as a sender.")
+    p.set_defaults(fn="channel_claim_timeout_all")
+    add_p_mpe_address_opt(p)
+    add_transaction_arguments(p)
+    add_p_from_block(p)
+
     p = subparsers.add_parser("extend-add", help="Set new expiration for the channel and add funds")
     p.set_defaults(fn="channel_extend_and_add_funds")
     add_p_channel_id(p)
