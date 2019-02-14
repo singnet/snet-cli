@@ -102,7 +102,7 @@ def add_identity_options(parser, config):
     subparsers = parser.add_subparsers(title="actions", metavar="ACTION")
     subparsers.required = True
 
-    p = subparsers.add_parser("list", help="List of identies")
+    p = subparsers.add_parser("list", help="List of identities")
     p.set_defaults(fn="list")
 
     p = subparsers.add_parser("create", help="Create a new identity")
@@ -120,7 +120,7 @@ def add_identity_options(parser, config):
     p = subparsers.add_parser("delete", help="Delete an identity")
     p.set_defaults(fn="delete")
 
-    identity_names = config.get_all_identies_names()
+    identity_names = config.get_all_identities_names()
 
     p.add_argument("identity_name", choices=identity_names,
                    help="name of identity to delete from {}".format(identity_names), metavar="IDENTITY_NAME")
@@ -218,7 +218,7 @@ def add_organization_options(parser):
     add_contract_identity_arguments(p, [("registry", "registry_at")])
     add_eth_call_arguments(p)
 
-    p = subparsers.add_parser("info", help="Organization's Informations")
+    p = subparsers.add_parser("info", help="Organization's Information")
     p.set_defaults(fn="info")
     add_p_org_id(p)
     add_contract_identity_arguments(p, [("registry", "registry_at")])
@@ -370,7 +370,7 @@ def add_mpe_account_options(parser):
     def add_p_snt_address_opt(p):
         p.add_argument("--singularitynettoken-at", "--snt", default=None,  help="address of SingularityNetToken contract, if not specified we read address from \"networks\"")
 
-    p = subparsers.add_parser("print", help="print the currect ETH account")
+    p = subparsers.add_parser("print", help="print the current ETH account")
     p.set_defaults(fn="print_account")
     add_eth_call_arguments(p)
 
@@ -397,7 +397,7 @@ def add_mpe_account_options(parser):
     p = subparsers.add_parser("transfer", help="transfer AGI tokens inside MPE wallet")
     p.set_defaults(fn="transfer_in_mpe")
     p.add_argument("receiver", help="address of the receiver")
-    p.add_argument("amount",   type=stragi2cogs, help="amount of AGI tokens to be transfered to another account inside MPE wallet")
+    p.add_argument("amount",   type=stragi2cogs, help="amount of AGI tokens to be transferred to another account inside MPE wallet")
     add_p_mpe_address_opt(p)
     add_transaction_arguments(p)
 
@@ -451,13 +451,13 @@ def add_mpe_channel_options(parser):
     add_p_channel_id(p)
     add_eth_call_arguments(p)
 
-    p = subparsers.add_parser("open-init", help="Open and initilize channel using metadata from Registry")
+    p = subparsers.add_parser("open-init", help="Open and initialize channel using metadata from Registry")
     p.set_defaults(fn="open_init_channel_from_registry")
     add_p_service_in_registry(p)
     add_p_open_channel_basic(p)
 
 
-    p = subparsers.add_parser("open-init-metadata", help="Open and initilize channel using service metadata")
+    p = subparsers.add_parser("open-init-metadata", help="Open and initialize channel using service metadata")
     p.set_defaults(fn="open_init_channel_from_metadata")
     add_p_service_in_registry(p)
     add_p_open_channel_basic(p)
@@ -487,7 +487,7 @@ def add_mpe_channel_options(parser):
     add_p_channel_id(p)
     add_p_set_for_extend_add(p)
 
-    p = subparsers.add_parser("extend-add-for-service", help="Set new expiration and add funds for the channel which was initilized for the given service")
+    p = subparsers.add_parser("extend-add-for-service", help="Set new expiration and add funds for the channel which was initialized for the given service")
     p.set_defaults(fn="channel_extend_and_add_funds_for_service")
     add_p_service_in_registry(p)
     add_p_set_for_extend_add(p)
@@ -582,11 +582,11 @@ def add_mpe_client_options(parser):
     p.set_defaults(fn="call_server_statelessly")
     add_p_org_id_service_id(p)
     add_p_set1_for_call(p)
-    p.add_argument("--channel-id", type=int, help="channel_id (only in case of multiply initilized channels for the same payment group)")
+    p.add_argument("--channel-id", type=int, help="channel_id (only in case of multiply initialized channels for the same payment group)")
     p.add_argument("--yes", "-y", action="store_true", help="skip interactive confirmation of call price", default=False)
 
 
-    p = subparsers.add_parser("call-lowlevel", help="Low level function for calling the server. Service should be already initilized.")
+    p = subparsers.add_parser("call-lowlevel", help="Low level function for calling the server. Service should be already initialized.")
     p.set_defaults(fn="call_server_lowlevel")
     add_p_org_id_service_id(p)
     add_p_channel_id(p)
@@ -655,7 +655,7 @@ def add_mpe_service_options(parser):
         p.add_argument("--update-mpe-address" , action='store_true', help="Update mpe_address in metadata before publishing them")
         add_p_mpe_address_opt(p)
 
-    p = subparsers.add_parser("publish-in-ipfs", help="Publish metadata only in IPFS, without publising in Registry")
+    p = subparsers.add_parser("publish-in-ipfs", help="Publish metadata only in IPFS, without publishing in Registry")
     p.set_defaults(fn="publish_metadata_in_ipfs")
     add_p_publish_params(p)
 

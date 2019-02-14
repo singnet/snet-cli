@@ -169,7 +169,7 @@ class IdentityCommand(Command):
         identity = {}
 
         identity_name = self.args.identity_name
-        self._ensure(not identity_name in self.config.get_all_identies_names(), "identity_name {} already exists".format(identity_name))
+        self._ensure(not identity_name in self.config.get_all_identities_names(), "identity_name {} already exists".format(identity_name))
 
         identity_type = self.args.identity_type
         identity["identity_type"] = identity_type

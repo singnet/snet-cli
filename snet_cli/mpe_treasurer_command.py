@@ -94,7 +94,7 @@ class MPETreasurerCommand(MPEChannelCommand):
             amount     = payment["amount"]
             sig        = payment["signature"]
             if (len(sig) != 65):
-                raise Exception("Length of signature is incorect: %i instead of 65"%(len(sig)))
+                raise Exception("Length of signature is incorrect: %i instead of 65"%(len(sig)))
             v, r, s = int(sig[-1]), sig[:32], sig[32:64]
             v = v % 27 + 27
             params     = [channel_id, amount, v , r, s, False]

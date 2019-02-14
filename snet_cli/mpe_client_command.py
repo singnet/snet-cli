@@ -6,7 +6,7 @@ import json
 import sys
 import grpc
 from eth_account.messages import defunct_hash_message
-from snet_cli.utils_proto import import_protobuf_from_dir, switch_to_json_payload_econding
+from snet_cli.utils_proto import import_protobuf_from_dir, switch_to_json_payload_encoding
 from snet_cli.utils_agi2cogs import cogs2stragi
 from snet_cli.utils import remove_http_https_prefix
 
@@ -102,7 +102,7 @@ class MPEClientCommand(MPEChannelCommand):
         call_fn  = getattr(stub, self.args.method)
 
         if service_metadata["encoding"] == "json":
-            switch_to_json_payload_econding(call_fn, response_class)
+            switch_to_json_payload_encoding(call_fn, response_class)
 
         mpe_address = self.get_mpe_address()
         signature = self._sign_message(mpe_address, channel_id, nonce, amount)
@@ -213,19 +213,19 @@ class MPEClientCommand(MPEChannelCommand):
         self._printout("current_unspent_amount_in_cogs = %s"%str(unspent_amount))
 
     def _get_channel_for_call(self):
-        channels = self._get_initilized_channels_for_service(self.args.org_id, self.args.service_id)
+        channels = self._get_initialized_channels_for_service(self.args.org_id, self.args.service_id)
         channels = [c for c in channels if c["signer"].lower() == self.ident.address.lower()]
         if (len(channels) == 0):
-            raise Exception("Cannot find initilized channel for service with org_id=%s service_id=%s and signer=%s"%(self.args.org_id, self.args.service_id, self.ident.adress))
+            raise Exception("Cannot find initialized channel for service with org_id=%s service_id=%s and signer=%s"%(self.args.org_id, self.args.service_id, self.ident.adress))
         if (self.args.channel_id is None):
             if (len(channels) > 1):
                 channel_ids = [channel["channelId"] for channel in channels]
-                raise Exception("We have several initilized channel: %s. You should use --channel-id to select one"%str(channel_ids))
+                raise Exception("We have several initialized channel: %s. You should use --channel-id to select one"%str(channel_ids))
             return channels[0]
         for channel in channels:
             if (channel["channelId"] == self.args.channel_id):
                 return channel
-        raise Exception("Channel %i has not been initilized or your are not the signer of it"%self.args.channel_id)
+        raise Exception("Channel %i has not been initialized or your are not the signer of it"%self.args.channel_id)
 
     def _get_price_from_metadata(self, service_metadata):
         pricing = service_metadata["pricing"]

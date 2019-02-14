@@ -118,7 +118,7 @@ class MPEServiceCommand(BlockchainCommand):
                     new_group = new_metadata.get_group(old_group["group_name"])
                     if (new_group["group_id"] != old_group["group_id"] or new_group["payment_address"] != old_group["payment_address"]):
                         raise Exception("You are trying to change group_id or payment_address in group '%s'.\n"%old_group["group_name"] +
-                                         "You will make all opennned channels invalid.\n" +
+                                         "You will make all open channels invalid.\n" +
                                          "Use --force if you really want it.")
 
         metadata_uri     = hash_to_bytesuri( self._publish_metadata_in_ipfs(self.args.metadata_file))

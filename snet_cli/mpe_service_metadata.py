@@ -62,7 +62,7 @@ class MPEServiceMetadata:
     def set_simple_field(self, f, v):
         if (f != "display_name" and f != "encoding" and f != "model_ipfs_hash" and f != "mpe_address" and
             f != "service_type" and f != "payment_expiration_threshold" and f != "service_description"):
-                raise Exception("unknow field in MPEServiceMetadata")
+                raise Exception("unknown field in MPEServiceMetadata")
         self.m[f] = v
 
     def set_fixed_price_in_cogs(self, price):
