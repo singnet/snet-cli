@@ -9,17 +9,17 @@ from snet_cli.mpe_service_metadata import mpe_service_metadata_from_json
 
 class SDKCommand(MPEServiceCommand):
     def generate_client_library(self):
-        cur_dir_path = PurePath(os.path.dirname(os.path.realpath(__file__)))
+        cur_dir_path = PurePath(os.getcwd())
 
         if not self.args.protodir:
-            client_libraries_base_dir_path = cur_dir_path.parent.joinpath("client_libraries")
+            client_libraries_base_dir_path = cur_dir_path.joinpath("client_libraries")
             if not os.path.exists(client_libraries_base_dir_path):
                 os.makedirs(client_libraries_base_dir_path)
         else:
             if os.path.isabs(self.args.protodir):
                 client_libraries_base_dir_path = PurePath(self.args.protodir)
             else: 
-                client_libraries_base_dir_path = PurePath(os.getcwd()).joinpath(self.args.protodir)
+                client_libraries_base_dir_path = cur_dir_path.joinpath(self.args.protodir)
 
             if not os.path.isdir(client_libraries_base_dir_path):
                 self._error("directory {} does not exist. Please make sure that the specified path exists".format(client_libraries_base_dir_path))
