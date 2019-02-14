@@ -246,6 +246,10 @@ class MPEClientCommand(MPEChannelCommand):
         price         = self._get_price_from_metadata(service_metadata)
         server_state  = self._get_channel_state_from_server(grpc_channel, channel_id)
 
+        proceed = self.args.yes or input("Price for this call will be %s AGI (use -y to remove this warning). Proceed? (y/n): "%(cogs2stragi(price))) == "y"
+        if (not proceed):
+            self._error("Cancelled")
+
         response = self._call_server_via_grpc_channel(grpc_channel, channel_id, server_state["current_nonce"], server_state["current_signed_amount"] + price, params, service_metadata)
         return response
 

@@ -569,6 +569,7 @@ def add_mpe_client_options(parser):
     add_p_org_id_service_id(p)
     add_p_set1_for_call(p)
     p.add_argument("--channel-id", type=int, help="channel_id (only in case of multiply initilized channels for the same payment group)")
+    p.add_argument("--yes", "-y", action="store_true", help="skip interactive confirmation of call price", default=False)
 
 
     p = subparsers.add_parser("call-lowlevel", help="Low level function for calling the server. Service should be already initilized.")
