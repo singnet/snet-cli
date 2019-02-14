@@ -487,7 +487,7 @@ def add_mpe_channel_options(parser):
     add_p_channel_id(p)
     add_p_set_for_extend_add(p)
 
-    p = subparsers.add_parser("extend-add-for-service", help="Set new expiration for the channel which was initilized for the given service")
+    p = subparsers.add_parser("extend-add-for-service", help="Set new expiration and add funds for the channel which was initilized for the given service")
     p.set_defaults(fn="channel_extend_and_add_funds_for_service")
     add_p_service_in_registry(p)
     add_p_set_for_extend_add(p)
