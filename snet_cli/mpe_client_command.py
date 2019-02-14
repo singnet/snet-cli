@@ -191,7 +191,7 @@ class MPEClientCommand(MPEChannelCommand):
         return (server["current_nonce"], server["current_signed_amount"], unspent_amount)
 
     def print_channel_state_statelessly(self):
-        grpc_channel = grpc.insecure_channel(self.args.endpoint)
+        grpc_channel = grpc.insecure_channel(remove_http_https_prefix(self.args.endpoint))
         current_nonce, current_amount, unspent_amount = self._get_channel_state_statelessly(grpc_channel, self.args.channel_id)
         self._printout("current_nonce                  = %i"%current_nonce)
         self._printout("current_signed_amount_in_cogs  = %i"%current_amount)
