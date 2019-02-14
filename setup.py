@@ -40,6 +40,7 @@ setup(
     author='SingularityNET Foundation',
     author_email='info@singularitynet.io',
     description='SingularityNET CLI',
+    python_requires='>=3.6',
     install_requires=[
         'grpcio-tools==1.14.1',
         'jsonrpcclient==2.5.2',
