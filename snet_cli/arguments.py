@@ -243,6 +243,12 @@ def add_organization_options(parser):
     add_p_org_id(p)
     add_contract_identity_arguments(p, [("registry", "registry_at")])
     add_eth_call_arguments(p)
+    
+    p = subparsers.add_parser("change-name", help="Change Organization's name")
+    p.set_defaults(fn="change_name")
+    add_p_org_id(p)
+    p.add_argument("name", help="The new Organization's name", metavar="ORG_NEW_NAME")
+    _add_organization_arguments(p)
 
     p = subparsers.add_parser("change-owner", help="Change Organization's owner")
     p.set_defaults(fn="change_owner")
