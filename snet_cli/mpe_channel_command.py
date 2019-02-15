@@ -74,15 +74,15 @@ class MPEChannelCommand(MPEServiceCommand):
             raise
 
     def _init_or_update_service_from_metadata(self, metadata):
-        tmp_dir = tempfile.mkdtemp()
-        shutil.rmtree(tmp_dir)
-        self._init_new_service_from_metadata(tmp_dir, metadata)
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            service_tmp_dir = os.path.join(tmp_dir, "service")
+            self._init_new_service_from_metadata(service_tmp_dir, metadata)
 
-        service_dir = self.get_service_spec_dir(self.args.org_id, self.args.service_id)
-        # it is relatevely safe to remove service_dir because we know that service_dir = self.get_service_spec_dir() so it is not a normal dir
-        if (os.path.exists(service_dir)):
-            shutil.rmtree(service_dir)
-        shutil.move(tmp_dir, service_dir)
+            service_dir = self.get_service_spec_dir(self.args.org_id, self.args.service_id)
+            # it is relatevely safe to remove service_dir because we know that service_dir = self.get_service_spec_dir() so it is not a normal dir
+            if (os.path.exists(service_dir)):
+                shutil.rmtree(service_dir)
+            shutil.move(service_tmp_dir, service_dir)
 
     def _init_channel_dir(self, channel_id, channel_info):
         channel_dir = self.get_channel_dir(self.args.org_id, self.args.service_id, channel_id)
@@ -177,13 +177,9 @@ class MPEChannelCommand(MPEServiceCommand):
 
     def _open_init_channel_from_metadata(self, metadata):
 
-        # first we simply try to initialize service without open channel (we check metadata and we compile .proto files) """
-        tmp_dir = tempfile.mkdtemp()
-        shutil.rmtree(tmp_dir)
-        self._init_new_service_from_metadata(tmp_dir, metadata)
-        shutil.rmtree(tmp_dir)
+        self._init_or_update_service_from_metadata(metadata)
 
-        # first we try to find channel for this service
+        # Before open new channel we try to find already openned channel
         if (not self.args.open_new_anyway):
             channel_id, channel_info = self._find_already_opened_channel(metadata)
         if (not self.args.open_new_anyway and channel_id is not None):
@@ -195,8 +191,7 @@ class MPEChannelCommand(MPEServiceCommand):
             self._printout("#channel_id")
             self._printout(channel_id)
 
-        # initialize new channel
-        self._init_or_update_service_from_metadata(metadata)
+        # initialize channel
         self._init_channel_dir(channel_id, channel_info)
 
     def open_init_channel_from_metadata(self):
