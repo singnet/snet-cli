@@ -40,6 +40,12 @@ snet organization list-org-names
 snet organization list-my | grep test2
 snet organization info test2
 
+# change test2 organization name to NEW_TEST2_NAME
+snet organization change-name test2 NEW_TEST2_NAME -y
+snet organization change-name test2 NEW_TEST2_NAME -y && exit 1 || echo "fail as expected"
+# change test2 organization name back to test2
+snet organization change-name test2 test2 -y
+
 snet organization change-owner test2 0x3b2b3C2e2E7C93db335E69D827F3CC4bC2A2A2cB -y
 snet organization change-owner test2 0x3b2b3C2e2E7C93db335E69D827F3CC4bC2A2A2cB -y && exit 1 || echo "fail as expected"
 snet organization add-members test2 0x32267d505B1901236508DcDa64C1D0d5B9DF639a -y && exit 1 || echo "fail as expected"

@@ -398,6 +398,23 @@ class OrganizationCommand(BlockchainCommand):
         else:
             self._printout("Organization with id={} exists but has no registered services.".format(org_id))
 
+    def change_name(self):
+        org_id = self.args.org_id
+        new_org_name = self.args.name
+        # Check if Organization exists
+        (found, _, org_name, _, _, _, _) = self._getorganizationbyid(org_id)
+        self.error_organization_not_found(org_id, found)
+    
+        if new_org_name == org_name:
+            raise Exception("\n{} is already the name of the Organization with id={}!\n".format(new_org_name, org_id))
+    
+        self._printout("Creating transaction to change organization {}'s name...\n".format(org_id))
+        try:
+            self.transact_contract_command("Registry", "changeOrganizationName", [type_converter("bytes32")(org_id), new_org_name])
+        except Exception as e:
+            self._printerr("\nTransaction error!\nHINT: Check if you are the owner of {}\n".format(org_id))
+            raise
+
     def change_owner(self):
         org_id = self.args.org_id
         # Check if Organization exists
