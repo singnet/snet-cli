@@ -69,7 +69,7 @@ def _import_protobuf_from_file(grpc_pyfile, method_name, service_name = None):
                         " You should specify service_name."%(method_name, ", ".join(found_services)))
     return True, (stub_class, request_class, response_class)
 
-def switch_to_json_payload_econding(call_fn, response_class):
+def switch_to_json_payload_encoding(call_fn, response_class):
     """ Switch payload encoding to JSON for GRPC call """
     def json_serializer(*args, **kwargs):
         return bytes(json_format.MessageToJson(args[0], True, preserving_proto_field_name=True), "utf-8")

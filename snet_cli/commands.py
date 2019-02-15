@@ -102,6 +102,9 @@ class BlockchainCommand(Command):
     def get_mpe_address(self):
         return get_contract_address(self, "MultiPartyEscrow")
 
+    def get_registry_address(self):
+        return get_contract_address(self, "Registry")
+
     def get_identity(self):
         identity_type = self.config.get_session_field("identity_type")
 
@@ -166,7 +169,7 @@ class IdentityCommand(Command):
         identity = {}
 
         identity_name = self.args.identity_name
-        self._ensure(not identity_name in self.config.get_all_identies_names(), "identity_name {} already exists".format(identity_name))
+        self._ensure(not identity_name in self.config.get_all_identities_names(), "identity_name {} already exists".format(identity_name))
 
         identity_type = self.args.identity_type
         identity["identity_type"] = identity_type

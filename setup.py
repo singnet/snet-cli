@@ -8,7 +8,6 @@ def install_and_compile_proto():
     import snet_cli
     from snet_cli.utils import compile_proto as compile_proto
     from pathlib import Path
-    import glob
     proto_dir = Path(__file__).absolute().parent.joinpath("snet_cli", "resources", "proto")
     dest_dir = Path(snet_cli.__file__).absolute().parent.joinpath("resources", "proto")
     print(proto_dir, "->", dest_dir)
@@ -41,6 +40,7 @@ setup(
     author='SingularityNET Foundation',
     author_email='info@singularitynet.io',
     description='SingularityNET CLI',
+    python_requires='>=3.6',
     install_requires=[
         'grpcio-tools==1.14.1',
         'jsonrpcclient==2.5.2',

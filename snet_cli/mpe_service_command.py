@@ -108,6 +108,19 @@ class MPEServiceCommand(BlockchainCommand):
         self.transact_contract_command("Registry", "createServiceRegistration", params)
 
     def publish_metadata_in_ipfs_and_update_registration(self):
+        # first we check that we do not change payment_address or group_id in existed payment groups
+        if (not self.args.force):
+            old_metadata = self._get_service_metadata_from_registry()
+            new_metadata = load_mpe_service_metadata(self.args.metadata_file)
+            for old_group in old_metadata["groups"]:
+                if (new_metadata.is_group_name_exists(old_group["group_name"])):
+
+                    new_group = new_metadata.get_group(old_group["group_name"])
+                    if (new_group["group_id"] != old_group["group_id"] or new_group["payment_address"] != old_group["payment_address"]):
+                        raise Exception("You are trying to change group_id or payment_address in group '%s'.\n"%old_group["group_name"] +
+                                         "You will make all open channels invalid.\n" +
+                                         "Use --force if you really want it.")
+
         metadata_uri     = hash_to_bytesuri( self._publish_metadata_in_ipfs(self.args.metadata_file))
         params           = [type_converter("bytes32")(self.args.org_id), type_converter("bytes32")(self.args.service_id), metadata_uri]
         self.transact_contract_command("Registry", "updateServiceRegistration", params)

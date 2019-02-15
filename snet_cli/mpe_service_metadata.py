@@ -44,7 +44,7 @@ from snet_cli.utils import is_valid_endpoint
 
 # TODO: we should use some standard solution here
 class MPEServiceMetadata:
-    
+
     def __init__(self):
         """ init with modelIPFSHash """
         self.m = {"version"        : 1,
@@ -62,7 +62,7 @@ class MPEServiceMetadata:
     def set_simple_field(self, f, v):
         if (f != "display_name" and f != "encoding" and f != "model_ipfs_hash" and f != "mpe_address" and
             f != "service_type" and f != "payment_expiration_threshold" and f != "service_description"):
-                raise Exception("unknow field in MPEServiceMetadata")
+                raise Exception("unknown field in MPEServiceMetadata")
         self.m[f] = v
 
     def set_fixed_price_in_cogs(self, price):
@@ -164,6 +164,10 @@ class MPEServiceMetadata:
 
     def get_all_endpoints(self):
         return [e["endpoint"] for e in self.m["endpoints"]]
+
+    def get_endpoints_for_group(self, group_name = None):
+        group_name = self.get_group_name_nonetrick(group_name)
+        return [e["endpoint"] for e in self.m["endpoints"] if e["group_name"] == group_name]
 
 def load_mpe_service_metadata(f):
     metadata = MPEServiceMetadata()
