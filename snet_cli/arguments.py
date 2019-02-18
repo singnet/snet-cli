@@ -12,6 +12,7 @@ from snet_cli.mpe_service_command import MPEServiceCommand
 from snet_cli.mpe_channel_command import MPEChannelCommand
 from snet_cli.mpe_client_command  import MPEClientCommand
 from snet_cli.mpe_treasurer_command import MPETreasurerCommand
+from snet_cli.sdk_command import SDKCommand
 from snet_cli.utils_agi2cogs import stragi2cogs
 from snet_cli.config import get_session_keys, get_session_network_keys_removable
 
@@ -89,6 +90,9 @@ def add_root_options(parser, config):
 
     p = subparsers.add_parser("treasurer", help="Treasurer logic")
     add_mpe_treasurer_options(p)
+
+    sdk_p = subparsers.add_parser("sdk", help="Generate client libraries to call SingularityNET services using your language of choice")
+    add_sdk_options(sdk_p)
 
 
 def add_version_options(parser):
@@ -606,7 +610,7 @@ def add_mpe_client_options(parser):
     add_p_channel_id(p)
     add_p_endpoint(p)
     add_eth_call_arguments(p)
-
+ 
 
 def add_mpe_service_options(parser):
     parser.set_defaults(cmd=MPEServiceCommand)
@@ -747,3 +751,19 @@ def add_mpe_treasurer_options(parser):
     p.add_argument("--expiration-threshold", type=int, default = 34560, help="Service expiration threshold in blocks (default is 34560 ~ 6 days with 15s/block)")
     add_p_endpoint(p)
     add_transaction_arguments(p)
+
+def add_sdk_options(parser):
+    parser.set_defaults(cmd=SDKCommand)
+    subparsers = parser.add_subparsers(title="Commands", metavar="COMMAND")
+    subparsers.required = True
+
+    supported_languages = [ "python" ]
+
+    p = subparsers.add_parser("generate-client-library", help="Generate compiled client libraries to call services using your language of choice")
+    p.set_defaults(fn="generate_client_library")
+    p.add_argument("language", choices=supported_languages,
+                   help="choose target language for the generated client library from {}".format(supported_languages),
+                   metavar="LANGUAGE")
+    add_p_service_in_registry(p)
+    p.add_argument("protodir", nargs="?", help="Directory where to output the generated client libraries", metavar="PROTODIR")
+    add_eth_call_arguments(p)

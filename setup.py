@@ -42,7 +42,7 @@ setup(
     description='SingularityNET CLI',
     python_requires='>=3.6',
     install_requires=[
-        'grpcio-tools==1.14.1',
+        'grpcio-tools==1.17.1',
         'jsonrpcclient==2.5.2',
         'web3==4.2.1',
         'mnemonic==0.18',

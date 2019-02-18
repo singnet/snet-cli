@@ -378,6 +378,20 @@ snet organization rem-members [-h] [--gas-price GAS_PRICE]
 
 ---
 
+```
+snet sdk generate-client-library [-h] [--eth-rpc-endpoint ETH_RPC_ENDPOINT]
+                                      [--registry-at REGISTRY_ADDRESS]
+                                      language organization service [protodir] 
+```
+
+* Generate compiled client libraries to call services using your language of choice
+  * `language`: target client library language
+  * `organization`: id of the organization
+  * `service`: id of the service
+  * `protodir`: directory where to output the generated client libraries
+
+---
+
 ## Development
 
 ### Installing
