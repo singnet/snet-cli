@@ -5,6 +5,7 @@ from tempfile import TemporaryDirectory
 
 from snet_cli.utils import type_converter, bytes32_to_str, compile_proto
 from snet_cli.utils_ipfs import bytesuri_to_hash, get_from_ipfs_and_checkhash, safe_extract_proto_from_ipfs
+from snet_cli.utils_config import get_contract_address
 from snet_cli.mpe_service_metadata import mpe_service_metadata_from_json
 
 class SDKCommand(MPEServiceCommand):
@@ -29,7 +30,7 @@ class SDKCommand(MPEServiceCommand):
         library_org_id = self.args.org_id
         library_service_id = self.args.service_id
 
-        library_dir_path = client_libraries_base_dir_path.joinpath(library_language, library_org_id, library_service_id)
+        library_dir_path = client_libraries_base_dir_path.joinpath(library_language, get_contract_address(self, "Registry"), library_org_id, library_service_id)
 
         metadata = self._get_service_metadata_from_registry()
         model_ipfs_hash = metadata["model_ipfs_hash"]
