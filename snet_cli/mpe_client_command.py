@@ -4,12 +4,11 @@ import base64
 from pathlib import Path
 import json
 import sys
-import os
 import grpc
 from eth_account.messages import defunct_hash_message
-from snet_cli.utils_proto import import_protobuf_from_dir, switch_to_json_payload_econding
-from snet_cli.mpe_service_metadata import load_mpe_service_metadata
+from snet_cli.utils_proto import import_protobuf_from_dir, switch_to_json_payload_encoding
 from snet_cli.utils_agi2cogs import cogs2stragi
+from snet_cli.utils import remove_http_https_prefix
 
 
 # we inherit MPEChannelCommand because client needs channels
@@ -62,66 +61,104 @@ class MPEClientCommand(MPEChannelCommand):
 
         return params
 
-    # possible modifiers: file, b64encode, b64decode
-    # format:             modifier1@modifier2@...modifierN@k_final
+
     def _transform_call_params(self, params):
+        """
+        possible modifiers: file, b64encode, b64decode
+        format:             modifier1@modifier2@...modifierN@k_final
+        """
         rez = {}
         for k, v in params.items():
-            # k = modifier1@modifier2@...modifierN@k_final
-            k_split = k.split("@")
-            k_final = k_split[-1]
-            k_mods  = k_split[:-1]
-            for m in k_mods:
-                if (m == "file"):
-                    with open(v, 'rb') as f:
-                        v = f.read()
-                elif (m == "b64encode"):
-                    v = base64.b64encode(v)
-                elif (m == "b64decode"):
-                    v = base64.b64decode(v)
-                else:
-                    raise Exception("Unknow modifier ('%s') in call parameters. Possible modifiers: file, b64encode, b64decode"%m)
+            if isinstance(v, dict):
+                v = self._transform_call_params(v)
+                k_final = k
+            else:
+                # k = modifier1@modifier2@...modifierN@k_final
+                k_split = k.split("@")
+                k_final = k_split[-1]
+                k_mods  = k_split[:-1]
+                for m in k_mods:
+                    if (m == "file"):
+                        with open(v, 'rb') as f:
+                            v = f.read()
+                    elif (m == "b64encode"):
+                        v = base64.b64encode(v)
+                    elif (m == "b64decode"):
+                        v = base64.b64decode(v)
+                    else:
+                        raise Exception("Unknown modifier ('%s') in call parameters. Possible modifiers: file, b64encode, b64decode"%m)
             rez[k_final] = v
         return rez
 
-    def _import_protobuf_for_channel(self):
-        channel_dir = self.get_channel_dir()
-        return import_protobuf_from_dir(channel_dir, self.args.method, self.args.service)
+    def _import_protobuf_for_service(self):
+        spec_dir = self.get_service_spec_dir(self.args.org_id, self.args.service_id)
+        return import_protobuf_from_dir(spec_dir, self.args.method, self.args.service)
 
-    def _call_server_via_grpc_channel(self, grpc_channel, nonce, amount, params, service_metadata):
-        stub_class, request_class, response_class = self._import_protobuf_for_channel()
+    def _call_server_via_grpc_channel(self, grpc_channel, channel_id, nonce, amount, params, service_metadata):
+        stub_class, request_class, response_class = self._import_protobuf_for_service()
 
         request  = request_class(**params)
         stub     = stub_class(grpc_channel)
         call_fn  = getattr(stub, self.args.method)
 
         if service_metadata["encoding"] == "json":
-            switch_to_json_payload_econding(call_fn, response_class)
+            switch_to_json_payload_encoding(call_fn, response_class)
 
         mpe_address = self.get_mpe_address()
-        channel_id  = self.args.channel_id
         signature = self._sign_message(mpe_address, channel_id, nonce, amount)
         metadata = [("snet-payment-type",                 "escrow"                    ),
                     ("snet-payment-channel-id",            str(channel_id)  ),
                     ("snet-payment-channel-nonce",         str(nonce)       ),
                     ("snet-payment-channel-amount",        str(amount)      ),
                     ("snet-payment-channel-signature-bin", bytes(signature))]
-
         response = call_fn(request, metadata=metadata)
         return response
 
-    def _get_service_metadata_for_channel(self):
-        if (not os.path.exists(self.get_channel_dir())):
-            raise Exception("Channel %i is not initilized"%self.args.channel_id)
-        return load_mpe_service_metadata(self.get_channel_dir().joinpath("service_metadata.json"))
+    def _deal_with_call_response(self, response):
+        if (self.args.save_response):
+            with open(self.args.save_response, "wb") as f:
+                f.write(response.SerializeToString())
+        elif (self.args.save_field):
+            field = getattr(response, self.args.save_field[0])
+            file_name = self.args.save_field[1]
+            if (type(field) == bytes):
+                with open(file_name, "wb") as f:
+                    f.write(field)
+            else:
+                with open(file_name, "w") as f:
+                    f.write(str(field))
+        else:
+            self._printout(response)
+
+    def _open_grpc_channel(self, endpoint):
+        """
+           open grpc channel:
+               - for http://  we open insecure_channel
+               - for https:// we open secure_channel (with default credentials)
+               - without prefix we open insecure_channel
+        """
+        if (endpoint.startswith("https://")):
+            return grpc.secure_channel(remove_http_https_prefix(endpoint), grpc.ssl_channel_credentials())
+        return grpc.insecure_channel(remove_http_https_prefix(endpoint))
+
+    def _get_endpoint_from_metadata_or_args(self, metadata):
+        if (self.args.endpoint):
+            return self.args.endpoint
+        endpoints = metadata.get_endpoints_for_group(self.args.group_name)
+        if (not endpoints):
+            raise Exception("Cannot find endpoint in metadata for the given payment group.")
+        if (len(endpoints) > 1):
+            self._printerr("There are several endpoints for the given payment group. We will select %s"%endpoints[0])
+        return endpoints[0]
 
     def call_server_lowlevel(self):
         params           = self._get_call_params()
-        grpc_channel     = grpc.insecure_channel(self.args.endpoint)
-        service_metadata = self._get_service_metadata_for_channel()
+        service_metadata = self._read_metadata_for_service(self.args.org_id, self.args.service_id)
+        endpoint         = self._get_endpoint_from_metadata_or_args(service_metadata)
+        grpc_channel     = self._open_grpc_channel(endpoint)
 
-        response = self._call_server_via_grpc_channel(grpc_channel, self.args.nonce, self.args.amount, params, service_metadata)
-        self._printout(response)
+        response = self._call_server_via_grpc_channel(grpc_channel, self.args.channel_id, self.args.nonce, self.args.amount_in_cogs, params, service_metadata)
+        self._deal_with_call_response(response)
 
     # III. Stateless client related functions
     def _get_channel_state_from_server(self, grpc_channel, channel_id):
@@ -151,10 +188,12 @@ class MPEClientCommand(MPEChannelCommand):
 
         return state
 
-    # we get state of the channel (nonce, amount, unspent_amount)
-    # We do it by securely combine information from the server and blockchain
-    # https://github.com/singnet/wiki/blob/master/multiPartyEscrowContract/MultiPartyEscrow_stateless_client.md
     def _get_channel_state_statelessly(self, grpc_channel, channel_id):
+        """
+        We get state of the channel (nonce, amount, unspent_amount)
+        We do it by securely combine information from the server and blockchain
+        https://github.com/singnet/wiki/blob/master/multiPartyEscrowContract/MultiPartyEscrow_stateless_client.md
+        """
         server     = self._get_channel_state_from_server    (grpc_channel, channel_id)
         blockchain = self._get_channel_state_from_blockchain(              channel_id)
 
@@ -166,32 +205,53 @@ class MPEClientCommand(MPEChannelCommand):
         return (server["current_nonce"], server["current_signed_amount"], unspent_amount)
 
     def print_channel_state_statelessly(self):
-        grpc_channel = grpc.insecure_channel(self.args.endpoint)
+        grpc_channel     = self._open_grpc_channel(self.args.endpoint)
+
         current_nonce, current_amount, unspent_amount = self._get_channel_state_statelessly(grpc_channel, self.args.channel_id)
         self._printout("current_nonce                  = %i"%current_nonce)
         self._printout("current_signed_amount_in_cogs  = %i"%current_amount)
         self._printout("current_unspent_amount_in_cogs = %s"%str(unspent_amount))
 
-    def _call_check_price(self, service_metadata):
-        pricing = service_metadata["pricing"]
-        if (pricing["price_model"] == "fixed_price" and pricing["price_in_cogs"] != self.args.price):
-            raise Exception("Service price is %s, but you set price %s"%(cogs2stragi(pricing["price_in_cogs"]), cogs2stragi(self.args.price)))
+    def _get_channel_for_call(self):
+        channels = self._get_initialized_channels_for_service(self.args.org_id, self.args.service_id)
+        channels = [c for c in channels if c["signer"].lower() == self.ident.address.lower()]
+        if (len(channels) == 0):
+            raise Exception("Cannot find initialized channel for service with org_id=%s service_id=%s and signer=%s"%(self.args.org_id, self.args.service_id, self.ident.adress))
+        if (self.args.channel_id is None):
+            if (len(channels) > 1):
+                channel_ids = [channel["channelId"] for channel in channels]
+                raise Exception("We have several initialized channel: %s. You should use --channel-id to select one"%str(channel_ids))
+            return channels[0]
+        for channel in channels:
+            if (channel["channelId"] == self.args.channel_id):
+                return channel
+        raise Exception("Channel %i has not been initialized or your are not the signer of it"%self.args.channel_id)
 
-    def _call_check_signer(self):
-        channel_info = self._read_channel_info(self.args.channel_id)
-        if (self.ident.address != channel_info["signer"]):
-            raise Exception("You are not the signer of the channel %i"%self.args.channel_id)
+    def _get_price_from_metadata(self, service_metadata):
+        pricing = service_metadata["pricing"]
+        if (pricing["price_model"] == "fixed_price"):
+            return pricing["price_in_cogs"]
+        raise Exception("We do not support price model: %s"%(pricing["price_model"]))
+
+
+    def call_server_statelessly_with_params(self, params):
+        service_metadata = self._read_metadata_for_service(self.args.org_id, self.args.service_id)
+        endpoint         = self._get_endpoint_from_metadata_or_args(service_metadata)
+        grpc_channel     = self._open_grpc_channel(endpoint)
+
+        channel       = self._get_channel_for_call()
+        channel_id    = channel["channelId"]
+        price         = self._get_price_from_metadata(service_metadata)
+        server_state  = self._get_channel_state_from_server(grpc_channel, channel_id)
+
+        proceed = self.args.yes or input("Price for this call will be %s AGI (use -y to remove this warning). Proceed? (y/n): "%(cogs2stragi(price))) == "y"
+        if (not proceed):
+            self._error("Cancelled")
+
+        response = self._call_server_via_grpc_channel(grpc_channel, channel_id, server_state["current_nonce"], server_state["current_signed_amount"] + price, params, service_metadata)
+        return response
 
     def call_server_statelessly(self):
         params           = self._get_call_params()
-        grpc_channel     = grpc.insecure_channel(self.args.endpoint)
-        service_metadata = self._get_service_metadata_for_channel()
-
-        self._call_check_price(service_metadata)
-        self._call_check_signer()
-
-        current_nonce, current_amount, unspent_amount = self._get_channel_state_statelessly(grpc_channel, self.args.channel_id)
-        self._printout("unspent_amount_in_cogs before call (None means that we cannot get it now):%s"%str(unspent_amount))
-        response = self._call_server_via_grpc_channel(grpc_channel, current_nonce, current_amount + self.args.price, params, service_metadata)
-        self._printout(response)
-
+        response = self.call_server_statelessly_with_params(params)
+        self._deal_with_call_response(response)

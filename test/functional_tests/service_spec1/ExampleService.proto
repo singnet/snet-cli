@@ -12,5 +12,6 @@ message ClassifyRequest {
 message ClassifyResponse {
   repeated string predictions = 1;  
   repeated float confidences = 2;
+  bytes binary_field = 3;
 }
 

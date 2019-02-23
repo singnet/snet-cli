@@ -6,7 +6,7 @@ SingularityNET CLI
   
 ## Getting Started  
   
-These instructions are intended to facilitate the development and use of the SingularityNET CLI.
+These instructions are for the development and use of the SingularityNET CLI.
 
 ### Installing with pip
 
@@ -48,6 +48,7 @@ snet identity
 ```
 snet identity create IDENTITY_NAME IDENTITY TYPE [--mnemonic MNEMONIC]
                                                  [--private-key PRIVATE_KEY]
+                                                 [--keystore-path KEYSTORE_PATH]
                                                  [--eth-rpc-endpoint ETH_RPC_ENDPOINT]
 ```
 
@@ -57,6 +58,7 @@ snet identity create IDENTITY_NAME IDENTITY TYPE [--mnemonic MNEMONIC]
   * `MNEMONIC`: required only for `mnemonic` identity type;
 [bip39](https://github.com/bitcoin/bips/blob/master/bip-0039.mediawiki) mnemonic for wallet derivation
   * `PRIVATE_KEY`: required only for `key` identity type; hex-encoded private Ethereum key
+  * `KEYSTORE_PATH`: required only for `keystore` identity type; local path of the encrypted JSON file
   * `ETH_RPC_ENDPOINT`: required only for `rpc` identity type; Ethereum JSON-RPC endpoint that manages target account
 
 ---
@@ -373,6 +375,20 @@ snet organization rem-members [-h] [--gas-price GAS_PRICE]
 * Remove members from an organization
   * `ORG_NAME`: name of the organization
   * `ORG_MEMBERS`: list of members to be removed from the organization (comma-separated)
+
+---
+
+```
+snet sdk generate-client-library [-h] [--eth-rpc-endpoint ETH_RPC_ENDPOINT]
+                                      [--registry-at REGISTRY_ADDRESS]
+                                      language organization service [protodir] 
+```
+
+* Generate compiled client libraries to call services using your language of choice
+  * `language`: target client library language
+  * `organization`: id of the organization
+  * `service`: id of the service
+  * `protodir`: directory where to output the generated client libraries
 
 ---
 

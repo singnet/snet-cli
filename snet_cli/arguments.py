@@ -12,6 +12,7 @@ from snet_cli.mpe_service_command import MPEServiceCommand
 from snet_cli.mpe_channel_command import MPEChannelCommand
 from snet_cli.mpe_client_command  import MPEClientCommand
 from snet_cli.mpe_treasurer_command import MPETreasurerCommand
+from snet_cli.sdk_command import SDKCommand
 from snet_cli.utils_agi2cogs import stragi2cogs
 from snet_cli.config import get_session_keys, get_session_network_keys_removable
 
@@ -90,6 +91,9 @@ def add_root_options(parser, config):
     p = subparsers.add_parser("treasurer", help="Treasurer logic")
     add_mpe_treasurer_options(p)
 
+    sdk_p = subparsers.add_parser("sdk", help="Generate client libraries to call SingularityNET services using your language of choice")
+    add_sdk_options(sdk_p)
+
 
 def add_version_options(parser):
     parser.set_defaults(cmd=VersionCommand)
@@ -102,7 +106,7 @@ def add_identity_options(parser, config):
     subparsers = parser.add_subparsers(title="actions", metavar="ACTION")
     subparsers.required = True
 
-    p = subparsers.add_parser("list", help="List of identies")
+    p = subparsers.add_parser("list", help="List of identities")
     p.set_defaults(fn="list")
 
     p = subparsers.add_parser("create", help="Create a new identity")
@@ -113,13 +117,14 @@ def add_identity_options(parser, config):
                    metavar="IDENTITY_TYPE")
     p.add_argument("--mnemonic", help="bip39 mnemonic for 'mnemonic' identity_type")
     p.add_argument("--private-key", help="hex-encoded private key for 'key' identity_type")
+    p.add_argument("--keystore-path", help="Path of the JSON encrypted file for 'keystore' identity_type")
     p.add_argument("--network", help="network this identity will be bind to (obligatory for 'rpc' identity_type, optional for others)")
     p.add_argument("--wallet-index", type=int, default=0, help="default wallet index for this account (default is 0)")
 
     p = subparsers.add_parser("delete", help="Delete an identity")
     p.set_defaults(fn="delete")
 
-    identity_names = config.get_all_identies_names()
+    identity_names = config.get_all_identities_names()
 
     p.add_argument("identity_name", choices=identity_names,
                    help="name of identity to delete from {}".format(identity_names), metavar="IDENTITY_NAME")
@@ -217,7 +222,7 @@ def add_organization_options(parser):
     add_contract_identity_arguments(p, [("registry", "registry_at")])
     add_eth_call_arguments(p)
 
-    p = subparsers.add_parser("info", help="Organization's Informations")
+    p = subparsers.add_parser("info", help="Organization's Information")
     p.set_defaults(fn="info")
     add_p_org_id(p)
     add_contract_identity_arguments(p, [("registry", "registry_at")])
@@ -242,6 +247,12 @@ def add_organization_options(parser):
     add_p_org_id(p)
     add_contract_identity_arguments(p, [("registry", "registry_at")])
     add_eth_call_arguments(p)
+    
+    p = subparsers.add_parser("change-name", help="Change Organization's name")
+    p.set_defaults(fn="change_name")
+    add_p_org_id(p)
+    p.add_argument("name", help="The new Organization's name", metavar="ORG_NEW_NAME")
+    _add_organization_arguments(p)
 
     p = subparsers.add_parser("change-owner", help="Change Organization's owner")
     p.set_defaults(fn="change_owner")
@@ -343,15 +354,22 @@ class AppendPositionalAction(argparse.Action):
 def add_p_mpe_address_opt(p):
     p.add_argument("--multipartyescrow-at", "--mpe", default=None,  help="address of MultiPartyEscrow contract, if not specified we read address from \"networks\"")
 
+def add_p_registry_address_opt(p):
+    p.add_argument("--registry-at", "--registry", default=None, help="address of Registry contract, if not specified we read address from \"networks\"")
+
 
 def add_p_metadata_file_opt(p):
     p.add_argument("--metadata-file", default="service_metadata.json", help="Service metadata json file (default service_metadata.json)")
 
 
-def add_p_service_in_registry(p):
-    p.add_argument("--registry-at", "--registry", default=None, help="address of Registry contract, if not specified we read address from \"networks\"")
+def add_p_org_id_service_id(p):
     add_p_org_id(p)
     p.add_argument("service_id",      help="Id of service")
+
+
+def add_p_service_in_registry(p):
+    add_p_org_id_service_id(p)
+    add_p_registry_address_opt(p)
 
 
 def add_mpe_account_options(parser):
@@ -362,7 +380,7 @@ def add_mpe_account_options(parser):
     def add_p_snt_address_opt(p):
         p.add_argument("--singularitynettoken-at", "--snt", default=None,  help="address of SingularityNetToken contract, if not specified we read address from \"networks\"")
 
-    p = subparsers.add_parser("print", help="print the currect ETH account")
+    p = subparsers.add_parser("print", help="print the current ETH account")
     p.set_defaults(fn="print_account")
     add_eth_call_arguments(p)
 
@@ -389,7 +407,7 @@ def add_mpe_account_options(parser):
     p = subparsers.add_parser("transfer", help="transfer AGI tokens inside MPE wallet")
     p.set_defaults(fn="transfer_in_mpe")
     p.add_argument("receiver", help="address of the receiver")
-    p.add_argument("amount",   type=stragi2cogs, help="amount of AGI tokens to be transfered to another account inside MPE wallet")
+    p.add_argument("amount",   type=stragi2cogs, help="amount of AGI tokens to be transferred to another account inside MPE wallet")
     add_p_mpe_address_opt(p)
     add_transaction_arguments(p)
 
@@ -399,29 +417,30 @@ def add_p_channel_id(p):
     p.add_argument("channel_id", type=int, help="channel_id")
 def add_p_endpoint(p):
     p.add_argument("endpoint",             help="service endpoint")
-def add_p_full_service_for_call(p):
-    add_p_endpoint(p)
-    p.add_argument("--service", default=None, help="name of protobuf service to call. It should be specified in case of method name conflict.")
-    p.add_argument("method",                  help="target service's method name to call")
-    p.add_argument("params", nargs='?',       help="json-serialized parameters object or path containing "
-                                                "json-serialized parameters object (leave emtpy to read from stdin)")
-def add_p_full_message(p):
-    add_p_mpe_address_opt(p)
-    add_p_channel_id(p)
-    p.add_argument("nonce",      type=int, help="nonce of the channel")
-    p.add_argument("amount",     type=int, help="amount")
 
 def add_p_group_name(p):
     p.add_argument("--group-name", default=None, help="name of the payment group. Parameter should be specified only for services with several payment groups")
 
+def add_p_expiration(p, is_optional):
+    h = "expiration time in blocks (<int>), or in blocks related to the current_block (+<int>blocks), or in days related to the current_block and assuming 15 sec/block (+<int>days)"
+    if (is_optional):
+        p.add_argument("--expiration", required=True,  help=h)
+    else:
+        p.add_argument("expiration",  help=h)
+    p.add_argument("--force", action="store_true", help="Skip check for very high (>6 month) expiration time")
+
 def add_p_open_channel_basic(p):
     p.add_argument("amount",         type=stragi2cogs, help="amount of AGI tokens to put in the new channel")
-    p.add_argument("expiration",     type=int, help="expiration time (in blocks) for the new channel (one block ~ 15 seconds)")
+    add_p_expiration(p, is_optional = False)
     p.add_argument("--signer", default=None, help="Signer for the channel (by default is equal to the sender)")
     add_p_group_name(p)
     add_p_mpe_address_opt(p)
     add_transaction_arguments(p)
+    p.add_argument("--open-new-anyway", action="store_true", help="skip check that channel already exists and open new channel anyway")
+    add_p_from_block(p)
 
+def add_p_from_block(p):
+        p.add_argument("--from-block", type=int, default=0, help="Start searching from this block")
 
 def add_mpe_channel_options(parser):
     parser.set_defaults(cmd=MPEChannelCommand)
@@ -436,18 +455,21 @@ def add_mpe_channel_options(parser):
 
     p = subparsers.add_parser("init-metadata", help="Initialize channel using service metadata")
     p.set_defaults(fn="init_channel_from_metadata")
+    add_p_service_in_registry(p)
     add_p_metadata_file_opt(p)
     add_p_mpe_address_opt(p)
     add_p_channel_id(p)
     add_eth_call_arguments(p)
 
-    p = subparsers.add_parser("open-init", help="Open and initilize channel using metadata from Registry")
+    p = subparsers.add_parser("open-init", help="Open and initialize channel using metadata from Registry")
     p.set_defaults(fn="open_init_channel_from_registry")
     add_p_service_in_registry(p)
     add_p_open_channel_basic(p)
 
-    p = subparsers.add_parser("open-init-metadata", help="Open and initilize channel using service metadata")
+
+    p = subparsers.add_parser("open-init-metadata", help="Open and initialize channel using service metadata")
     p.set_defaults(fn="open_init_channel_from_metadata")
+    add_p_service_in_registry(p)
     add_p_open_channel_basic(p)
     add_p_metadata_file_opt(p)
 
@@ -457,14 +479,28 @@ def add_mpe_channel_options(parser):
     add_p_mpe_address_opt(p)
     add_transaction_arguments(p)
 
+    p = subparsers.add_parser("claim-timeout-all", help="Claim timeout for all channels which have current identity as a sender.")
+    p.set_defaults(fn="channel_claim_timeout_all")
+    add_p_mpe_address_opt(p)
+    add_transaction_arguments(p)
+    add_p_from_block(p)
+
+    def add_p_set_for_extend_add(p):
+        expiration_amount_g = p.add_argument_group(title="Expiration and amount")
+        add_p_expiration(expiration_amount_g, is_optional = True)
+        expiration_amount_g.add_argument("--amount",     type=stragi2cogs, required=True, help="Amount of AGI tokens to add to the channel")
+        add_p_mpe_address_opt(p)
+        add_transaction_arguments(p)
+
     p = subparsers.add_parser("extend-add", help="Set new expiration for the channel and add funds")
     p.set_defaults(fn="channel_extend_and_add_funds")
     add_p_channel_id(p)
-    expiration_amount_g = p.add_argument_group(title="Expiration and amount")
-    expiration_amount_g.add_argument("--expiration", type=int,         required=True, help="New expiration for the channel (should be bigger then old one)")
-    expiration_amount_g.add_argument("--amount",     type=stragi2cogs, required=True, help="Amount of AGI tokens to add to the channel")
-    add_p_mpe_address_opt(p)
-    add_transaction_arguments(p)
+    add_p_set_for_extend_add(p)
+
+    p = subparsers.add_parser("extend-add-for-service", help="Set new expiration and add funds for the channel which was initialized for the given service")
+    p.set_defaults(fn="channel_extend_and_add_funds_for_service")
+    add_p_service_in_registry(p)
+    add_p_set_for_extend_add(p)
 
     p = subparsers.add_parser("block-number", help="Print the last ethereum block number")
     p.set_defaults(fn="print_block_number")
@@ -484,18 +520,16 @@ def add_mpe_channel_options(parser):
     add_p_only_sender_signer(p)
     add_p_mpe_address_opt(p)
     add_eth_call_arguments(p)
+    add_p_registry_address_opt(p)
 
-    p = subparsers.add_parser("print-initialized-filter-group", help="Print initialized channels for the given service (given payment group).")
-    p.set_defaults(fn="print_initialized_channels_filter_group")
+
+    p = subparsers.add_parser("print-initialized-filter-service", help="Print initialized channels for the given service (all payment group).")
+    p.set_defaults(fn="print_initialized_channels_filter_service")
     add_p_service_in_registry(p)
     add_p_only_id(p)
     add_p_only_sender_signer(p)
     add_p_mpe_address_opt(p)
     add_eth_call_arguments(p)
-    add_p_group_name(p)
-
-    def add_p_from_block(p):
-        p.add_argument("--from-block", type=int, default=0, help="Start searching from this block")
 
     def add_p_sender(p):
         p.add_argument("--sender", default=None, help="Account to set as sender (by default we use the current identity)")
@@ -541,19 +575,34 @@ def add_mpe_client_options(parser):
     subparsers = parser.add_subparsers(title="Commands", metavar="COMMAND")
     subparsers.required = True
 
-    p = subparsers.add_parser("call", help="call server in stateless manner. We ask state of the channel from the server. Channel should be already initialized.")
-    p.set_defaults(fn="call_server_statelessly")
-    add_p_channel_id(p)
-    p.add_argument("price",     type=stragi2cogs, help="price for this call in AGI tokens")
-    add_p_full_service_for_call(p)
-    add_p_mpe_address_opt(p)
-    add_eth_call_arguments(p)
+    def add_p_set1_for_call(p):
+        p.add_argument("--service", default=None, help="name of protobuf service to call. It should be specified in case of method name conflict.")
+        p.add_argument("method",                  help="target service's method name to call")
+        p.add_argument("params", nargs='?',       help="json-serialized parameters object or path containing "
+                                                "json-serialized parameters object (leave emtpy to read from stdin)")
+        add_eth_call_arguments(p)
+        add_p_mpe_address_opt(p)
+        p.add_argument("--save-response", default=None, help="save response in the file", metavar="FILENAME")
+        p.add_argument("--save-field",    default=None, nargs=2, help="save specific field in the file (two arguments 'field' and 'file_name' should be specified)")
+        p.add_argument("--endpoint",             help="service endpoint (by default we read it from metadata)")
+        add_p_group_name(p)
 
-    p = subparsers.add_parser("call-lowlevel", help="Low level function for calling the server. Channel should be already initialized.")
+    # call: testo tests method params --endpoint --group-name
+    p = subparsers.add_parser("call", help="call server. We ask state of the channel from the server if needed. Channel should be already initialized.")
+    p.set_defaults(fn="call_server_statelessly")
+    add_p_org_id_service_id(p)
+    add_p_set1_for_call(p)
+    p.add_argument("--channel-id", type=int, help="channel_id (only in case of multiply initialized channels for the same payment group)")
+    p.add_argument("--yes", "-y", action="store_true", help="skip interactive confirmation of call price", default=False)
+
+
+    p = subparsers.add_parser("call-lowlevel", help="Low level function for calling the server. Service should be already initialized.")
     p.set_defaults(fn="call_server_lowlevel")
-    add_p_full_message(p)
-    add_p_full_service_for_call(p)
-    add_eth_call_arguments(p)
+    add_p_org_id_service_id(p)
+    add_p_channel_id(p)
+    p.add_argument("nonce",              type=int, help="nonce of the channel")
+    p.add_argument("amount_in_cogs",     type=int, help="amount in cogs")
+    add_p_set1_for_call(p)
 
     p = subparsers.add_parser("get-channel-state", help="Get channel state in stateless manner")
     p.set_defaults(fn="print_channel_state_statelessly")
@@ -561,7 +610,7 @@ def add_mpe_client_options(parser):
     add_p_channel_id(p)
     add_p_endpoint(p)
     add_eth_call_arguments(p)
-
+ 
 
 def add_mpe_service_options(parser):
     parser.set_defaults(cmd=MPEServiceCommand)
@@ -616,7 +665,7 @@ def add_mpe_service_options(parser):
         p.add_argument("--update-mpe-address" , action='store_true', help="Update mpe_address in metadata before publishing them")
         add_p_mpe_address_opt(p)
 
-    p = subparsers.add_parser("publish-in-ipfs", help="Publish metadata only in IPFS, without publising in Registry")
+    p = subparsers.add_parser("publish-in-ipfs", help="Publish metadata only in IPFS, without publishing in Registry")
     p.set_defaults(fn="publish_metadata_in_ipfs")
     add_p_publish_params(p)
 
@@ -632,6 +681,7 @@ def add_mpe_service_options(parser):
     add_p_publish_params(p)
     add_p_service_in_registry(p)
     add_transaction_arguments(p)
+    p.add_argument("--force", action="store_true", help="Force update metadata")
 
     p = subparsers.add_parser("update-add-tags", help="Add tags to existed service registration")
     p.set_defaults(fn="update_registration_add_tags")
@@ -701,3 +751,19 @@ def add_mpe_treasurer_options(parser):
     p.add_argument("--expiration-threshold", type=int, default = 34560, help="Service expiration threshold in blocks (default is 34560 ~ 6 days with 15s/block)")
     add_p_endpoint(p)
     add_transaction_arguments(p)
+
+def add_sdk_options(parser):
+    parser.set_defaults(cmd=SDKCommand)
+    subparsers = parser.add_subparsers(title="Commands", metavar="COMMAND")
+    subparsers.required = True
+
+    supported_languages = [ "python" ]
+
+    p = subparsers.add_parser("generate-client-library", help="Generate compiled client libraries to call services using your language of choice")
+    p.set_defaults(fn="generate_client_library")
+    p.add_argument("language", choices=supported_languages,
+                   help="choose target language for the generated client library from {}".format(supported_languages),
+                   metavar="LANGUAGE")
+    add_p_service_in_registry(p)
+    p.add_argument("protodir", nargs="?", help="Directory where to output the generated client libraries", metavar="PROTODIR")
+    add_eth_call_arguments(p)

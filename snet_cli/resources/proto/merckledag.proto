@@ -1,0 +1,17 @@
+syntax = "proto2";
+// An IPFS MerkleDAG Link
+message MerkleLink {
+  required bytes Hash = 1;   // multihash of the target object
+  required string Name = 2;  // utf string name
+  required uint64 Tsize = 3; // cumulative size of target object
+
+  // user extensions start at 50
+}
+
+// An IPFS MerkleDAG Node
+message MerkleNode {
+  repeated MerkleLink Links = 2; // refs to other objects
+  required bytes Data = 1; // opaque user data
+
+  // user extensions start at 50
+}

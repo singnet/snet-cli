@@ -7,8 +7,8 @@ class MPEAccountCommand(BlockchainCommand):
     def print_account(self):
         self._printout(self.ident.address)
 
-    # print balance of ETH, AGI, and MPE wallet
     def print_agi_and_mpe_balances(self):
+        """ Print balance of ETH, AGI, and MPE wallet """
         if (self.args.account):
             account = self.args.account
         else:

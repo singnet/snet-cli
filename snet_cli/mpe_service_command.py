@@ -8,8 +8,8 @@ import json
 
 class MPEServiceCommand(BlockchainCommand):
 
-    # publis proto files in ipfs and print hash
     def publish_proto_in_ipfs(self):
+        """ Publish proto files in ipfs and print hash """
         ipfs_hash_base58 = utils_ipfs.publish_proto_in_ipfs(self._get_ipfs_client(), self.args.protodir)
         self._printout(ipfs_hash_base58)
 
@@ -26,12 +26,12 @@ class MPEServiceCommand(BlockchainCommand):
         self._metadata_add_group(metadata)
         for endpoint in self.args.endpoints:
             metadata.add_endpoint(self.args.group_name, endpoint)
-        if (self.args.fixed_price):
+        if (self.args.fixed_price is not None):
             metadata.set_fixed_price_in_cogs(self.args.fixed_price)
         metadata.save_pretty(self.args.metadata_file)
 
-    # publish protobuf model in ipfs and update existed metadata file
     def publish_proto_metadata_update(self):
+        """ Publish protobuf model in ipfs and update existing metadata file """
         metadata = load_mpe_service_metadata(self.args.metadata_file)
         ipfs_hash_base58 = utils_ipfs.publish_proto_in_ipfs(self._get_ipfs_client(), self.args.protodir)
         metadata.set_simple_field("model_ipfs_hash", ipfs_hash_base58)
@@ -52,16 +52,16 @@ class MPEServiceCommand(BlockchainCommand):
         self._metadata_add_group(metadata)
         metadata.save_pretty(self.args.metadata_file)
 
-    # metadata add endpoint to the group
     def metadata_add_endpoints(self):
+        """ Metadata: add endpoint to the group """
         metadata = load_mpe_service_metadata(self.args.metadata_file)
         group_name = metadata.get_group_name_nonetrick(self.args.group_name)
         for endpoint in self.args.endpoints:
             metadata.add_endpoint(group_name, endpoint)
         metadata.save_pretty(self.args.metadata_file)
 
-    # metadata add description
     def metadata_add_description(self):
+        """ Metadata: add description """
         service_description = {}
         if (self.args.json):
             service_description = json.loads(self.args.json)
@@ -94,8 +94,8 @@ class MPEServiceCommand(BlockchainCommand):
                             "2. You can use --update-mpe-address parameter to update mpe_address in metadata before publishing it\n")
         return self._get_ipfs_client().add_bytes(metadata.get_json().encode("utf-8"))
 
-    # publish metadata in ipfs and print hash
     def publish_metadata_in_ipfs(self):
+        """ Publish metadata in ipfs and print hash """
         self._printout( self._publish_metadata_in_ipfs(self.args.metadata_file) )
 
     def _get_converted_tags(self):
@@ -108,6 +108,19 @@ class MPEServiceCommand(BlockchainCommand):
         self.transact_contract_command("Registry", "createServiceRegistration", params)
 
     def publish_metadata_in_ipfs_and_update_registration(self):
+        # first we check that we do not change payment_address or group_id in existed payment groups
+        if (not self.args.force):
+            old_metadata = self._get_service_metadata_from_registry()
+            new_metadata = load_mpe_service_metadata(self.args.metadata_file)
+            for old_group in old_metadata["groups"]:
+                if (new_metadata.is_group_name_exists(old_group["group_name"])):
+
+                    new_group = new_metadata.get_group(old_group["group_name"])
+                    if (new_group["group_id"] != old_group["group_id"] or new_group["payment_address"] != old_group["payment_address"]):
+                        raise Exception("You are trying to change group_id or payment_address in group '%s'.\n"%old_group["group_name"] +
+                                         "You will make all open channels invalid.\n" +
+                                         "Use --force if you really want it.")
+
         metadata_uri     = hash_to_bytesuri( self._publish_metadata_in_ipfs(self.args.metadata_file))
         params           = [type_converter("bytes32")(self.args.org_id), type_converter("bytes32")(self.args.service_id), metadata_uri]
         self.transact_contract_command("Registry", "updateServiceRegistration", params)

@@ -14,11 +14,10 @@ from snet_cli.utils import DefaultAttributeObject, get_web3, serializable, type_
 
 from snet_cli.utils_config import get_contract_address, get_field_from_args_or_session
 from snet_cli.identity import RpcIdentityProvider, MnemonicIdentityProvider, TrezorIdentityProvider, \
-    LedgerIdentityProvider, KeyIdentityProvider
+    LedgerIdentityProvider, KeyIdentityProvider, KeyStoreIdentityProvider
 import web3
 import secrets
 import string
-
 
 
 class Command(object):
@@ -36,13 +35,24 @@ class Command(object):
         if not condition:
             self._error(message)
 
+    @staticmethod
+    def _print(message, fd):
+        message = str(message) + "\n"
+        try:
+            fd.write(message)
+        except UnicodeEncodeError:
+            if hasattr(fd, "buffer"):
+                fd.buffer.write(message.encode("utf-8"))
+            else:
+                raise
+
     def _printout(self, message):
         if self.out_f is not None:
-            print(message, file=self.out_f)
+            self._print(message, self.out_f)
 
     def _printerr(self, message):
         if self.err_f is not None:
-            print(message, file=self.err_f)
+            self._print(message, self.err_f)
 
     def _pprint(self, item):
         self._printout(indent(yaml.dump(json.loads(json.dumps(item, default=serializable)), default_flow_style=False,
@@ -66,6 +76,7 @@ class Command(object):
         ipfs_scheme = ipfs_endpoint.scheme if ipfs_endpoint.scheme else "http"
         ipfs_port = ipfs_endpoint.port if ipfs_endpoint.port else 5001
         return ipfsapi.connect(urljoin(ipfs_scheme, ipfs_endpoint.hostname), ipfs_port)
+
 
 class VersionCommand(Command):
     def show(self):
@@ -91,6 +102,9 @@ class BlockchainCommand(Command):
     def get_mpe_address(self):
         return get_contract_address(self, "MultiPartyEscrow")
 
+    def get_registry_address(self):
+        return get_contract_address(self, "Registry")
+
     def get_identity(self):
         identity_type = self.config.get_session_field("identity_type")
 
@@ -104,6 +118,8 @@ class BlockchainCommand(Command):
             return LedgerIdentityProvider(self.w3, self.get_wallet_index())
         if identity_type == "key":
             return KeyIdentityProvider(self.w3, self.config.get_session_field("private_key"))
+        if identity_type == "keystore":
+            return KeyStoreIdentityProvider(self.w3, self.config.get_session_field("keystore_path"))
 
     def get_contract_argser(self, contract_address, contract_function, contract_def, **kwargs):
         def f(*positional_inputs, **named_inputs):
@@ -153,7 +169,7 @@ class IdentityCommand(Command):
         identity = {}
 
         identity_name = self.args.identity_name
-        self._ensure(not identity_name in self.config.get_all_identies_names(), "identity_name {} already exists".format(identity_name))
+        self._ensure(not identity_name in self.config.get_all_identities_names(), "identity_name {} already exists".format(identity_name))
 
         identity_type = self.args.identity_type
         identity["identity_type"] = identity_type
@@ -385,6 +401,23 @@ class OrganizationCommand(BlockchainCommand):
         else:
             self._printout("Organization with id={} exists but has no registered services.".format(org_id))
 
+    def change_name(self):
+        org_id = self.args.org_id
+        new_org_name = self.args.name
+        # Check if Organization exists
+        (found, _, org_name, _, _, _, _) = self._getorganizationbyid(org_id)
+        self.error_organization_not_found(org_id, found)
+    
+        if new_org_name == org_name:
+            raise Exception("\n{} is already the name of the Organization with id={}!\n".format(new_org_name, org_id))
+    
+        self._printout("Creating transaction to change organization {}'s name...\n".format(org_id))
+        try:
+            self.transact_contract_command("Registry", "changeOrganizationName", [type_converter("bytes32")(org_id), new_org_name])
+        except Exception as e:
+            self._printerr("\nTransaction error!\nHINT: Check if you are the owner of {}\n".format(org_id))
+            raise
+
     def change_owner(self):
         org_id = self.args.org_id
         # Check if Organization exists
@@ -457,8 +490,8 @@ class OrganizationCommand(BlockchainCommand):
             self._printerr("\nTransaction error!\nHINT: Check if you are the owner of {}\n".format(org_id))
             raise
 
-    # find organization with have the current identity as the owner or as the membmer
     def list_my(self):
+        """ Find organization that has the current identity as the owner or as the member """
         org_list = self.call_contract_command("Registry", "listOrganizations", [])
 
         rez_owner  = []
