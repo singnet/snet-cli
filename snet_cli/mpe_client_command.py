@@ -212,34 +212,24 @@ class MPEClientCommand(MPEChannelCommand):
         self._printout("current_signed_amount_in_cogs  = %i"%current_amount)
         self._printout("current_unspent_amount_in_cogs = %s"%str(unspent_amount))
 
-    def _get_channel_for_call(self):
-        channels = self._get_initialized_channels_for_service(self.args.org_id, self.args.service_id)
-        channels = [c for c in channels if c["signer"].lower() == self.ident.address.lower()]
-        if (len(channels) == 0):
-            raise Exception("Cannot find initialized channel for service with org_id=%s service_id=%s and signer=%s"%(self.args.org_id, self.args.service_id, self.ident.adress))
-        if (self.args.channel_id is None):
-            if (len(channels) > 1):
-                channel_ids = [channel["channelId"] for channel in channels]
-                raise Exception("We have several initialized channel: %s. You should use --channel-id to select one"%str(channel_ids))
-            return channels[0]
-        for channel in channels:
-            if (channel["channelId"] == self.args.channel_id):
-                return channel
-        raise Exception("Channel %i has not been initialized or your are not the signer of it"%self.args.channel_id)
-
     def _get_price_from_metadata(self, service_metadata):
         pricing = service_metadata["pricing"]
         if (pricing["price_model"] == "fixed_price"):
             return pricing["price_in_cogs"]
         raise Exception("We do not support price model: %s"%(pricing["price_model"]))
 
-
     def call_server_statelessly_with_params(self, params):
+
+        # if service is not initilized we will initialize it (unless we want skip registry check for update)
+        if (not self.args.skip_update_check):
+            self._init_or_update_registered_service_if_needed()
+
         service_metadata = self._read_metadata_for_service(self.args.org_id, self.args.service_id)
         endpoint         = self._get_endpoint_from_metadata_or_args(service_metadata)
         grpc_channel     = self._open_grpc_channel(endpoint)
 
-        channel       = self._get_channel_for_call()
+        # if channel was not initilized we will try to initailize it (it will work only in simple case of signer == sender)
+        channel       = self._smart_get_initialized_channel_for_service(service_metadata, filter_by = "signer")
         channel_id    = channel["channelId"]
         price         = self._get_price_from_metadata(service_metadata)
         server_state  = self._get_channel_state_from_server(grpc_channel, channel_id)
