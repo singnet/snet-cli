@@ -111,8 +111,7 @@ class MPEClientCommand(MPEChannelCommand):
                     ("snet-payment-channel-nonce",         str(nonce)       ),
                     ("snet-payment-channel-amount",        str(amount)      ),
                     ("snet-payment-channel-signature-bin", bytes(signature))]
-        response = call_fn(request, metadata=metadata)
-        return response
+        return call_fn(request, metadata=metadata)
 
     def _deal_with_call_response(self, response):
         if (self.args.save_response):
@@ -238,8 +237,7 @@ class MPEClientCommand(MPEChannelCommand):
         if (not proceed):
             self._error("Cancelled")
 
-        response = self._call_server_via_grpc_channel(grpc_channel, channel_id, server_state["current_nonce"], server_state["current_signed_amount"] + price, params, service_metadata)
-        return response
+        return self._call_server_via_grpc_channel(grpc_channel, channel_id, server_state["current_nonce"], server_state["current_signed_amount"] + price, params, service_metadata)
 
     def call_server_statelessly(self):
         params           = self._get_call_params()
