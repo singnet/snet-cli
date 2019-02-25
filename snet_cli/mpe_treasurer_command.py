@@ -1,4 +1,4 @@
-from snet_cli.mpe_channel_command import MPEChannelCommand
+from snet_cli.mpe_client_command import MPEClientCommand
 from snet_cli.utils import compile_proto
 from pathlib import Path
 import grpc
