@@ -143,11 +143,11 @@ class MPEServiceCommand(BlockchainCommand):
         rez = self.call_contract_command("Registry", "getServiceRegistrationById", params)
         if (rez[0] == False):
             raise Exception("Cannot find Service with id=%s in Organization with id=%s"%(self.args.service_id, self.args.org_id))
-        return rez
+        return {"metadataURI" : rez[2], "tags" : rez[3]}
 
     def _get_service_metadata_from_registry(self):
         rez           = self._get_service_registration()
-        metadata_hash = bytesuri_to_hash(rez[2])
+        metadata_hash = bytesuri_to_hash(rez["metadataURI"])
         metadata      = get_from_ipfs_and_checkhash(self._get_ipfs_client(), metadata_hash)
         metadata      = metadata.decode("utf-8")
         metadata      = mpe_service_metadata_from_json(metadata)
@@ -159,7 +159,7 @@ class MPEServiceCommand(BlockchainCommand):
 
     def print_service_tags_from_registry(self):
         rez  = self._get_service_registration()
-        tags = rez[3]
+        tags = rez["tags"]
         tags = [bytes32_to_str(tag) for tag in tags]
         self._printout(" ".join(tags))
 

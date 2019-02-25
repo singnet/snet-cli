@@ -247,7 +247,7 @@ def add_organization_options(parser):
     add_p_org_id(p)
     add_contract_identity_arguments(p, [("registry", "registry_at")])
     add_eth_call_arguments(p)
-    
+
     p = subparsers.add_parser("change-name", help="Change Organization's name")
     p.set_defaults(fn="change_name")
     add_p_org_id(p)
@@ -415,6 +415,10 @@ def add_mpe_account_options(parser):
 def add_p_channel_id(p):
     # int is ok here because in python3 int is unlimited
     p.add_argument("channel_id", type=int, help="channel_id")
+
+def add_p_channel_id_opt(p):
+    p.add_argument("--channel-id", type=int, help="channel_id (only in case of multiply initialized channels for the same payment group)")
+
 def add_p_endpoint(p):
     p.add_argument("endpoint",             help="service endpoint")
 
@@ -440,7 +444,7 @@ def add_p_open_channel_basic(p):
     add_p_from_block(p)
 
 def add_p_from_block(p):
-        p.add_argument("--from-block", type=int, default=0, help="Start searching from this block")
+        p.add_argument("--from-block", type=int, default=0, help="Start searching from this block (for channel searching)")
 
 def add_mpe_channel_options(parser):
     parser.set_defaults(cmd=MPEChannelCommand)
@@ -501,6 +505,9 @@ def add_mpe_channel_options(parser):
     p.set_defaults(fn="channel_extend_and_add_funds_for_service")
     add_p_service_in_registry(p)
     add_p_set_for_extend_add(p)
+    add_p_group_name(p)
+    add_p_channel_id_opt(p)
+    add_p_from_block(p)
 
     p = subparsers.add_parser("block-number", help="Print the last ethereum block number")
     p.set_defaults(fn="print_block_number")
@@ -592,8 +599,10 @@ def add_mpe_client_options(parser):
     p.set_defaults(fn="call_server_statelessly")
     add_p_org_id_service_id(p)
     add_p_set1_for_call(p)
-    p.add_argument("--channel-id", type=int, help="channel_id (only in case of multiply initialized channels for the same payment group)")
+    add_p_channel_id_opt(p)
+    add_p_from_block(p)
     p.add_argument("--yes", "-y", action="store_true", help="skip interactive confirmation of call price", default=False)
+    p.add_argument("--skip-update-check", action="store_true", help="skip check for service update", default=False)
 
 
     p = subparsers.add_parser("call-lowlevel", help="Low level function for calling the server. Service should be already initialized.")
@@ -610,7 +619,7 @@ def add_mpe_client_options(parser):
     add_p_channel_id(p)
     add_p_endpoint(p)
     add_eth_call_arguments(p)
- 
+
 
 def add_mpe_service_options(parser):
     parser.set_defaults(cmd=MPEServiceCommand)
