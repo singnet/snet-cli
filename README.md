@@ -17,8 +17,7 @@ You should have python with version >= 3.6.5 and pip installed.
 Additionally you should install the following packages:
 
 * libudev
-* libusb 1.0
-* python-argcomplete
+* libusb 1.0 
 
 If you use Ubuntu (or any Linux distribution with APT package support) you should do the following:
 
