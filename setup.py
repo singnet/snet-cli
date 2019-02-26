@@ -62,7 +62,8 @@ setup(
         'pillow>=3.4.0',  # _vendor/ledgerblue
         'python-u2flib-host>=3.0.2',  # _vendor/ledgerblue
         'pymultihash==0.8.2',
-        'base58==1.0.2'
+        'base58==1.0.2',
+        'argcomplete>=1.9.4'
     ],
     cmdclass={
         'develop': develop,

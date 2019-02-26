@@ -18,12 +18,28 @@ Additionally you should install the following packages:
 
 * libudev
 * libusb 1.0
+* python-argcomplete
 
 If you use Ubuntu (or any Linux distribution with APT package support) you should do the following:
 
 ```bash
 sudo apt-get install libudev-dev libusb-1.0-0-dev
 ```
+
+If you want to enable auto completion of snet commands, you should install the following package
+* python-argcomplete
+
+On ubuntu (or any Linux distribution with APT package support), you should do the following
+
+```bash
+sudo apt install python-argcomplete
+```
+After the package is installed, activate autocomplete by using 
+
+```bash
+sudo activate-global-python-argcomplete
+```
+Note: Changes will not take effect until shell is restarted.
 
 #### Install snet-cli using pip
 
