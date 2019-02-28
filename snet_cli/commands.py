@@ -15,10 +15,9 @@ from snet_cli.utils import DefaultAttributeObject, get_web3, serializable, type_
 from snet_cli.utils_config import get_contract_address, get_field_from_args_or_session
 from snet_cli.identity import RpcIdentityProvider, MnemonicIdentityProvider, TrezorIdentityProvider, \
     LedgerIdentityProvider, KeyIdentityProvider, KeyStoreIdentityProvider
-import web3
+from web3.eth import is_checksum_address
 import secrets
 import string
-from web3 import middleware
 from web3.gas_strategies.time_based import fast_gas_price_strategy, medium_gas_price_strategy, slow_gas_price_strategy
 
 
@@ -348,7 +347,7 @@ class OrganizationCommand(BlockchainCommand):
             return []
         members = [m.replace("[", "").replace("]", "") for m in self.args.members.split(',')]
         for m in members:
-            if not web3.eth.is_checksum_address(m):
+            if not is_checksum_address(m):
                 raise Exception("Member account %s is not a valid Ethereum checksum address"%m)
         return members
 
@@ -461,7 +460,7 @@ class OrganizationCommand(BlockchainCommand):
         self.error_organization_not_found(org_id, found)
 
         new_owner = self.args.owner
-        if not web3.eth.is_checksum_address(new_owner):
+        if not is_checksum_address(new_owner):
             raise Exception("New owner account %s is not a valid Ethereum checksum address"%new_owner)
 
         if new_owner.lower() == owner.lower():
