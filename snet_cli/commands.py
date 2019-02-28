@@ -86,12 +86,36 @@ class VersionCommand(Command):
         self._pprint({"version": get_cli_version()})
 
 
+class cached_gas_price_strategy:
+    def __init__(self, gas_price_param):
+        self.gas_price_param = gas_price_param
+        self.cached_gas_price = None
+    def __call__(self, web3, transaction_params):
+        if (self.cached_gas_price is None):
+            self.cached_gas_price = self.calc_gas_price(web3, transaction_params)
+        return self.cached_gas_price
+    def calc_gas_price(self, web3, transaction_params):
+        gas_price_param = self.gas_price_param
+        if (gas_price_param.isdigit()):
+            return int(self.gas_price_param)
+        if (gas_price_param == "fast"):
+            return (fast_gas_price_strategy(web3, transaction_params))
+        if (gas_price_param == "medium"):
+            return (medium_gas_price_strategy(web3, transaction_params))
+        if (gas_price_param == "slow"):
+            return (slow_gas_price_strategy(web3, transaction_params))
+        raise Exception("Unknown gas price strategy: %s"%gas_price_param)
+    def is_going_to_calculate(self):
+        return self.cached_gas_price is None and not self.gas_price_param.isdigit()
+
+
 class BlockchainCommand(Command):
     def __init__(self, config, args, out_f=sys.stdout, err_f=sys.stderr, w3=None, ident=None):
         super(BlockchainCommand, self).__init__(config, args, out_f, err_f)
         self.w3 = w3 or get_web3(self.get_eth_endpoint())
         self.ident = ident or self.get_identity()
-        self.init_gas_price_strategy()
+        if (type(self.w3.eth.gasPriceStrategy) != cached_gas_price_strategy):
+            self.w3.eth.setGasPriceStrategy(cached_gas_price_strategy(self.get_gas_price_param()))
 
     def get_eth_endpoint(self):
         # the only one source of eth_rpc_endpoint is the configuration file
@@ -100,31 +124,12 @@ class BlockchainCommand(Command):
     def get_wallet_index(self):
         return int(get_field_from_args_or_session(self.config, self.args, "wallet_index"))
 
-    def init_gas_price_strategy(self):
-        gas_price_param = get_field_from_args_or_session(self.config, self.args, "gas_price")
-        if (gas_price_param.isdigit()):
-            self.is_gas_price_strategy = False
-            # use trivial gas price strategy
-            self.w3.eth.setGasPriceStrategy(lambda a,b: int(gas_price_param))
-            return
-
-        self.is_gas_price_strategy = True
-        if (gas_price_param == "fast"):
-            self.w3.eth.setGasPriceStrategy(fast_gas_price_strategy)
-        elif(gas_price_param == "medium"):
-            self.w3.eth.setGasPriceStrategy(medium_gas_price_strategy)
-        elif(gas_price_param == "slow"):
-            self.w3.eth.setGasPriceStrategy(slow_gas_price_strategy)
-        else:
-            raise Exception("Unknown gas price strategy: %s"%gas_price_param)
-# TODO: Uncomment then bug with middleware (wrong result of getTransactionCount in Contract. build_transaction) will be fixed
-#        if (middleware.time_based_cache_middleware not in self.w3.middleware_stack):
-#            self.w3.middleware_stack.add(middleware.time_based_cache_middleware)
-#            self.w3.middleware_stack.add(middleware.latest_block_based_cache_middleware)
-#            self.w3.middleware_stack.add(middleware.simple_cache_middleware)
+    def get_gas_price_param(self):
+         return get_field_from_args_or_session(self.config, self.args, "gas_price")
 
     def get_gas_price_verbose(self):
-        if (self.is_gas_price_strategy):
+        # gas price is not given explicitly in Wei
+        if (self.w3.eth.gasPriceStrategy.is_going_to_calculate()):
             self._printerr("# Calculating gas price. It might take ~60 seconds.")
         g = self.w3.eth.generateGasPrice()
         self._printerr("# gas_price = %f GWei"%(g * 1E-9))
