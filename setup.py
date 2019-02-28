@@ -44,7 +44,7 @@ setup(
     install_requires=[
         'grpcio-tools==1.17.1',
         'jsonrpcclient==2.5.2',
-        'web3==4.2.1',
+        'web3==4.8.3',
         'mnemonic==0.18',
         'pycoin>=0.80',
         'ecdsa==0.13',
@@ -56,7 +56,7 @@ setup(
         'hidapi>=0.7.99',  # _vendor/ledgerblue
         'protobuf>=2.6.1',  # _vendor/ledgerblue
         'pycryptodome>=3.6.6',  # _vendor/ledgerblue
-        'eth-hash==0.1.4',  # the latest eth-hash v0.2.0 requires pycryptodome>=3.6.6,<4
+        'eth-hash>=0.2.0',  # the latest eth-hash v0.2.0 requires pycryptodome>=3.6.6,<4
         'future==0.16.0',  # _vendor/ledgerblue
         'ecpy>=0.8.1',  # _vendor/ledgerblue
         'pillow>=3.4.0',  # _vendor/ledgerblue
