@@ -662,6 +662,11 @@ def add_mpe_service_options(parser):
     p.add_argument("--group-name", default=None, help="name of the payment group to which we want to add endpoints. Parameter should be specified in case of several payment groups")
     add_p_metadata_file_opt(p)
 
+    p = subparsers.add_parser("metadata-remove-all-endpoints", help="Remove all endpoints from metadata")
+    p.set_defaults(fn="metadata_remove_all_endpoints")
+    add_p_metadata_file_opt(p)
+
+
     p = subparsers.add_parser("metadata-add-description", help="Add service description")
     p.set_defaults(fn="metadata_add_description")
     p.add_argument("--json",        default=None,  help="Service description in json")
