@@ -85,24 +85,24 @@ class VersionCommand(Command):
         self._pprint({"version": get_cli_version()})
 
 
-class cached_gas_price_strategy:
+class cachedGasPriceStrategy:
     def __init__(self, gas_price_param):
         self.gas_price_param = gas_price_param
         self.cached_gas_price = None
-    def __call__(self, web3, transaction_params):
+    def __call__(self, w3, transaction_params):
         if (self.cached_gas_price is None):
-            self.cached_gas_price = self.calc_gas_price(web3, transaction_params)
+            self.cached_gas_price = self.calc_gas_price(w3, transaction_params)
         return self.cached_gas_price
-    def calc_gas_price(self, web3, transaction_params):
+    def calc_gas_price(self, w3, transaction_params):
         gas_price_param = self.gas_price_param
         if (gas_price_param.isdigit()):
             return int(self.gas_price_param)
         if (gas_price_param == "fast"):
-            return (fast_gas_price_strategy(web3, transaction_params))
+            return (fast_gas_price_strategy(w3, transaction_params))
         if (gas_price_param == "medium"):
-            return (medium_gas_price_strategy(web3, transaction_params))
+            return (medium_gas_price_strategy(w3, transaction_params))
         if (gas_price_param == "slow"):
-            return (slow_gas_price_strategy(web3, transaction_params))
+            return (slow_gas_price_strategy(w3, transaction_params))
         raise Exception("Unknown gas price strategy: %s"%gas_price_param)
     def is_going_to_calculate(self):
         return self.cached_gas_price is None and not self.gas_price_param.isdigit()
@@ -113,8 +113,8 @@ class BlockchainCommand(Command):
         super(BlockchainCommand, self).__init__(config, args, out_f, err_f)
         self.w3 = w3 or get_web3(self.get_eth_endpoint())
         self.ident = ident or self.get_identity()
-        if (type(self.w3.eth.gasPriceStrategy) != cached_gas_price_strategy):
-            self.w3.eth.setGasPriceStrategy(cached_gas_price_strategy(self.get_gas_price_param()))
+        if (type(self.w3.eth.gasPriceStrategy) != cachedGasPriceStrategy):
+            self.w3.eth.setGasPriceStrategy(cachedGasPriceStrategy(self.get_gas_price_param()))
 
     def get_eth_endpoint(self):
         # the only one source of eth_rpc_endpoint is the configuration file
