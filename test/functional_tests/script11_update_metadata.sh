@@ -9,12 +9,10 @@ snet service publish testo tests -y -q
 snet service metadata-init ./service_spec1/ ExampleService 0x52653A9091b5d5021bed06c5118D24b23620c529  --fixed-price 0.0001 --endpoints 8.8.8.8:2020 --metadata-file service_metadata2.json
 
 snet service update-metadata testo tests --metadata-file service_metadata2.json -yq && exit 1 || echo "fail as expected"
-snet service update-metadata testo tests --metadata-file service_metadata2.json -yq --force
 
 #change payment_address
-cat service_metadata2.json | jq '.groups[0].payment_address = "0xc7973537517BfDeA79EE11Fa2D52584241a34dF2"' > service_metadata3.json
-snet service update-metadata testo tests --metadata-file service_metadata3.json -yq && exit 1 || echo "fail as expected"
-snet service update-metadata testo tests --metadata-file service_metadata3.json -yq --force
+cat service_metadata.json | jq '.groups[0].payment_address = "0xc7973537517BfDeA79EE11Fa2D52584241a34dF2"' > service_metadata2.json
+snet service update-metadata testo tests --metadata-file service_metadata2.json -yq && exit 1 || echo "fail as expected"
 
 
 # case with several groups
@@ -33,16 +31,11 @@ cat service_metadata.json | jq '.groups[1].group_id = "B5r64fQiiB5kvkWZDo7lXmo4i
 mv -f service_metadata2.json service_metadata.json
 
 snet service update-metadata testo tests -yq && exit 1 || echo "fail as expected"
-snet service update-metadata testo tests -yq --force
 
 
 #change payment_address
+snet service print-metadata testo tests > service_metadata.json
 cat service_metadata.json | jq '.groups[1].payment_address = "0xc7973537517BfDeA79EE11Fa2D52584241a34dF2"' > service_metadata2.json
 mv -f service_metadata2.json service_metadata.json
 
 snet service update-metadata testo tests -yq && exit 1 || echo "fail as expected"
-snet service update-metadata testo tests -yq --force
-
-snet service print-metadata  testo tests > service_metadata3.json
-
-cmp <(jq -S . service_metadata.json) <(jq -S . service_metadata3.json)
