@@ -93,6 +93,9 @@ class MPEServiceMetadata:
             raise Exception("the endpoint %s is already present"%str(endpoint))
         self.m["endpoints"] += [{"group_name" : group_name, "endpoint"   : endpoint}]
 
+    def remove_all_endpoints(self):
+        self.m["endpoints"] = []
+
     def is_group_name_exists(self, group_name):
         """ check if group with given name is already exists """
         groups = self.m["groups"]
