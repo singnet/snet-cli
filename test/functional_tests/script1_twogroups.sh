@@ -23,6 +23,12 @@ snet service metadata-add-description --json '{"url":"http://127.0.0.1"}' --url 
 snet service metadata-add-group group2 0x0067b427E299Eb2A4CBafc0B04C723F77c6d8a18
 snet service metadata-add-endpoints  8.8.8.8:2020 9.8.9.8:8080 --group-name group1
 snet service metadata-add-endpoints  8.8.8.8:22   1.2.3.4:8080 --group-name group2
+grep "8.8.8.8:2020" service_metadata.json
+snet service  metadata-remove-all-endpoints
+grep "8.8.8.8:2020" service_metadata.json && exit 1 || echo "fail as expected"
+snet service metadata-add-endpoints  8.8.8.8:2020 9.8.9.8:8080 --group-name group1
+snet service metadata-add-endpoints  8.8.8.8:22   1.2.3.4:8080 --group-name group2
+
 snet service metadata-set-fixed-price 0.0001
 
 # test --endpoints and --fixed-price options in 'snet service metadata-init'
