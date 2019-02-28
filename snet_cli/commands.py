@@ -18,6 +18,9 @@ from snet_cli.identity import RpcIdentityProvider, MnemonicIdentityProvider, Tre
 import web3
 import secrets
 import string
+from web3 import middleware
+from web3.gas_strategies.time_based import fast_gas_price_strategy, medium_gas_price_strategy, slow_gas_price_strategy
+
 
 
 class Command(object):
@@ -88,6 +91,7 @@ class BlockchainCommand(Command):
         super(BlockchainCommand, self).__init__(config, args, out_f, err_f)
         self.w3 = w3 or get_web3(self.get_eth_endpoint())
         self.ident = ident or self.get_identity()
+        self.init_gas_price_strategy()
 
     def get_eth_endpoint(self):
         # the only one source of eth_rpc_endpoint is the configuration file
@@ -96,8 +100,34 @@ class BlockchainCommand(Command):
     def get_wallet_index(self):
         return int(get_field_from_args_or_session(self.config, self.args, "wallet_index"))
 
-    def get_gas_price(self):
-        return int(get_field_from_args_or_session(self.config, self.args, "gas_price"))
+    def init_gas_price_strategy(self):
+        gas_price_param = get_field_from_args_or_session(self.config, self.args, "gas_price")
+        if (gas_price_param.isdigit()):
+            self.is_gas_price_strategy = False
+            # use trivial gas price strategy
+            self.w3.eth.setGasPriceStrategy(lambda a,b: int(gas_price_param))
+            return
+
+        self.is_gas_price_strategy = True
+        if (gas_price_param == "fast"):
+            self.w3.eth.setGasPriceStrategy(fast_gas_price_strategy)
+        elif(gas_price_param == "medium"):
+            self.w3.eth.setGasPriceStrategy(medium_gas_price_strategy)
+        elif(gas_price_param == "slow"):
+            self.w3.eth.setGasPriceStrategy(slow_gas_price_strategy)
+        else:
+            raise Exception("Unknown gas price strategy: %s"%gas_price_param)
+        if (middleware.time_based_cache_middleware not in self.w3.middleware_stack):
+            self.w3.middleware_stack.add(middleware.time_based_cache_middleware)
+            self.w3.middleware_stack.add(middleware.latest_block_based_cache_middleware)
+            self.w3.middleware_stack.add(middleware.simple_cache_middleware)
+
+    def get_gas_price_verbose(self):
+        if (self.is_gas_price_strategy):
+            self._printerr("# Calculating gas price. It might take ~60 seconds.")
+        g = self.w3.eth.generateGasPrice()
+        self._printerr("# gas_price = %f GWei"%(g * 1E-9))
+        return g
 
     def get_mpe_address(self):
         return get_contract_address(self, "MultiPartyEscrow")
@@ -276,7 +306,7 @@ class ContractCommand(BlockchainCommand):
             in self.args.__dict__.items() if name.startswith("contract_named_input_")
         }
 
-        gas_price = self.get_gas_price()
+        gas_price = self.get_gas_price_verbose()
 
         txn = contract.build_transaction(self.args.contract_function,
                                          self.ident.get_address(),
@@ -407,10 +437,10 @@ class OrganizationCommand(BlockchainCommand):
         # Check if Organization exists
         (found, _, org_name, _, _, _, _) = self._getorganizationbyid(org_id)
         self.error_organization_not_found(org_id, found)
-    
+
         if new_org_name == org_name:
             raise Exception("\n{} is already the name of the Organization with id={}!\n".format(new_org_name, org_id))
-    
+
         self._printout("Creating transaction to change organization {}'s name...\n".format(org_id))
         try:
             self.transact_contract_command("Registry", "changeOrganizationName", [type_converter("bytes32")(org_id), new_org_name])

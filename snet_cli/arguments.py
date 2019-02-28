@@ -148,7 +148,7 @@ def add_network_options(parser, config):
     p.set_defaults(fn="create")
     p.add_argument("network_name", help="name of network to create")
     p.add_argument("eth_rpc_endpoint", help="ethereum rpc endpoint")
-    p.add_argument("--default-gas-price", default=1000000000, type=int, help="default gas price for this network (in wei), default is 1000000000")
+    p.add_argument("--default-gas-price", default="medium", help="default gas price (in wei) or gas price strategy ('fast' ~1min, 'medium' ~5min or 'slow' ~60min), default is 'medium'")
     p.add_argument("--skip-check", action="store_true", help="skip check that eth_rpc_endpoint is valid")
 
 
@@ -331,8 +331,7 @@ def add_eth_call_arguments(parser):
 
 def add_transaction_arguments(parser):
     transaction_g = parser.add_argument_group(title="transaction arguments")
-    transaction_g.add_argument("--gas-price", type=int,
-                               help="ethereum gas price for transaction (defaults to session.default_gas_price)")
+    transaction_g.add_argument("--gas-price", help="ethereum gas price in Wei or time based gas price strategy ('fast' ~1min, 'medium' ~5min or 'slow' ~60min)  (defaults to session.default_gas_price)")
     transaction_g.add_argument("--wallet-index", type=int,
                                help="wallet index of account to use for signing (defaults to session.identity.default_wallet_index)")
     transaction_g.add_argument("--yes", "-y", action="store_true",
