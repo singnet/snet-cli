@@ -695,7 +695,6 @@ def add_mpe_service_options(parser):
     add_p_publish_params(p)
     add_p_service_in_registry(p)
     add_transaction_arguments(p)
-    p.add_argument("--force", action="store_true", help="Force update metadata")
 
     p = subparsers.add_parser("update-add-tags", help="Add tags to existed service registration")
     p.set_defaults(fn="update_registration_add_tags")
