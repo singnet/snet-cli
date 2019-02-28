@@ -117,10 +117,11 @@ class BlockchainCommand(Command):
             self.w3.eth.setGasPriceStrategy(slow_gas_price_strategy)
         else:
             raise Exception("Unknown gas price strategy: %s"%gas_price_param)
-        if (middleware.time_based_cache_middleware not in self.w3.middleware_stack):
-            self.w3.middleware_stack.add(middleware.time_based_cache_middleware)
-            self.w3.middleware_stack.add(middleware.latest_block_based_cache_middleware)
-            self.w3.middleware_stack.add(middleware.simple_cache_middleware)
+# TODO: Uncomment then bug with middleware (wrong result of getTransactionCount in Contract. build_transaction) will be fixed
+#        if (middleware.time_based_cache_middleware not in self.w3.middleware_stack):
+#            self.w3.middleware_stack.add(middleware.time_based_cache_middleware)
+#            self.w3.middleware_stack.add(middleware.latest_block_based_cache_middleware)
+#            self.w3.middleware_stack.add(middleware.simple_cache_middleware)
 
     def get_gas_price_verbose(self):
         if (self.is_gas_price_strategy):
