@@ -66,6 +66,15 @@ class MPEServiceCommand(BlockchainCommand):
         metadata.remove_all_endpoints()
         metadata.save_pretty(self.args.metadata_file)
 
+    def metadata_update_endpoints(self):
+        """ Metadata: Remove all endpoints from the group and add new ones """
+        metadata = load_mpe_service_metadata(self.args.metadata_file)
+        group_name = metadata.get_group_name_nonetrick(self.args.group_name)
+        metadata.remove_all_endpoints_for_group(group_name)
+        for endpoint in self.args.endpoints:
+            metadata.add_endpoint(group_name, endpoint)
+        metadata.save_pretty(self.args.metadata_file)
+
     def metadata_add_description(self):
         """ Metadata: add description """
         service_description = {}
