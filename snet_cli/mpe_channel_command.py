@@ -269,7 +269,13 @@ class MPEChannelCommand(MPEServiceCommand):
 
     def channel_extend_and_add_funds(self):
         expiration = self._get_expiration_from_args()
+        check_new_expiration_from_blockchain(self.args.channel_id, expiration)
         self.transact_contract_command("MultiPartyEscrow", "channelExtendAndAddFunds", [self.args.channel_id, expiration, self.args.amount])
+
+    def check_new_expiration_from_blockchain(self, channel_id, new_expiration):
+        channel = self._get_channel_state_from_blockchain(channel_id)
+        if (new_expiration < channel["expiration"]):
+            raise Exception("New expiration (%i) is smaller then old one (%i)"%(new_expiration, channel["expiration"]))
 
     def _smart_get_initialized_channel_for_service(self, metadata, filter_by, is_try_initailize = True):
         '''
@@ -296,13 +302,26 @@ class MPEChannelCommand(MPEServiceCommand):
                 return channel
         raise Exception("Channel %i has not been initialized or your are not the sender/signer of it"%self.args.channel_id)
 
-    def channel_extend_and_add_funds_for_service(self):
+    def _smart_get_channel_for_service(self):
         self._init_or_update_registered_service_if_needed()
-        expiration = self._get_expiration_from_args()
         metadata   = self._read_metadata_for_service(self.args.org_id, self.args.service_id)
-        channel    = self._smart_get_initialized_channel_for_service(metadata, "sender")
-        channel_id = channel["channelId"]
+        return self._smart_get_initialized_channel_for_service(metadata, "sender")
+
+    def channel_extend_and_add_funds_for_service(self):
+        channel_id = self._smart_get_channel_for_service()["channelId"]
+        expiration = self._get_expiration_from_args()
+        self.check_new_expiration_from_blockchain(channel_id, expiration)
         self.transact_contract_command("MultiPartyEscrow", "channelExtendAndAddFunds", [channel_id, expiration, self.args.amount])
+
+    def channel_extend_for_service(self):
+        channel_id = self._smart_get_channel_for_service()["channelId"]
+        expiration = self._get_expiration_from_args()
+        self.check_new_expiration_from_blockchain(channel_id, expiration)
+        self.transact_contract_command("MultiPartyEscrow", "channelExtend", [channel_id, expiration])
+
+    def channel_add_funds_for_service(self):
+        channel_id = self._smart_get_channel_for_service()["channelId"]
+        self.transact_contract_command("MultiPartyEscrow", "channelAddFunds", [channel_id, self.args.amount])
 
     def _get_all_initialized_channels(self):
         """ return dict of lists  rez[(<org_id>, <service_id>)] = [(channel_id, channel_info)] """
