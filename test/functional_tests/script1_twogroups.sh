@@ -38,10 +38,10 @@ ipfs cat $IPFS_HASH > service_metadata2.json
 # compare service_metadata.json and service_metadata2.json
 cmp <(jq -S . service_metadata.json) <(jq -S . service_metadata2.json)
 
-snet organization create org1 --org-id testo -y -q
-snet service publish testo tests -y -q
-snet service update-add-tags testo tests tag1 tag2 tag3 -y -q
-snet service update-remove-tags testo tests tag2 tag1 -y -q
+snet organization create org1 --org-id testo -y -q  --gas-price fast
+snet service publish testo tests -y -q  --gas-price medium
+snet service update-add-tags testo tests tag1 tag2 tag3 -y -q --gas-price slow
+snet service update-remove-tags testo tests tag2 tag1 -y -q  --gas-price 1000000000
 snet service print-tags  testo tests
 
 # it should have only tag3 now

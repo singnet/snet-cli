@@ -15,9 +15,11 @@ from snet_cli.utils import DefaultAttributeObject, get_web3, serializable, type_
 from snet_cli.utils_config import get_contract_address, get_field_from_args_or_session
 from snet_cli.identity import RpcIdentityProvider, MnemonicIdentityProvider, TrezorIdentityProvider, \
     LedgerIdentityProvider, KeyIdentityProvider, KeyStoreIdentityProvider
-import web3
+from web3.eth import is_checksum_address
 import secrets
 import string
+from web3.gas_strategies.time_based import fast_gas_price_strategy, medium_gas_price_strategy, slow_gas_price_strategy
+
 
 
 class Command(object):
@@ -83,11 +85,36 @@ class VersionCommand(Command):
         self._pprint({"version": get_cli_version()})
 
 
+class cachedGasPriceStrategy:
+    def __init__(self, gas_price_param):
+        self.gas_price_param = gas_price_param
+        self.cached_gas_price = None
+    def __call__(self, w3, transaction_params):
+        if (self.cached_gas_price is None):
+            self.cached_gas_price = self.calc_gas_price(w3, transaction_params)
+        return self.cached_gas_price
+    def calc_gas_price(self, w3, transaction_params):
+        gas_price_param = self.gas_price_param
+        if (gas_price_param.isdigit()):
+            return int(self.gas_price_param)
+        if (gas_price_param == "fast"):
+            return (fast_gas_price_strategy(w3, transaction_params))
+        if (gas_price_param == "medium"):
+            return (medium_gas_price_strategy(w3, transaction_params))
+        if (gas_price_param == "slow"):
+            return (slow_gas_price_strategy(w3, transaction_params))
+        raise Exception("Unknown gas price strategy: %s"%gas_price_param)
+    def is_going_to_calculate(self):
+        return self.cached_gas_price is None and not self.gas_price_param.isdigit()
+
+
 class BlockchainCommand(Command):
     def __init__(self, config, args, out_f=sys.stdout, err_f=sys.stderr, w3=None, ident=None):
         super(BlockchainCommand, self).__init__(config, args, out_f, err_f)
         self.w3 = w3 or get_web3(self.get_eth_endpoint())
         self.ident = ident or self.get_identity()
+        if (type(self.w3.eth.gasPriceStrategy) != cachedGasPriceStrategy):
+            self.w3.eth.setGasPriceStrategy(cachedGasPriceStrategy(self.get_gas_price_param()))
 
     def get_eth_endpoint(self):
         # the only one source of eth_rpc_endpoint is the configuration file
@@ -96,8 +123,16 @@ class BlockchainCommand(Command):
     def get_wallet_index(self):
         return int(get_field_from_args_or_session(self.config, self.args, "wallet_index"))
 
-    def get_gas_price(self):
-        return int(get_field_from_args_or_session(self.config, self.args, "gas_price"))
+    def get_gas_price_param(self):
+         return get_field_from_args_or_session(self.config, self.args, "gas_price")
+
+    def get_gas_price_verbose(self):
+        # gas price is not given explicitly in Wei
+        if (self.w3.eth.gasPriceStrategy.is_going_to_calculate()):
+            self._printerr("# Calculating gas price. It might take ~60 seconds.")
+        g = self.w3.eth.generateGasPrice()
+        self._printerr("# gas_price = %f GWei"%(g * 1E-9))
+        return g
 
     def get_mpe_address(self):
         return get_contract_address(self, "MultiPartyEscrow")
@@ -276,7 +311,7 @@ class ContractCommand(BlockchainCommand):
             in self.args.__dict__.items() if name.startswith("contract_named_input_")
         }
 
-        gas_price = self.get_gas_price()
+        gas_price = self.get_gas_price_verbose()
 
         txn = contract.build_transaction(self.args.contract_function,
                                          self.ident.get_address(),
@@ -312,7 +347,7 @@ class OrganizationCommand(BlockchainCommand):
             return []
         members = [m.replace("[", "").replace("]", "") for m in self.args.members.split(',')]
         for m in members:
-            if not web3.eth.is_checksum_address(m):
+            if not is_checksum_address(m):
                 raise Exception("Member account %s is not a valid Ethereum checksum address"%m)
         return members
 
@@ -407,10 +442,10 @@ class OrganizationCommand(BlockchainCommand):
         # Check if Organization exists
         (found, _, org_name, _, _, _, _) = self._getorganizationbyid(org_id)
         self.error_organization_not_found(org_id, found)
-    
+
         if new_org_name == org_name:
             raise Exception("\n{} is already the name of the Organization with id={}!\n".format(new_org_name, org_id))
-    
+
         self._printout("Creating transaction to change organization {}'s name...\n".format(org_id))
         try:
             self.transact_contract_command("Registry", "changeOrganizationName", [type_converter("bytes32")(org_id), new_org_name])
@@ -425,7 +460,7 @@ class OrganizationCommand(BlockchainCommand):
         self.error_organization_not_found(org_id, found)
 
         new_owner = self.args.owner
-        if not web3.eth.is_checksum_address(new_owner):
+        if not is_checksum_address(new_owner):
             raise Exception("New owner account %s is not a valid Ethereum checksum address"%new_owner)
 
         if new_owner.lower() == owner.lower():
