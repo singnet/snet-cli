@@ -269,7 +269,7 @@ class MPEChannelCommand(MPEServiceCommand):
 
     def channel_extend_and_add_funds(self):
         expiration = self._get_expiration_from_args()
-        check_new_expiration_from_blockchain(self.args.channel_id, expiration)
+        self.check_new_expiration_from_blockchain(self.args.channel_id, expiration)
         self.transact_contract_command("MultiPartyEscrow", "channelExtendAndAddFunds", [self.args.channel_id, expiration, self.args.amount])
 
     def check_new_expiration_from_blockchain(self, channel_id, new_expiration):
