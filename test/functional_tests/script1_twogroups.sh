@@ -75,11 +75,12 @@ snet channel claim-timeout 0 -y -q
 # we do not send transaction second time
 snet channel claim-timeout 0 -y -q && exit 1 || echo "fail as expected"
 
-snet channel extend-add 0 --expiration 10000         --amount 42 -y  -q
-snet channel extend-add 0 --expiration +10000blocks  --amount 0  -y  -q
-snet channel extend-add 0 --expiration +10000days    --amount 0  -y  -q && exit 1 || echo "fail as expected"
-snet channel extend-add 0 --expiration +10000days --force  --amount 0  -y  -q
-snet channel extend-add 0 --expiration 57600000 --force  --amount 0  -y  -q && exit 1 || echo "fail as expected"
+snet channel extend-add 0 --expiration 10000 --amount 42 -y  -q
+snet channel extend-add 0 --amount 42 -y  -q
+snet channel extend-add 0 --expiration +10000blocks   -y  -q
+snet channel extend-add 0 --expiration +10000days  -y  -q && exit 1 || echo "fail as expected"
+snet channel extend-add 0 --expiration +10000days --force  -y  -q
+snet channel extend-add 0 --expiration 57600000 --force  -y  -q && exit 1 || echo "fail as expected"
 
 EXPIRATION1=$((`snet channel block-number` + 57600000))
 snet channel extend-add 0 --expiration $EXPIRATION1 --force  --amount 0  -y  -q
