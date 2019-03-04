@@ -267,10 +267,27 @@ class MPEChannelCommand(MPEServiceCommand):
             if (rez["value"] > 0 and rez["expiration"] < self.ident.w3.eth.blockNumber):
                 self.transact_contract_command("MultiPartyEscrow", "channelClaimTimeout", [channel_id])
 
-    def channel_extend_and_add_funds(self):
+    def _channel_extend_add_funds_with_channel_id(self, channel_id):
+        if (self.args.amount is None and self.args.expiration is None):
+            raise Exception("You should specify --amount or/and --expiration")
+
+        #only add funds to the channel (if --expiration hasn't been specified)
+        if (self.args.expiration is None):
+            self.transact_contract_command("MultiPartyEscrow", "channelAddFunds", [channel_id, self.args.amount])
+            return
+
         expiration = self._get_expiration_from_args()
-        self.check_new_expiration_from_blockchain(self.args.channel_id, expiration)
-        self.transact_contract_command("MultiPartyEscrow", "channelExtendAndAddFunds", [self.args.channel_id, expiration, self.args.amount])
+        self.check_new_expiration_from_blockchain(channel_id, expiration)
+        # only extend channel (if --amount hasn't been specified)
+        if (self.args.amount is None):
+            self.transact_contract_command("MultiPartyEscrow", "channelExtend", [channel_id, expiration])
+            return
+
+        # extend and add funds if --amount and --expiration have been specified
+        self.transact_contract_command("MultiPartyEscrow", "channelExtendAndAddFunds", [channel_id, expiration, self.args.amount])
+
+    def channel_extend_and_add_funds(self):
+        self._channel_extend_add_funds_with_channel_id(self.args.channel_id)
 
     def check_new_expiration_from_blockchain(self, channel_id, new_expiration):
         channel = self._get_channel_state_from_blockchain(channel_id)
@@ -309,19 +326,7 @@ class MPEChannelCommand(MPEServiceCommand):
 
     def channel_extend_and_add_funds_for_service(self):
         channel_id = self._smart_get_channel_for_service()["channelId"]
-        expiration = self._get_expiration_from_args()
-        self.check_new_expiration_from_blockchain(channel_id, expiration)
-        self.transact_contract_command("MultiPartyEscrow", "channelExtendAndAddFunds", [channel_id, expiration, self.args.amount])
-
-    def channel_extend_for_service(self):
-        channel_id = self._smart_get_channel_for_service()["channelId"]
-        expiration = self._get_expiration_from_args()
-        self.check_new_expiration_from_blockchain(channel_id, expiration)
-        self.transact_contract_command("MultiPartyEscrow", "channelExtend", [channel_id, expiration])
-
-    def channel_add_funds_for_service(self):
-        channel_id = self._smart_get_channel_for_service()["channelId"]
-        self.transact_contract_command("MultiPartyEscrow", "channelAddFunds", [channel_id, self.args.amount])
+        self._channel_extend_add_funds_with_channel_id(channel_id)
 
     def _get_all_initialized_channels(self):
         """ return dict of lists  rez[(<org_id>, <service_id>)] = [(channel_id, channel_info)] """
