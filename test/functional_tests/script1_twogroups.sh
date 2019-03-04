@@ -23,6 +23,21 @@ snet service metadata-add-description --json '{"url":"http://127.0.0.1"}' --url 
 snet service metadata-add-group group2 0x0067b427E299Eb2A4CBafc0B04C723F77c6d8a18
 snet service metadata-add-endpoints  8.8.8.8:2020 9.8.9.8:8080 --group-name group1
 snet service metadata-add-endpoints  8.8.8.8:22   1.2.3.4:8080 --group-name group2
+grep "8.8.8.8:2020" service_metadata.json
+snet service  metadata-remove-all-endpoints
+grep "8.8.8.8:2020" service_metadata.json && exit 1 || echo "fail as expected"
+snet service metadata-add-endpoints  8.8.8.8:2020 9.8.9.8:8080 --group-name group1
+snet service metadata-add-endpoints  8.8.8.8:22   1.2.3.4:8080 --group-name group2
+snet service metadata-update-endpoints 8.8.8.8:23456  1.2.3.4:22 --group-name group2
+grep "8.8.8.8:23456" service_metadata.json
+grep "8.8.8.8:2020" service_metadata.json
+grep "9.8.9.8:8080" service_metadata.json
+grep "8.8.8.8:22" service_metadata.json && exit 1 || echo "fail as expected"
+grep "1.2.3.4:8080" service_metadata.json && exit 1 || echo "fail as expected"
+
+
+
+
 snet service metadata-set-fixed-price 0.0001
 
 # test --endpoints and --fixed-price options in 'snet service metadata-init'
@@ -93,6 +108,12 @@ snet channel print-all-filter-sender |grep 0x42A605c07EdE0E1f648aB054775D6D4E384
 # we have two initilized channels one for group1 and anther for group1 (recipient=0x42A605c07EdE0E1f648aB054775D6D4E38496144)
 
 snet service metadata-init ./service_spec1/ ExampleService 0x52653A9091b5d5021bed06c5118D24b23620c529  --fixed-price 0.0001 --endpoints 8.8.8.8:2020 --metadata-file service_metadata2.json
+grep "8.8.8.8:2020" service_metadata2.json
+snet service metadata-update-endpoints 8.8.8.8:2025 --metadata-file service_metadata2.json
+grep "8.8.8.8:2025" service_metadata2.json
+grep "8.8.8.8:2020" service_metadata2.json && exit 1 || echo "fail as expected"
+
+
 snet service publish testo tests2 -y -q --metadata-file service_metadata2.json
 
 snet channel open-init testo tests2 7234.345 1 -y  -q --signer 0x3b2b3C2e2E7C93db335E69D827F3CC4bC2A2A2cB

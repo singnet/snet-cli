@@ -60,6 +60,21 @@ class MPEServiceCommand(BlockchainCommand):
             metadata.add_endpoint(group_name, endpoint)
         metadata.save_pretty(self.args.metadata_file)
 
+    def metadata_remove_all_endpoints(self):
+        """ Metadata: remove all endpoints from all groups """
+        metadata = load_mpe_service_metadata(self.args.metadata_file)
+        metadata.remove_all_endpoints()
+        metadata.save_pretty(self.args.metadata_file)
+
+    def metadata_update_endpoints(self):
+        """ Metadata: Remove all endpoints from the group and add new ones """
+        metadata = load_mpe_service_metadata(self.args.metadata_file)
+        group_name = metadata.get_group_name_nonetrick(self.args.group_name)
+        metadata.remove_all_endpoints_for_group(group_name)
+        for endpoint in self.args.endpoints:
+            metadata.add_endpoint(group_name, endpoint)
+        metadata.save_pretty(self.args.metadata_file)
+
     def metadata_add_description(self):
         """ Metadata: add description """
         service_description = {}
@@ -109,18 +124,17 @@ class MPEServiceCommand(BlockchainCommand):
 
     def publish_metadata_in_ipfs_and_update_registration(self):
         # first we check that we do not change payment_address or group_id in existed payment groups
-        if (not self.args.force):
-            old_metadata = self._get_service_metadata_from_registry()
-            new_metadata = load_mpe_service_metadata(self.args.metadata_file)
-            for old_group in old_metadata["groups"]:
-                if (new_metadata.is_group_name_exists(old_group["group_name"])):
-
-                    new_group = new_metadata.get_group(old_group["group_name"])
-                    if (new_group["group_id"] != old_group["group_id"] or new_group["payment_address"] != old_group["payment_address"]):
-                        raise Exception("You are trying to change group_id or payment_address in group '%s'.\n"%old_group["group_name"] +
-                                         "You will make all open channels invalid.\n" +
-                                         "Use --force if you really want it.")
-
+        old_metadata = self._get_service_metadata_from_registry()
+        new_metadata = load_mpe_service_metadata(self.args.metadata_file)
+        for old_group in old_metadata["groups"]:
+            if (new_metadata.is_group_name_exists(old_group["group_name"])):
+                new_group = new_metadata.get_group(old_group["group_name"])
+                if (new_group["group_id"] != old_group["group_id"] or new_group["payment_address"] != old_group["payment_address"]):
+                    raise Exception("\n\nYou are trying to change group_id or payment_address in group '%s'.\n"%old_group["group_name"] +
+                                    "It would make all open channels invalid.\n" +
+                                    "You shoudn't use 'metadata-init' for existed service, because it reinitialize group_id\n" +
+                                    "Please use 'metadata-set-model' for change your protobuf file\n" +
+                                    "Please use 'metadata-remove-all-endpoints/metadata-add-endpoints to update endpoints'\n\n")
         metadata_uri     = hash_to_bytesuri( self._publish_metadata_in_ipfs(self.args.metadata_file))
         params           = [type_converter("bytes32")(self.args.org_id), type_converter("bytes32")(self.args.service_id), metadata_uri]
         self.transact_contract_command("Registry", "updateServiceRegistration", params)
