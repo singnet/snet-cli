@@ -91,7 +91,7 @@ class cachedGasPriceStrategy:
         self.cached_gas_price = None
     def __call__(self, w3, transaction_params):
         if (self.cached_gas_price is None):
-            self.cached_gas_price = self.calc_gas_price(w3, transaction_params)
+            self.cached_gas_price = int(self.calc_gas_price(w3, transaction_params))
         return self.cached_gas_price
     def calc_gas_price(self, w3, transaction_params):
         gas_price_param = self.gas_price_param
