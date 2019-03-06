@@ -427,7 +427,7 @@ def add_p_group_name(p):
 def add_p_expiration(p, is_optional):
     h = "expiration time in blocks (<int>), or in blocks related to the current_block (+<int>blocks), or in days related to the current_block and assuming 15 sec/block (+<int>days)"
     if (is_optional):
-        p.add_argument("--expiration", required=True,  help=h)
+        p.add_argument("--expiration", help=h)
     else:
         p.add_argument("expiration",  help=h)
     p.add_argument("--force", action="store_true", help="Skip check for very high (>6 month) expiration time")
@@ -491,7 +491,7 @@ def add_mpe_channel_options(parser):
     def add_p_set_for_extend_add(p):
         expiration_amount_g = p.add_argument_group(title="Expiration and amount")
         add_p_expiration(expiration_amount_g, is_optional = True)
-        expiration_amount_g.add_argument("--amount",     type=stragi2cogs, required=True, help="Amount of AGI tokens to add to the channel")
+        expiration_amount_g.add_argument("--amount",     type=stragi2cogs, help="Amount of AGI tokens to add to the channel")
         add_p_mpe_address_opt(p)
         add_transaction_arguments(p)
 
@@ -500,7 +500,7 @@ def add_mpe_channel_options(parser):
     add_p_channel_id(p)
     add_p_set_for_extend_add(p)
 
-    p = subparsers.add_parser("extend-add-for-service", help="Set new expiration and add funds for the channel which was initialized for the given service")
+    p = subparsers.add_parser("extend-add-for-service", help="Set new expiration and add funds for the channel for the given service")
     p.set_defaults(fn="channel_extend_and_add_funds_for_service")
     add_p_service_in_registry(p)
     add_p_set_for_extend_add(p)

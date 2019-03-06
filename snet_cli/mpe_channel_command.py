@@ -267,9 +267,32 @@ class MPEChannelCommand(MPEServiceCommand):
             if (rez["value"] > 0 and rez["expiration"] < self.ident.w3.eth.blockNumber):
                 self.transact_contract_command("MultiPartyEscrow", "channelClaimTimeout", [channel_id])
 
-    def channel_extend_and_add_funds(self):
+    def _channel_extend_add_funds_with_channel_id(self, channel_id):
+        if (self.args.amount is None and self.args.expiration is None):
+            raise Exception("You should specify --amount or/and --expiration")
+
+        #only add funds to the channel (if --expiration hasn't been specified)
+        if (self.args.expiration is None):
+            self.transact_contract_command("MultiPartyEscrow", "channelAddFunds", [channel_id, self.args.amount])
+            return
+
         expiration = self._get_expiration_from_args()
-        self.transact_contract_command("MultiPartyEscrow", "channelExtendAndAddFunds", [self.args.channel_id, expiration, self.args.amount])
+        self.check_new_expiration_from_blockchain(channel_id, expiration)
+        # only extend channel (if --amount hasn't been specified)
+        if (self.args.amount is None):
+            self.transact_contract_command("MultiPartyEscrow", "channelExtend", [channel_id, expiration])
+            return
+
+        # extend and add funds if --amount and --expiration have been specified
+        self.transact_contract_command("MultiPartyEscrow", "channelExtendAndAddFunds", [channel_id, expiration, self.args.amount])
+
+    def channel_extend_and_add_funds(self):
+        self._channel_extend_add_funds_with_channel_id(self.args.channel_id)
+
+    def check_new_expiration_from_blockchain(self, channel_id, new_expiration):
+        channel = self._get_channel_state_from_blockchain(channel_id)
+        if (new_expiration < channel["expiration"]):
+            raise Exception("New expiration (%i) is smaller then old one (%i)"%(new_expiration, channel["expiration"]))
 
     def _smart_get_initialized_channel_for_service(self, metadata, filter_by, is_try_initailize = True):
         '''
@@ -296,13 +319,14 @@ class MPEChannelCommand(MPEServiceCommand):
                 return channel
         raise Exception("Channel %i has not been initialized or your are not the sender/signer of it"%self.args.channel_id)
 
-    def channel_extend_and_add_funds_for_service(self):
+    def _smart_get_channel_for_service(self):
         self._init_or_update_registered_service_if_needed()
-        expiration = self._get_expiration_from_args()
         metadata   = self._read_metadata_for_service(self.args.org_id, self.args.service_id)
-        channel    = self._smart_get_initialized_channel_for_service(metadata, "sender")
-        channel_id = channel["channelId"]
-        self.transact_contract_command("MultiPartyEscrow", "channelExtendAndAddFunds", [channel_id, expiration, self.args.amount])
+        return self._smart_get_initialized_channel_for_service(metadata, "sender")
+
+    def channel_extend_and_add_funds_for_service(self):
+        channel_id = self._smart_get_channel_for_service()["channelId"]
+        self._channel_extend_add_funds_with_channel_id(channel_id)
 
     def _get_all_initialized_channels(self):
         """ return dict of lists  rez[(<org_id>, <service_id>)] = [(channel_id, channel_info)] """
