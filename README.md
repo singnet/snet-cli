@@ -17,7 +17,7 @@ You should have python with version >= 3.6.5 and pip installed.
 Additionally you should install the following packages:
 
 * libudev
-* libusb 1.0
+* libusb 1.0 
 
 If you use Ubuntu (or any Linux distribution with APT package support) you should do the following:
 
@@ -29,6 +29,34 @@ sudo apt-get install libudev-dev libusb-1.0-0-dev
 
 ```bash
 $ pip3 install snet-cli
+```
+
+
+#### Enabling commands autocomplete
+If you want to enable auto completion of commands, you should install the following package
+* python-argcomplete
+
+On ubuntu (or any Linux distribution with APT package support), you should do the following
+
+```bash
+sudo apt install python-argcomplete
+```
+After the package is installed, activate autocomplete 
+
+##### for all python commands (which includes snet commands as well) 
+
+```bash
+sudo activate-global-python-argcomplete
+```
+Note: Changes will not take effect until shell is restarted.
+
+##### only for snet commands, then you should do the following
+```bash
+echo 'eval "$(register-python-argcomplete snet)"' >> ~/.bashrc
+```
+then
+```bash
+source ~/.bashrc
 ```
 
 ### Commands

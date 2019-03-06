@@ -1,7 +1,11 @@
+#!/usr/bin/env python
+# PYTHON_ARGCOMPLETE_OK
+
 import sys
 
 from snet_cli import arguments
 from snet_cli.config import Config
+import argcomplete
 
 __version__ = "0.2.10"
 
@@ -11,6 +15,7 @@ def main():
         argv = sys.argv[1:]
         conf   = Config()
         parser = arguments.get_root_parser(conf)
+        argcomplete.autocomplete(parser)
 
         try:
             args = parser.parse_args(argv)
