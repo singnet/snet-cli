@@ -168,6 +168,17 @@ class MPEChannelCommand(MPEServiceCommand):
         service_registration = self._get_service_registration()
         self._init_channel_from_metadata(metadata, service_registration)
 
+    def _expiration_str_to_blocks(self, expiration_str):
+        current_block = self.ident.w3.eth.blockNumber
+        s = expiration_str
+        if (s.startswith("+") and s.endswith("days")):
+            rez = current_block + int(s[1:-4]) * 4 * 60 * 24
+        elif (s.startswith("+") and s.endswith("blocks")):
+            rez = current_block + int(s[1:-6])
+        else:
+            rez = int(s)
+        return rez
+
     def _get_expiration_from_args(self):
         """
         read expiration from args.
@@ -178,14 +189,7 @@ class MPEChannelCommand(MPEServiceCommand):
 
         If expiration > current_block + 1036800 (~6 month) we generate an exception if "--force" flag haven't been set
         """
-        current_block = self.ident.w3.eth.blockNumber
-        s = self.args.expiration
-        if (s.startswith("+") and s.endswith("days")):
-            rez = current_block + int(s[1:-4]) * 4 * 60 * 24
-        elif (s.startswith("+") and s.endswith("blocks")):
-            rez = current_block + int(s[1:-6])
-        else:
-            rez = int(s)
+        rez = self._expiration_str_to_blocks(self.args.expiration)
         if (rez > current_block + 1036800 and not self.args.force):
             d = (rez - current_block) // (4 * 60 * 24)
             raise Exception("You try to set expiration time too far in the future: approximately %i days. "%d +
@@ -202,8 +206,8 @@ class MPEChannelCommand(MPEServiceCommand):
 
         signer = self.get_address_from_arg_or_ident(self.args.signer)
 
-        channel_info = {"sender": self.ident.address, "signer": signer, "recipient": recipient, "groupId" : group_id}
         expiration = self._get_expiration_from_args()
+        channel_info = {"sender": self.ident.address, "signer": signer, "recipient": recipient, "groupId" : group_id, "expiration" : expiration, "value": self.args.amount, "nonce": 0}
         params = [channel_info["signer"], channel_info["recipient"], channel_info["groupId"], self.args.amount, expiration]
         rez = self.transact_contract_command("MultiPartyEscrow", "openChannel", params)
 
@@ -233,6 +237,10 @@ class MPEChannelCommand(MPEServiceCommand):
         if (not self.args.open_new_anyway):
             sender  = self.ident.address
             signer  = self.get_address_from_arg_or_ident(self.args.signer)
+            if (sender == signer):
+                channels = self._get_initialized_channels_for_service_filtered(metadata, "signer", is_try_initailize = False)
+                if (len(channels) > 0):
+                    return
             channel = self._initialize_already_opened_channel(metadata, sender, signer)
             if (channel is not None):
                 return
@@ -294,7 +302,7 @@ class MPEChannelCommand(MPEServiceCommand):
         if (new_expiration < channel["expiration"]):
             raise Exception("New expiration (%i) is smaller then old one (%i)"%(new_expiration, channel["expiration"]))
 
-    def _smart_get_initialized_channel_for_service(self, metadata, filter_by, is_try_initailize = True):
+    def _get_initialized_channels_for_service_filtered(self, metadata, filter_by, is_try_initailize = True):
         '''
          - filter_by can be sender or signer
         '''
@@ -305,7 +313,14 @@ class MPEChannelCommand(MPEServiceCommand):
         if (len(channels) == 0 and is_try_initailize):
            # this will work only in simple case where signer == sender
            self._initialize_already_opened_channel(metadata, self.ident.address, self.ident.address)
-           return self._smart_get_initialized_channel_for_service(metadata, filter_by, is_try_initailize = False)
+           return self._get_initialized_channels_for_service_filtered(metadata, filter_by, is_try_initailize = False)
+        return channels
+
+    def _smart_get_initialized_channel_for_service(self, metadata, filter_by, is_try_initailize = True):
+        '''
+         - filter_by can be sender or signer
+        '''
+        channels = self._get_initialized_channels_for_service_filtered(metadata, filter_by, is_try_initailize)
 
         if (len(channels) == 0):
             raise Exception("Cannot find initialized channel for service with org_id=%s service_id=%s and signer=%s"%(self.args.org_id, self.args.service_id, self.ident.address))
@@ -345,6 +360,11 @@ class MPEChannelCommand(MPEServiceCommand):
         channel     = self.call_contract_command("MultiPartyEscrow",  "channels", [channel_id])
         channel     = abi_decode_struct_to_dict(channel_abi, channel)
         channel["channelId"] = channel_id
+        return channel
+
+    def _get_channel_state_from_blockchain_update_cache(self, channel_id):
+        channel = self._get_channel_state_from_blockchain(channel_id)
+        self._add_channel_to_initialized(self.args.org_id, self.args.service_id, channel)
         return channel
 
     def _read_metadata_for_service(self, org_id, service_id):
