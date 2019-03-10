@@ -31,11 +31,18 @@ class Session(BlockchainCommand):
 
         channel_command.open_init_channel_from_registry()
 
-    def channel_extend_add(self, org_id, service_id, amount_cogs, expiration, group_name = None):
+    def reserve_funds(self, org_id, service_id, amount_cogs, expiration, group_name = None):
+        # TODO remove two transaction... It is a hack...
         params      = DefaultAttributeObject(org_id = org_id, service_id = service_id, amount = amount_cogs, expiration = expiration,
-                                             open_new_anyway = False, from_block = 0)
+                                             open_new_anyway = False, from_block = 0, yes = True)
         channel_command = MPEChannelCommand(self.config, params, self.out_f, self.err_f, w3 = self.w3, ident = self.ident)
-        channel_command.open_init_channel_from_registry()
+
+        # Open new channel if needed
+        if (channel_command.open_init_channel_from_registry() is not None):
+            self._printerr("# new channel with %i cogs have been opened for %s %s"%(amount_cogs, org_id, service_id))
+            return
+        channel_command.channel_extend_and_add_funds_for_service()
+        self._printerr("# we've added %i cogs for %s %s"%(amount_cogs, org_id, service_id))
 
 class _ClientCallDetails(
                collections.namedtuple( '_ClientCallDetails',
@@ -123,7 +130,7 @@ class AutoFundingClient(BasicClient):
             if (unspent_amount is not None and unspent_amount < price):
                 is_fund = True
 
-        expiration = self._expiration_str_to_blocks(self.expiration)
+        expiration = self._expiration_str_to_blocks(self.expiration, self.ident.w3.eth.blockNumber)
 
         if (is_extend and not is_fund):
             self.transact_contract_command("MultiPartyEscrow", "channelExtend", [channel_id, expiration])
