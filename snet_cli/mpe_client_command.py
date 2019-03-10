@@ -104,14 +104,18 @@ class MPEClientCommand(MPEChannelCommand):
         if service_metadata["encoding"] == "json":
             switch_to_json_payload_encoding(call_fn, response_class)
 
+        metadata = self._create_call_metadata(channel_id, nonce, amount )
+        return call_fn(request, metadata=metadata)
+
+    def _create_call_metadata(self, channel_id, nonce, amount):
         mpe_address = self.get_mpe_address()
         signature = self._sign_message(mpe_address, channel_id, nonce, amount)
-        metadata = [("snet-payment-type",                 "escrow"                    ),
-                    ("snet-payment-channel-id",            str(channel_id)  ),
-                    ("snet-payment-channel-nonce",         str(nonce)       ),
-                    ("snet-payment-channel-amount",        str(amount)      ),
-                    ("snet-payment-channel-signature-bin", bytes(signature))]
-        return call_fn(request, metadata=metadata)
+        return [("snet-payment-type",                 "escrow"                    ),
+                ("snet-payment-channel-id",            str(channel_id)  ),
+                ("snet-payment-channel-nonce",         str(nonce)       ),
+                ("snet-payment-channel-amount",        str(amount)      ),
+                ("snet-payment-channel-signature-bin", bytes(signature))]
+
 
     def _deal_with_call_response(self, response):
         if (self.args.save_response):
@@ -176,6 +180,12 @@ class MPEClientCommand(MPEChannelCommand):
 
         return state
 
+    def _calculate_unspent_amount(self, blockchain, server):
+        if (server["current_nonce"] == blockchain["nonce"]):
+            return blockchain["value"] - server["current_signed_amount"]
+        else:
+            return None # in this case we cannot securely define unspent_amount yet
+
     def _get_channel_state_statelessly(self, grpc_channel, channel_id):
         """
         We get state of the channel (nonce, amount, unspent_amount)
@@ -185,10 +195,7 @@ class MPEClientCommand(MPEChannelCommand):
         server     = self._get_channel_state_from_server    (grpc_channel, channel_id)
         blockchain = self._get_channel_state_from_blockchain(              channel_id)
 
-        if (server["current_nonce"] == blockchain["nonce"]):
-            unspent_amount = blockchain["value"] - server["current_signed_amount"]
-        else:
-            unspent_amount = None # in this case we cannot securely define unspent_amount yet
+        unspent_amount = self._calculate_unspent_amount(blockchain, server)
 
         return (server["current_nonce"], server["current_signed_amount"], unspent_amount)
 
