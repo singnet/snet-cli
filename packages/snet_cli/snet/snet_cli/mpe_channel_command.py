@@ -170,8 +170,7 @@ class MPEChannelCommand(MPEServiceCommand):
         service_registration = self._get_service_registration()
         self._init_channel_from_metadata(metadata, service_registration)
 
-    def _expiration_str_to_blocks(self, expiration_str):
-        current_block = self.ident.w3.eth.blockNumber
+    def _expiration_str_to_blocks(self, expiration_str, current_block):
         s = expiration_str
         if (s.startswith("+") and s.endswith("days")):
             rez = current_block + int(s[1:-4]) * 4 * 60 * 24
@@ -191,7 +190,8 @@ class MPEChannelCommand(MPEServiceCommand):
 
         If expiration > current_block + 1036800 (~6 month) we generate an exception if "--force" flag haven't been set
         """
-        rez = self._expiration_str_to_blocks(self.args.expiration)
+        current_block = self.ident.w3.eth.blockNumber
+        rez = self._expiration_str_to_blocks(self.args.expiration, current_block)
         if (rez > current_block + 1036800 and not self.args.force):
             d = (rez - current_block) // (4 * 60 * 24)
             raise Exception("You try to set expiration time too far in the future: approximately %i days. "%d +
@@ -242,10 +242,10 @@ class MPEChannelCommand(MPEServiceCommand):
             if (sender == signer):
                 channels = self._get_initialized_channels_for_service_filtered(metadata, "signer", is_try_initailize = False)
                 if (len(channels) > 0):
-                    return
+                    return None
             channel = self._initialize_already_opened_channel(metadata, sender, signer)
             if (channel is not None):
-                return
+                return None
 
         # open payment channel
         channel = self._open_channel_for_service(metadata)
@@ -254,6 +254,7 @@ class MPEChannelCommand(MPEServiceCommand):
 
         # initialize channel
         self._add_channel_to_initialized(self.args.org_id, self.args.service_id, channel)
+        return channel
 
     def open_init_channel_from_metadata(self):
         metadata  = load_mpe_service_metadata(self.args.metadata_file)
@@ -262,7 +263,7 @@ class MPEChannelCommand(MPEServiceCommand):
     def open_init_channel_from_registry(self):
         metadata     = self._get_service_metadata_from_registry()
         service_registration = self._get_service_registration()
-        self._open_init_channel_from_metadata(metadata, service_registration)
+        return self._open_init_channel_from_metadata(metadata, service_registration)
 
     def channel_claim_timeout(self):
         rez = self._get_channel_state_from_blockchain(self.args.channel_id)
