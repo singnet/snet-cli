@@ -270,8 +270,28 @@ class SessionCommand(Command):
     def unset(self):
         self.config.unset_session_field(self.args.key, self.out_f)
 
+    def populateContractAddress(self, rez, key):
+        if 'current_multipartyescrow_at' in rez and 'current_registry_at' in rez:
+            return
+        registryAddress = ""
+        mpeAddress = ""
+        try:
+            obj = BlockchainCommand(config=self.config, args=self.args, out_f=self.out_f, err_f=self.err_f)
+            registryAddress = get_contract_address(obj, contract_name="Registry",
+                                                                error_message="unable to fetch registry address")
+            mpeAddress = get_contract_address(obj, contract_name="MultiPartyEscrow",
+                                                                          error_message="unable to fetch mpe address")
+        except Exception as e:
+            self._printerr("\nUnable to determine contract address from the session (Network has not been selected or no address has been associated with the network)\n")
+
+        rez[key]['current_registry_at'] = registryAddress
+        rez[key]['current_multipartyescrow_at'] = mpeAddress
+        return
+
     def show(self):
         rez = self.config.session_to_dict()
+        key =  "network.%s"%rez['session']['network']
+        self.populateContractAddress(rez,key)
 
         # we don't want to who private_key and mnemonic
         for d in rez.values():
