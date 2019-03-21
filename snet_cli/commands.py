@@ -12,7 +12,7 @@ from snet_cli.contract import Contract
 from snet_cli.identity import get_kws_for_identity_type
 from snet_cli.utils import DefaultAttributeObject, get_web3, serializable, type_converter, get_contract_def, get_cli_version, bytes32_to_str
 
-from snet_cli.utils_config import get_contract_address, get_field_from_args_or_session
+from snet_cli.utils_config import get_contract_address, get_field_from_args_or_session, read_default_contract_address
 from snet_cli.identity import RpcIdentityProvider, MnemonicIdentityProvider, TrezorIdentityProvider, \
     LedgerIdentityProvider, KeyIdentityProvider, KeyStoreIdentityProvider
 from web3.eth import is_checksum_address
@@ -263,21 +263,39 @@ class NetworkCommand(Command):
         self.config.set_session_network(self.args.network_name, self.out_f)
 
 
-class SessionCommand(Command):
+class SessionSetCommand(Command):
     def set(self):
         self.config.set_session_field(self.args.key, self.args.value, self.out_f)
 
     def unset(self):
         self.config.unset_session_field(self.args.key, self.out_f)
 
+class SessionShowCommand(BlockchainCommand):
     def show(self):
         rez = self.config.session_to_dict()
+        key =  "network.%s"%rez['session']['network']
+        self.populate_contract_address(rez, key)
 
         # we don't want to who private_key and mnemonic
         for d in rez.values():
             d.pop("private_key", None)
             d.pop("mnemonic", None)
         self._pprint(rez)
+
+    def populate_contract_address(self, rez, key):
+        try:
+            rez[key]['default_registry_address'] = read_default_contract_address(w3=self.w3, contract_name="Registry",
+                                                     err_msg="unable to fetch registry address")
+            rez[key]['default_multiparty_escrow_address'] = read_default_contract_address(w3=self.w3, contract_name="MultiPartyEscrow",
+                                                     err_msg="unable to fetch mpe address")
+            rez[key]['default_singularity_net_token_address'] = read_default_contract_address(w3=self.w3, contract_name="SingularityNetToken",
+                                                     err_msg="unable to fetch singularity-net-token address")
+        except Exception as e:
+            rez[key]['default_registry_address'] = None
+            rez[key]['default_multiparty_escrow_address'] = None
+            rez[key]['default_singularity_net_token_address'] = None
+
+        return
 
 
 class ContractCommand(BlockchainCommand):
