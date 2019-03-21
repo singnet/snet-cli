@@ -1,10 +1,13 @@
 from snet_cli.commands    import BlockchainCommand
 import snet_cli.utils_ipfs as utils_ipfs
 from snet_cli.mpe_service_metadata import MPEServiceMetadata, load_mpe_service_metadata, mpe_service_metadata_from_json
-from snet_cli.utils import type_converter, bytes32_to_str
+from snet_cli.utils import type_converter, bytes32_to_str, open_grpc_channel
 from snet_cli.utils_ipfs import hash_to_bytesuri, bytesuri_to_hash, get_from_ipfs_and_checkhash, safe_extract_proto_from_ipfs
 import web3
 import json
+import grpc
+from grpc_health.v1 import health_pb2 as heartb_pb2
+from grpc_health.v1 import health_pb2_grpc as  heartb_pb2_grpc
 
 class MPEServiceCommand(BlockchainCommand):
 
@@ -170,6 +173,32 @@ class MPEServiceCommand(BlockchainCommand):
     def print_service_metadata_from_registry(self):
         metadata      = self._get_service_metadata_from_registry()
         self._printout(metadata.get_json_pretty())
+
+    def _service_status(self, url, secure=True):
+        channel = None
+        try:
+            channel = open_grpc_channel(endpoint=url)
+            stub = heartb_pb2_grpc.HealthStub(channel)
+            try:
+                response = stub.Check(heartb_pb2.HealthCheckRequest(service=""))
+            except grpc.RpcError as err:
+                err_code = str(err.code())
+                print(err_code)
+            if response!=None and response.status == 1:
+                return True
+            return False
+        except Exception as e:
+            print("error in making grpc call::url: ", url, "|err: ", e)
+            return False
+
+    def print_service_status(self):
+        metadata      = self._get_service_metadata_from_registry().m
+        endpoints =[]
+        for endpoint in metadata.get("endpoints", {}):
+            endpoint["status"] = "Available" if self._service_status(url=endpoint['endpoint'])  else "Not Available"
+            endpoints.append(endpoint)
+        self._pprint(endpoints)
+
 
     def print_service_tags_from_registry(self):
         rez  = self._get_service_registration()
