@@ -7,9 +7,6 @@ from snet_cli import arguments
 from snet_cli.config import Config
 import argcomplete
 
-__version__ = "0.2.10"
-
-
 def main():
     try:
         argv = sys.argv[1:]

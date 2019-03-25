@@ -1,6 +1,7 @@
 from setuptools import setup, find_packages
 from setuptools.command.develop import develop as _develop
 from setuptools.command.install import install as _install
+from version import __version__
 import re
 
 
@@ -28,8 +29,7 @@ class install(_install):
         self.execute(install_and_compile_proto, (), msg="Compile protocol buffers")
 
 
-with open('snet_cli/__init__.py', 'rt', encoding='utf8') as f:
-    version = re.search(r'__version__ = "(.*?)"', f.read()).group(1)
+version = __version__
 
 setup(
     name='snet-cli',
