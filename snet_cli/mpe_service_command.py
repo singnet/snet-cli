@@ -195,8 +195,16 @@ class MPEServiceCommand(BlockchainCommand):
         metadata      = self._get_service_metadata_from_registry().m
         endpoints =[]
         for endpoint in metadata.get("endpoints", {}):
-            endpoint["status"] = "Available" if self._service_status(url=endpoint['endpoint'])  else "Not Available"
-            endpoints.append(endpoint)
+            if self.args.group_name == None or self.args.group_name == endpoint['group_name']:
+                endpoint["status"] = "Available" if self._service_status(url=endpoint['endpoint'])  else "Not Available"
+                endpoints.append(endpoint)
+
+        if endpoints == [] and self.args.group_name != None:
+            print("Error: No endpoints exist for group name ", self.args.group_name)
+            return
+        elif endpoints == []:
+            print("Error: No endpoints exist for org_id {} and service_id {}".format(self.args.org_id, self.service_id))
+
         self._pprint(endpoints)
 
 
