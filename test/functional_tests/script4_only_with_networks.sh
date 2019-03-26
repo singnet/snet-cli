@@ -13,7 +13,7 @@ rm -rf ../../snet_cli/resources/contracts/networks/*.json
 snet unset current_singularitynettoken_at || echo "could fail if hasn't been set (it is ok)"
 snet unset current_registry_at            || echo "could fail if hasn't been set (it is ok)"
 snet unset current_multipartyescrow_at    || echo "could fail if hasn't been set (it is ok)"
-
+snet session
 # this should fail without addresses
 snet account balance && exit 1 || echo "fail as expected"
 snet organization create testo --org-id testo -y -q  && exit 1 || echo "fail as expected"

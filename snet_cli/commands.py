@@ -284,16 +284,11 @@ class SessionShowCommand(BlockchainCommand):
 
     def populate_contract_address(self, rez, key):
         try:
-            rez[key]['default_registry_address'] = read_default_contract_address(w3=self.w3, contract_name="Registry",
-                                                     err_msg="unable to fetch registry address")
-            rez[key]['default_multiparty_escrow_address'] = read_default_contract_address(w3=self.w3, contract_name="MultiPartyEscrow",
-                                                     err_msg="unable to fetch mpe address")
-            rez[key]['default_singularity_net_token_address'] = read_default_contract_address(w3=self.w3, contract_name="SingularityNetToken",
-                                                     err_msg="unable to fetch singularity-net-token address")
+            rez[key]['default_registry_at'] = read_default_contract_address(w3=self.w3, contract_name="Registry")
+            rez[key]['default_multipartyescrow_at'] = read_default_contract_address(w3=self.w3, contract_name="MultiPartyEscrow")
+            rez[key]['default_singularitynettoken_at'] = read_default_contract_address(w3=self.w3, contract_name="SingularityNetToken")
         except Exception as e:
-            rez[key]['default_registry_address'] = None
-            rez[key]['default_multiparty_escrow_address'] = None
-            rez[key]['default_singularity_net_token_address'] = None
+            pass
 
         return
 

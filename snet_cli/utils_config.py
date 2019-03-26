@@ -28,11 +28,11 @@ def get_contract_address(cmd, contract_name, error_message = None):
 
     error_message = error_message or "Fail to read %s address from \"networks\", you should specify address by yourself via --%s_at parameter"%(contract_name, contract_name.lower())
     # try to take address from networks
-    return read_default_contract_address(w3=cmd.w3, contract_name=contract_name, err_msg=error_message)
+    return read_default_contract_address(w3=cmd.w3, contract_name=contract_name)
 
-def read_default_contract_address(w3, contract_name, err_msg):
+def read_default_contract_address(w3, contract_name):
     try :
-        chain_id = w3.version.network  # this will raise exception if endpoint is invalid
+        chain_id         = w3.version.network  # this will raise exception if endpoint is invalid
         contract_def     = get_contract_def(contract_name)
         networks         = contract_def["networks"]
         contract_address = networks.get(chain_id, {}).get("address", None)
@@ -40,7 +40,7 @@ def read_default_contract_address(w3, contract_name, err_msg):
             raise Exception()
         contract_address = w3.toChecksumAddress(contract_address)
     except:
-        raise Exception(err_msg)
+        raise Exception()
 
     return contract_address
 
