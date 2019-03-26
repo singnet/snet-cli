@@ -171,6 +171,14 @@ class MPEServiceMetadata:
     def get_all_endpoints(self):
         return [e["endpoint"] for e in self.m["endpoints"]]
 
+    def get_all_endpoints_with_group_name(self):
+        endpts_with_grp = {}
+        for e in self.m["endpoints"]:
+            if e['group_name'] not in endpts_with_grp.keys():
+                endpts_with_grp[e['group_name']] = []
+            endpts_with_grp[e['group_name']].append(e['endpoint'])
+        return endpts_with_grp
+
     def get_endpoints_for_group(self, group_name = None):
         group_name = self.get_group_name_nonetrick(group_name)
         return [e["endpoint"] for e in self.m["endpoints"] if e["group_name"] == group_name]

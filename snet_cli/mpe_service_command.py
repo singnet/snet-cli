@@ -175,38 +175,37 @@ class MPEServiceCommand(BlockchainCommand):
         self._printout(metadata.get_json_pretty())
 
     def _service_status(self, url, secure=True):
-        channel = None
         try:
             channel = open_grpc_channel(endpoint=url)
             stub = heartb_pb2_grpc.HealthStub(channel)
             try:
                 response = stub.Check(heartb_pb2.HealthCheckRequest(service=""), timeout=10)
             except grpc.RpcError as err:
-                err_code = str(err.code())
-                print(err_code)
+                return False
             if response!=None and response.status == 1:
                 return True
             return False
         except Exception as e:
-            print("error in making grpc call::url: ", url, "|err: ", e)
             return False
 
     def print_service_status(self):
-        metadata      = self._get_service_metadata_from_registry().m
-        endpoints =[]
-        for endpoint in metadata.get("endpoints", {}):
-            if self.args.group_name == None or self.args.group_name == endpoint['group_name']:
-                endpoint["status"] = "Available" if self._service_status(url=endpoint['endpoint'])  else "Not Available"
-                endpoints.append(endpoint)
-
-        if endpoints == [] and self.args.group_name != None:
-            print("Error: No endpoints exist for group name ", self.args.group_name)
+        metadata = self._get_service_metadata_from_registry()
+        if self.args.group_name != None:
+            groups = {self.args.group_name: metadata.get_endpoints_for_group(self.args.group_name)}
+        else:
+            groups = metadata.get_all_endpoints_with_group_name()
+        srvc_status = {}
+        for grp in groups:
+            srvc_status[grp] = {}
+            if groups[grp] == []:
+               srvc_status.pop(grp)
+            for endpoint in groups[grp]:
+                status = "Available" if self._service_status(url=endpoint)  else "Not Available"
+                srvc_status[grp].update({"endpoint": endpoint, "status": status})
+        if srvc_status == {}:
+            self._printout("Error: No endpoints found to check service status.")
             return
-        elif endpoints == []:
-            print("Error: No endpoints exist for org_id {} and service_id {}".format(self.args.org_id, self.service_id))
-
-        self._pprint(endpoints)
-
+        self._pprint(srvc_status)
 
     def print_service_tags_from_registry(self):
         rez  = self._get_service_registration()
