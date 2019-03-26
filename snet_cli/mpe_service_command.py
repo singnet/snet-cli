@@ -178,10 +178,7 @@ class MPEServiceCommand(BlockchainCommand):
         try:
             channel = open_grpc_channel(endpoint=url)
             stub = heartb_pb2_grpc.HealthStub(channel)
-            try:
-                response = stub.Check(heartb_pb2.HealthCheckRequest(service=""), timeout=10)
-            except grpc.RpcError as err:
-                return False
+            response = stub.Check(heartb_pb2.HealthCheckRequest(service=""), timeout=10)
             if response!=None and response.status == 1:
                 return True
             return False
