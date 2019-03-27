@@ -8,6 +8,7 @@ import json
 import grpc
 from grpc_health.v1 import health_pb2 as heartb_pb2
 from grpc_health.v1 import health_pb2_grpc as  heartb_pb2_grpc
+from collections import defaultdict
 
 class MPEServiceCommand(BlockchainCommand):
 
@@ -191,14 +192,11 @@ class MPEServiceCommand(BlockchainCommand):
             groups = {self.args.group_name: metadata.get_endpoints_for_group(self.args.group_name)}
         else:
             groups = metadata.get_all_endpoints_with_group_name()
-        srvc_status = {}
+        srvc_status = defaultdict(list)
         for grp in groups:
-            srvc_status[grp] = {}
-            if groups[grp] == []:
-               srvc_status.pop(grp)
             for endpoint in groups[grp]:
                 status = "Available" if self._service_status(url=endpoint)  else "Not Available"
-                srvc_status[grp].update({"endpoint": endpoint, "status": status})
+                srvc_status[grp].append({"endpoint": endpoint, "status": status})
         if srvc_status == {}:
             self._printout("Error: No endpoints found to check service status.")
             return
