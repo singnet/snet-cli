@@ -718,6 +718,11 @@ def add_mpe_service_options(parser):
     p.set_defaults(fn="print_service_metadata_from_registry")
     add_p_service_in_registry(p)
 
+    p = subparsers.add_parser("print-service-status", help="Print service status")
+    p.set_defaults(fn="print_service_status")
+    add_p_service_in_registry(p)
+    add_p_group_name(p)
+
     p = subparsers.add_parser("print-tags", help="Print tags for given service from registry")
     p.set_defaults(fn="print_service_tags_from_registry")
     add_p_service_in_registry(p)

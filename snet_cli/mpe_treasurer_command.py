@@ -1,5 +1,5 @@
 from snet_cli.mpe_client_command import MPEClientCommand
-from snet_cli.utils import compile_proto
+from snet_cli.utils import compile_proto, open_grpc_channel
 from pathlib import Path
 import grpc
 from snet_cli.utils_proto import import_protobuf_from_dir
@@ -79,7 +79,7 @@ class MPETreasurerCommand(MPEClientCommand):
         return self._decode_PaymentReply(response)
 
     def print_unclaimed(self):
-        grpc_channel     = self._open_grpc_channel(self.args.endpoint)
+        grpc_channel     = open_grpc_channel(self.args.endpoint)
         payments = self._call_GetListUnclaimed(grpc_channel)
         self._printout("# channel_id  channel_nonce  signed_amount (AGI)")
         total = 0
@@ -130,18 +130,18 @@ class MPETreasurerCommand(MPEClientCommand):
         self._blockchain_claim(payments)
 
     def claim_channels(self):
-        grpc_channel     = self._open_grpc_channel(self.args.endpoint)
+        grpc_channel     = open_grpc_channel(self.args.endpoint)
         self._claim_in_progress_and_claim_channels(grpc_channel, self.args.channels)
 
     def claim_all_channels(self):
-        grpc_channel     = self._open_grpc_channel(self.args.endpoint)
+        grpc_channel     = open_grpc_channel(self.args.endpoint)
         # we take list of all channels
         unclaimed_payments = self._call_GetListUnclaimed(grpc_channel)
         channels = [p["channel_id"] for p in unclaimed_payments]
         self._claim_in_progress_and_claim_channels(grpc_channel, channels)
 
     def claim_almost_expired_channels(self):
-        grpc_channel     = self._open_grpc_channel(self.args.endpoint)
+        grpc_channel     = open_grpc_channel(self.args.endpoint)
         # we take list of all channels
         unclaimed_payments = self._call_GetListUnclaimed(grpc_channel)
 
