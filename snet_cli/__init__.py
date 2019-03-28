@@ -1,24 +1,30 @@
+#!/usr/bin/env python
+# PYTHON_ARGCOMPLETE_OK
+
 import sys
 
 from snet_cli import arguments
-from snet_cli.config import conf
+from snet_cli.config import Config
+import argcomplete
 
-__version__ = "0.1.7"
+__version__ = "0.2.10"
 
 
 def main():
-    argv = sys.argv[1:]
-    parser = arguments.get_root_parser(conf)
-
     try:
-        args = parser.parse_args(argv)
-    except TypeError:
-        args = parser.parse_args(argv + ["-h"])
+        argv = sys.argv[1:]
+        conf   = Config()
+        parser = arguments.get_root_parser(conf)
+        argcomplete.autocomplete(parser)
 
-    try:
+        try:
+            args = parser.parse_args(argv)
+        except TypeError:
+            args = parser.parse_args(argv + ["-h"])
+
         getattr(args.cmd(conf, args), args.fn)()
     except Exception as e:
-        if (args.print_traceback):
+        if (sys.argv[1] == "--print-traceback"):
             raise
         else:
             print("Error:", e)

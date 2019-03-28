@@ -1,0 +1,55 @@
+syntax = "proto3";
+
+package escrow;
+
+service ProviderControlService {
+
+    //get list of all unclaimed "payments".
+    //in PaymentsSignatureReply signatures MUST be omited
+    //if signature field is present then response should be considered as invalid
+    rpc GetListUnclaimed(GetPaymentsListRequest)  returns (PaymentsListReply) {}
+
+    //get list of all payments in progress
+    rpc GetListInProgress(GetPaymentsListRequest) returns (PaymentsListReply) {}
+
+    //initilize claim for specific channel
+    rpc StartClaim(StartClaimRequest) returns (PaymentReply) {}
+}
+
+
+message GetPaymentsListRequest {
+    //address of MultiPartyEscrow contract
+    string mpe_address = 1;
+    //current block number (signature will be valid only for short time around this block number)
+    uint64 current_block = 2;
+    //signature of the following message:
+    //for GetListUnclaimed ("__list_unclaimed", mpe_address, current_block_number)
+    //for GetListInProgress ("__list_in_progress", mpe_address, current_block_number)
+    bytes signature = 3;
+}
+
+message StartClaimRequest {
+    //address of MultiPartyEscrow contract
+    string mpe_address = 1;
+    //channel_id contains id of the channel which state is requested.
+    bytes channel_id = 2;
+    //signature of the following message ("__start_claim", mpe_address, channel_id, channel_nonce)
+    bytes signature = 3;
+}
+
+message PaymentReply {
+    bytes channel_id    = 1;
+
+    bytes channel_nonce = 2;
+
+    bytes signed_amount = 3;
+
+    //this filed must be OMITED in GetListUnclaimed request
+    bytes signature = 4;
+}
+
+message PaymentsListReply {
+    repeated PaymentReply payments = 1;
+}
+
+

@@ -1,4 +1,4 @@
-# safe conversion between agi(string) and cogs(int)
+""" Safe conversion between agi(string) and cogs(int) """
 import decimal
 AGI_TOKEN_DECIMALS = 8
 

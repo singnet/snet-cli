@@ -1,14 +1,13 @@
-import _md5
 import json
 import os
+
+from urllib.parse import urlparse
 from pathlib import Path
 
 import web3
 import pkg_resources
+import grpc
 from grpc_tools.protoc import main as protoc
-
-from snet_cli.identity import RpcIdentityProvider, MnemonicIdentityProvider, TrezorIdentityProvider, \
-    LedgerIdentityProvider, KeyIdentityProvider
 
 
 class DefaultAttributeObject(object):
@@ -48,22 +47,6 @@ class DefaultAttributeObject(object):
         return self.__dict__.__str__()
 
 
-def get_identity(w3, session, args):
-    if session.identity is None:
-        pass
-    if session.identity.identity_type == "rpc":
-        return RpcIdentityProvider(w3, getattr(args, "wallet_index", None) or session.getint("default_wallet_index"))
-    if session.identity.identity_type == "mnemonic":
-        return MnemonicIdentityProvider(w3, session.identity.mnemonic,
-                                        getattr(args, "wallet_index", None) or session.getint("default_wallet_index"))
-    if session.identity.identity_type == "trezor":
-        return TrezorIdentityProvider(w3, getattr(args, "wallet_index", None) or session.getint("default_wallet_index"))
-    if session.identity.identity_type == "ledger":
-        return LedgerIdentityProvider(w3, getattr(args, "wallet_index", None) or session.getint("default_wallet_index"))
-    if session.identity.identity_type == "key":
-        return KeyIdentityProvider(w3, session.identity.private_key)
-
-
 def get_web3(rpc_endpoint):
     if rpc_endpoint.startswith("ws:"):
         provider = web3.WebsocketProvider(rpc_endpoint)
@@ -79,6 +62,11 @@ def serializable(o):
     else:
         return o.__dict__
 
+def safe_address_converter(a):
+    if not web3.eth.is_checksum_address(a):
+        raise Exception("%s is not is not a valid Ethereum checksum address"%a)
+    return a
+
 
 def type_converter(t):
     if t.endswith("[]"):
@@ -91,9 +79,13 @@ def type_converter(t):
         elif "byte" in t:
             return lambda x: web3.Web3.toBytes(text=x) if not x.startswith("0x") else web3.Web3.toBytes(hexstr=x)
         elif "address" in t:
-            return web3.Web3.toChecksumAddress
+            return safe_address_converter
         else:
             return str
+
+
+def bytes32_to_str(b):
+    return b.rstrip(b"\0").decode("utf-8")
 
 
 def _add_next_paths(path, entry_path, seen_paths, next_paths):
@@ -173,8 +165,8 @@ def compile_proto(entry_path, codegen_dir, proto_file=None):
     except Exception as e:
         return False
 
-# return element of abi (return None if fails to find)
 def abi_get_element_by_name(abi, name):
+    """ Return element of abi (return None if fails to find) """
     if (abi and "abi" in abi):
         for a in abi["abi"]:
             if ("name" in a and a["name"] == name):
@@ -185,32 +177,50 @@ def abi_decode_struct_to_dict(abi, struct_list):
     return {el_abi["name"] : el for el_abi, el in zip(abi["outputs"], struct_list)}
 
 
-# TODO: move get_contract_address_from_args_or_networks to the new session/config logic (issue #110)
-# if arg is not None we take address from it otherwise we read the address from "networks/*json"
-def get_contract_address_from_args_or_networks(w3, contract_name, arg):
-    if (arg):
-        return w3.toChecksumAddress(arg)
-    
-    # try to take address from networks
-    try :
-        contract_def     = get_contract_def(contract_name)
-        networks         = contract_def["networks"]
-        chain_id         = w3.version.network
-        contract_address = networks.get(chain_id, {}).get("address", None)
-        if (not contract_address):
-            raise Exception()
-        contract_address = w3.toChecksumAddress(contract_address)
-    except:
-        raise Exception("Fail to read %s address from \"networks\", you should specify address by yourself via --%s parameter"%(contract_name, contract_name.lower()))
-        
-    return contract_address
+def int4bytes_big(b):
+    return int.from_bytes(b, byteorder='big')
 
-def get_registry_address_from_args_or_networks(w3, arg):
-    return get_contract_address_from_args_or_networks(w3, "Registry", arg)
 
-def get_mpe_address_from_args_or_networks(w3, arg):
-    return get_contract_address_from_args_or_networks(w3, "MultiPartyEscrow", arg)
+def is_valid_endpoint(url):
+    """
+    Just ensures the url has a scheme (http/https), and a net location (IP or domain name).
+    Can make more advanced or do on-network tests if needed, but this is really just to catch obvious errors.
+    >>> is_valid_endpoint("https://34.216.72.29:6206")
+    True
+    >>> is_valid_endpoint("blahblah")
+    False
+    >>> is_valid_endpoint("blah://34.216.72.29")
+    False
+    >>> is_valid_endpoint("http://34.216.72.29:%%%")
+    False
+    >>> is_valid_endpoint("http://192.168.0.2:9999")
+    True
+    """
+    try:
+        result = urlparse(url)
+        if result.port:
+            _port = int(result.port)
+        return (
+            all([result.scheme, result.netloc]) and
+            result.scheme in ['http', 'https']
+        )
+    except ValueError:
+        return False
 
-def get_snt_address_from_args_or_networks(w3, arg):
-    return get_contract_address_from_args_or_networks(w3, "SingularityNetToken", arg)
 
+def remove_http_https_prefix(endpoint):
+    """remove http:// or https:// prefix if presented in endpoint"""
+    endpoint = endpoint.replace("https://","")
+    endpoint = endpoint.replace("http://","")
+    return endpoint
+
+def open_grpc_channel(endpoint):
+    """
+       open grpc channel:
+           - for http://  we open insecure_channel
+           - for https:// we open secure_channel (with default credentials)
+           - without prefix we open insecure_channel
+    """
+    if (endpoint.startswith("https://")):
+        return grpc.secure_channel(remove_http_https_prefix(endpoint), grpc.ssl_channel_credentials())
+    return grpc.insecure_channel(remove_http_https_prefix(endpoint))
