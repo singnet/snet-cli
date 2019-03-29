@@ -4,7 +4,7 @@ import re
 import sys
 from pathlib import Path
 
-from snet_cli.commands import IdentityCommand, SessionCommand, NetworkCommand, ContractCommand, OrganizationCommand, VersionCommand
+from snet_cli.commands import IdentityCommand, SessionSetCommand, SessionShowCommand, NetworkCommand, ContractCommand, OrganizationCommand, VersionCommand
 from snet_cli.identity import get_identity_types
 from snet_cli.utils import type_converter, get_contract_def
 from snet_cli.mpe_account_command import MPEAccountCommand
@@ -161,12 +161,12 @@ def add_network_options(parser, config):
 
 
 def add_session_options(parser):
-    parser.set_defaults(cmd=SessionCommand)
+    parser.set_defaults(cmd=SessionShowCommand)
     parser.set_defaults(fn="show")
 
 
 def add_set_options(parser):
-    parser.set_defaults(cmd=SessionCommand)
+    parser.set_defaults(cmd=SessionSetCommand)
     parser.set_defaults(fn="set")
     parser.add_argument("key", choices=get_session_keys(), help="session key to set from {}".format(get_session_keys()),
                         metavar="KEY")
@@ -174,7 +174,7 @@ def add_set_options(parser):
 
 
 def add_unset_options(parser):
-    parser.set_defaults(cmd=SessionCommand)
+    parser.set_defaults(cmd=SessionSetCommand)
     parser.set_defaults(fn="unset")
     parser.add_argument("key", choices=get_session_network_keys_removable(),
                         help="session key to unset from {}".format(get_session_network_keys_removable()), metavar="KEY")
@@ -717,6 +717,11 @@ def add_mpe_service_options(parser):
     p = subparsers.add_parser("print-metadata", help="Print service metadata from registry")
     p.set_defaults(fn="print_service_metadata_from_registry")
     add_p_service_in_registry(p)
+
+    p = subparsers.add_parser("print-service-status", help="Print service status")
+    p.set_defaults(fn="print_service_status")
+    add_p_service_in_registry(p)
+    add_p_group_name(p)
 
     p = subparsers.add_parser("print-tags", help="Print tags for given service from registry")
     p.set_defaults(fn="print_service_tags_from_registry")

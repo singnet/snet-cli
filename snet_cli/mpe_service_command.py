@@ -1,10 +1,14 @@
 from snet_cli.commands    import BlockchainCommand
 import snet_cli.utils_ipfs as utils_ipfs
 from snet_cli.mpe_service_metadata import MPEServiceMetadata, load_mpe_service_metadata, mpe_service_metadata_from_json
-from snet_cli.utils import type_converter, bytes32_to_str
+from snet_cli.utils import type_converter, bytes32_to_str, open_grpc_channel
 from snet_cli.utils_ipfs import hash_to_bytesuri, bytesuri_to_hash, get_from_ipfs_and_checkhash, safe_extract_proto_from_ipfs
 import web3
 import json
+import grpc
+from grpc_health.v1 import health_pb2 as heartb_pb2
+from grpc_health.v1 import health_pb2_grpc as  heartb_pb2_grpc
+from collections import defaultdict
 
 class MPEServiceCommand(BlockchainCommand):
 
@@ -170,6 +174,33 @@ class MPEServiceCommand(BlockchainCommand):
     def print_service_metadata_from_registry(self):
         metadata      = self._get_service_metadata_from_registry()
         self._printout(metadata.get_json_pretty())
+
+    def _service_status(self, url, secure=True):
+        try:
+            channel = open_grpc_channel(endpoint=url)
+            stub = heartb_pb2_grpc.HealthStub(channel)
+            response = stub.Check(heartb_pb2.HealthCheckRequest(service=""), timeout=10)
+            if response!=None and response.status == 1:
+                return True
+            return False
+        except Exception as e:
+            return False
+
+    def print_service_status(self):
+        metadata = self._get_service_metadata_from_registry()
+        if self.args.group_name != None:
+            groups = {self.args.group_name: metadata.get_endpoints_for_group(self.args.group_name)}
+        else:
+            groups = metadata.get_all_endpoints_with_group_name()
+        srvc_status = defaultdict(list)
+        for grp in groups:
+            for endpoint in groups[grp]:
+                status = "Available" if self._service_status(url=endpoint)  else "Not Available"
+                srvc_status[grp].append({"endpoint": endpoint, "status": status})
+        if srvc_status == {}:
+            self._printout("Error: No endpoints found to check service status.")
+            return
+        self._pprint(srvc_status)
 
     def print_service_tags_from_registry(self):
         rez  = self._get_service_registration()

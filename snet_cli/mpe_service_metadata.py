@@ -40,6 +40,7 @@ import base64
 import secrets
 
 from snet_cli.utils import is_valid_endpoint
+from collections import defaultdict
 
 
 # TODO: we should use some standard solution here
@@ -170,6 +171,12 @@ class MPEServiceMetadata:
 
     def get_all_endpoints(self):
         return [e["endpoint"] for e in self.m["endpoints"]]
+
+    def get_all_endpoints_with_group_name(self):
+        endpts_with_grp = defaultdict(list)
+        for e in self.m["endpoints"]:
+            endpts_with_grp[e['group_name']].append(e['endpoint'])
+        return endpts_with_grp
 
     def get_endpoints_for_group(self, group_name = None):
         group_name = self.get_group_name_nonetrick(group_name)

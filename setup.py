@@ -63,7 +63,8 @@ setup(
         'python-u2flib-host>=3.0.2',  # _vendor/ledgerblue
         'pymultihash==0.8.2',
         'base58==1.0.2',
-        'argcomplete>=1.9.4'
+        'argcomplete>=1.9.4',
+        'grpcio-health-checking==1.19.0'
     ],
     cmdclass={
         'develop': develop,

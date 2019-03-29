@@ -6,6 +6,7 @@ from pathlib import Path
 
 import web3
 import pkg_resources
+import grpc
 from grpc_tools.protoc import main as protoc
 
 
@@ -212,3 +213,14 @@ def remove_http_https_prefix(endpoint):
     endpoint = endpoint.replace("https://","")
     endpoint = endpoint.replace("http://","")
     return endpoint
+
+def open_grpc_channel(endpoint):
+    """
+       open grpc channel:
+           - for http://  we open insecure_channel
+           - for https:// we open secure_channel (with default credentials)
+           - without prefix we open insecure_channel
+    """
+    if (endpoint.startswith("https://")):
+        return grpc.secure_channel(remove_http_https_prefix(endpoint), grpc.ssl_channel_credentials())
+    return grpc.insecure_channel(remove_http_https_prefix(endpoint))

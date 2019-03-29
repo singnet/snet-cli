@@ -1,3 +1,5 @@
+snet session
+
 # service side
 
 #should fail (not existed directory)
