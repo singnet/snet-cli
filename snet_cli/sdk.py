@@ -9,6 +9,8 @@ import snet_cli.generic_client_interceptor as generic_client_interceptor
 import collections
 import grpc
 from snet_cli.utils_proto4sdk import import_protobuf_from_dir_for_given_service_name
+from snet_cli.utils import open_grpc_channel
+
 
 class Session(BlockchainCommand):
     def __init__(self, config, out_f=sys.stdout, err_f=sys.stderr):
@@ -72,7 +74,7 @@ class Client(MPEClientCommand):
 
         self.service_metadata   = self._read_metadata_for_service(self.args.org_id, self.args.service_id)
         self.endpoint           = self._get_endpoint_from_metadata_or_args(self.service_metadata)
-        self._pure_grpc_channel = self._open_grpc_channel(self.endpoint)
+        self._pure_grpc_channel = open_grpc_channel(self.endpoint)
 
 
         spec_dir = self.get_service_spec_dir(self.args.org_id, self.args.service_id)
