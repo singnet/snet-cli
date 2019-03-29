@@ -84,12 +84,13 @@ class Client(MPEClientCommand):
         self.channel  = self._smart_get_initialized_channel_for_service(self.service_metadata, filter_by = "signer")
         self.channel_id = self.channel["channelId"]
 
-        if self.service_metadata["encoding"] == "json":
-            for _, (_, response_class) in self.methods_iodict.items():
-                switch_to_json_payload_encoding(call_fn, response_class)
-
         self.grpc_channel = grpc.intercept_channel(self._pure_grpc_channel, generic_client_interceptor.create(self.intercept_call))
         self.stub = self.stub_class(self.grpc_channel)
+
+        if self.service_metadata["encoding"] == "json":
+            for method_name, (_, response_class) in self.methods_iodict.items():
+                call_fn  = getattr(self.stub, method_name)
+                switch_to_json_payload_encoding(call_fn, response_class)
 
         self.classes = __import__("%s_pb2"%self.protobuf_file_prefix)
 
