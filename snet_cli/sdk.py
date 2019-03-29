@@ -34,7 +34,8 @@ class Session(BlockchainCommand):
 
         channel_command.open_init_channel_from_registry()
 
-    def reserve_funds(self, org_id, service_id, amount_cogs, expiration, group_name = None):
+    # amount_cogs MUST be a named argument in order to prevent errors
+    def reserve_funds(self, org_id, service_id, *, amount_cogs, expiration, group_name = None):
         # TODO remove two transaction... It is a hack...
         params      = DefaultAttributeObject(org_id = org_id, service_id = service_id, amount = amount_cogs, expiration = expiration,
                                              open_new_anyway = False, from_block = 0, yes = True)
@@ -121,10 +122,11 @@ class Client(MPEClientCommand):
 
 class AutoFundingFundingStrategy:
     # force amount_cogs and expiration be named parameters (in order to be sure that amount are passed in cogs!)
-    def __init__(self, *, amount_cogs , expiration, expiration_margin = 5760):
-        self.funding_amount_cogs = amount_cogs
-        self.expiration          = expiration
-        self.expiration_margin   = expiration_margin
+    # expiration_threshold_blocks is default to 8 days (1 day more then default payment_expiration_threshold for services)
+    def __init__(self, *, amount_cogs, expiration, expiration_threshold_blocks = 46080):
+        self.funding_amount_cogs          = amount_cogs
+        self.expiration                   = expiration
+        self.expiration_threshold_blocks  = expiration_threshold_blocks
 
     def init_for_client(self, client):
         # open new channel if needed
@@ -139,9 +141,9 @@ class AutoFundingFundingStrategy:
         # Do we need extend our channel?
         is_extend = False
         current_block = client.ident.w3.eth.blockNumber
-        if (client.channel["expiration"] - current_block < self.expiration_margin):
+        if (client.channel["expiration"] - current_block < self.expiration_threshold_blocks):
             client.channel = client._get_channel_state_from_blockchain_update_cache(channel_id)
-            if (client.channel["expiration"] - current_block < self.expiration_margin):
+            if (client.channel["expiration"] - current_block < self.expiration_threshold_blocks):
                 is_extend = True
 
         # Do we need to fund our channel?
@@ -157,6 +159,9 @@ class AutoFundingFundingStrategy:
                 is_fund = True
 
         expiration = client._expiration_str_to_blocks(self.expiration, client.ident.w3.eth.blockNumber)
+
+        if (expiration - current_block < self.expiration_threshold_blocks):
+            raise Exception("Expiration=%s is effectivly smaller then your expiration_threshold_blocks=%i"%(self.expiration, self.expiration_threshold_blocks))
 
         if (is_extend and not is_fund):
             client.transact_contract_command("MultiPartyEscrow", "channelExtend", [channel_id, expiration])
