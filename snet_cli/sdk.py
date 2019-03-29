@@ -8,6 +8,7 @@ from snet_cli.utils import DefaultAttributeObject
 import snet_cli.generic_client_interceptor as generic_client_interceptor
 import collections
 import grpc
+from snet_cli.utils_proto4sdk import import_protobuf_from_dir_for_given_service_name
 
 class Session(BlockchainCommand):
     def __init__(self, config, out_f=sys.stdout, err_f=sys.stderr):
@@ -50,28 +51,47 @@ class _ClientCallDetails(
                grpc.ClientCallDetails):
     pass
 
+class BasicFundingStrategy:
+    def init_for_client(self, client):
+        pass
+    def fund_and_extend_if_needed(self, service_state):
+        pass
 
-class BasicClient(MPEClientCommand):
-    def __init__(self, session, org_id, service_id, method, skip_update_check = False, group_name = None):
-        args = DefaultAttributeObject(org_id = org_id, service_id = service_id, method = method, group_name = group_name, yes = True)
-        super(BasicClient, self).__init__(session.config, args, session.out_f, session.err_f, w3 = session.w3, ident = session.ident)
+
+class Client(MPEClientCommand):
+    def __init__(self, session, org_id, service_id, funding_strategy = BasicFundingStrategy(), grpc_service_name = None, skip_update_check = False, group_name = None):
+        args = DefaultAttributeObject(org_id = org_id, service_id = service_id, group_name = group_name, yes = True)
+        super(Client, self).__init__(session.config, args, session.out_f, session.err_f, w3 = session.w3, ident = session.ident)
+        self.session = session
 
         if (not skip_update_check):
             self._init_or_update_registered_service_if_needed()
 
+        funding_strategy.init_for_client(self)
+        self.funding_strategy = funding_strategy
+
         self.service_metadata   = self._read_metadata_for_service(self.args.org_id, self.args.service_id)
         self.endpoint           = self._get_endpoint_from_metadata_or_args(self.service_metadata)
         self._pure_grpc_channel = self._open_grpc_channel(self.endpoint)
-        self.stub_class, self.request_class, self.response_class = self._import_protobuf_for_service()
+
+
+        spec_dir = self.get_service_spec_dir(self.args.org_id, self.args.service_id)
+        self.stub_class, self.methods_iodict, self.protobuf_file_prefix = import_protobuf_from_dir_for_given_service_name(spec_dir, grpc_service_name)
+
         self.channel  = self._smart_get_initialized_channel_for_service(self.service_metadata, filter_by = "signer")
         self.channel_id = self.channel["channelId"]
 
         if self.service_metadata["encoding"] == "json":
-            switch_to_json_payload_encoding(call_fn, response_class)
+            for _, (_, response_class) in self.methods_iodict.items():
+                switch_to_json_payload_encoding(call_fn, response_class)
 
         self.grpc_channel = grpc.intercept_channel(self._pure_grpc_channel, generic_client_interceptor.create(self.intercept_call))
-
         self.stub = self.stub_class(self.grpc_channel)
+
+        self.classes = __import__("%s_pb2"%self.protobuf_file_prefix)
+
+    def get_request_class(self, method):
+        return self.methods_iodict[method][0]
 
     def unspent_amount(self):
         _,_,unspent_amount = self._get_channel_state_statelessly(self._pure_grpc_channel, self.channel_id)
@@ -89,62 +109,58 @@ class BasicClient(MPEClientCommand):
     def get_call_metadata(self):
         channel_id    = self.channel_id
         server_state  = self._get_channel_state_from_server(self._pure_grpc_channel, channel_id)
+
+        self.funding_strategy.fund_and_extend_if_needed(server_state)
+
         price         = self._get_price_from_metadata(self.service_metadata)
         metadata      = self._create_call_metadata(channel_id, server_state["current_nonce"], server_state["current_signed_amount"] + price)
         return metadata
 
-class AutoFundingClient(BasicClient):
-    def __init__(self, session, org_id, service_id, method, amount_cogs, expiration, expiration_margin = 5760, group_name = None):
 
-        self.expiration             = expiration
-        self.expiration_margin      = expiration_margin
-        self.funding_amount_cogs    = amount_cogs
+class AutoFundingFundingStrategy:
+    # force amount_cogs and expiration be named parameters (in order to be sure that amount are passed in cogs!)
+    def __init__(self, *, amount_cogs , expiration, expiration_margin = 5760):
+        self.funding_amount_cogs = amount_cogs
+        self.expiration          = expiration
+        self.expiration_margin   = expiration_margin
 
+    def init_for_client(self, client):
         # open new channel if needed
-        session._open_channel_if_not_exists(org_id, service_id, amount_cogs, expiration, group_name)
-
-        # we skip_update_check because we've already checked for update in open_channel_if_not_exists
-        super(AutoFundingClient, self).__init__(session, org_id, service_id, method, skip_update_check = True, group_name = group_name)
+        client.session._open_channel_if_not_exists(client.args.org_id, client.args.service_id, self.funding_amount_cogs, self.expiration, client.args.group_name)
+        self.client = client
 
 
-    def _fund_and_extend_if_needed(self, service_state):
-        channel_id = self.channel_id
+    def fund_and_extend_if_needed(self, service_state):
+        client     = self.client
+        channel_id = client.channel_id
 
         # Do we need extend our channel?
         is_extend = False
-        current_block = self.ident.w3.eth.blockNumber
-        if (self.channel["expiration"] - current_block < self.expiration_margin):
-            self.channel = self._get_channel_state_from_blockchain_update_cache(channel_id)
-            if (self.channel["expiration"] - current_block < self.expiration_margin):
+        current_block = client.ident.w3.eth.blockNumber
+        if (client.channel["expiration"] - current_block < self.expiration_margin):
+            client.channel = client._get_channel_state_from_blockchain_update_cache(channel_id)
+            if (client.channel["expiration"] - current_block < self.expiration_margin):
                 is_extend = True
 
-        # Do we need to fund our channel
-        price          = self._get_price_from_metadata(self.service_metadata)
-        server_state   = self._get_channel_state_from_server(self._pure_grpc_channel, self.channel_id)
-        unspent_amount = self._calculate_unspent_amount(self.channel, server_state)
+        # Do we need to fund our channel?
+        price          = client._get_price_from_metadata(client.service_metadata)
+        server_state   = client._get_channel_state_from_server(client._pure_grpc_channel, channel_id)
+        unspent_amount = client._calculate_unspent_amount(client.channel, server_state)
         is_fund = False
         if (unspent_amount is not None and unspent_amount < price):
             # update channel state from blockchain
-            self.channel = self._get_channel_state_from_blockchain_update_cache(channel_id)
-            unspent_amount = self._calculate_unspent_amount(self.channel, server_state)
+            client.channel = client._get_channel_state_from_blockchain_update_cache(channel_id)
+            unspent_amount = client._calculate_unspent_amount(client.channel, server_state)
             if (unspent_amount is not None and unspent_amount < price):
                 is_fund = True
 
-        expiration = self._expiration_str_to_blocks(self.expiration, self.ident.w3.eth.blockNumber)
+        expiration = client._expiration_str_to_blocks(self.expiration, client.ident.w3.eth.blockNumber)
 
         if (is_extend and not is_fund):
-            self.transact_contract_command("MultiPartyEscrow", "channelExtend", [channel_id, expiration])
+            client.transact_contract_command("MultiPartyEscrow", "channelExtend", [channel_id, expiration])
 
         if (is_fund):
-            if (self.channel["expiration"] < expiration):
-                self.transact_contract_command("MultiPartyEscrow", "channelExtendAndAddFunds", [channel_id, expiration, self.funding_amount_cogs])
+            if (client.channel["expiration"] < expiration):
+                client.transact_contract_command("MultiPartyEscrow", "channelExtendAndAddFunds", [channel_id, expiration, self.funding_amount_cogs])
             else:
-                self.transact_contract_command("MultiPartyEscrow", "channelAddFunds", [channel_id, self.funding_amount_cogs])
-
-    def get_call_metadata(self):
-        channel_id    = self.channel_id
-        server_state  = self._get_channel_state_from_server(self._pure_grpc_channel, channel_id)
-        self._fund_and_extend_if_needed(server_state)
-        price         = self._get_price_from_metadata(self.service_metadata)
-        metadata      = self._create_call_metadata(channel_id, server_state["current_nonce"], server_state["current_signed_amount"] + price)
-        return metadata
+                client.transact_contract_command("MultiPartyEscrow", "channelAddFunds", [channel_id, self.funding_amount_cogs])
