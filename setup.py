@@ -1,7 +1,6 @@
 from setuptools import setup, find_packages
 from setuptools.command.develop import develop as _develop
 from setuptools.command.install import install as _install
-import re
 
 
 def install_and_compile_proto():
@@ -15,25 +14,29 @@ def install_and_compile_proto():
         print("Compiling protobuf", fn)
         compile_proto(proto_dir, dest_dir, proto_file=fn)
 
+
 class develop(_develop):
     """Post-installation for development mode."""
+
     def run(self):
         _develop.run(self)
         self.execute(install_and_compile_proto, (), msg="Compile protocol buffers")
 
+
 class install(_install):
     """Post-installation for installation mode."""
+
     def run(self):
         _install.run(self)
         self.execute(install_and_compile_proto, (), msg="Compile protocol buffers")
 
 
-with open('snet_cli/__init__.py', 'rt', encoding='utf8') as f:
-    version = re.search(r'__version__ = "(.*?)"', f.read()).group(1)
-
+version_dict = {}
+with open("./snet_cli/version.py") as fp:
+    exec(fp.read(), version_dict)
 setup(
     name='snet-cli',
-    version=version,
+    version=version_dict['__version__'],
     packages=find_packages(),
     url='https://github.com/singnet/snet-cli',
     license='MIT',
