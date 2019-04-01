@@ -14,17 +14,17 @@ Welcome to snet-cli's documentation!
    :caption: Commands:
    :hidden:
 
-   version
-   identity
-   network
-   session
-   set
-   unset
-   contract
-   organization
    account
    channel
    client
-   service
-   treasurer
+   contract
+   identity
+   network
+   organization
    sdk
+   service
+   session
+   set
+   treasurer
+   unset
+   version
