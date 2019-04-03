@@ -22,12 +22,12 @@ class CustomParser(argparse.ArgumentParser):
     def __init__(self, default_choice=None, *args, **kwargs):
         self.default_choice = default_choice
         super().__init__(*args, **kwargs)
-    
+
     def error(self, message):
         sys.stderr.write("error: {}\n\n".format(message))
         self.print_help(sys.stderr)
         sys.exit(2)
-    
+
     def _parse_known_args(self, arg_strings, *args, **kwargs):
         if self.default_choice and not len(list(filter(lambda option: option in arg_strings, {'-h', '--help'}))):
             for action in list(filter(
@@ -36,7 +36,7 @@ class CustomParser(argparse.ArgumentParser):
             )):
                 if not len(list(filter(lambda arg: arg in action._name_parser_map.keys(), arg_strings))):
                     arg_strings = [self.default_choice] + arg_strings
-        
+
         return super()._parse_known_args(
             arg_strings, *args, **kwargs
         )
@@ -48,66 +48,66 @@ def get_root_parser(config):
                         action='store_true',
                         help="Do not catch last exception and print full TraceBack")
     add_root_options(parser, config)
-    
+
     return parser
 
 
 def add_root_options(parser, config):
     subparsers = parser.add_subparsers(title="snet commands", metavar="COMMAND")
     subparsers.required = True
-    
+
     p = subparsers.add_parser("account",
                               help="AGI account")
     add_mpe_account_options(p)
-    
+
     p = subparsers.add_parser("channel",
                               help="Interact with SingularityNET payment channels")
     add_mpe_channel_options(p)
-    
+
     mpe_client_p = subparsers.add_parser("client",
                                          help="Interact with SingularityNET services")
     add_mpe_client_options(mpe_client_p)
-    
+
     contract_p = subparsers.add_parser("contract",
                                        help="Interact with contracts at a low level")
     add_contract_options(contract_p)
-    
+
     identity_p = subparsers.add_parser("identity",
                                        help="Manage identities")
     add_identity_options(identity_p, config)
-    
+
     network_p = subparsers.add_parser("network",
                                       help="Manage networks")
     add_network_options(network_p, config)
-    
+
     organization_p = subparsers.add_parser("organization",
                                            help="Interact with SingularityNET Organizations")
     add_organization_options(organization_p)
-    
+
     sdk_p = subparsers.add_parser("sdk",
                                   help="Generate client libraries to call SingularityNET services using your language of choice")
     add_sdk_options(sdk_p)
-    
+
     mpe_server_p = subparsers.add_parser("service",
                                          help="Create, publish, register, and update SingularityNET services")
     add_mpe_service_options(mpe_server_p)
-    
+
     session_p = subparsers.add_parser("session",
                                       help="View session state")
     add_session_options(session_p)
-    
+
     set_p = subparsers.add_parser("set",
                                   help="Set session keys")
     add_set_options(set_p)
-    
+
     p = subparsers.add_parser("treasurer",
                               help="Treasurer logic")
     add_mpe_treasurer_options(p)
-    
+
     unset_p = subparsers.add_parser("unset",
                                     help="Unset session keys")
     add_unset_options(unset_p)
-    
+
     version_p = subparsers.add_parser("version",
                                       help="Show version and exit")
     add_version_options(version_p)
@@ -120,14 +120,14 @@ def add_version_options(parser):
 
 def add_identity_options(parser, config):
     parser.set_defaults(cmd=IdentityCommand)
-    
+
     subparsers = parser.add_subparsers(title="actions", metavar="ACTION")
     subparsers.required = True
 
     p = subparsers.add_parser("list",
                               help="List of identities")
     p.set_defaults(fn="list")
-    
+
     p = subparsers.add_parser("create",
                               help="Create a new identity")
     p.set_defaults(fn="create")
@@ -150,17 +150,17 @@ def add_identity_options(parser, config):
                    type=int,
                    default=0,
                    help="Default wallet index for this account (default is 0)")
-    
+
     p = subparsers.add_parser("delete",
                               help="Delete an identity")
     p.set_defaults(fn="delete")
-    
+
     identity_names = config.get_all_identities_names()
     p.add_argument("identity_name",
                    choices=identity_names,
                    help="Name of identity to delete from {}".format(identity_names),
                    metavar="IDENTITY_NAME")
-    
+
     for identity_name in identity_names:
         p = subparsers.add_parser(identity_name,
                                   help="Switch to {} identity".format(identity_name))
@@ -170,14 +170,14 @@ def add_identity_options(parser, config):
 
 def add_network_options(parser, config):
     parser.set_defaults(cmd=NetworkCommand)
-    
+
     subparsers = parser.add_subparsers(title="networks", metavar="NETWORK")
     subparsers.required = True
 
     p = subparsers.add_parser("list",
                               help="List of networks")
     p.set_defaults(fn="list")
-    
+
     p = subparsers.add_parser("create",
                               help="Create a new network")
     p.set_defaults(fn="create")
@@ -191,7 +191,7 @@ def add_network_options(parser, config):
     p.add_argument("--skip-check",
                    action="store_true",
                    help="Skip check that eth_rpc_endpoint is valid")
-    
+
     network_names = config.get_all_networks_names()
     for network_name in network_names:
         p = subparsers.add_parser(network_name, help="Switch to {} network".format(network_name))
@@ -227,10 +227,10 @@ def add_unset_options(parser):
 
 def add_contract_options(parser):
     parser.set_defaults(cmd=ContractCommand)
-    
+
     subparsers = parser.add_subparsers(title="contracts", metavar="CONTRACT")
     subparsers.required = True
-    
+
     for path in Path(__file__).absolute().parent.joinpath("resources", "contracts", "abi").glob("*json"):
         contract_name = re.search(r"([^.]*)\.json", os.path.basename(path)).group(1)
         contract_p = subparsers.add_parser(contract_name, help="{} contract".format(contract_name))
@@ -250,7 +250,7 @@ def add_p_org_id(p):
 
 def add_organization_options(parser):
     parser.set_defaults(cmd=OrganizationCommand)
-    
+
     subparsers = parser.add_subparsers(title="Organization commands", metavar="COMMAND")
     subparsers.required = True
 
@@ -321,7 +321,7 @@ def add_organization_options(parser):
                    help="Address of the new Organization's owner",
                    metavar="OWNER_ADDRESS")
     add_organization_arguments(p)
-    
+
     p = subparsers.add_parser("add-members",
                               help="Add members to Organization")
     p.set_defaults(fn="add_members")
@@ -330,7 +330,7 @@ def add_organization_options(parser):
                    help="List of members to be added to the organization",
                    metavar="ORG_MEMBERS[]")
     add_organization_arguments(p)
-    
+
     p = subparsers.add_parser("rem-members",
                               help="Remove members from Organization")
     p.set_defaults(fn="rem_members")
@@ -349,11 +349,11 @@ def add_organization_options(parser):
 
 def add_contract_function_options(parser, contract_name):
     add_contract_identity_arguments(parser)
-    
+
     contract_def = get_contract_def(contract_name)
     parser.set_defaults(contract_def=contract_def)
     parser.set_defaults(contract_name=contract_name)
-    
+
     fns = []
     for fn in filter(lambda e: e["type"] == "function", contract_def["abi"]):
         fns.append({
@@ -361,11 +361,11 @@ def add_contract_function_options(parser, contract_name):
             "named_inputs": [(i["name"], i["type"]) for i in fn["inputs"] if i["name"] != ""],
             "positional_inputs": [i["type"] for i in fn["inputs"] if i["name"] == ""]
         })
-    
+
     if len(fns) > 0:
         subparsers = parser.add_subparsers(title="{} functions".format(contract_name), metavar="FUNCTION")
         subparsers.required = True
-        
+
         for fn in fns:
             fn_p = subparsers.add_parser(fn["name"], help="{} function".format(fn["name"]))
             fn_p.set_defaults(fn="call")
@@ -479,7 +479,7 @@ def add_mpe_account_options(parser):
     parser.set_defaults(cmd=MPEAccountCommand)
     subparsers = parser.add_subparsers(title="Commands", metavar="COMMAND")
     subparsers.required = True
-    
+
     def add_p_snt_address_opt(p):
         p.add_argument("--singularitynettoken-at",
                        "--snt",
@@ -489,7 +489,7 @@ def add_mpe_account_options(parser):
     p = subparsers.add_parser("print", help="Print the current ETH account")
     p.set_defaults(fn="print_account")
     add_eth_call_arguments(p)
-    
+
     p = subparsers.add_parser("balance", help="Print balance of AGI tokens and balance of MPE wallet")
     p.set_defaults(fn="print_agi_and_mpe_balances")
     p.add_argument("--account",
@@ -498,7 +498,7 @@ def add_mpe_account_options(parser):
     add_p_snt_address_opt(p)
     add_p_mpe_address_opt(p)
     add_eth_call_arguments(p)
-    
+
     p = subparsers.add_parser("deposit", help="Deposit AGI tokens to MPE wallet")
     p.set_defaults(fn="deposit_to_mpe")
     p.add_argument("amount",
@@ -517,7 +517,7 @@ def add_mpe_account_options(parser):
                    metavar="AMOUNT")
     add_p_mpe_address_opt(p)
     add_transaction_arguments(p)
-    
+
     p = subparsers.add_parser("transfer", help="Transfer AGI tokens inside MPE wallet")
     p.set_defaults(fn="transfer_in_mpe")
     p.add_argument("receiver",
@@ -655,12 +655,12 @@ def add_mpe_channel_options(parser):
     p = subparsers.add_parser("block-number",
                               help="Print the last ethereum block number")
     p.set_defaults(fn="print_block_number")
-    
+
     def add_p_only_id(_p):
         _p.add_argument("--only-id",
                         action='store_true',
                         help="Print only id of channels")
-    
+
     def add_p_only_sender_signer(_p):
         pm = _p.add_mutually_exclusive_group(required=False)
         pm.add_argument("--filter-sender",
@@ -672,7 +672,7 @@ def add_mpe_channel_options(parser):
         pm.add_argument("--filter-my",
                         action='store_true',
                         help="Print only channels in which current identity is sender or signer")
-    
+
     def add_p_sender(_p):
         _p.add_argument("--sender",
                         default=None,
@@ -715,7 +715,7 @@ def add_mpe_channel_options(parser):
     p.add_argument("--recipient",
                    default=None,
                    help="Account to set as recipient (by default we use the current identity)")
-    
+
     p = subparsers.add_parser("print-all-filter-group",
                               help="Print all channels for the given service.")
     p.set_defaults(fn="print_all_channels_filter_group")
@@ -725,7 +725,7 @@ def add_mpe_channel_options(parser):
     add_p_mpe_address_opt(p)
     add_p_from_block(p)
     add_eth_call_arguments(p)
-    
+
     p = subparsers.add_parser("print-all-filter-group-sender",
                               help="Print all channels for the given group and sender.")
     p.set_defaults(fn="print_all_channels_filter_group_sender")
@@ -756,7 +756,7 @@ def add_mpe_client_options(parser):
     parser.set_defaults(cmd=MPEClientCommand)
     subparsers = parser.add_subparsers(title="Commands", metavar="COMMAND")
     subparsers.required = True
-    
+
     def add_p_set1_for_call(_p):
         _p.add_argument("--service",
                         default=None,
@@ -782,7 +782,7 @@ def add_mpe_client_options(parser):
         _p.add_argument("--endpoint",
                         help="Service endpoint (by default we read it from metadata)")
         add_p_group_name(_p)
-    
+
     # call: testo tests method params --endpoint --group-name
     p = subparsers.add_parser("call",
                               help="Call server. We ask state of the channel from the server if needed. Channel should be already initialized.")
@@ -799,7 +799,7 @@ def add_mpe_client_options(parser):
                    action="store_true",
                    help="Skip check for service update",
                    default=False)
-    
+
     p = subparsers.add_parser("call-lowlevel",
                               help="Low level function for calling the server. Service should be already initialized.")
     p.set_defaults(fn="call_server_lowlevel")
@@ -814,7 +814,7 @@ def add_mpe_client_options(parser):
                    help="Amount in cogs",
                    metavar="AMOUNT_IN_COGS")
     add_p_set1_for_call(p)
-    
+
     p = subparsers.add_parser("get-channel-state",
                               help="Get channel state in stateless manner")
     p.set_defaults(fn="print_channel_state_statelessly")
@@ -1003,18 +1003,18 @@ def add_mpe_service_options(parser):
                               help="Print tags for given service from registry")
     p.set_defaults(fn="print_service_tags_from_registry")
     add_p_service_in_registry(p)
-    
+
     def add_p_protodir_to_extract(_p):
         _p.add_argument("protodir",
                         help="Directory to which extract api (model)",
                         metavar="PROTO_DIR")
-    
+
     p = subparsers.add_parser("get-api-metadata",
                               help="Extract service api (model) to the given protodir. Get model_ipfs_hash from metadata")
     p.set_defaults(fn="extract_service_api_from_metadata")
     add_p_protodir_to_extract(p)
     add_p_metadata_file_opt(p)
-    
+
     p = subparsers.add_parser("get-api-registry",
                               help="Extract service api (model) to the given protodir. Get metadata from registry")
     p.set_defaults(fn="extract_service_api_from_registry")
@@ -1032,7 +1032,7 @@ def add_mpe_treasurer_options(parser):
     parser.set_defaults(cmd=MPETreasurerCommand)
     subparsers = parser.add_subparsers(title="Commands", metavar="COMMAND")
     subparsers.required = True
-    
+
     def add_p_daemon_endpoint(_p):
         _p.add_argument("--endpoint",
                         required=True,
@@ -1043,7 +1043,7 @@ def add_mpe_treasurer_options(parser):
     p.set_defaults(fn="print_unclaimed")
     add_p_daemon_endpoint(p)
     add_eth_call_arguments(p)
-    
+
     p = subparsers.add_parser("claim",
                               help="Claim given channels. We also claim all pending 'payments in progress' in case we 'lost' some payments.")
     p.set_defaults(fn="claim_channels")
@@ -1054,13 +1054,13 @@ def add_mpe_treasurer_options(parser):
                    metavar="CHANNELS")
     add_p_daemon_endpoint(p)
     add_transaction_arguments(p)
-    
+
     p = subparsers.add_parser("claim-all",
                               help="Claim all channels. We also claim all pending 'payments in progress' in case we 'lost' some payments.")
     p.set_defaults(fn="claim_all_channels")
     add_p_daemon_endpoint(p)
     add_transaction_arguments(p)
-    
+
     p = subparsers.add_parser("claim-expired",
                               help="Claim all channels which are close to expiration date. We also claim all pending 'payments in progress' in case we 'lost' some payments.")
     p.set_defaults(fn="claim_almost_expired_channels")
@@ -1076,9 +1076,9 @@ def add_sdk_options(parser):
     parser.set_defaults(cmd=SDKCommand)
     subparsers = parser.add_subparsers(title="Commands", metavar="COMMAND")
     subparsers.required = True
-    
+
     supported_languages = ["python"]
-    
+
     p = subparsers.add_parser("generate-client-library",
                               help="Generate compiled client libraries to call services using your language of choice")
     p.set_defaults(fn="generate_client_library")
