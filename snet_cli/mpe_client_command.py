@@ -10,7 +10,6 @@ from snet_cli.utils_proto import import_protobuf_from_dir, switch_to_json_payloa
 from snet_cli.utils_agi2cogs import cogs2stragi
 from snet_cli.utils import open_grpc_channel
 
-
 # we inherit MPEChannelCommand because client needs channels
 class MPEClientCommand(MPEChannelCommand):
 
@@ -30,6 +29,11 @@ class MPEClientCommand(MPEChannelCommand):
         message_hash = defunct_hash_message(message)
         sign_address = self.ident.w3.eth.account.recoverHash(message_hash, signature=signature)
         return sign_address == self.ident.address
+
+    def _assert_vilidity_of_my_signature_or_zero_amount(self, signature, channel_id, nonce, signed_amount, error_message):
+        if (signed_amount > 0):
+            if (not self._verify_my_signature(signature, self.get_mpe_address(), channel_id, nonce, signed_amount)):
+                raise Exception(error_message)
 
     # II. Call related functions (low level)
 
@@ -154,14 +158,10 @@ class MPEClientCommand(MPEChannelCommand):
 
     # III. Stateless client related functions
     def _get_channel_state_from_server(self, grpc_channel, channel_id):
-        # Compile protobuf if needed
-        codegen_dir = Path.home().joinpath(".snet", "mpe_client", "state_service")
-        proto_dir   = Path(__file__).absolute().parent.joinpath("resources", "proto")
-        if (not codegen_dir.joinpath("state_service_pb2.py").is_file()):
-            compile_proto(proto_dir, codegen_dir, proto_file = "state_service.proto")
-
-        # make PaymentChannelStateService.GetChannelState call to the daemon
-        stub_class, request_class, _ = import_protobuf_from_dir(codegen_dir, "GetChannelState")
+        # We should simply statically import everything, but it doesn't work because of the following issue in protobuf: https://github.com/protocolbuffers/protobuf/issues/1491
+        #from snet_cli.resources.proto.state_service_pb2      import ChannelStateRequest            as request_class
+        #from snet_cli.resources.proto.state_service_pb2_grpc import PaymentChannelStateServiceStub as stub_class
+        stub_class, request_class, _ = import_protobuf_from_dir(Path(__file__).absolute().parent.joinpath("resources", "proto"), "GetChannelState")
         message   = self.w3.soliditySha3(["uint256"], [channel_id])
         signature = self.ident.sign_message_after_soliditySha3(message)
 
@@ -173,18 +173,27 @@ class MPEClientCommand(MPEChannelCommand):
         state = dict()
         state["current_nonce"]          = int.from_bytes(response.current_nonce,         byteorder='big')
         state["current_signed_amount"]  = int.from_bytes(response.current_signed_amount, byteorder='big')
-        if (state["current_signed_amount"] > 0):
-         good = self._verify_my_signature(bytes(response.current_signature), self.get_mpe_address(), channel_id, state["current_nonce"], state["current_signed_amount"])
-         if (not good):
-             raise Exception("Error in _get_channel_state_from_server. My own signature from the server is not valid.")
+
+        error_message = "Error in _get_channel_state_from_server. My own signature from the server is not valid."
+        self._assert_vilidity_of_my_signature_or_zero_amount(bytes(response.current_signature),  channel_id, state["current_nonce"],     state["current_signed_amount"],  error_message)
+
+        if (hasattr(response, "old_nonce_signed_amount")):
+            state["old_nonce_signed_amount"] = int.from_bytes(response.old_nonce_signed_amount, byteorder='big')
+            self._assert_vilidity_of_my_signature_or_zero_amount(bytes(response.old_nonce_signature), channel_id, state["current_nonce"] - 1, state["old_nonce_signed_amount"], error_message)
 
         return state
 
     def _calculate_unspent_amount(self, blockchain, server):
         if (server["current_nonce"] == blockchain["nonce"]):
             return blockchain["value"] - server["current_signed_amount"]
-        else:
-            return None # in this case we cannot securely define unspent_amount yet
+        if (server["current_nonce"] - 1 != blockchain["nonce"]):
+            raise Exception("Server nonce is different from blockchain nonce to more then 1: server_nonce = %i blockchain_nonce = %i"%(server["current_nonce"], blockchain["nonce"]))
+
+        if ("old_nonce_signed_amount" in server):
+            return blockchain["value"] - server["old_nonce_signed_amount"] - server["current_signed_amount"]
+
+        self._printerr("Service is using old daemon which is not fully support stateless logic. Unspent amount might be overestimated")
+        return blockchain["value"] - server["current_signed_amount"]
 
     def _get_channel_state_statelessly(self, grpc_channel, channel_id):
         """
