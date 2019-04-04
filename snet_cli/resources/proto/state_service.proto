@@ -1,3 +1,9 @@
+//
+// FIXME: All changes all this file should manually be copied to the `snet-cli`
+// repo until https://github.com/singnet/snet-daemon/issues/99 and
+// https://github.com/singnet/snet-cli/issues/88 are fixed.
+//
+
 syntax = "proto3";
 
 package escrow;
@@ -5,8 +11,10 @@ package escrow;
 // PaymentChannelStateService contains methods to get the MultiPartyEscrow
 // payment channel state.
 // channel_id, channel_nonce, value and amount fields below in fact are
-// Solidity uint256 values. Which are big-endian integers padded by zeros, see
+// Solidity uint256 values. Which are big-endian integers, see
 // https://github.com/ethereum/wiki/wiki/Ethereum-Contract-ABI#formal-specification-of-the-encoding
+// These values may be or may be not padded by zeros, service supports both
+// options.
 service PaymentChannelStateService {
     // GetChannelState method returns a channel state by channel id.
     rpc GetChannelState(ChannelStateRequest) returns (ChannelStateReply) {}
@@ -31,9 +39,15 @@ message ChannelStateReply {
 
     // current_signed_amount is a last amount which were signed by client with current_nonce
     //it could be absent if none message was signed with current_nonce
-    bytes current_signed_amount = 2; 
+    bytes current_signed_amount = 2;
 
     // current_signature is a last signature sent by client with current_nonce
-    // it could be abset if none message was signed with current nonce
-    bytes current_signature = 3; 
+    // it could be absent if none message was signed with current nonce
+    bytes current_signature = 3;
+
+    // last amount which was signed by client with nonce=current_nonce - 1
+    bytes old_nonce_signed_amount = 4;
+
+    // last signature sent by client with nonce = current_nonce - 1
+    bytes old_nonce_signature = 5;
  }
