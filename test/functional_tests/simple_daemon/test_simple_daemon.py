@@ -78,6 +78,14 @@ class PaymentChannelStateService(state_service_pb2_grpc.PaymentChannelStateServi
     def GetChannelState(self, request, context):
         channel_id = int.from_bytes(request.channel_id, byteorder='big')
         nonce, amount, signature = get_current_channel_state(channel_id)
+        if (channel_id in payments_in_progress):
+            if (payments_in_progress[channel_id]["nonce"] != nonce - 1):
+                raise Exception("Bad payment in payments_in_progress")
+            return state_service_pb2.ChannelStateReply(current_nonce           = web3.Web3.toBytes(nonce),
+                                                       current_signed_amount   = web3.Web3.toBytes(amount),
+                                                       current_signature       = signature,
+                                                       old_nonce_signed_amount = web3.Web3.toBytes(payments_in_progress[channel_id]["amount"]),
+                                                       old_nonce_signature     = payments_in_progress[channel_id]["signature"])
         return state_service_pb2.ChannelStateReply(current_nonce         = web3.Web3.toBytes(nonce),
                                                    current_signed_amount = web3.Web3.toBytes(amount),
                                                    current_signature     = signature)
