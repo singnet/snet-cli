@@ -113,12 +113,24 @@ class MPEClientCommand(MPEChannelCommand):
                     ("snet-payment-channel-signature-bin", bytes(signature))]
         return call_fn(request, metadata=metadata)
 
+    def _get_field(self, field, response):
+        field_parts = field.split(".", 1)
+        field_name = field_parts[0]
+        try:
+            field_value = getattr(response, field_name)
+            if len(field_parts) == 2:
+                return self._get_field(field_parts[1], field_value)
+            else:
+                return field_value
+        except AttributeError:
+            raise Exception("Field {} not found in message" % field_name)
+
     def _deal_with_call_response(self, response):
         if (self.args.save_response):
             with open(self.args.save_response, "wb") as f:
                 f.write(response.SerializeToString())
         elif (self.args.save_field):
-            field = getattr(response, self.args.save_field[0])
+            field = self._get_field(self.args.save_field[0], response)
             file_name = self.args.save_field[1]
             if (type(field) == bytes):
                 with open(file_name, "wb") as f:
