@@ -15,7 +15,7 @@ from snet_cli.mpe_client_command import MPEClientCommand
 from snet_cli.mpe_treasurer_command import MPETreasurerCommand
 from snet_cli.sdk_command import SDKCommand
 from snet_cli.utils_agi2cogs import stragi2cogs
-from snet_cli.config import get_session_keys, get_session_network_keys_removable
+from snet_cli.config import Config, get_session_keys, get_session_network_keys_removable
 
 
 class CustomParser(argparse.ArgumentParser):
@@ -41,6 +41,9 @@ class CustomParser(argparse.ArgumentParser):
             arg_strings, *args, **kwargs
         )
 
+
+def get_parser():
+    return get_root_parser(Config())
 
 def get_root_parser(config):
     parser = CustomParser(prog="snet", description="SingularityNET CLI")
