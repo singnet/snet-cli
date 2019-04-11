@@ -1,5 +1,6 @@
 import json
 import os
+import functools
 
 from urllib.parse import urlparse
 from pathlib import Path
@@ -224,3 +225,14 @@ def open_grpc_channel(endpoint):
     if (endpoint.startswith("https://")):
         return grpc.secure_channel(remove_http_https_prefix(endpoint), grpc.ssl_channel_credentials())
     return grpc.insecure_channel(remove_http_https_prefix(endpoint))
+
+def rgetattr(obj, attr):
+    """
+    >>> from types import SimpleNamespace
+    >>> args = SimpleNamespace(a=1, b=SimpleNamespace(c=2, d='e'))
+    >>> rgetattr(args, "a")
+    1
+    >>> rgetattr(args, "b.c")
+    2
+    """
+    return functools.reduce(getattr, [obj] + attr.split('.'))
