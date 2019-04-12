@@ -1257,6 +1257,23 @@ $ ./scripts/blockchain install
 $ pip3 install -e .
 ```
 
+#### Building Docs
+
+* Install sphinx, sphinx-argparse and the rtd theme
+```bash
+$ pip install sphinx
+$ pip install sphinx-argparse
+$ pip install sphinx-rtd-theme
+``` 
+
+* Run the build-docs.sh in the docs directory
+```bash
+$ cd docs
+$ sh build-docs.sh
+```
+
+The documentation is generated under the docs/build/html folder
+
 ### Release  
   
 This project is published to [PyPI](https://pypi.org/project/snet-cli/).  
