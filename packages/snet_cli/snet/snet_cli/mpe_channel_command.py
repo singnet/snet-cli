@@ -44,7 +44,7 @@ class MPEChannelCommand(MPEServiceCommand):
         # replace old file atomically (os.rename is more or less atomic)
         tmp = tempfile.NamedTemporaryFile(delete=False)
         pickle.dump( channels_dict, open( tmp.name, "wb" ) )
-        os.rename(tmp.name, self._get_channels_info_file(org_id, service_id))
+        shutil.move(tmp.name, self._get_channels_info_file(org_id, service_id))
 
     def _get_initialized_channels_dict_for_service(self, org_id, service_id):
         '''return {channel_id: channel}'''
