@@ -118,7 +118,6 @@ class MPEClientCommand(MPEChannelCommand):
                 f.write(response.SerializeToString())
         elif (self.args.save_field):
             field = rgetattr(response, self.args.save_field[0])
-            #field = self._get_field(, response)
             file_name = self.args.save_field[1]
             if (type(field) == bytes):
                 with open(file_name, "wb") as f:

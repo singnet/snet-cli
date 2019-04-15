@@ -1,1 +1,0 @@
-nosetests -v --with-doctest
