@@ -62,7 +62,7 @@ source ~/.bashrc
 
 ## Commands
 
-Complete documentation is available [here](http://snet-cli-docs.singularitynet.io/):
+Complete documentation is available [here](http://snet-cli-docs.singularitynet.io/)
 
 
 ## Development
