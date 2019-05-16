@@ -7,10 +7,11 @@ from snet_cli import arguments
 from snet_cli.config import Config
 import argcomplete
 
+
 def main():
     try:
         argv = sys.argv[1:]
-        conf   = Config()
+        conf = Config()
         parser = arguments.get_root_parser(conf)
         argcomplete.autocomplete(parser)
 
@@ -21,7 +22,7 @@ def main():
 
         getattr(args.cmd(conf, args), args.fn)()
     except Exception as e:
-        if (sys.argv[1] == "--print-traceback"):
+        if sys.argv[1] == "--print-traceback":
             raise
         else:
             print("Error:", e)

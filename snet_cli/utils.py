@@ -63,22 +63,31 @@ def serializable(o):
     else:
         return o.__dict__
 
+
 def safe_address_converter(a):
     if not web3.eth.is_checksum_address(a):
-        raise Exception("%s is not is not a valid Ethereum checksum address"%a)
+        raise Exception("%s is not is not a valid "
+                        "Ethereum checksum address" % a)
     return a
 
 
 def type_converter(t):
     if t.endswith("[]"):
-        return lambda x: list(map(type_converter(t.replace("[]", "")), json.loads(x)))
+        return lambda x: list(
+            map(type_converter(t.replace("[]", "")), json.loads(x)))
     else:
         if "int" in t:
             return lambda x: web3.Web3.toInt(text=x)
         elif "bytes32" in t:
-            return lambda x: web3.Web3.toBytes(text=x).ljust(32, b"\0") if not x.startswith("0x") else web3.Web3.toBytes(hexstr=x).ljust(32, b"\0")
+            return lambda x: web3.Web3.toBytes(text=x).ljust(
+                32,
+                b"\0")\
+                if not x.startswith("0x")\
+                else web3.Web3.toBytes(hexstr=x).ljust(32, b"\0")
         elif "byte" in t:
-            return lambda x: web3.Web3.toBytes(text=x) if not x.startswith("0x") else web3.Web3.toBytes(hexstr=x)
+            return lambda x: web3.Web3.toBytes(text=x) \
+                if not x.startswith("0x")\
+                else web3.Web3.toBytes(hexstr=x)
         elif "address" in t:
             return safe_address_converter
         else:
@@ -95,13 +104,15 @@ def _add_next_paths(path, entry_path, seen_paths, next_paths):
             if line.strip().startswith("import"):
                 import_statement = "".join(line.split('"')[1::2])
                 if not import_statement.startswith("google/protobuf"):
-                    import_statement_path = Path(path.parent.joinpath(import_statement)).resolve()
+                    import_statement_path = Path(
+                        path.parent.joinpath(import_statement)).resolve()
                     if entry_path.parent in path.parents:
                         if import_statement_path not in seen_paths:
                             seen_paths.add(import_statement_path)
                             next_paths.append(import_statement_path)
                     else:
-                        raise ValueError("Path must not be a parent of entry path")
+                        raise ValueError(
+                            "Path must not be a parent of entry path")
 
 
 def walk_imports(entry_path):
@@ -121,12 +132,26 @@ def walk_imports(entry_path):
     return seen_paths
 
 
-def get_contract_def(contract_name, contract_artifacts_root=Path(__file__).absolute().parent.joinpath("resources", "contracts")):
-    contract_def = {}
-    with open(Path(__file__).absolute().parent.joinpath(contract_artifacts_root, "abi", "{}.json".format(contract_name))) as f:
+def get_contract_def(contract_name, contract_artifacts_root=None):
+    if contract_artifacts_root is None:
+        contract_artifacts_root = Path(__file__).absolute().parent
+        contract_artifacts_root = contract_artifacts_root.joinpath("resources",
+                                                                   "contracts")
+    contract_def = dict()
+    with open(
+            Path(__file__).absolute().parent.joinpath(
+                contract_artifacts_root,
+                "abi",
+                "{}.json".format(contract_name))) as f:
         contract_def["abi"] = json.load(f)
-    if os.path.isfile(Path(__file__).absolute().parent.joinpath(contract_artifacts_root, "networks", "{}.json".format(contract_name))):
-        with open(Path(__file__).absolute().parent.joinpath(contract_artifacts_root, "networks", "{}.json".format(contract_name))) as f:
+    if os.path.isfile(
+            Path(__file__).absolute().parent.joinpath(
+                contract_artifacts_root,
+                "networks",
+                "{}.json".format(contract_name))):
+        with open(Path(__file__).absolute().parent.joinpath(
+                contract_artifacts_root, "networks",
+                "{}.json".format(contract_name))) as f:
             contract_def["networks"] = json.load(f)
     return contract_def
 
@@ -163,19 +188,22 @@ def compile_proto(entry_path, codegen_dir, proto_file=None):
         else:
             return False
 
-    except Exception as e:
+    except Exception:
         return False
+
 
 def abi_get_element_by_name(abi, name):
     """ Return element of abi (return None if fails to find) """
-    if (abi and "abi" in abi):
+    if abi and "abi" in abi:
         for a in abi["abi"]:
-            if ("name" in a and a["name"] == name):
+            if "name" in a and a["name"] == name:
                 return a
     return None
 
+
 def abi_decode_struct_to_dict(abi, struct_list):
-    return {el_abi["name"] : el for el_abi, el in zip(abi["outputs"], struct_list)}
+    return {el_abi["name"]: el for el_abi, el in
+            zip(abi["outputs"], struct_list)}
 
 
 def int4bytes_big(b):
@@ -184,8 +212,10 @@ def int4bytes_big(b):
 
 def is_valid_endpoint(url):
     """
-    Just ensures the url has a scheme (http/https), and a net location (IP or domain name).
-    Can make more advanced or do on-network tests if needed, but this is really just to catch obvious errors.
+    Just ensures the url has a scheme (http/https),
+    and a net location (IP or domain name).
+    Can make more advanced or do on-network tests if needed,
+    but this is really just to catch obvious errors.
     >>> is_valid_endpoint("https://34.216.72.29:6206")
     True
     >>> is_valid_endpoint("blahblah")
@@ -202,8 +232,8 @@ def is_valid_endpoint(url):
         if result.port:
             _port = int(result.port)
         return (
-            all([result.scheme, result.netloc]) and
-            result.scheme in ['http', 'https']
+                all([result.scheme, result.netloc]) and
+                result.scheme in ['http', 'https']
         )
     except ValueError:
         return False
@@ -211,9 +241,10 @@ def is_valid_endpoint(url):
 
 def remove_http_https_prefix(endpoint):
     """remove http:// or https:// prefix if presented in endpoint"""
-    endpoint = endpoint.replace("https://","")
-    endpoint = endpoint.replace("http://","")
+    endpoint = endpoint.replace("https://", "")
+    endpoint = endpoint.replace("http://", "")
     return endpoint
+
 
 def open_grpc_channel(endpoint):
     """
@@ -222,9 +253,11 @@ def open_grpc_channel(endpoint):
            - for https:// we open secure_channel (with default credentials)
            - without prefix we open insecure_channel
     """
-    if (endpoint.startswith("https://")):
-        return grpc.secure_channel(remove_http_https_prefix(endpoint), grpc.ssl_channel_credentials())
+    if endpoint.startswith("https://"):
+        return grpc.secure_channel(remove_http_https_prefix(endpoint),
+                                   grpc.ssl_channel_credentials())
     return grpc.insecure_channel(remove_http_https_prefix(endpoint))
+
 
 def rgetattr(obj, attr):
     """

@@ -8,8 +8,12 @@ import getpass
 from pycoin.key.BIP32Node import BIP32Node
 import ecdsa
 import rlp
-from eth_account.internal.transactions import serializable_unsigned_transaction_from_dict, encode_transaction, \
-    UnsignedTransaction
+
+from eth_account.internal.transactions import (
+    serializable_unsigned_transaction_from_dict,
+    encode_transaction,
+    UnsignedTransaction)
+
 from eth_account.messages import defunct_hash_message
 from mnemonic import Mnemonic
 from trezorlib.client import TrezorClient, proto
@@ -17,7 +21,7 @@ from trezorlib.transport_hid import HidTransport
 
 from snet_cli._vendor.ledgerblue.comm import getDongle
 from snet_cli._vendor.ledgerblue.commException import CommException
-      
+
 BIP32_HARDEN = 0x80000000
 
 
@@ -43,22 +47,28 @@ class KeyIdentityProvider(IdentityProvider):
         else:
             self.private_key = bytes(bytearray.fromhex(private_key))
 
-        public_key = ecdsa.SigningKey.from_string(string=self.private_key,
-                                                  curve=ecdsa.SECP256k1,
-                                                  hashfunc=hashlib.sha256).get_verifying_key()
+        public_key = ecdsa.SigningKey.from_string(
+            string=self.private_key,
+            curve=ecdsa.SECP256k1,
+            hashfunc=hashlib.sha256).get_verifying_key()
 
         self.address = self.w3.toChecksumAddress(
-            "0x" + self.w3.sha3(hexstr=public_key.to_string().hex())[12:].hex())
+            "0x" + self.w3.sha3(
+                hexstr=public_key.to_string().hex())[12:].hex())
 
     def get_address(self):
         return self.address
 
     def transact(self, transaction, out_f):
-        raw_transaction = sign_transaction_with_private_key(self.w3, self.private_key, transaction)
+        raw_transaction = sign_transaction_with_private_key(self.w3,
+                                                            self.private_key,
+                                                            transaction)
         return send_and_wait_for_transaction(raw_transaction, self.w3, out_f)
 
     def sign_message_after_soliditySha3(self, message):
-        return sign_message_with_private_key(self.w3, self.private_key, message)
+        return sign_message_with_private_key(self.w3,
+                                             self.private_key,
+                                             message)
 
 
 class KeyStoreIdentityProvider(IdentityProvider):
@@ -67,13 +77,13 @@ class KeyStoreIdentityProvider(IdentityProvider):
         try:
             with open(path_to_keystore) as keyfile:
                 encrypted_key = keyfile.read()
-                self.address = self.w3.toChecksumAddress(json.loads(encrypted_key)["address"])
+                self.address = self.w3.toChecksumAddress(
+                    json.loads(encrypted_key)["address"])
                 self.path_to_keystore = path_to_keystore
                 self.private_key = None
         except CommException:
-            raise RuntimeError(
-                "Error decrypting your keystore. Are you sure it is the correct path?")
-
+            raise RuntimeError("Error decrypting your keystore. "
+                               "Are you sure it is the correct path?")
 
     def get_address(self):
         return self.address
@@ -81,17 +91,26 @@ class KeyStoreIdentityProvider(IdentityProvider):
     def transact(self, transaction, out_f):
 
         if self.private_key is None:
-            self.private_key = unlock_keystore_with_password(self.w3, self.path_to_keystore)
+            self.private_key = unlock_keystore_with_password(
+                self.w3,
+                self.path_to_keystore)
 
-        raw_transaction = sign_transaction_with_private_key(self.w3, self.private_key, transaction)
+        raw_transaction = sign_transaction_with_private_key(
+            self.w3,
+            self.private_key,
+            transaction)
         return send_and_wait_for_transaction(raw_transaction, self.w3, out_f)
 
     def sign_message_after_soliditySha3(self, message):
 
         if self.private_key is None:
-            self.private_key = unlock_keystore_with_password(self.w3, self.path_to_keystore)
+            self.private_key = unlock_keystore_with_password(
+                self.w3,
+                self.path_to_keystore)
 
-        return sign_message_with_private_key(self.w3, self.private_key, message)
+        return sign_message_with_private_key(self.w3,
+                                             self.private_key,
+                                             message)
 
 
 class RpcIdentityProvider(IdentityProvider):
@@ -123,22 +142,29 @@ class MnemonicIdentityProvider(IdentityProvider):
         account = change_subtree.subkey(i=index)
         self.private_key = account.secret_exponent().to_bytes(32, 'big')
 
-        public_key = ecdsa.SigningKey.from_string(string=self.private_key,
-                                                  curve=ecdsa.SECP256k1,
-                                                  hashfunc=hashlib.sha256).get_verifying_key()
+        public_key = ecdsa.SigningKey.from_string(
+            string=self.private_key,
+            curve=ecdsa.SECP256k1,
+            hashfunc=hashlib.sha256).get_verifying_key()
 
         self.address = self.w3.toChecksumAddress(
-            "0x" + self.w3.sha3(hexstr=public_key.to_string().hex())[12:].hex())
+            "0x" + self.w3.sha3(
+                hexstr=public_key.to_string().hex())[12:].hex())
 
     def get_address(self):
         return self.address
 
     def transact(self, transaction, out_f):
-        raw_transaction = sign_transaction_with_private_key(self.w3, self.private_key, transaction)
+        raw_transaction = sign_transaction_with_private_key(
+            self.w3,
+            self.private_key,
+            transaction)
         return send_and_wait_for_transaction(raw_transaction, self.w3, out_f)
 
     def sign_message_after_soliditySha3(self, message):
-        return sign_message_with_private_key(self.w3, self.private_key, message)
+        return sign_message_with_private_key(self.w3,
+                                             self.private_key,
+                                             message)
 
 
 class TrezorIdentityProvider(IdentityProvider):
@@ -157,15 +183,19 @@ class TrezorIdentityProvider(IdentityProvider):
 
     def transact(self, transaction, out_f):
         print("Sending transaction to trezor for signature...\n", file=out_f)
-        signature = self.client.ethereum_sign_tx(n=[44 + BIP32_HARDEN, 60 + BIP32_HARDEN,
-                                                    BIP32_HARDEN, 0, self.index],
-                                                 nonce=transaction["nonce"],
-                                                 gas_price=transaction["gasPrice"],
-                                                 gas_limit=transaction["gas"],
-                                                 to=bytearray.fromhex(
-                                                     transaction["to"][2:]),
-                                                 value=transaction["value"],
-                                                 data=bytearray.fromhex(transaction["data"][2:]))
+        signature = self.client.ethereum_sign_tx(
+            n=[44 + BIP32_HARDEN,
+               60 + BIP32_HARDEN,
+               BIP32_HARDEN,
+               0,
+               self.index],
+            nonce=transaction["nonce"],
+            gas_price=transaction["gasPrice"],
+            gas_limit=transaction["gas"],
+            to=bytearray.fromhex(
+                transaction["to"][2:]),
+            value=transaction["value"],
+            data=bytearray.fromhex(transaction["data"][2:]))
 
         transaction.pop("from")
         unsigned_transaction = serializable_unsigned_transaction_from_dict(
@@ -182,7 +212,9 @@ class TrezorIdentityProvider(IdentityProvider):
                                         BIP32_HARDEN,
                                         0,
                                         self.index])
-        return self.client.call(proto.EthereumSignMessage(address_n=n, message=message)).signature
+        return self.client.call(proto.EthereumSignMessage(
+            address_n=n,
+            message=message)).signature
 
 
 class LedgerIdentityProvider(IdentityProvider):
@@ -196,8 +228,8 @@ class LedgerIdentityProvider(IdentityProvider):
         try:
             self.dongle = getDongle(False)
         except CommException:
-            raise RuntimeError(
-                "Received commException from ledger. Are you sure your device is plugged in?")
+            raise RuntimeError("Received commException from ledger. "
+                               "Are you sure your device is plugged in?")
         self.dongle_path = parse_bip32_path("44'/60'/0'/0/{}".format(index))
         apdu = LedgerIdentityProvider.GET_ADDRESS_OP
         apdu += bytearray([len(self.dongle_path) + 1,
@@ -205,12 +237,14 @@ class LedgerIdentityProvider(IdentityProvider):
         try:
             result = self.dongle.exchange(apdu)
         except CommException:
-            raise RuntimeError("Received commException from ledger. Are you sure your device is unlocked and the "
+            raise RuntimeError("Received commException from ledger. "
+                               "Are you sure your device is unlocked and the "
                                "Ethereum app is running?")
 
         offset = 1 + result[0]
-        self.address = self.w3.toChecksumAddress(bytes(result[offset + 1: offset + 1 + result[offset]])
-                                                 .decode("utf-8"))
+        self.address = self.w3.toChecksumAddress(
+            bytes(result[offset + 1:
+                         offset + 1 + result[offset]]).decode("utf-8"))
 
     def get_address(self):
         return self.address
@@ -226,44 +260,48 @@ class LedgerIdentityProvider(IdentityProvider):
         )
 
         encoded_tx = rlp.encode(tx, UnsignedTransaction)
+        remaining_tx = []
 
         overflow = len(self.dongle_path) + 1 + len(encoded_tx) - 255
 
         if overflow > 0:
-            encoded_tx, remaining_tx = encoded_tx[:-
-                                                  overflow], encoded_tx[-overflow:]
+            encoded_tx, remaining_tx = encoded_tx[:-overflow],\
+                                       encoded_tx[-overflow:]
 
         apdu = LedgerIdentityProvider.SIGN_TX_OP
         apdu += bytearray([len(self.dongle_path) + 1 +
                            len(encoded_tx), int(len(self.dongle_path) / 4)])
         apdu += self.dongle_path + encoded_tx
         try:
-            print("Sending transaction to ledger for signature...\n", file=out_f)
+            print("Sending transaction to ledger for signature...\n",
+                  file=out_f)
             result = self.dongle.exchange(apdu)
             while overflow > 0:
                 encoded_tx = remaining_tx
                 overflow = len(encoded_tx) - 255
 
                 if overflow > 0:
-                    encoded_tx, remaining_tx = encoded_tx[:-
-                                                          overflow], encoded_tx[-overflow:]
+                    encoded_tx, remaining_tx = encoded_tx[:-overflow],\
+                                               encoded_tx[-overflow:]
 
                 apdu = LedgerIdentityProvider.SIGN_TX_OP_CONT
                 apdu += bytearray([len(encoded_tx)])
                 apdu += encoded_tx
                 result = self.dongle.exchange(apdu)
         except CommException:
-            raise RuntimeError("Received commException from ledger. Are you sure your device is unlocked and the "
+            raise RuntimeError("Received commException from ledger. "
+                               "Are you sure your device is unlocked and the "
                                "Ethereum app is running?")
 
         transaction.pop("from")
         unsigned_transaction = serializable_unsigned_transaction_from_dict(
             transaction)
-        raw_transaction = encode_transaction(unsigned_transaction,
-                                             vrs=(result[0],
-                                                  int.from_bytes(
-                                                      result[1:33], byteorder="big"),
-                                                  int.from_bytes(result[33:65], byteorder="big")))
+        raw_transaction = encode_transaction(
+            unsigned_transaction,
+            vrs=(result[0],
+                 int.from_bytes(
+                     result[1:33], byteorder="big"),
+                 int.from_bytes(result[33:65], byteorder="big")))
         return send_and_wait_for_transaction(raw_transaction, self.w3, out_f)
 
     def sign_message_after_soliditySha3(self, message):
@@ -274,7 +312,8 @@ class LedgerIdentityProvider(IdentityProvider):
         try:
             result = self.dongle.exchange(apdu)
         except CommException:
-            raise RuntimeError("Received commException from ledger. Are you sure your device is unlocked and the "
+            raise RuntimeError("Received commException from ledger. "
+                               "Are you sure your device is unlocked and the "
                                "Ethereum app is running?")
 
         return result[1:] + result[0:1]
@@ -337,15 +376,17 @@ def get_identity_types():
 
 
 def sign_transaction_with_private_key(w3, private_key, transaction):
-    return w3.eth.account.signTransaction(transaction, private_key).rawTransaction
+    return w3.eth.account.signTransaction(transaction,
+                                          private_key).rawTransaction
+
 
 def sign_message_with_private_key(w3, private_key, message):
     h = defunct_hash_message(message)
     return w3.eth.account.signHash(h, private_key).signature
+
 
 def unlock_keystore_with_password(w3, path_to_keystore):
     password = getpass.getpass("Password : ") or ""
     with open(path_to_keystore) as keyfile:
         encrypted_key = keyfile.read()
         return w3.eth.account.decrypt(encrypted_key, password)
-    
