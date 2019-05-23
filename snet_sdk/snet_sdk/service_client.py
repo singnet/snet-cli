@@ -24,18 +24,20 @@ class ServiceClient:
         self.group = group
         self.metadata = metadata
         self.payment_channel_management_strategy = payment_channel_management_strategy
-        self.payment_channel_state_service_client = self._generate_payment_channel_state_service_client()
         self.expiry_threshold = self.metadata.payment_expiration_threshold
-        self.stub = self._generate_grpc_stub(service_stub)
+        self._base_grpc_channel = self._get_grpc_channel()
+        self.grpc_channel = grpc.intercept_channel(self._base_grpc_channel, generic_client_interceptor.create(self._intercept_call))
+        self.payment_channel_state_service_client = self._generate_payment_channel_state_service_client()
+        self.service = self._generate_grpc_stub(service_stub)
         self.payment_channels = []
         self.last_read_block = 0
 
 
     def _generate_grpc_stub(self, service_stub):
-        grpc_channel = self._get_grpc_channel()
+        grpc_channel = self._base_grpc_channel
         disable_blockchain_operations = self.options.get("disable_blockchain_operations", False)
         if disable_blockchain_operations is False:
-            grpc_channel = grpc.intercept_channel(grpc_channel, generic_client_interceptor.create(self._intercept_call))
+            grpc_channel = self.grpc_channel
         stub_instance = service_stub(grpc_channel)
         return stub_instance
 
@@ -108,7 +110,7 @@ class ServiceClient:
 
 
     def _generate_payment_channel_state_service_client(self):
-        grpc_channel = self._get_grpc_channel()
+        grpc_channel = self._base_grpc_channel
         return state_service_pb2_grpc.PaymentChannelStateServiceStub(grpc_channel)
 
 
