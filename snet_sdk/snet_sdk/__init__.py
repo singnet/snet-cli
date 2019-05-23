@@ -25,7 +25,7 @@ from snet_sdk.account import Account
 from snet_sdk.mpe_contract import MPEContract
 from snet_sdk.payment_channel_management_strategies.default import PaymentChannelManagementStrategy
 
-__version__ = "0.0.1"
+__version__ = "0.0.2"
 
 
 class SnetSDK:

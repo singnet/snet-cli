@@ -19,5 +19,6 @@ setup(
         'web3==4.2.1',
         'ipfsapi==0.4.2.post1',
         'rfc3986==1.1.0'
-    ]
+    ],
+    include_package_data=True
 )
