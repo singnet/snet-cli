@@ -54,7 +54,6 @@ class SnetSDK:
         self.registry_contract = get_contract_object(self.web3, "Registry.json")
         self.account = Account(self.web3, config, self.mpe_contract)
 
-        self.block_offset = self._config.get("block_offset", 604800)
 
     def create_service_client(self, org_id, service_id, service_stub, group_name="default_group", payment_channel_management_strategy=PaymentChannelManagementStrategy, options={}):
         service_metadata = self.service_metadata(org_id, service_id)
