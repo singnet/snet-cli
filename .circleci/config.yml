@@ -37,7 +37,8 @@ jobs:
     - run:
         name: Unit tests
         command: |
-            bash -ex test/utils/run_all_unit.sh
+            sudo pip3 install nose
+            nosetests -v --with-doctest
     - run:
         name: Functional tests
         command: |
