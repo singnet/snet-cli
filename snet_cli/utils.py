@@ -148,15 +148,15 @@ def compile_proto(entry_path, codegen_dir, proto_file=None, target_language="pyt
             os.makedirs(codegen_dir)
         proto_include = pkg_resources.resource_filename('grpc_tools', '_proto')
 
-        protoc_args = [
-            "protoc",
+        compiler_args = [
             "-I{}".format(entry_path),
             "-I{}".format(proto_include)
         ]
 
         if target_language == "python":
-            protoc_args.append("--python_out={}".format(codegen_dir))
-            protoc_args.append("--grpc_python_out={}".format(codegen_dir)) 
+            compiler_args.insert(0, "protoc")
+            compiler_args.append("--python_out={}".format(codegen_dir))
+            compiler_args.append("--grpc_python_out={}".format(codegen_dir)) 
             compiler = protoc
         elif target_language == "nodejs":
             resources_path = Path(os.path.dirname(os.path.realpath(__file__))).joinpath("resources")
@@ -165,18 +165,17 @@ def compile_proto(entry_path, codegen_dir, proto_file=None, target_language="pyt
             if not os.path.isfile(protoc_node_compiler_path) or not os.path.isfile(grpc_node_plugin_path):
                 print("Missing required node.js protoc compiler. Retrieving from npm...")
                 subprocess.run(["npm", "install"], cwd=resources_path)
-            protoc_args.remove("protoc")
-            protoc_args.append("--js_out=import_style=commonjs,binary:{}".format(codegen_dir))
-            protoc_args.append("--grpc_out={}".format(codegen_dir))
-            protoc_args.append("--plugin=protoc-gen-grpc={}".format(grpc_node_plugin_path))
+            compiler_args.append("--js_out=import_style=commonjs,binary:{}".format(codegen_dir))
+            compiler_args.append("--grpc_out={}".format(codegen_dir))
+            compiler_args.append("--plugin=protoc-gen-grpc={}".format(grpc_node_plugin_path))
             compiler = lambda args: subprocess.run([str(protoc_node_compiler_path)] + args)
 
         if proto_file:
-            protoc_args.append(str(proto_file))
+            compiler_args.append(str(proto_file))
         else:
-            protoc_args.extend([str(p) for p in entry_path.glob("**/*.proto")])
+            compiler_args.extend([str(p) for p in entry_path.glob("**/*.proto")])
 
-        if not compiler(protoc_args):
+        if not compiler(compiler_args):
             return True
         else:
             return False
