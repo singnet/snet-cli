@@ -1,12 +1,11 @@
 import abc
 import json
-import hashlib
 import struct
 import time
 import getpass
 
+import web3
 from pycoin.key.BIP32Node import BIP32Node
-import ecdsa
 import rlp
 from eth_account.internal.transactions import serializable_unsigned_transaction_from_dict, encode_transaction, \
     UnsignedTransaction
@@ -43,12 +42,7 @@ class KeyIdentityProvider(IdentityProvider):
         else:
             self.private_key = bytes(bytearray.fromhex(private_key))
 
-        public_key = ecdsa.SigningKey.from_string(string=self.private_key,
-                                                  curve=ecdsa.SECP256k1,
-                                                  hashfunc=hashlib.sha256).get_verifying_key()
-
-        self.address = self.w3.sha3(hexstr=public_key.to_string().hex())[12:].hex()
-        self.address = self.w3.toChecksumAddress(self.address) if self.address.startswith("0x") else self.w3.toChecksumAddress("0x" + self.address)
+        self.address = web3.eth.Account.privateKeyToAccount(self.private_key).address
 
     def get_address(self):
         return self.address
@@ -122,13 +116,7 @@ class MnemonicIdentityProvider(IdentityProvider):
         change_subtree = account_subtree.subkey(i=0)
         account = change_subtree.subkey(i=index)
         self.private_key = account.secret_exponent().to_bytes(32, 'big')
-
-        public_key = ecdsa.SigningKey.from_string(string=self.private_key,
-                                                  curve=ecdsa.SECP256k1,
-                                                  hashfunc=hashlib.sha256).get_verifying_key()
-        
-        self.address = self.w3.sha3(hexstr=public_key.to_string().hex())[12:].hex()
-        self.address = self.w3.toChecksumAddress(self.address) if self.address.startswith("0x") else self.w3.toChecksumAddress("0x" + self.address)
+        self.address = web3.eth.Account.privateKeyToAccount(self.private_key).address
 
     def get_address(self):
         return self.address
