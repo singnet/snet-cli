@@ -47,8 +47,8 @@ class KeyIdentityProvider(IdentityProvider):
                                                   curve=ecdsa.SECP256k1,
                                                   hashfunc=hashlib.sha256).get_verifying_key()
 
-        self.address = self.w3.toChecksumAddress(
-            "0x" + self.w3.sha3(hexstr=public_key.to_string().hex())[12:].hex())
+        self.address = self.w3.sha3(hexstr=public_key.to_string().hex())[12:].hex()
+        self.address = self.w3.toChecksumAddress(self.address) if self.address.startswith("0x") else self.w3.toChecksumAddress("0x" + self.address)
 
     def get_address(self):
         return self.address
@@ -126,9 +126,9 @@ class MnemonicIdentityProvider(IdentityProvider):
         public_key = ecdsa.SigningKey.from_string(string=self.private_key,
                                                   curve=ecdsa.SECP256k1,
                                                   hashfunc=hashlib.sha256).get_verifying_key()
-
-        self.address = self.w3.toChecksumAddress(
-            "0x" + self.w3.sha3(hexstr=public_key.to_string().hex())[12:].hex())
+        
+        self.address = self.w3.sha3(hexstr=public_key.to_string().hex())[12:].hex()
+        self.address = self.w3.toChecksumAddress(self.address) if self.address.startswith("0x") else self.w3.toChecksumAddress("0x" + self.address)
 
     def get_address(self):
         return self.address
