@@ -1,5 +1,6 @@
 import json
 import os
+import subprocess
 import functools
 
 from urllib.parse import urlparse
@@ -141,24 +142,41 @@ def get_cli_version():
     return pkg_resources.get_distribution("snet-cli").version
 
 
-def compile_proto(entry_path, codegen_dir, proto_file=None):
+def compile_proto(entry_path, codegen_dir, proto_file=None, target_language="python"):
     try:
         if not os.path.exists(codegen_dir):
             os.makedirs(codegen_dir)
         proto_include = pkg_resources.resource_filename('grpc_tools', '_proto')
+
         protoc_args = [
             "protoc",
             "-I{}".format(entry_path),
-            '-I{}'.format(proto_include),
-            "--python_out={}".format(codegen_dir),
-            "--grpc_python_out={}".format(codegen_dir)
+            "-I{}".format(proto_include)
         ]
+
+        if target_language == "python":
+            protoc_args.append("--python_out={}".format(codegen_dir))
+            protoc_args.append("--grpc_python_out={}".format(codegen_dir)) 
+            compiler = protoc
+        elif target_language == "nodejs":
+            resources_path = Path(os.path.dirname(os.path.realpath(__file__))).joinpath("resources")
+            protoc_node_compiler_path = resources_path.joinpath("node_modules").joinpath("grpc-tools").joinpath("bin").joinpath("protoc.js").absolute()
+            grpc_node_plugin_path = resources_path.joinpath("node_modules").joinpath("grpc-tools").joinpath("bin").joinpath("grpc_node_plugin").resolve()
+            if not os.path.isfile(protoc_node_compiler_path) or not os.path.isfile(grpc_node_plugin_path):
+                print("Missing required node.js protoc compiler. Retrieving from npm...")
+                subprocess.run(["npm", "install"], cwd=resources_path)
+            protoc_args.remove("protoc")
+            protoc_args.append("--js_out=import_style=commonjs,binary:{}".format(codegen_dir))
+            protoc_args.append("--grpc_out={}".format(codegen_dir))
+            protoc_args.append("--plugin=protoc-gen-grpc={}".format(grpc_node_plugin_path))
+            compiler = lambda args: subprocess.run([str(protoc_node_compiler_path)] + args)
+
         if proto_file:
             protoc_args.append(str(proto_file))
         else:
             protoc_args.extend([str(p) for p in entry_path.glob("**/*.proto")])
 
-        if not protoc(protoc_args):
+        if not compiler(protoc_args):
             return True
         else:
             return False

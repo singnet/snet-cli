@@ -1080,7 +1080,7 @@ def add_sdk_options(parser):
     subparsers = parser.add_subparsers(title="Commands", metavar="COMMAND")
     subparsers.required = True
 
-    supported_languages = ["python"]
+    supported_languages = ["python", "nodejs"]
 
     p = subparsers.add_parser("generate-client-library",
                               help="Generate compiled client libraries to call services using your language of choice")
