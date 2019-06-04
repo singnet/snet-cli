@@ -1092,6 +1092,7 @@ def add_sdk_options(parser):
     add_p_service_in_registry(p)
     p.add_argument("protodir",
                    nargs="?",
+                   default="client_libraries",
                    help="Directory where to output the generated client libraries",
                    metavar="PROTO_DIR")
     add_eth_call_arguments(p)
