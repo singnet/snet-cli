@@ -6,6 +6,7 @@ __pycache__/
 snet_cli/resources/contracts/abi
 snet_cli/resources/contracts/networks
 snet_cli/resources/proto/*.py
+snet_cli/resources/node_modules
 build/
 dist/
 client_libraries/

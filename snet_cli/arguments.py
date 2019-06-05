@@ -1080,7 +1080,7 @@ def add_sdk_options(parser):
     subparsers = parser.add_subparsers(title="Commands", metavar="COMMAND")
     subparsers.required = True
 
-    supported_languages = ["python"]
+    supported_languages = ["python", "nodejs"]
 
     p = subparsers.add_parser("generate-client-library",
                               help="Generate compiled client libraries to call services using your language of choice")
@@ -1092,6 +1092,7 @@ def add_sdk_options(parser):
     add_p_service_in_registry(p)
     p.add_argument("protodir",
                    nargs="?",
+                   default="client_libraries",
                    help="Directory where to output the generated client libraries",
                    metavar="PROTO_DIR")
     add_eth_call_arguments(p)
