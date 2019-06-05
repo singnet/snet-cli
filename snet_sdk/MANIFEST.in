@@ -1,3 +1,2 @@
-include snet_sdk/resources/proto/*
 include snet_sdk/resources/contracts/abi/*
 include snet_sdk/resources/contracts/networks/*

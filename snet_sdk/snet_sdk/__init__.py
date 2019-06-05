@@ -1,31 +1,18 @@
-import operator
-from functools import reduce
-import sys
-import os 
-import importlib
 import json
 import base64
-from pathlib import PurePath, Path
 from urllib.parse import urljoin
 
-import hashlib
-import collections
 import web3
 from web3.gas_strategies.rpc import rpc_gas_price_strategy
-from eth_account.messages import defunct_hash_message
 from rfc3986 import urlparse
 import ipfsapi
-from web3.utils.datastructures import AttributeDict, MutableAttributeDict
-
-import snet_sdk.generic_client_interceptor as generic_client_interceptor
+from web3.utils.datastructures import AttributeDict
 
 from snet_sdk.utils import get_contract_object
 from snet_sdk.service_client import ServiceClient
 from snet_sdk.account import Account
 from snet_sdk.mpe_contract import MPEContract
 from snet_sdk.payment_channel_management_strategies.default import PaymentChannelManagementStrategy
-
-__version__ = "0.0.2"
 
 
 class SnetSDK:
