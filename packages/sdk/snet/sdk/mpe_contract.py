@@ -3,11 +3,10 @@ import base64
 import web3
 from snet.sdk.payment_channel import PaymentChannel
 
-from snet.snet_cli.utils import get_contract_object, get_contract_deployment_block 
+from snet.snet_cli.utils import get_contract_object, get_contract_deployment_block
 
 
 BLOCKS_PER_BATCH = 20000
-EVENT_ABI = {'anonymous': False, 'inputs': [{'indexed': False, 'name': 'channelId', 'type': 'uint256'}, {'indexed': False, 'name': 'nonce', 'type': 'uint256'}, {'indexed': True, 'name': 'sender', 'type': 'address'}, {'indexed': False, 'name': 'signer', 'type': 'address'}, {'indexed': True, 'name': 'recipient', 'type': 'address'}, {'indexed': True, 'name': 'groupId', 'type': 'bytes32'}, {'indexed': False, 'name': 'amount', 'type': 'uint256'}, {'indexed': False, 'name': 'expiration', 'type': 'uint256'}], 'name': 'ChannelOpen', 'type': 'event'} 
 
 
 class MPEContract:
@@ -32,7 +31,8 @@ class MPEContract:
             logs = logs + self.web3.eth.getLogs({"fromBlock" : from_block, "toBlock": to_block, "address": self.contract.address, "topics": self.event_topics})
             from_block = to_block + 1
 
-        channels_opened = list(filter(lambda channel: channel.sender == account.address and channel.signer == account.signer_address and channel.recipient == service.group["payment_address"], [web3.utils.events.get_event_data(EVENT_ABI, l)["args"] for l in logs]))
+        event_abi = self.contract._find_matching_event_abi(event_name="ChannelOpen")
+        channels_opened = list(filter(lambda channel: channel.sender == account.address and channel.signer == account.signer_address and channel.recipient == service.group["payment_address"], [web3.utils.events.get_event_data(event_abi, l)["args"] for l in logs]))
         return list(map(lambda channel: PaymentChannel(channel["channelId"], self.web3, account, service, self), channels_opened))
 
 

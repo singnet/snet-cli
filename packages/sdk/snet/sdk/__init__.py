@@ -43,13 +43,17 @@ class SnetSDK:
         self.account = Account(self.web3, config, self.mpe_contract)
 
 
-    def create_service_client(self, org_id, service_id, service_stub, group_name="default_group", payment_channel_management_strategy=PaymentChannelManagementStrategy, options={}):
+    def create_service_client(self, org_id, service_id, service_stub, group_name="default_group", payment_channel_management_strategy=PaymentChannelManagementStrategy, options=None):
+        if options is None:
+            options = dict()
+
         service_metadata = self.service_metadata(org_id, service_id)
         try:
             group = next(filter(lambda group: group["group_name"] == group_name, service_metadata.groups))
         except StopIteration:
             raise ValueError("Group[name: {}] not found for orgId: {} and serviceId: {}".format(group_name, org_id, service_id))
-        service_client = ServiceClient(self, service_metadata, group, service_stub, payment_channel_management_strategy(self), options)
+        strategy = payment_channel_management_strategy(self)
+        service_client = ServiceClient(self, service_metadata, group, service_stub, strategy, options)
         return service_client
 
     def service_metadata(self, org_id, service_id):
