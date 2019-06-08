@@ -1,7 +1,0 @@
-venv/
-snet_cli.egg-info/
-snet_cli/resources/contracts/abi
-snet_cli/resources/contracts/networks
-snet_cli/resources/proto/*.py
-build/
-dist/

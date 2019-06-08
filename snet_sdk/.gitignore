@@ -1,6 +1,0 @@
-venv/
-snet_sdk.egg-info/
-snet_sdk/resources/contracts/abi
-snet_sdk/resources/contracts/networks
-build/
-dist/

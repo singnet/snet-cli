@@ -1,3 +1,5 @@
+venv/
 .idea/
 __pycache__
 blockchain/node_modules
+snet.egg-info/
