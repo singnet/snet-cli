@@ -28,7 +28,7 @@ class MPEClientCommand(MPEChannelCommand):
         sign_address = self.ident.w3.eth.account.recoverHash(message_hash, signature=signature)
         return sign_address == self.ident.address
 
-    def _assert_vilidity_of_my_signature_or_zero_amount(self, signature, channel_id, nonce, signed_amount, error_message):
+    def _assert_validity_of_my_signature_or_zero_amount(self, signature, channel_id, nonce, signed_amount, error_message):
         if (signed_amount > 0):
             if (not self._verify_my_signature(signature, self.get_mpe_address(), channel_id, nonce, signed_amount)):
                 raise Exception(error_message)
@@ -176,11 +176,11 @@ class MPEClientCommand(MPEChannelCommand):
         state["current_signed_amount"]  = int.from_bytes(response.current_signed_amount, byteorder='big')
 
         error_message = "Error in _get_channel_state_from_server. My own signature from the server is not valid."
-        self._assert_vilidity_of_my_signature_or_zero_amount(bytes(response.current_signature),  channel_id, state["current_nonce"],     state["current_signed_amount"],  error_message)
+        self._assert_validity_of_my_signature_or_zero_amount(bytes(response.current_signature),  channel_id, state["current_nonce"],     state["current_signed_amount"],  error_message)
 
         if (hasattr(response, "old_nonce_signed_amount")):
             state["old_nonce_signed_amount"] = int.from_bytes(response.old_nonce_signed_amount, byteorder='big')
-            self._assert_vilidity_of_my_signature_or_zero_amount(bytes(response.old_nonce_signature), channel_id, state["current_nonce"] - 1, state["old_nonce_signed_amount"], error_message)
+            self._assert_validity_of_my_signature_or_zero_amount(bytes(response.old_nonce_signature), channel_id, state["current_nonce"] - 1, state["old_nonce_signed_amount"], error_message)
 
         return state
 
