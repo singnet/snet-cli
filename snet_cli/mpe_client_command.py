@@ -3,11 +3,10 @@ import base64
 from pathlib import Path
 import json
 import sys
-import grpc
 from eth_account.messages import defunct_hash_message
 from snet_cli.utils_proto import import_protobuf_from_dir, switch_to_json_payload_encoding
 from snet_cli.utils_agi2cogs import cogs2stragi
-from snet_cli.utils import open_grpc_channel, rgetattr, compile_proto
+from snet_cli.utils import open_grpc_channel, rgetattr
 
 # we inherit MPEChannelCommand because client needs channels
 class MPEClientCommand(MPEChannelCommand):
@@ -157,14 +156,17 @@ class MPEClientCommand(MPEChannelCommand):
 
     # III. Stateless client related functions
     def _get_channel_state_from_server(self, grpc_channel, channel_id):
+
         # We should simply statically import everything, but it doesn't work because of the following issue in protobuf: https://github.com/protocolbuffers/protobuf/issues/1491
         #from snet_cli.resources.proto.state_service_pb2      import ChannelStateRequest            as request_class
         #from snet_cli.resources.proto.state_service_pb2_grpc import PaymentChannelStateServiceStub as stub_class
         stub_class, request_class, _ = import_protobuf_from_dir(Path(__file__).absolute().parent.joinpath("resources", "proto"), "GetChannelState")
-        message   = self.w3.soliditySha3(["uint256"], [channel_id])
+        current_block = self.ident.w3.eth.blockNumber
+        message =  self.w3.soliditySha3( ["string",             "uint256",   "uint256"],
+                                         ["__get_channel_state", channel_id, current_block])
         signature = self.ident.sign_message_after_soliditySha3(message)
 
-        request   = request_class(channel_id = self.w3.toBytes(channel_id), signature = bytes(signature))
+        request   = request_class(channel_id = self.w3.toBytes(channel_id), signature = bytes(signature), current_block = current_block)
 
         stub     = stub_class(grpc_channel)
         response = getattr(stub, "GetChannelState")(request)
