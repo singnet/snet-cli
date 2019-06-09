@@ -24,9 +24,13 @@ service PaymentChannelStateService {
 message ChannelStateRequest {
     // channel_id contains id of the channel which state is requested.
     bytes channel_id = 1;
+
     // signature is a client signature of the message which contains
     // channel_id. It is used for client authorization.
     bytes signature = 2;
+
+    //current block number (signature will be valid only for short time around this block number)
+    uint64 current_block = 3;
 }
 
 // ChannelStateReply message contains a latest channel state. current_nonce and
