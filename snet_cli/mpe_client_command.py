@@ -162,8 +162,9 @@ class MPEClientCommand(MPEChannelCommand):
         #from snet_cli.resources.proto.state_service_pb2_grpc import PaymentChannelStateServiceStub as stub_class
         stub_class, request_class, _ = import_protobuf_from_dir(Path(__file__).absolute().parent.joinpath("resources", "proto"), "GetChannelState")
         current_block = self.ident.w3.eth.blockNumber
-        message =  self.w3.soliditySha3( ["string",             "uint256",   "uint256"],
-                                         ["__get_channel_state", channel_id, current_block])
+        mpe_address = self.get_mpe_address()
+        message =  self.w3.soliditySha3( ["string",             "address",    "uint256",   "uint256"],
+                                         ["__get_channel_state", mpe_address, channel_id, current_block])
         signature = self.ident.sign_message_after_soliditySha3(message)
 
         request   = request_class(channel_id = self.w3.toBytes(channel_id), signature = bytes(signature), current_block = current_block)
