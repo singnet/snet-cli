@@ -10,10 +10,10 @@ from web3.utils.encoding import pad_hex
 from web3.utils.events import get_event_data
 
 from snet_cli.mpe_service_command import MPEServiceCommand
-from snet_cli.mpe_service_metadata import load_mpe_service_metadata
-from snet_cli.utils_ipfs import safe_extract_proto_from_ipfs
 from snet_cli.utils_agi2cogs import cogs2stragi
 
+from snet.snet_cli.utils_ipfs import safe_extract_proto_from_ipfs
+from snet.snet_cli.mpe_service_metadata import load_mpe_service_metadata
 from snet.snet_cli.utils import compile_proto, get_contract_def, abi_get_element_by_name, abi_decode_struct_to_dict
 
 

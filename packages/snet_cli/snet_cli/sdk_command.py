@@ -3,9 +3,8 @@ from pathlib import Path, PurePath
 from tempfile import TemporaryDirectory
 
 from snet_cli.mpe_service_command import MPEServiceCommand
-from snet_cli.utils_ipfs import bytesuri_to_hash, get_from_ipfs_and_checkhash, safe_extract_proto_from_ipfs
-from snet_cli.mpe_service_metadata import mpe_service_metadata_from_json
 
+from snet.snet_cli.utils_ipfs import bytesuri_to_hash, get_from_ipfs_and_checkhash, safe_extract_proto_from_ipfs
 from snet.snet_cli.utils import type_converter, bytes32_to_str, compile_proto
 
 class SDKCommand(MPEServiceCommand):

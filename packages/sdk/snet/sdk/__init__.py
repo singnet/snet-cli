@@ -3,7 +3,7 @@ import base64
 from urllib.parse import urljoin
 
 import web3
-from web3.gas_strategies.rpc import rpc_gas_price_strategy
+from web3.gas_strategies.time_based import medium_gas_price_strategy
 from rfc3986 import urlparse
 import ipfsapi
 from web3.datastructures import AttributeDict
@@ -14,6 +14,8 @@ from snet.sdk.mpe_contract import MPEContract
 from snet.sdk.payment_channel_management_strategies.default import PaymentChannelManagementStrategy
 
 from snet.snet_cli.utils import get_contract_object
+from snet.snet_cli.utils_ipfs import bytesuri_to_hash, get_from_ipfs_and_checkhash
+from snet.snet_cli.mpe_service_metadata import mpe_service_metadata_from_json
 
 
 class SnetSDK:
@@ -28,7 +30,7 @@ class SnetSDK:
         eth_rpc_endpoint = self._config.get("eth_rpc_endpoint", "https://mainnet.infura.io")
         provider = web3.HTTPProvider(eth_rpc_endpoint)
         self.web3 = web3.Web3(provider)
-        self.web3.eth.setGasPriceStrategy(rpc_gas_price_strategy)
+        self.web3.eth.setGasPriceStrategy(medium_gas_price_strategy)
 
         self.mpe_contract = MPEContract(self.web3)
 
@@ -43,20 +45,20 @@ class SnetSDK:
         self.account = Account(self.web3, config, self.mpe_contract)
 
 
-    def create_service_client(self, org_id, service_id, service_stub, group_name="default_group", payment_channel_management_strategy=PaymentChannelManagementStrategy, options=None):
+    def create_service_client(self, org_id, service_id, service_stub, group_name=None, payment_channel_management_strategy=PaymentChannelManagementStrategy, options=None):
         if options is None:
             options = dict()
 
-        service_metadata = self.service_metadata(org_id, service_id)
-        try:
-            group = next(filter(lambda group: group["group_name"] == group_name, service_metadata.groups))
-        except StopIteration:
-            raise ValueError("Group[name: {}] not found for orgId: {} and serviceId: {}".format(group_name, org_id, service_id))
+        service_metadata = self.get_service_metadata(org_id, service_id)
+        group = service_metadata.get_group(group_name)
         strategy = payment_channel_management_strategy(self)
         service_client = ServiceClient(self, service_metadata, group, service_stub, strategy, options)
         return service_client
 
-    def service_metadata(self, org_id, service_id):
+
+    def get_service_metadata(self, org_id, service_id):
         (found, registration_id, metadata_uri, tags) = self.registry_contract.functions.getServiceRegistrationById(bytes(org_id, "utf-8"), bytes(service_id, "utf-8")).call()
-        metadata = AttributeDict(json.loads(self.ipfs_client.cat(metadata_uri.rstrip(b"\0").decode('ascii')[7:])))
+        metadata_hash = bytesuri_to_hash(metadata_uri)
+        metadata_json = get_from_ipfs_and_checkhash(self.ipfs_client, metadata_hash)
+        metadata = mpe_service_metadata_from_json(metadata_json)
         return metadata

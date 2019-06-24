@@ -1,5 +1,6 @@
 import unittest
-from snet_cli.mpe_service_metadata import MPEServiceMetadata
+
+from snet.snet_cli.mpe_service_metadata import MPEServiceMetadata
 
 class TestStringMethods(unittest.TestCase):
     

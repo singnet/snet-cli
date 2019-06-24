@@ -15,9 +15,9 @@ from rfc3986 import urlparse
 from snet_cli.utils_config import get_contract_address, get_field_from_args_or_session, read_default_contract_address
 from snet_cli.identity import RpcIdentityProvider, MnemonicIdentityProvider, TrezorIdentityProvider, \
     LedgerIdentityProvider, KeyIdentityProvider, KeyStoreIdentityProvider
-from snet_cli.contract import Contract
 from snet_cli.identity import get_kws_for_identity_type
 
+from snet.snet_cli.contract import Contract
 from snet.snet_cli.utils import DefaultAttributeObject, get_web3, serializable, type_converter, get_contract_def, get_cli_version, bytes32_to_str
 
 

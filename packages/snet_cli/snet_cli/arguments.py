@@ -9,13 +9,13 @@ from snet_cli.commands import IdentityCommand, SessionSetCommand, SessionShowCom
 from snet_cli.identity import get_identity_types
 from snet_cli.mpe_account_command import MPEAccountCommand
 from snet_cli.mpe_service_command import MPEServiceCommand
-from snet_cli.mpe_channel_command import MPEChannelCommand
 from snet_cli.mpe_client_command import MPEClientCommand
 from snet_cli.mpe_treasurer_command import MPETreasurerCommand
 from snet_cli.sdk_command import SDKCommand
 from snet_cli.utils_agi2cogs import stragi2cogs
 from snet_cli.config import Config, get_session_keys, get_session_network_keys_removable
 
+from snet.snet_cli.mpe_channel_command import MPEChannelCommand
 from snet.snet_cli.utils import type_converter, get_contract_def, RESOURCES_PATH
 
 

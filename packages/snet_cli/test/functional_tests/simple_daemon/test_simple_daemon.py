@@ -2,9 +2,9 @@ from concurrent import futures
 import time
 import web3
 
-from snet_cli.mpe_channel_command import MPEChannelCommand
 from snet_cli.config import Config
 
+from snet.snet_cli.mpe_channel_command import MPEChannelCommand
 from snet.snet_cli.utils import compile_proto, DefaultAttributeObject
 
 

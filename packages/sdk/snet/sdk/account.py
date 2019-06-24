@@ -49,7 +49,7 @@ class Account:
     def _send_signed_transaction(self, contract_fn, *args):
         transaction = contract_fn(*args).buildTransaction({
             "chainId": int(self.web3.version.network),
-            "gas": DEFAULT_GAS, 
+            "gas": DEFAULT_GAS,
             "gasPrice": self._get_gas_price(),
             "nonce": self._get_nonce()
         })
