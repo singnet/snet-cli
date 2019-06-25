@@ -8,8 +8,9 @@ from snet_cli import arguments
 
 
 def create_subcommand_rst(subcommand_contents, name):
-    contents = subcommand_contents.replace("<<TITLE_PLACEHOLDER>>", name.title()).replace("<<PATH_PLACEHOLDER>>", name)
-    with open(name+".rst","w") as fp:
+    contents = subcommand_contents.replace(
+        "<<TITLE_PLACEHOLDER>>", name.title()).replace("<<PATH_PLACEHOLDER>>", name)
+    with open(name+".rst", "w") as fp:
         fp.write(contents)
         fp.flush()
         fp.close()
@@ -31,7 +32,7 @@ def generate_index_rst(index_contents, subcommand_contents):
                     print("File does not exist " + key)
                     create_subcommand_rst(subcommand_contents, key)
 
-    with open("index.rst","w") as fp:
+    with open("index.rst", "w") as fp:
         fp.write(index_contents)
         fp.flush()
         fp.close()
@@ -39,11 +40,11 @@ def generate_index_rst(index_contents, subcommand_contents):
 
 if not os.path.exists("index_template.tpl"):
     print("index template not found. Unable to proceed")
-    exit(1);
+    exit(1)
 
 if not os.path.exists("subcommand_template.tpl"):
     print("subcommand_template template not found. Unable to proceed")
-    exit(1);
+    exit(1)
 
 with open("index_template.tpl", "r") as fp:
     index_contents = fp.read()

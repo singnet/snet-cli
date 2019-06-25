@@ -7,8 +7,10 @@ def install_and_compile_proto():
     import snet.snet_cli
     from snet.snet_cli.utils import compile_proto as compile_proto
     from pathlib import Path
-    proto_dir = Path(__file__).absolute().parent.joinpath("snet", "snet_cli", "resources", "proto")
-    dest_dir = Path(snet.snet_cli.__file__).absolute().parent.joinpath("resources", "proto")
+    proto_dir = Path(__file__).absolute().parent.joinpath(
+        "snet", "snet_cli", "resources", "proto")
+    dest_dir = Path(snet.snet_cli.__file__).absolute(
+    ).parent.joinpath("resources", "proto")
     print(proto_dir, "->", dest_dir)
     for fn in proto_dir.glob('*.proto'):
         print("Compiling protobuf", fn)
@@ -20,7 +22,8 @@ class develop(_develop):
 
     def run(self):
         _develop.run(self)
-        self.execute(install_and_compile_proto, (), msg="Compile protocol buffers")
+        self.execute(install_and_compile_proto, (),
+                     msg="Compile protocol buffers")
 
 
 class install(_install):
@@ -28,7 +31,8 @@ class install(_install):
 
     def run(self):
         _install.run(self)
-        self.execute(install_and_compile_proto, (), msg="Compile protocol buffers")
+        self.execute(install_and_compile_proto, (),
+                     msg="Compile protocol buffers")
 
 
 version_dict = {}

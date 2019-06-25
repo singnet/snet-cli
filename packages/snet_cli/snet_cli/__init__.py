@@ -11,7 +11,7 @@ import argcomplete
 def main():
     try:
         argv = sys.argv[1:]
-        conf   = Config()
+        conf = Config()
         parser = arguments.get_root_parser(conf)
         argcomplete.autocomplete(parser)
 

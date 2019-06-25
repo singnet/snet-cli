@@ -1,7 +1,8 @@
 class Contract:
     def __init__(self, w3, address, abi):
         self.w3 = w3
-        self.contract = self.w3.eth.contract(address=self.w3.toChecksumAddress(address), abi=abi)
+        self.contract = self.w3.eth.contract(
+            address=self.w3.toChecksumAddress(address), abi=abi)
         self.abi = abi
 
     def call(self, function_name, *positional_inputs, **named_inputs):
@@ -20,8 +21,10 @@ class Contract:
     def process_receipt(self, receipt):
         events = []
 
-        contract_events = map(lambda e: e["name"], filter(lambda e: e["type"] == "event", self.abi))
+        contract_events = map(lambda e: e["name"], filter(
+            lambda e: e["type"] == "event", self.abi))
         for contract_event in contract_events:
-            events.extend(getattr(self.contract.events, contract_event)().processReceipt(receipt))
+            events.extend(getattr(self.contract.events,
+                                  contract_event)().processReceipt(receipt))
 
         return events

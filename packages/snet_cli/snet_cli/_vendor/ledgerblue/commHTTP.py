@@ -27,12 +27,13 @@ import sys
 import requests
 import json
 
+
 def hexstr(bstr):
-	if (sys.version_info.major == 3):
-		return hexlify(bstr).decode()
-	if (sys.version_info.major == 2):
-		return hexlify(bstr)
-	return "<undecoded APDU<"
+    if (sys.version_info.major == 3):
+        return hexlify(bstr).decode()
+    if (sys.version_info.major == 2):
+        return hexlify(bstr)
+    return "<undecoded APDU<"
 
 
 class HTTPProxy(object):
@@ -41,13 +42,13 @@ class HTTPProxy(object):
         self.remote_host = "http://" + remote_host
         self.debug = debug
 
-
     def exchange(self, apdu):
         if self.debug:
             print("=> %s" % hexstr(apdu))
-    
+
         try:
-            ret = requests.post(self.remote_host + "/send_apdu", params={"data": hexstr(apdu)})
+            ret = requests.post(self.remote_host + "/send_apdu",
+                                params={"data": hexstr(apdu)})
 
             while True:
                 ret = requests.post(self.remote_host + "/fetch_apdu")
@@ -57,23 +58,20 @@ class HTTPProxy(object):
                 else:
                     time.sleep(0.1)
 
-
             return bytearray(str(ret.text).decode("hex"))
         except Exception as e:
             print(e)
-
-
 
     def exchange_seph_event(self, event):
         if self.debug >= 3:
             print("=> %s" % hexstr(event))
 
         try:
-            ret = requests.post(self.remote_host + "/send_seph_event", params={"data": event.encode("hex")})
+            ret = requests.post(
+                self.remote_host + "/send_seph_event", params={"data": event.encode("hex")})
             return ret.text
         except Exception as e:
             print(e)
-
 
     def poll_status(self):
         if self.debug >= 5:
@@ -91,7 +89,6 @@ class HTTPProxy(object):
         except Exception as e:
             print(e)
 
-
     def reset(self):
         if self.debug:
             print("=> Reset")
@@ -100,11 +97,6 @@ class HTTPProxy(object):
             ret = requests.post(self.remote_host + "/reset")
         except Exception as e:
             print(e)
-
-
-
-
-
 
 
 def getDongle(remote_host="localhost", debug=False):
