@@ -13,4 +13,3 @@ snet network mainnet
 
 #switch to kovan
 snet network kovan
-
