@@ -1,0 +1,4 @@
+venv/
+snet.sdk.egg-info/
+build/
+dist/

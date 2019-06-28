@@ -1,0 +1,11 @@
+include snet/snet_cli/resources/proto/*
+include snet/snet_cli/resources/contracts/abi/*
+include snet/snet_cli/resources/contracts/networks/*
+include snet/snet_cli/resources/package.json
+
+recursive-include snet_cli/_vendor *
+
+recursive-exclude * .git
+recursive-exclude * node_modules
+recursive-exclude * __pycache__
+recursive-exclude * *.py[co]
