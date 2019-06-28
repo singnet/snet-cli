@@ -11,6 +11,7 @@ _sym_db.RegisterMessage = lambda x: None
 import json
 import base64
 from urllib.parse import urljoin
+from pathlib import Path, PurePath
 
 import web3
 from web3.gas_strategies.time_based import medium_gas_price_strategy
@@ -19,14 +20,15 @@ import ipfsapi
 from web3.datastructures import AttributeDict
 
 from snet.sdk.service_client import ServiceClient
+from snet.sdk.dynamic_service_client import DynamicServiceClient
 from snet.sdk.account import Account
 from snet.sdk.mpe_contract import MPEContract
 from snet.sdk.payment_channel_management_strategies.default import PaymentChannelManagementStrategy
 
-from snet.snet_cli.utils import get_contract_object
-from snet.snet_cli.utils_ipfs import bytesuri_to_hash, get_from_ipfs_and_checkhash
+from snet.snet_cli.utils import get_contract_object, compile_proto
+from snet.snet_cli.utils_proto import import_protobuf_from_dir
+from snet.snet_cli.utils_ipfs import bytesuri_to_hash, get_from_ipfs_and_checkhash, safe_extract_proto_from_ipfs
 from snet.snet_cli.mpe_service_metadata import mpe_service_metadata_from_json
-
 
 class SnetSDK:
     """Base Snet SDK"""
@@ -64,6 +66,18 @@ class SnetSDK:
         strategy = payment_channel_management_strategy(self)
         service_client = ServiceClient(self, service_metadata, group, service_stub, strategy, options)
         return service_client
+
+
+    def create_dynamic_service_client(self, org_id, service_id, group_name=None, payment_channel_management_strategy=PaymentChannelManagementStrategy, options=None):
+        if options is None:
+            options = dict()
+
+        service_metadata = self.get_service_metadata(org_id, service_id)
+        group = service_metadata.get_group(group_name)
+        strategy = payment_channel_management_strategy(self)
+        grpc_output_path = PurePath(Path.resolve(Path(sys.argv[0]))).parent.joinpath("grpc", org_id, service_id)
+        dynamic_service_client = DynamicServiceClient(self, service_metadata, group, org_id, service_id, grpc_output_path, strategy, options)
+        return dynamic_service_client
 
 
     def get_service_metadata(self, org_id, service_id):

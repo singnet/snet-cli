@@ -4,6 +4,28 @@ from pathlib import Path
 import os
 from google.protobuf import json_format
 
+from snet.snet_cli.utils import add_to_path
+
+
+def import_all_grpc_methods_from_dir(proto_dir):
+    """
+    Dynamic import of grpc-protobuf from given directory (proto_dir)
+    Neither service_name nor method_name need to be provided as each method will be imported using its fully qualified method name.
+    Returns a map of method name => stub_class, request_class, response_class
+    """
+    proto_dir = Path(proto_dir)
+    grpc_pyfiles = [str(os.path.basename(p)) for p in proto_dir.glob("*_pb2_grpc.py")]
+
+    found_methods = dict()
+    with add_to_path(str(proto_dir)): # <SERVICE>_pb2_grpc.py import <SERVICE>_pb2.py so we are forced to add proto_dir to path
+        for grpc_pyfile in grpc_pyfiles:
+            is_found, imported_methods = _import_protobuf_from_file(grpc_pyfile);
+            if is_found:
+                for fully_qualified_method_name, rez in imported_methods.items():
+                    found_methods[fully_qualified_method_name] = rez
+
+    return found_methods
+
 
 def import_protobuf_from_dir(proto_dir, method_name, service_name = None):
     """
@@ -13,14 +35,21 @@ def import_protobuf_from_dir(proto_dir, method_name, service_name = None):
     ! We need response_class only for json payload encoding !
     """
     proto_dir = Path(proto_dir)
-    # <SERVICE>_pb2_grpc.py import <SERVICE>_pb2.py so we are forced to add proto_dir to path
-    sys.path.append(str(proto_dir))    
     grpc_pyfiles = [str(os.path.basename(p)) for p in proto_dir.glob("*_pb2_grpc.py")]
     
     good_rez = []
-    for grpc_pyfile in grpc_pyfiles:
-        is_found, rez = _import_protobuf_from_file(grpc_pyfile, method_name, service_name);
-        if (is_found): good_rez.append(rez) 
+    with add_to_path(str(proto_dir)): # <SERVICE>_pb2_grpc.py import <SERVICE>_pb2.py so we are forced to add proto_dir to path
+        for grpc_pyfile in grpc_pyfiles:
+            is_found, imported_methods = _import_protobuf_from_file(grpc_pyfile);
+            if is_found: 
+                for fully_qualified_method_name, rez in imported_methods.items():
+                    try:
+                        package, service, method = fully_qualified_method_name.split(".")
+                    except:
+                        service, method = fully_qualified_method_name.split(".")
+                    if method == method_name and (service_name is None or service == service_name):
+                        good_rez.append(rez)
+
     if (len(good_rez) == 0):
         raise Exception("Error while loading protobuf. Cannot find method=%s"%method_name)
     if (len(good_rez) > 1):
@@ -30,12 +59,12 @@ def import_protobuf_from_dir(proto_dir, method_name, service_name = None):
             raise Exception("Error while loading protobuf. Found method %s in multiply .proto files. You could try to specify service_name."%method_name)
     return good_rez[0]
 
-def _import_protobuf_from_file(grpc_pyfile, method_name, service_name = None):
+
+def _import_protobuf_from_file(grpc_pyfile):
     """
-    helper function which try to import method from the given _pb2_grpc.py file
-    service_name should be provided only in case of name conflict
+    helper function which imports all methods from the given _pb2_grpc.py file
     return (False, None)  in case of failure
-    return (True, (stub_class, request_class, response_class)) in case of success
+    return (True, <dict of fully_qualified_method_name => (stub_class, request_class, response_class)> in case of success
     """
     
     prefix = grpc_pyfile[:-12]
@@ -46,28 +75,19 @@ def _import_protobuf_from_file(grpc_pyfile, method_name, service_name = None):
     # we take all objects from pb2_grpc module which endswith "Stub", and we remove this postfix to get service_name
     all_service_names = [stub_name[:-4] for stub_name in dir(pb2_grpc) if stub_name.endswith("Stub")]
     
-    # if service_name was specified we take only this service_name
-    if (service_name):
-        if (service_name not in all_service_names):
-            return False, None
-        all_service_names = [service_name]    
-
-    found_services = []
+    found_services = dict()
     for service_name in all_service_names:
         service_descriptor =  getattr(pb2, "DESCRIPTOR").services_by_name[service_name]
         for method in service_descriptor.methods:
-            if(method.name == method_name):
-                request_class      = method.input_type._concrete_class
-                response_class     = method.output_type._concrete_class
-                stub_class         = getattr(pb2_grpc, "%sStub"%service_name)
-                
-                found_services.append(service_name)
+            request_class      = method.input_type._concrete_class
+            response_class     = method.output_type._concrete_class
+            stub_class         = getattr(pb2_grpc, "%sStub"%service_name)
+
+            found_services[method.full_name] = (stub_class, request_class, response_class)
     if (len(found_services) == 0):
         return False, None
-    if (len(found_services) > 1):
-        raise Exception("Error while loading protobuf. We found methods %s in multiply services [%s]."
-                        " You should specify service_name."%(method_name, ", ".join(found_services)))
-    return True, (stub_class, request_class, response_class)
+    return True, found_services
+
 
 def switch_to_json_payload_encoding(call_fn, response_class):
     """ Switch payload encoding to JSON for GRPC call """
