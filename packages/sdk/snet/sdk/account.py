@@ -43,7 +43,7 @@ class Account:
 
 
     def _get_gas_price(self):
-        return self.web3.eth.generateGasPrice()
+        return int(self.web3.eth.generateGasPrice())
 
 
     def _send_signed_transaction(self, contract_fn, *args):
@@ -59,7 +59,7 @@ class Account:
 
     def send_transaction(self, contract_fn, *args):
         txn_hash = self._send_signed_transaction(contract_fn, *args)
-        return self.web3.eth.waitForTransactionReceipt(txn_hash)
+        return self.web3.eth.waitForTransactionReceipt(txn_hash, 300)
 
 
     def _parse_receipt(self, receipt, event, encoder=json.JSONEncoder):
