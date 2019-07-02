@@ -19,14 +19,15 @@ class DynamicServiceClient:
             except:
                 service, method = fully_qualified_method_name.split(".")
             if package:
-                if not hasattr(self, package):
+                package_object = getattr(self, package, None)
+                if package_object is None:
                     setattr(self, package, SimpleNamespace())
-                    getattr(self, package).service = dict()
-                    getattr(self, package).message = dict()
-                package_object = getattr(self, package)
-                getattr(package_object, "service")[service] = ServiceClient(sdk, metadata, group, stub, strategy, options)
-                getattr(package_object, "message")[request.DESCRIPTOR.name] = request
-                getattr(package_object, "message")[response.DESCRIPTOR.name] = response
+                    package_object = getattr(self, package)
+                    setattr(package_object, "service", SimpleNamespace())
+                    setattr(package_object, "message", SimpleNamespace())
+                setattr(package_object.service, service, ServiceClient(sdk, metadata, group, stub, strategy, options))
+                setattr(package_object.message, request.DESCRIPTOR.name, request)
+                setattr(package_object.message, response.DESCRIPTOR.name, response)
             else:
                 if not hasattr(self, "service"):
                     self.service = SimpleNamespace()

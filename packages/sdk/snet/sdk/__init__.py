@@ -8,6 +8,7 @@ _sym_db = _symbol_database.Default()
 _sym_db.RegisterMessage = lambda x: None
 
 
+import sys
 import json
 import base64
 from urllib.parse import urljoin
