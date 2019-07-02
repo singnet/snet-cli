@@ -7,8 +7,10 @@ def install_and_compile_proto():
     import snet.snet_cli
     from snet.snet_cli.utils import compile_proto as compile_proto
     from pathlib import Path
-    proto_dir = Path(__file__).absolute().parent.joinpath("snet", "snet_cli", "resources", "proto")
-    dest_dir = Path(snet.snet_cli.__file__).absolute().parent.joinpath("resources", "proto")
+    proto_dir = Path(__file__).absolute().parent.joinpath(
+        "snet", "snet_cli", "resources", "proto")
+    dest_dir = Path(snet.snet_cli.__file__).absolute(
+    ).parent.joinpath("resources", "proto")
     print(proto_dir, "->", dest_dir)
     for fn in proto_dir.glob('*.proto'):
         print("Compiling protobuf", fn)
@@ -20,7 +22,8 @@ class develop(_develop):
 
     def run(self):
         _develop.run(self)
-        self.execute(install_and_compile_proto, (), msg="Compile protocol buffers")
+        self.execute(install_and_compile_proto, (),
+                     msg="Compile protocol buffers")
 
 
 class install(_install):
@@ -28,7 +31,8 @@ class install(_install):
 
     def run(self):
         _install.run(self)
-        self.execute(install_and_compile_proto, (), msg="Compile protocol buffers")
+        self.execute(install_and_compile_proto, (),
+                     msg="Compile protocol buffers")
 
 
 version_dict = {}
@@ -50,23 +54,23 @@ setup(
         'jsonrpcclient==2.5.2',
         'web3==4.8.3',
         'mnemonic==0.18',
-        'pycoin>=0.80',
+        'pycoin==0.80',
         'trezor==0.9.1',
         'rlp==1.0.1',
-        'pyyaml>=4.2b1',
+        'pyyaml==4.2b1',
         'ipfsapi==0.4.2.post1',
         'rfc3986==1.1.0',
-        'hidapi>=0.7.99',  # _vendor/ledgerblue
-        'protobuf>=2.6.1',  # _vendor/ledgerblue
-        'pycryptodome>=3.6.6',  # _vendor/ledgerblue
-        'eth-hash>=0.2.0',  # the latest eth-hash v0.2.0 requires pycryptodome>=3.6.6,<4
+        'hidapi==0.7.99.post21',  # _vendor/ledgerblue
+        'protobuf==3.6.0',  # _vendor/ledgerblue
+        'pycryptodome==3.6.6',  # _vendor/ledgerblue
+        'eth-hash==0.2.0',  # the latest eth-hash v0.2.0 requires pycryptodome>=3.6.6,<4
         'future==0.16.0',  # _vendor/ledgerblue
-        'ecpy>=0.8.1',  # _vendor/ledgerblue
-        'pillow>=3.4.0',  # _vendor/ledgerblue
-        'python-u2flib-host>=3.0.2',  # _vendor/ledgerblue
+        'ecpy==0.8.1',  # _vendor/ledgerblue
+        'pillow==6.0.0',  # _vendor/ledgerblue
+        'python-u2flib-host==3.0.2',  # _vendor/ledgerblue
         'pymultihash==0.8.2',
         'base58==1.0.2',
-        'argcomplete>=1.9.4',
+        'argcomplete==1.9.4',
         'grpcio-health-checking==1.19.0'
     ],
     cmdclass={
