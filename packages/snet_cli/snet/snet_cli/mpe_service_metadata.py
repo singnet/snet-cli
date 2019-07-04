@@ -23,7 +23,7 @@ pricing {}      -  Pricing model
              price_model   - "fixed_price"
              price_in_cogs -  unique fixed price in cogs for all method (1 AGI = 10^8 cogs)
              (other pricing models can be easily supported)
-groups[]       - group is the number of endpoints which shares same payment channel;
+[]       - group is the number of endpoints which shares same payment channel;
                   grouping strategy is defined by service provider;
                   for example service provider can use region name as group name
      group_name - unique name of the group (human readable)
@@ -31,7 +31,9 @@ groups[]       - group is the number of endpoints which shares same payment chan
      payment_address - Ethereum address to recieve payments
 endpoints[] - address in the off-chain network to provide a service
      group_name
-     endpoint  -  unique endpoint identifier (ip:port)
+     endpoint   -  unique endpoint identifier (ip:port)
+
+assets {}       - contains asset type and its ipfs value/values
 """
 
 import re
@@ -40,8 +42,15 @@ import base64
 import secrets
 
 from collections import defaultdict
+from enum import Enum
 
 from snet.snet_cli.utils import is_valid_endpoint
+
+
+# Supported Asset types
+class AssetType(Enum):
+    HERO_IMAGE = "hero_image"
+    IMAGES = "images"
 
 
 # TODO: we should use some standard solution here
@@ -58,12 +67,14 @@ class MPEServiceMetadata:
                   "mpe_address"    : "",
                   "pricing"        : {},
                   "groups"         : [],
-                  "endpoints"      : []}
+                  "endpoints"      : [],
+                  "assets"          : {}
+                 }
 
 
     def set_simple_field(self, f, v):
         if (f != "display_name" and f != "encoding" and f != "model_ipfs_hash" and f != "mpe_address" and
-            f != "service_type" and f != "payment_expiration_threshold" and f != "service_description"):
+            f != "service_type" and f != "payment_expiration_threshold" and f != "service_description" and f!="hero_image_ipfs_hash"):
                 raise Exception("unknown field in MPEServiceMetadata")
         self.m[f] = v
 
@@ -82,6 +93,47 @@ class MPEServiceMetadata:
                               "group_id"        : group_id_base64.decode("ascii"),
                               "payment_address" : payment_address}]
         return group_id_base64
+
+    def add_asset(self, asset_ipfs_hash, asset_type):
+        # Check if we need to validation if ssame asset type is added twice if we need to add it or replace the existing one
+
+        if 'assets' not in self.m:
+            self.m['assets'] = {}
+
+        # hero image will contain the single value
+        if asset_type == AssetType.HERO_IMAGE.value:
+            self.m['assets'][asset_type] = asset_ipfs_hash
+
+        # images can contain multiple value
+        elif asset_type == AssetType.IMAGES.value:
+            if asset_type in self.m['assets']:
+                self.m['assets'][asset_type].append(asset_ipfs_hash)
+            else:
+                self.m['assets'][asset_type]=[asset_ipfs_hash]
+        else:
+            raise Exception("Invalid asset type %s"%asset_type)
+
+    def remove_all_assets(self):
+        self.m['assets'] = {}
+
+    def remove_assets(self,asset_type):
+        if 'assets' in self.m:
+            if asset_type == AssetType.HERO_IMAGE.value:
+                self.m['assets'][asset_type] = ""
+            elif asset_type == AssetType.IMAGES.value:
+                self.m['assets'][asset_type] = []
+            else:
+                raise Exception("Invalid asset type %s" % asset_type)
+
+
+
+
+
+
+
+
+
+
 
     def add_endpoint(self, group_name, endpoint):
         if re.match("^\w+://", endpoint) is None:

@@ -21,10 +21,11 @@ class MPEServiceCommand(BlockchainCommand):
         self._printout(ipfs_hash_base58)
 
     def publish_proto_metadata_init(self):
-        ipfs_hash_base58 = utils_ipfs.publish_proto_in_ipfs(self._get_ipfs_client(), self.args.protodir)
+        model_ipfs_hash_base58 = utils_ipfs.publish_proto_in_ipfs(self._get_ipfs_client(), self.args.protodir)
+
         metadata    = MPEServiceMetadata()
         mpe_address = self.get_mpe_address()
-        metadata.set_simple_field("model_ipfs_hash",              ipfs_hash_base58)
+        metadata.set_simple_field("model_ipfs_hash",              model_ipfs_hash_base58)
         metadata.set_simple_field("mpe_address",                  mpe_address)
         metadata.set_simple_field("display_name",                 self.args.display_name)
         metadata.set_simple_field("encoding",                     self.args.encoding)
@@ -81,6 +82,27 @@ class MPEServiceCommand(BlockchainCommand):
         for endpoint in self.args.endpoints:
             metadata.add_endpoint(group_name, endpoint)
         metadata.save_pretty(self.args.metadata_file)
+
+
+    def metadata_add_asset_to_ipfs(self):
+        metadata = load_mpe_service_metadata(self.args.metadata_file)
+        asset_file_ipfs_hash_base58 = utils_ipfs.publish_file_in_ipfs(self._get_ipfs_client(),
+                                                                       self.args.asset_file_path)
+
+        metadata.add_asset(asset_file_ipfs_hash_base58, self.args.asset_type)
+        metadata.save_pretty(self.args.metadata_file)
+
+    def metadata_remove_all_assets(self):
+        metadata = load_mpe_service_metadata(self.args.metadata_file)
+        metadata.remove_all_assets()
+        metadata.save_pretty(self.args.metadata_file)
+
+    def metadata_remove_assets_of_a_given_type(self):
+        metadata = load_mpe_service_metadata(self.args.metadata_file)
+        metadata.remove_assets(self.args.asset_type)
+        metadata.save_pretty(self.args.metadata_file)
+
+
 
     def metadata_add_description(self):
         """ Metadata: add description """

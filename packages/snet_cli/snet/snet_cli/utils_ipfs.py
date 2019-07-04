@@ -7,6 +7,21 @@ import os
 import base58
 import multihash
 
+
+
+def publish_file_in_ipfs(ipfs_client, filepath):
+    """
+        push a file to ipfs given its path
+    """
+    try:
+        with open(filepath, 'w') as file:
+           result= ipfs_client.add(file)
+           return result['Hash']
+    except Exception as err:
+        print("File error ", err)
+
+
+
 def publish_proto_in_ipfs(ipfs_client, protodir):
     """
     make tar from protodir/*proto, and publish this tar in ipfs
