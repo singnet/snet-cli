@@ -32,7 +32,11 @@ class MPEContract:
             from_block = to_block + 1
 
         event_abi = self.contract._find_matching_event_abi(event_name="ChannelOpen")
-        channels_opened = list(filter(lambda channel: channel.sender == account.address and channel.signer == account.signer_address and channel.recipient == service.group["payment_address"], [web3.utils.events.get_event_data(event_abi, l)["args"] for l in logs]))
+        group = service.metadata.get_group_id(service.group['group_name'])
+        channels_opened = list(filter(
+            lambda channel: channel.sender == account.address and channel.signer == account.signer_address and channel.recipient == service.group["payment_address"] and channel.groupId == group,
+            [web3.utils.events.get_event_data(event_abi, l)["args"] for l in logs]
+        ))
         return list(map(lambda channel: PaymentChannel(channel["channelId"], self.web3, account, service, self), channels_opened))
 
 
