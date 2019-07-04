@@ -23,17 +23,17 @@ pricing {}      -  Pricing model
              price_model   - "fixed_price"
              price_in_cogs -  unique fixed price in cogs for all method (1 AGI = 10^8 cogs)
              (other pricing models can be easily supported)
-[]       - group is the number of endpoints which shares same payment channel;
+groups []       - group is the number of endpoints which shares same payment channel;
                   grouping strategy is defined by service provider;
                   for example service provider can use region name as group name
      group_name - unique name of the group (human readable)
      group_id   - unique id of the group (random 32 byte string in base64 encoding)
      payment_address - Ethereum address to recieve payments
-endpoints[] - address in the off-chain network to provide a service
+endpoints[]     - address in the off-chain network to provide a service
      group_name
      endpoint   -  unique endpoint identifier (ip:port)
 
-assets {}       - contains asset type and its ipfs value/values
+assets {}       -  asset type and its ipfs value/values
 """
 
 import re
