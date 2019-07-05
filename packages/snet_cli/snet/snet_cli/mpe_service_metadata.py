@@ -51,6 +51,13 @@ from snet.snet_cli.utils import is_valid_endpoint
 class AssetType(Enum):
     HERO_IMAGE = "hero_image"
     IMAGES = "images"
+    DOCUMENTATION = "documentation"
+    TERMS_OF_USE = "terms_of_use"
+
+    @staticmethod
+    def is_asset_having_single_value(asset_type):
+        if asset_type == AssetType.HERO_IMAGE.value or asset_type == AssetType.DOCUMENTATION.value or asset_type == AssetType.TERMS_OF_USE.value:
+            return True
 
 
 # TODO: we should use some standard solution here
@@ -101,7 +108,7 @@ class MPEServiceMetadata:
             self.m['assets'] = {}
 
         # hero image will contain the single value
-        if asset_type == AssetType.HERO_IMAGE.value:
+        if AssetType.is_asset_having_single_value(asset_type):
             self.m['assets'][asset_type] = asset_ipfs_hash
 
         # images can contain multiple value
@@ -113,12 +120,13 @@ class MPEServiceMetadata:
         else:
             raise Exception("Invalid asset type %s"%asset_type)
 
+
     def remove_all_assets(self):
         self.m['assets'] = {}
 
     def remove_assets(self,asset_type):
         if 'assets' in self.m:
-            if asset_type == AssetType.HERO_IMAGE.value:
+            if AssetType.is_asset_having_single_value(asset_type):
                 self.m['assets'][asset_type] = ""
             elif asset_type == AssetType.IMAGES.value:
                 self.m['assets'][asset_type] = []

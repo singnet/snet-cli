@@ -1,4 +1,5 @@
 
+
 # simple case of one group
 snet service metadata-init ./service_spec1/ ExampleService 0x52653A9091b5d5021bed06c5118D24b23620c529  --fixed-price 0.0001 --endpoints 8.8.8.8:2020
 snet organization create testo --org-id testo -y -q
@@ -39,3 +40,32 @@ cat service_metadata.json | jq '.groups[1].payment_address = "0xc7973537517BfDeA
 mv -f service_metadata2.json service_metadata.json
 
 snet service update-metadata testo tests -yq && exit 1 || echo "fail as expected"
+
+
+#add assets with single value
+snet service metadata-init ./service_spec1/ ExampleService 0x52653A9091b5d5021bed06c5118D24b23620c529
+snet --print-traceback service metadata-add-assets  ./service_spec1/ExampleService.proto hero_image
+snet --print-traceback service metadata-add-assets  ./service_spec1/ExampleService.proto terms_of_use
+result=$(cat service_metadata.json | jq '.assets.hero_image')
+test $result = '"QmbFMke1KXqnYyBBWxB74N4c5SBnJMVAiMNRcGu6x1AwQH"'  &&  echo "add asset with single value  test case passed " ||   exit 1
+
+
+#add assets with multiple values
+snet --print-traceback service metadata-add-assets  ./service_spec1/ExampleService.proto images
+snet --print-traceback service metadata-add-assets  ./service_spec1/ExampleService.proto images
+result=$(cat service_metadata.json | jq '.assets.images[1]')
+test $result = '"QmbFMke1KXqnYyBBWxB74N4c5SBnJMVAiMNRcGu6x1AwQH"'  &&  echo "add asset with multiple value  test case passed " ||   exit 1
+
+
+
+#remove assets
+snet  service metadata-remove-assets hero_image
+result=$(cat service_metadata.json | jq '.assets.hero_image')
+test $result = '""'  &&  echo "metadata-remove-assets  test case passed " ||   exit 1
+
+#remove all assets
+snet  service metadata-remove-all-assets
+result=$(cat service_metadata.json | jq '.assets')
+test $result = '{}'  &&  echo "metadata-remove-all-assets test case passed " ||   exit 1
+
+
