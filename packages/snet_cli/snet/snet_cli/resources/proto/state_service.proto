@@ -1,9 +1,3 @@
-//
-// FIXME: All changes all this file should manually be copied to the `snet-cli`
-// repo until https://github.com/singnet/snet-daemon/issues/99 and
-// https://github.com/singnet/snet-cli/issues/88 are fixed.
-//
-
 syntax = "proto3";
 
 package escrow;
