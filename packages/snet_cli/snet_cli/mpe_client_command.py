@@ -3,12 +3,11 @@ from pathlib import Path
 import json
 import sys
 
-import grpc
 from eth_account.messages import defunct_hash_message
 
 from snet_cli.utils_agi2cogs import cogs2stragi
 
-from snet.snet_cli.utils import open_grpc_channel, rgetattr, compile_proto, RESOURCES_PATH
+from snet.snet_cli.utils import open_grpc_channel, rgetattr, RESOURCES_PATH
 from snet.snet_cli.mpe_channel_command import MPEChannelCommand
 from snet.snet_cli.utils_proto import import_protobuf_from_dir, switch_to_json_payload_encoding
 
@@ -32,6 +31,11 @@ class MPEClientCommand(MPEChannelCommand):
         message_hash = defunct_hash_message(message)
         sign_address = self.ident.w3.eth.account.recoverHash(message_hash, signature=signature)
         return sign_address == self.ident.address
+
+    def _assert_validity_of_my_signature_or_zero_amount(self, signature, channel_id, nonce, signed_amount, error_message):
+        if (signed_amount > 0):
+            if (not self._verify_my_signature(signature, self.get_mpe_address(), channel_id, nonce, signed_amount)):
+                raise Exception(error_message)
 
     # II. Call related functions (low level)
 
@@ -106,14 +110,18 @@ class MPEClientCommand(MPEChannelCommand):
         if service_metadata["encoding"] == "json":
             switch_to_json_payload_encoding(call_fn, response_class)
 
+        metadata = self._create_call_metadata(channel_id, nonce, amount )
+        return call_fn(request, metadata=metadata)
+
+    def _create_call_metadata(self, channel_id, nonce, amount):
         mpe_address = self.get_mpe_address()
         signature = self._sign_message(mpe_address, channel_id, nonce, amount)
-        metadata = [("snet-payment-type",                 "escrow"                    ),
-                    ("snet-payment-channel-id",            str(channel_id)  ),
-                    ("snet-payment-channel-nonce",         str(nonce)       ),
-                    ("snet-payment-channel-amount",        str(amount)      ),
-                    ("snet-payment-channel-signature-bin", bytes(signature))]
-        return call_fn(request, metadata=metadata)
+        return [("snet-payment-type",                 "escrow"                    ),
+                ("snet-payment-channel-id",            str(channel_id)  ),
+                ("snet-payment-channel-nonce",         str(nonce)       ),
+                ("snet-payment-channel-amount",        str(amount)      ),
+                ("snet-payment-channel-signature-bin", bytes(signature))]
+
 
     def _deal_with_call_response(self, response):
         if (self.args.save_response):
@@ -152,14 +160,19 @@ class MPEClientCommand(MPEChannelCommand):
 
     # III. Stateless client related functions
     def _get_channel_state_from_server(self, grpc_channel, channel_id):
-        proto_dir   = RESOURCES_PATH.joinpath("proto")
 
-        # make PaymentChannelStateService.GetChannelState call to the daemon
+        # We should simply statically import everything, but it doesn't work because of the following issue in protobuf: https://github.com/protocolbuffers/protobuf/issues/1491
+        #from snet_cli.resources.proto.state_service_pb2      import ChannelStateRequest            as request_class
+        #from snet_cli.resources.proto.state_service_pb2_grpc import PaymentChannelStateServiceStub as stub_class
+        proto_dir   = RESOURCES_PATH.joinpath("proto")
         stub_class, request_class, _ = import_protobuf_from_dir(proto_dir, "GetChannelState")
-        message   = self.w3.soliditySha3(["uint256"], [channel_id])
+        current_block = self.ident.w3.eth.blockNumber
+        mpe_address = self.get_mpe_address()
+        message     =  self.w3.soliditySha3( ["string",             "address",    "uint256",   "uint256"],
+                                             ["__get_channel_state", mpe_address, channel_id, current_block])
         signature = self.ident.sign_message_after_soliditySha3(message)
 
-        request   = request_class(channel_id = self.w3.toBytes(channel_id), signature = bytes(signature))
+        request   = request_class(channel_id = self.w3.toBytes(channel_id), signature = bytes(signature), current_block = current_block)
 
         stub     = stub_class(grpc_channel)
         response = getattr(stub, "GetChannelState")(request)
@@ -167,12 +180,27 @@ class MPEClientCommand(MPEChannelCommand):
         state = dict()
         state["current_nonce"]          = int.from_bytes(response.current_nonce,         byteorder='big')
         state["current_signed_amount"]  = int.from_bytes(response.current_signed_amount, byteorder='big')
-        if (state["current_signed_amount"] > 0):
-         good = self._verify_my_signature(bytes(response.current_signature), self.get_mpe_address(), channel_id, state["current_nonce"], state["current_signed_amount"])
-         if (not good):
-             raise Exception("Error in _get_channel_state_from_server. My own signature from the server is not valid.")
+
+        error_message = "Error in _get_channel_state_from_server. My own signature from the server is not valid."
+        self._assert_validity_of_my_signature_or_zero_amount(bytes(response.current_signature),  channel_id, state["current_nonce"],     state["current_signed_amount"],  error_message)
+
+        if (hasattr(response, "old_nonce_signed_amount")):
+            state["old_nonce_signed_amount"] = int.from_bytes(response.old_nonce_signed_amount, byteorder='big')
+            self._assert_validity_of_my_signature_or_zero_amount(bytes(response.old_nonce_signature), channel_id, state["current_nonce"] - 1, state["old_nonce_signed_amount"], error_message)
 
         return state
+
+    def _calculate_unspent_amount(self, blockchain, server):
+        if (server["current_nonce"] == blockchain["nonce"]):
+            return blockchain["value"] - server["current_signed_amount"]
+        if (server["current_nonce"] - 1 != blockchain["nonce"]):
+            raise Exception("Server nonce is different from blockchain nonce to more then 1: server_nonce = %i blockchain_nonce = %i"%(server["current_nonce"], blockchain["nonce"]))
+
+        if ("old_nonce_signed_amount" in server):
+            return blockchain["value"] - server["old_nonce_signed_amount"] - server["current_signed_amount"]
+
+        self._printerr("Service is using old daemon which is not fully support stateless logic. Unspent amount might be overestimated")
+        return blockchain["value"] - server["current_signed_amount"]
 
     def _get_channel_state_statelessly(self, grpc_channel, channel_id):
         """
@@ -183,10 +211,7 @@ class MPEClientCommand(MPEChannelCommand):
         server     = self._get_channel_state_from_server    (grpc_channel, channel_id)
         blockchain = self._get_channel_state_from_blockchain(              channel_id)
 
-        if (server["current_nonce"] == blockchain["nonce"]):
-            unspent_amount = blockchain["value"] - server["current_signed_amount"]
-        else:
-            unspent_amount = None # in this case we cannot securely define unspent_amount yet
+        unspent_amount = self._calculate_unspent_amount(blockchain, server)
 
         return (server["current_nonce"], server["current_signed_amount"], unspent_amount)
 
