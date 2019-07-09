@@ -55,7 +55,7 @@ class AssetType(Enum):
     TERMS_OF_USE = "terms_of_use"
 
     @staticmethod
-    def is_asset_having_single_value(asset_type):
+    def is_single_value(asset_type):
         if asset_type == AssetType.HERO_IMAGE.value or asset_type == AssetType.DOCUMENTATION.value or asset_type == AssetType.TERMS_OF_USE.value:
             return True
 
@@ -108,7 +108,7 @@ class MPEServiceMetadata:
             self.m['assets'] = {}
 
         # hero image will contain the single value
-        if AssetType.is_asset_having_single_value(asset_type):
+        if AssetType.is_single_value(asset_type):
             self.m['assets'][asset_type] = asset_ipfs_hash
 
         # images can contain multiple value
@@ -126,7 +126,7 @@ class MPEServiceMetadata:
 
     def remove_assets(self,asset_type):
         if 'assets' in self.m:
-            if AssetType.is_asset_having_single_value(asset_type):
+            if AssetType.is_single_value(asset_type):
                 self.m['assets'][asset_type] = ""
             elif asset_type == AssetType.IMAGES.value:
                 self.m['assets'][asset_type] = []
