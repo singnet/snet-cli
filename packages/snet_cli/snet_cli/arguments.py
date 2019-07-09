@@ -32,7 +32,8 @@ class CustomParser(argparse.ArgumentParser):
     def _parse_known_args(self, arg_strings, *args, **kwargs):
         if self.default_choice and not len(list(filter(lambda option: option in arg_strings, {'-h', '--help'}))):
             for action in list(filter(
-                    lambda subparser_action: isinstance(subparser_action, argparse._SubParsersAction),
+                    lambda subparser_action: isinstance(
+                        subparser_action, argparse._SubParsersAction),
                     self._subparsers._actions
             )):
                 if not len(list(filter(lambda arg: arg in action._name_parser_map.keys(), arg_strings))):
@@ -46,6 +47,7 @@ class CustomParser(argparse.ArgumentParser):
 def get_parser():
     return get_root_parser(Config())
 
+
 def get_root_parser(config):
     parser = CustomParser(prog="snet", description="SingularityNET CLI")
     parser.add_argument("--print-traceback",
@@ -57,7 +59,8 @@ def get_root_parser(config):
 
 
 def add_root_options(parser, config):
-    subparsers = parser.add_subparsers(title="snet commands", metavar="COMMAND")
+    subparsers = parser.add_subparsers(
+        title="snet commands", metavar="COMMAND")
     subparsers.required = True
 
     p = subparsers.add_parser("account",
@@ -140,7 +143,8 @@ def add_identity_options(parser, config):
                    metavar="IDENTITY_NAME")
     p.add_argument("identity_type",
                    choices=get_identity_types(),
-                   help="Type of identity to create from {}".format(get_identity_types()),
+                   help="Type of identity to create from {}".format(
+                       get_identity_types()),
                    metavar="IDENTITY_TYPE")
     p.add_argument("--mnemonic",
                    help="BIP39 mnemonic for 'mnemonic' identity_type")
@@ -162,7 +166,8 @@ def add_identity_options(parser, config):
     identity_names = config.get_all_identities_names()
     p.add_argument("identity_name",
                    choices=identity_names,
-                   help="Name of identity to delete from {}".format(identity_names),
+                   help="Name of identity to delete from {}".format(
+                       identity_names),
                    metavar="IDENTITY_NAME")
 
     for identity_name in identity_names:
@@ -198,7 +203,8 @@ def add_network_options(parser, config):
 
     network_names = config.get_all_networks_names()
     for network_name in network_names:
-        p = subparsers.add_parser(network_name, help="Switch to {} network".format(network_name))
+        p = subparsers.add_parser(
+            network_name, help="Switch to {} network".format(network_name))
         p.set_defaults(network_name=network_name)
         p.set_defaults(fn="set")
 
@@ -213,7 +219,8 @@ def add_set_options(parser):
     parser.set_defaults(fn="set")
     parser.add_argument("key",
                         choices=get_session_keys(),
-                        help="Session key to set from {}".format(get_session_keys()),
+                        help="Session key to set from {}".format(
+                            get_session_keys()),
                         metavar="KEY")
     parser.add_argument("value",
                         help="Desired value of session key",
@@ -225,7 +232,8 @@ def add_unset_options(parser):
     parser.set_defaults(fn="unset")
     parser.add_argument("key",
                         choices=get_session_network_keys_removable(),
-                        help="Session key to unset from {}".format(get_session_network_keys_removable()),
+                        help="Session key to unset from {}".format(
+                            get_session_network_keys_removable()),
                         metavar="KEY")
 
 
@@ -236,8 +244,10 @@ def add_contract_options(parser):
     subparsers.required = True
 
     for path in Path(RESOURCES_PATH.joinpath("contracts", "abi")).glob("*json"):
-        contract_name = re.search(r"([^.]*)\.json", os.path.basename(path)).group(1)
-        contract_p = subparsers.add_parser(contract_name, help="{} contract".format(contract_name))
+        contract_name = re.search(
+            r"([^.]*)\.json", os.path.basename(path)).group(1)
+        contract_p = subparsers.add_parser(
+            contract_name, help="{} contract".format(contract_name))
         add_contract_function_options(contract_p, contract_name)
 
 
@@ -255,7 +265,8 @@ def add_p_org_id(p):
 def add_organization_options(parser):
     parser.set_defaults(cmd=OrganizationCommand)
 
-    subparsers = parser.add_subparsers(title="Organization commands", metavar="COMMAND")
+    subparsers = parser.add_subparsers(
+        title="Organization commands", metavar="COMMAND")
     subparsers.required = True
 
     p = subparsers.add_parser("list",
@@ -367,11 +378,13 @@ def add_contract_function_options(parser, contract_name):
         })
 
     if len(fns) > 0:
-        subparsers = parser.add_subparsers(title="{} functions".format(contract_name), metavar="FUNCTION")
+        subparsers = parser.add_subparsers(
+            title="{} functions".format(contract_name), metavar="FUNCTION")
         subparsers.required = True
 
         for fn in fns:
-            fn_p = subparsers.add_parser(fn["name"], help="{} function".format(fn["name"]))
+            fn_p = subparsers.add_parser(
+                fn["name"], help="{} function".format(fn["name"]))
             fn_p.set_defaults(fn="call")
             fn_p.set_defaults(contract_function=fn["name"])
             for i in fn["positional_inputs"]:
@@ -405,7 +418,8 @@ def add_contract_identity_arguments(parser, names_and_destinations=(("", "at"),)
             h += " (defaults to session.current_{})".format(destination)
         identity_g.add_argument("--{}at".format(arg_name),
                                 dest=destination,
-                                metavar="{}ADDRESS".format(metavar_name.upper()),
+                                metavar="{}ADDRESS".format(
+                                    metavar_name.upper()),
                                 help=h)
 
 
@@ -440,7 +454,8 @@ def add_transaction_arguments(parser):
 
 class AppendPositionalAction(argparse.Action):
     def __call__(self, parser, namespace, values, option_string=None):
-        positional_inputs = getattr(namespace, "contract_positional_inputs", None)
+        positional_inputs = getattr(
+            namespace, "contract_positional_inputs", None)
         if positional_inputs is None:
             setattr(namespace, "contract_positional_inputs", [])
         getattr(namespace, "contract_positional_inputs").append(values)
@@ -494,7 +509,8 @@ def add_mpe_account_options(parser):
     p.set_defaults(fn="print_account")
     add_eth_call_arguments(p)
 
-    p = subparsers.add_parser("balance", help="Print balance of AGI tokens and balance of MPE wallet")
+    p = subparsers.add_parser(
+        "balance", help="Print balance of AGI tokens and balance of MPE wallet")
     p.set_defaults(fn="print_agi_and_mpe_balances")
     p.add_argument("--account",
                    default=None,
@@ -503,7 +519,8 @@ def add_mpe_account_options(parser):
     add_p_mpe_address_opt(p)
     add_eth_call_arguments(p)
 
-    p = subparsers.add_parser("deposit", help="Deposit AGI tokens to MPE wallet")
+    p = subparsers.add_parser(
+        "deposit", help="Deposit AGI tokens to MPE wallet")
     p.set_defaults(fn="deposit_to_mpe")
     p.add_argument("amount",
                    type=stragi2cogs,
@@ -513,7 +530,8 @@ def add_mpe_account_options(parser):
     add_p_mpe_address_opt(p)
     add_transaction_arguments(p)
 
-    p = subparsers.add_parser("withdraw", help="Withdraw AGI tokens from MPE wallet")
+    p = subparsers.add_parser(
+        "withdraw", help="Withdraw AGI tokens from MPE wallet")
     p.set_defaults(fn="withdraw_from_mpe")
     p.add_argument("amount",
                    type=stragi2cogs,
@@ -522,7 +540,8 @@ def add_mpe_account_options(parser):
     add_p_mpe_address_opt(p)
     add_transaction_arguments(p)
 
-    p = subparsers.add_parser("transfer", help="Transfer AGI tokens inside MPE wallet")
+    p = subparsers.add_parser(
+        "transfer", help="Transfer AGI tokens inside MPE wallet")
     p.set_defaults(fn="transfer_in_mpe")
     p.add_argument("receiver",
                    help="Address of the receiver",
@@ -634,7 +653,8 @@ def add_mpe_channel_options(parser):
     add_p_metadata_file_opt(p)
 
     def add_p_set_for_extend_add(_p):
-        expiration_amount_g = _p.add_argument_group(title="Expiration and amount")
+        expiration_amount_g = _p.add_argument_group(
+            title="Expiration and amount")
         add_p_expiration(expiration_amount_g, is_optional=True)
         expiration_amount_g.add_argument("--amount",
                                          type=stragi2cogs,
@@ -642,7 +662,8 @@ def add_mpe_channel_options(parser):
         add_p_mpe_address_opt(p)
         add_transaction_arguments(p)
 
-    p = subparsers.add_parser("extend-add", help="Set new expiration for the channel and add funds")
+    p = subparsers.add_parser(
+        "extend-add", help="Set new expiration for the channel and add funds")
     p.set_defaults(fn="channel_extend_and_add_funds")
     add_p_channel_id(p)
     add_p_set_for_extend_add(p)
@@ -931,12 +952,10 @@ def add_mpe_service_options(parser):
                    help="Type of the asset to be removed , valid asset types are [hero_image,images]")
     add_p_metadata_file_opt(p)
 
-
     p = subparsers.add_parser("metadata-remove-all-assets",
                               help="Remove all assets from metadata")
     p.set_defaults(fn="metadata_remove_all_assets")
     add_p_metadata_file_opt(p)
-
 
     p = subparsers.add_parser("metadata-update-endpoints",
                               help="Remove all endpoints from the group and add new ones")
@@ -1111,7 +1130,8 @@ def add_sdk_options(parser):
     p.set_defaults(fn="generate_client_library")
     p.add_argument("language",
                    choices=supported_languages,
-                   help="Choose target language for the generated client library from {}".format(supported_languages),
+                   help="Choose target language for the generated client library from {}".format(
+                       supported_languages),
                    metavar="LANGUAGE")
     add_p_service_in_registry(p)
     p.add_argument("protodir",
