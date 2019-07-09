@@ -81,7 +81,7 @@ class MPEServiceMetadata:
 
     def set_simple_field(self, f, v):
         if (f != "display_name" and f != "encoding" and f != "model_ipfs_hash" and f != "mpe_address" and
-            f != "service_type" and f != "payment_expiration_threshold" and f != "service_description" and f!="hero_image_ipfs_hash"):
+            f != "service_type" and f != "payment_expiration_threshold" and f != "service_description"):
                 raise Exception("unknown field in MPEServiceMetadata")
         self.m[f] = v
 
