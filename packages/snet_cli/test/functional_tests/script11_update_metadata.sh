@@ -39,16 +39,16 @@ snet service update-metadata testo tests -yq && exit 1 || echo "fail as expected
 
 #add assets with single value
 
-#snet service metadata-init ./service_spec1/ ExampleService 0x52653A9091b5d5021bed06c5118D24b23620c529 --metadata-file=service_asset_metadata.json
-cp service_metadata.json service_asset_metadata.json
-snet --print-traceback service metadata-add-assets ./service_spec1/ExampleService.proto hero_image --metadata-file=service_asset_metadata.json
-snet --print-traceback service metadata-add-assets ./service_spec1/ExampleService.proto terms_of_use --metadata-file=service_asset_metadata.json
+snet service metadata-init ./service_spec1/ ExampleService 0x52653A9091b5d5021bed06c5118D24b23620c529 --metadata-file=service_asset_metadata.json
+#cp service_metadata.json service_asset_metadata.json
+snet --print-traceback service metadata-add-assets ./service_spec1/test hero_image --metadata-file=service_asset_metadata.json
+snet --print-traceback service metadata-add-assets ./service_spec1/test terms_of_use --metadata-file=service_asset_metadata.json
 result=$(cat service_asset_metadata.json | jq '.assets.hero_image')
 test $result = '"QmbFMke1KXqnYyBBWxB74N4c5SBnJMVAiMNRcGu6x1AwQH"' && echo "add asset with single value  test case passed " || exit 1
 
 #add assets with multiple values
-snet --print-traceback service metadata-add-assets ./service_spec1/ExampleService.proto images --metadata-file=service_asset_metadata.json
-snet --print-traceback service metadata-add-assets ./service_spec1/ExampleService.proto images --metadata-file=service_asset_metadata.json
+snet --print-traceback service metadata-add-assets ./service_spec1/test images --metadata-file=service_asset_metadata.json
+snet --print-traceback service metadata-add-assets ./service_spec1/test images --metadata-file=service_asset_metadata.json
 result=$(cat service_asset_metadata.json | jq '.assets.images[1]')
 test $result = '"QmbFMke1KXqnYyBBWxB74N4c5SBnJMVAiMNRcGu6x1AwQH"' && echo "add asset with multiple value  test case passed " || exit 1
 
