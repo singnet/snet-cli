@@ -1,4 +1,3 @@
-#!/usr/bin/env bash
 # simple case of one group
 snet service metadata-init ./service_spec1/ ExampleService 0x52653A9091b5d5021bed06c5118D24b23620c529 --fixed-price 0.0001 --endpoints 8.8.8.8:2020
 snet organization create testo --org-id testo -y -q
