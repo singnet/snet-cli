@@ -38,6 +38,7 @@ mv -f service_metadata2.json service_metadata.json
 snet service update-metadata testo tests -yq && exit 1 || echo "fail as expected"
 
 ##add assets with single value
+
 #snet service metadata-init ./service_spec1/ ExampleService 0x52653A9091b5d5021bed06c5118D24b23620c529 --metadata-file=service_asset_metadata.json
 #snet --print-traceback service metadata-add-assets ./service_spec1/ExampleService.proto hero_image --metadata-file=service_asset_metadata.json
 #snet --print-traceback service metadata-add-assets ./service_spec1/ExampleService.proto terms_of_use --metadata-file=service_asset_metadata.json
