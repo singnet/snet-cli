@@ -21,13 +21,13 @@ jobs:
     - run:
         name: Install snet-cli 
         command: |
-            ./scripts/blockchain install
-            sudo pip3 install -e .
+            ./packages/snet_cli/scripts/blockchain install
+            sudo pip3 install -e ./packages/snet_cli
     - run:
         name: Install platform-contracts from master
         command: |
             # Install platform-contracts (from master)
-            # we will deploy contracts from test/utils/reset_enviroment.sh
+            # we will deploy contracts from packages/snet_cli/test/utils/reset_enviroment.sh
             cd ..
             git clone https://github.com/singnet/platform-contracts
             cd platform-contracts
@@ -37,11 +37,12 @@ jobs:
     - run:
         name: Unit tests
         command: |
-            bash -ex test/utils/run_all_unit.sh
+            sudo pip3 install nose
+            nosetests -v --with-doctest
     - run:
         name: Functional tests
         command: |
-            bash -ex test/utils/run_all_functional.sh
+            bash -ex packages/snet_cli/test/utils/run_all_functional.sh
     - run:
         name: Trigger platform-pipeline build
         command: |
