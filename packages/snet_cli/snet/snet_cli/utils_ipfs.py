@@ -14,8 +14,8 @@ def publish_file_in_ipfs(ipfs_client, filepath):
     """
     try:
         with open(filepath, 'r+b') as file:
-            result = ipfs_client.add(file,pin=True,wrap_with_directory=True)
-            return  result[1]['Hash']+'/'+result[0]['Name']
+            result = ipfs_client.add(file, pin=True, wrap_with_directory=True)
+            return result[1]['Hash']+'/'+result[0]['Name']
     except Exception as err:
         print("File error ", err)
 
