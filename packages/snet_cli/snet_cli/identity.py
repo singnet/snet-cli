@@ -14,8 +14,8 @@ from mnemonic import Mnemonic
 from trezorlib.client import TrezorClient, proto
 from trezorlib.transport_hid import HidTransport
 
-from snet_cli._vendor.ledgerblue.comm import getDongle
-from snet_cli._vendor.ledgerblue.commException import CommException
+from ledgerblue.comm import getDongle
+from ledgerblue.commException import CommException
 
 from snet.snet_cli.utils import get_address_from_private, normalize_private_key
 
