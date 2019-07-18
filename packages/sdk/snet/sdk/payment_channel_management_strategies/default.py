@@ -1,5 +1,5 @@
 class PaymentChannelManagementStrategy:
-    def __init__(self, sdk_context, block_offset=0, call_allowance=1):
+    def __init__(self, sdk_context, block_offset=240, call_allowance=1):
         self.sdk_context = sdk_context
         self.block_offset = block_offset
         self.call_allowance = call_allowance
@@ -13,7 +13,15 @@ class PaymentChannelManagementStrategy:
         mpe_balance = account.escrow_balance()
         default_expiration = service_client.default_channel_expiration()
 
-        payment_channel = payment_channels[0]
+        if len(payment_channels) < 1:
+            if service_call_price > mpe_balance:
+                payment_channel = service_client.deposit_and_open_channel(service_call_price, default_expiration + self.block_offset)
+            else:
+                payment_channel = service_client.open_channel(service_call_price, default_expiration + self.block_offset)
+            service_client.payment_channels = service_client.payment_channels + [payment_channel]
+            service_client.update_channel_states()
+        else:
+            payment_channel = payment_channels[0]
 
         if self._has_sufficient_funds(payment_channel, service_call_price) and not self._is_valid(payment_channel, default_expiration):
             payment_channel.extend_expiration(default_expiration + self.block_offset)
