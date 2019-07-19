@@ -1,3 +1,13 @@
+import google.protobuf.internal.api_implementation
+
+google.protobuf.internal.api_implementation.Type = lambda: 'python'
+
+from google.protobuf import symbol_database as _symbol_database
+
+_sym_db = _symbol_database.Default()
+_sym_db.RegisterMessage = lambda x: None
+
+
 import json
 import base64
 from urllib.parse import urljoin
