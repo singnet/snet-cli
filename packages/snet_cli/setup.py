@@ -18,7 +18,7 @@ setup(
     author_email='info@singularitynet.io',
     description='SingularityNET CLI',
     python_requires='>=3.6',
-    install_requires= common_dependencies + [
+    install_requires=common_dependencies + [
         'trezor==0.9.1',
         'ledgerblue==0.1.27',
     ],
