@@ -15,28 +15,31 @@ class PaymentChannelManagementStrategy:
 
         if len(payment_channels) < 1:
             if service_call_price > mpe_balance:
-                payment_channel = service_client.deposit_and_open_channel(service_call_price, default_expiration + self.block_offset)
+                payment_channel = service_client.deposit_and_open_channel(
+                    service_call_price, default_expiration + self.block_offset)
             else:
-                payment_channel = service_client.open_channel(service_call_price, default_expiration + self.block_offset)
-            service_client.payment_channels = service_client.payment_channels + [payment_channel]
+                payment_channel = service_client.open_channel(
+                    service_call_price, default_expiration + self.block_offset)
+            service_client.payment_channels = service_client.payment_channels + \
+                [payment_channel]
             service_client.update_channel_states()
         else:
             payment_channel = payment_channels[0]
 
         if self._has_sufficient_funds(payment_channel, service_call_price) and not self._is_valid(payment_channel, default_expiration):
-            payment_channel.extend_expiration(default_expiration + self.block_offset)
+            payment_channel.extend_expiration(
+                default_expiration + self.block_offset)
         elif not self._has_sufficient_funds(payment_channel, service_call_price) and self._is_valid(payment_channel, default_expiration):
             payment_channel.add_funds(service_call_price*self.call_allowance)
         elif not self._has_sufficient_funds(payment_channel, service_call_price) and not self._is_valid(payment_channel, default_expiration):
-            payment_channel.extend_and_add_funds(default_expiration + self.block_offset, service_call_price*self.call_allowance)
+            payment_channel.extend_and_add_funds(
+                default_expiration + self.block_offset, service_call_price*self.call_allowance)
 
         return payment_channel
-
 
     @staticmethod
     def _has_sufficient_funds(channel, amount):
         return channel.state["available_amount"] >= amount
-
 
     @staticmethod
     def _is_valid(channel, expiry):
