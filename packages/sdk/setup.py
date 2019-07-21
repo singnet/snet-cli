@@ -7,6 +7,8 @@ PACKAGE_NAME = 'snet.sdk'
 
 def is_package_installed(package_name):
     installed_modules = [p.project_name for p in pkg_resources.working_set]
+    print("Installed modules:")
+    print(installed_modules)
     return package_name in installed_modules
 
 
@@ -21,6 +23,7 @@ if is_package_installed('snet-cli'):
     # If snet_cli is not available, snet.snet_cli will be fetched from PyPI.
     print("Package 'snet_cli' is installed and in your PYTHONPATH: skipping snet.snet_cli dependency")
 else:
+    print("Package 'snet_cli is not installed: installing required snet.snet_cli dependency'")
     dependencies.append('snet.snet_cli')
 
 
