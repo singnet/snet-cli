@@ -68,6 +68,10 @@ class SnetSDK:
 
     def get_service_metadata(self, org_id, service_id):
         (found, registration_id, metadata_uri, tags) = self.registry_contract.functions.getServiceRegistrationById(bytes(org_id, "utf-8"), bytes(service_id, "utf-8")).call()
+
+        if found is not True:
+            raise Exception('No service "{}" found in organization "{}"'.format(service_id, org_id))
+
         metadata_hash = bytesuri_to_hash(metadata_uri)
         metadata_json = get_from_ipfs_and_checkhash(self.ipfs_client, metadata_hash)
         metadata = mpe_service_metadata_from_json(metadata_json)
