@@ -1,3 +1,6 @@
+
+
+
 # Test "snet organization"
 
 snet organization create test0 --org-id test0 -y -q

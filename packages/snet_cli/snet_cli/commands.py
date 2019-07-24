@@ -12,6 +12,10 @@ import ipfsapi
 import yaml
 from rfc3986 import urlparse
 
+from build.lib.snet.snet_cli.utils_ipfs import publish_file_in_ipfs
+from snet.snet_cli.mpe_orgainzation_metadata import OrganizationMetadata, PaymentStorageClient, Payment, Group
+from snet.snet_cli.mpe_service_metadata import mpe_service_metadata_from_json
+from snet.snet_cli.utils_ipfs import bytesuri_to_hash, get_from_ipfs_and_checkhash, hash_to_bytesuri
 from snet_cli.utils_config import get_contract_address, get_field_from_args_or_session, read_default_contract_address
 from snet_cli.identity import RpcIdentityProvider, MnemonicIdentityProvider, TrezorIdentityProvider, \
     LedgerIdentityProvider, KeyIdentityProvider, KeyStoreIdentityProvider
@@ -346,6 +350,124 @@ class ContractCommand(BlockchainCommand):
 
 
 class OrganizationCommand(BlockchainCommand):
+
+    def add_group(self):
+
+        metadata_file=self.args.metadata_file
+
+        try:
+            with open(metadata_file, 'r') as f:
+                org_metadata = OrganizationMetadata.from_json(json.load(f));
+        except Exception as e:
+            print("Organization metadata json file not found ,Please check --metadata-file path ")
+            raise e
+
+
+        payment_storage_client=PaymentStorageClient(self.args.payment_channel_connection_timeout,self.args.payment_channel_request_timeout,self.args.endpoints)
+        payment=Payment(self.args.payment_address,self.args.payment_expiration_threshold,self.args.payment_channel_storage_type,payment_storage_client)
+        group=Group(self.args.group_name,self.args.group_id,payment)
+        org_metadata.add_group(group)
+        org_metadata.save_pretty(metadata_file)
+
+
+
+
+    def remove_group(self):
+        group_id=self.args.group_id
+        metadata_file = self.args.metadata_file
+
+
+        try:
+            with open(metadata_file, 'r') as f:
+                org_metadata = OrganizationMetadata.from_json(json.load(f));
+        except Exception as e:
+            print("Organization metadata json file not found ,Please check --metadata-file path ")
+            raise e
+
+        existing_groups=org_metadata.groups
+        updated_groups = [group for group in existing_groups if  not group_id == group.group_id]
+        org_metadata.groups=updated_groups
+        org_metadata.save_pretty(metadata_file)
+
+
+
+    def set_changed_values_for_group(self,group):
+        #if value of a parameter is None that means it was not updated
+
+        if self.args.endpoints:
+            group.update_endpoints(self.args.endpoints)
+        if self.args.payment_address:
+            group.update_payment_address(self.args.payment_address)
+        if self.args.payment_expiration_threshold:
+            group.update_payment_expiration_threshold(self.args.payment_expiration_threshold)
+        if self.args.payment_channel_storage_type:
+            group.update_payment_channel_storage_type(self.args.payment_channel_storage_type)
+        if self.args.payment_channel_connection_timeout:
+            group.update_connection_timeout(self.args.payment_channel_connection_timeout)
+        if self.args.payment_channel_request_timeout:
+            group.update_request_timeout(self.args.payment_channel_request_timeout)
+
+
+
+    def update_group(self):
+        group_id = self.args.group_id
+        metadata_file = self.args.metadata_file
+        try:
+            with open(metadata_file, 'r') as f:
+                org_metadata = OrganizationMetadata.from_json(json.load(f));
+        except Exception as e:
+            print("Organization metadata json file not found ,Please check --metadata-file path ")
+            raise e
+        existing_groups = org_metadata.groups
+        for group in existing_groups:
+            if  group_id == group.group_id:
+                self.set_changed_values_for_group(group)
+
+        org_metadata.save_pretty(metadata_file)
+
+    def initalize_metadata(self):
+        org_id= self.args.org_id
+        metadata_file_name=self.args.metadata_file
+
+        # create unique uuid if org_id haven't been specified manualy
+        if (not org_id):
+            alphabet = string.ascii_letters + string.digits
+            org_id = ''.join(secrets.choice(alphabet) for i in range(32))
+
+        # Check if Organization already exists
+        found = self._getorganizationbyid(org_id)[0]
+        if found:
+            raise Exception("\nOrganization with id={} already exists!\n".format(org_id))
+        org_metadata = OrganizationMetadata(self.args.org_name,org_id)
+        org_metadata.save_pretty(metadata_file_name)
+
+
+    def print_metadata(self,org_id):
+        org_id=self.args.org_id
+        org_metadta=self._get_organization_metadata_from_registry(org_id)
+        #org_metadta=OrganizationMetadata.from_json(org_id)
+
+        self._printout(org_metadta)
+
+    def _get_service_registration(self,org_id):
+        params = [type_converter("bytes32")(org_id)]
+        rez = self.call_contract_command(
+            "Registry", "getOrganizationById", params)
+        if (rez[0] == False):
+            raise Exception("Cannot find  Organization with id=%s" % (
+                self.args.org_id))
+        return {"orgMetadataURI": rez[2]}
+
+
+    def _get_organization_metadata_from_registry(self,org_id):
+        rez = self._get_service_registration(org_id)
+        metadata_hash = bytesuri_to_hash(rez["orgMetadataURI"])
+        metadata = get_from_ipfs_and_checkhash(
+            self._get_ipfs_client(), metadata_hash)
+        metadata = metadata.decode("utf-8")
+
+        return metadata
+
     def _getorganizationbyid(self, org_id):
         org_id_bytes32 = type_converter("bytes32")(org_id)
         if (len(org_id_bytes32) > 32):
@@ -407,19 +529,30 @@ class OrganizationCommand(BlockchainCommand):
                 self._printout(" - {}".format(bytes32_to_str(repo)))
 
     def create(self):
-        org_id = self.args.org_id
-        # create unique uuid if org_id haven't been specified manualy
-        if (not org_id):
-            alphabet = string.ascii_letters + string.digits
-            org_id   = ''.join(secrets.choice(alphabet) for i in range(32))
 
-        # Check if Organization already exists
+
+        metadata_file = self.args.metadata_file
+
+        try:
+            with open(metadata_file, 'r') as f:
+                org_metadata = OrganizationMetadata.from_json(json.load(f));
+        except Exception as e:
+            print("Organization metadata json file not found ,Please check --metadata-file path ")
+            raise e
+        org_id=org_metadata.org_id
+        #validate the metadata before creating
+        org_metadata.validate()
+
+        #R Check if Organization already exists
         found = self._getorganizationbyid(org_id)[0]
         if found:
             raise Exception("\nOrganization with id={} already exists!\n".format(org_id))
 
         members = self.get_members_from_args()
-        params = [type_converter("bytes32")(org_id), self.args.org_name, members]
+
+
+        ipfs_metatdata_uri = publish_file_in_ipfs(self._get_ipfs_client(),metadata_file)
+        params = [type_converter("bytes32")(org_id),hash_to_bytesuri(ipfs_metatdata_uri) , members]
         self._printout("Creating transaction to create organization name={} id={}\n".format(self.args.org_name, org_id))
         self.transact_contract_command("Registry", "createOrganization", params)
         self._printout("id:\n%s"%org_id)
@@ -437,6 +570,31 @@ class OrganizationCommand(BlockchainCommand):
             self._printerr("\nTransaction error!\nHINT: Check if you are the owner of organization with id={}\n".format(org_id))
             raise
 
+    def update_metadata(self):
+        metadata_file = self.args.metadata_file
+        org_metadata = OrganizationMetadata.from_json(json.load(metadata_file))
+        # validate the metadata before updating
+        org_metadata.validate()
+
+        org_id = org_metadata.org_id
+        # Check if Organization already exists
+        found = self._getorganizationbyid(org_id)[0]
+        if not found:
+            raise Exception("\nOrganization with id={} does not  exists!\n".format(org_id))
+
+        members = self.get_members_from_args()
+
+        ipfs_metatdata_uri = publish_file_in_ipfs(self._get_ipfs_client(), metadata_file)
+        params = [type_converter("bytes32")(org_id), ipfs_metatdata_uri, members]
+        self._printout("Creating transaction to create organization name={} id={}\n".format(self.args.org_name, org_id))
+        self.transact_contract_command("Registry", "changeOrganizationMetadataURI", params)
+        self._printout("id:\n%s" % org_id)
+
+
+
+
+
+
     def list_services(self):
         org_id = self.args.org_id
         (found, org_service_list) = self.call_contract_command("Registry", "listServicesForOrganization", [type_converter("bytes32")(org_id)])
@@ -448,22 +606,6 @@ class OrganizationCommand(BlockchainCommand):
         else:
             self._printout("Organization with id={} exists but has no registered services.".format(org_id))
 
-    def change_name(self):
-        org_id = self.args.org_id
-        new_org_name = self.args.name
-        # Check if Organization exists
-        (found, _, org_name, _, _, _, _) = self._getorganizationbyid(org_id)
-        self.error_organization_not_found(org_id, found)
-
-        if new_org_name == org_name:
-            raise Exception("\n{} is already the name of the Organization with id={}!\n".format(new_org_name, org_id))
-
-        self._printout("Creating transaction to change organization {}'s name...\n".format(org_id))
-        try:
-            self.transact_contract_command("Registry", "changeOrganizationName", [type_converter("bytes32")(org_id), new_org_name])
-        except Exception as e:
-            self._printerr("\nTransaction error!\nHINT: Check if you are the owner of {}\n".format(org_id))
-            raise
 
     def change_owner(self):
         org_id = self.args.org_id

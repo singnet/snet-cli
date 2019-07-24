@@ -262,12 +262,126 @@ def add_p_org_id(p):
                    metavar="ORG_ID")
 
 
+def add_metadatafile_argument_for_org(p):
+    p.add_argument("--metadata-file",
+                   default="organization_metadata.json",
+                   help="Service metadata json file (default organization_metadata.json)")
+
+
 def add_organization_options(parser):
     parser.set_defaults(cmd=OrganizationCommand)
 
     subparsers = parser.add_subparsers(
         title="Organization commands", metavar="COMMAND")
     subparsers.required = True
+
+
+    p = subparsers.add_parser("metadata-init",
+                              help="Initalize matadata for organization ")
+    p.set_defaults(fn="initalize_metadata")
+
+    p.add_argument("org_name",
+                   help="Organization name")
+    pm = p.add_mutually_exclusive_group(required=True)
+    pm.add_argument("--org-id",
+                    default=None,
+                    help="Unique organization Id")
+    pm.add_argument("--auto",
+                    action='store_true',
+                    help="Generate organization Id (by default random id is generated)")
+    add_metadatafile_argument_for_org(p)
+
+
+
+    p = subparsers.add_parser("print-metadata",
+                              help="Initalize matadata for organization ")
+    p.set_defaults(fn="print_metadata")
+
+    p.add_argument("org_name",
+                   help="Organization name")
+    p.add_argument("org_id",
+                   help="Organization Id")
+
+
+
+    p = subparsers.add_parser("add-group",
+                              help="Add group to organization ")
+    p.set_defaults(fn="add_group")
+
+    p.add_argument("group_name",
+                   help="Group Name ")
+
+    p.add_argument("group_id",
+                   help="Group Id")
+
+    p.add_argument("payment_address",
+                      help="Payment address")
+    p.add_argument("endpoints",
+                   nargs='*',
+                   help="Endpoints for the first group")
+
+
+    p.add_argument("--payment-expiration-threshold",
+                   default=500,
+                   type=int,
+                   help="Service metadata json file (default organization_metadata.json)")
+
+    p.add_argument("--payment-channel-storage-type",
+                   default="etcd",
+                   help="Service metadata json file (default organization_metadata.json)")
+
+    p.add_argument("--payment-channel-connection-timeout",
+                   default=3000,
+                   type=int,
+                   help="Service metadata json file (default organization_metadata.json)")
+
+    p.add_argument("--payment-channel-request-timeout",
+                   default=5,
+                   type=int,
+                   help="Service metadata json file (default organization_metadata.json)")
+    add_metadatafile_argument_for_org(p)
+
+
+    p = subparsers.add_parser("update-group",
+                              help="Add group to organization ")
+
+    p.set_defaults(fn="update_group")
+    p.add_argument("group_id",
+                   help="Group Id")
+
+    p.add_argument("--payment-address",
+                   help="Payment Address")
+    p.add_argument("--endpoints",
+                   nargs='*',
+                   help="Endpoints for the first group")
+
+    p.add_argument("--payment-expiration-threshold",
+                   help="Payment Expiration threshold")
+
+    p.add_argument("--payment-channel-storage-type",
+                   help="Payment Channel Storage Type")
+
+    p.add_argument("--payment-channel-connection-timeout",
+                   help="Payment Channel Connection timeout")
+
+    p.add_argument("--payment-channel-request-timeout",
+                   help="Payment channel Request time out")
+
+
+
+    add_metadatafile_argument_for_org(p)
+
+    p = subparsers.add_parser("remove-group",
+                              help="Add group to organization ")
+    p.set_defaults(fn="remove_group")
+
+    p.add_argument("group_id",
+                   help="Group Id ")
+    add_metadatafile_argument_for_org(p)
+
+
+
+
 
     p = subparsers.add_parser("list",
                               help="List of Organizations Ids")
@@ -304,29 +418,32 @@ def add_organization_options(parser):
     p = subparsers.add_parser("create",
                               help="Create an Organization")
     p.set_defaults(fn="create")
-    p.add_argument("org_name",
+    p.add_argument("--org_name",
                    help="Name of the Organization",
                    metavar="ORG_NAME")
-    pm = p.add_mutually_exclusive_group(required=True)
-    pm.add_argument("--org-id",
-                    default=None,
-                    help="Unique organization Id")
-    pm.add_argument("--auto",
-                    action='store_true',
-                    help="Generate organization Id (by default random id is generated)")
+    add_metadatafile_argument_for_org(p)
     p.add_argument("--members",
                    help="List of members to be added to the organization",
                    metavar="ORG_MEMBERS[]")
     add_organization_arguments(p)
 
-    p = subparsers.add_parser("change-name",
-                              help="Change Organization's name")
-    p.set_defaults(fn="change_name")
-    add_p_org_id(p)
-    p.add_argument("name",
-                   help="The new Organization's name",
-                   metavar="ORG_NEW_NAME")
+    p = subparsers.add_parser("update-metadata",
+                              help="Create an Organization")
+    p.set_defaults(fn="update")
+    add_metadatafile_argument_for_org(p)
+    p.add_argument("--members",
+                   help="List of members to be added to the organization",
+                   metavar="ORG_MEMBERS[]")
     add_organization_arguments(p)
+
+    # p = subparsers.add_parser("change-name",
+    #                           help="Change Organization's name")
+    # p.set_defaults(fn="change_name")
+    # add_p_org_id(p)
+    # p.add_argument("name",
+    #                help="The new Organization's name",
+    #                metavar="ORG_NEW_NAME")
+    # add_organization_arguments(p)
 
     p = subparsers.add_parser("change-owner",
                               help="Change Organization's owner")
@@ -908,6 +1025,28 @@ def add_mpe_service_options(parser):
                    metavar="PRICE")
     add_p_metadata_file_opt(p)
 
+    p = subparsers.add_parser("metadata-set-method-price",
+                              help="Set pricing model as method price for all methods")
+    p.set_defaults(fn="metadata_set_method_price")
+
+    p.add_argument("group_name",
+                   help="Set fixed price in AGI token for all methods")
+    p.add_argument("package_name",
+                   help="Set fixed price in AGI token for all methods")
+    p.add_argument("service_name",
+                   help="Set fixed price in AGI token for all methods")
+
+    p.add_argument("method",
+                   help="Set fixed price in AGI token for all methods",
+                   )
+
+
+    p.add_argument("price",
+                   type=stragi2cogs,
+                   help="Set fixed price in AGI token for all methods",
+                   metavar="PRICE")
+    add_p_metadata_file_opt(p)
+
     p = subparsers.add_parser("metadata-add-group",
                               help="Add new group of replicas")
     p.set_defaults(fn="metadata_add_group")
@@ -915,25 +1054,28 @@ def add_mpe_service_options(parser):
     p.add_argument("group_name",
                    help="Name of the new payment group",
                    metavar="GROUP_NAME")
-    p.add_argument("payment_address",
-                   help="Payment_address for this group",
-                   metavar="PAYMENT_ADDRESS")
 
     p = subparsers.add_parser("metadata-add-endpoints",
                               help="Add endpoints to the groups")
     p.set_defaults(fn="metadata_add_endpoints")
+    p.add_argument("group_name",
+                   default=None,
+                   help="Name of the payment group to which we want to add endpoints. Parameter should be specified in case of several payment groups")
+
     p.add_argument("endpoints",
                    nargs="+",
                    help="Endpoints",
                    metavar="ENDPOINTS")
-    p.add_argument("--group-name",
-                   default=None,
-                   help="Name of the payment group to which we want to add endpoints. Parameter should be specified in case of several payment groups")
     add_p_metadata_file_opt(p)
 
     p = subparsers.add_parser("metadata-remove-all-endpoints",
                               help="Remove all endpoints from metadata")
+    p.add_argument("group_name",
+                   default=None,
+                   help="Name of the payment group to which we want to add endpoints. Parameter should be specified in case of several payment groups")
+
     p.set_defaults(fn="metadata_remove_all_endpoints")
+
     add_p_metadata_file_opt(p)
 
     p = subparsers.add_parser("metadata-add-assets",
