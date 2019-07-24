@@ -5,7 +5,7 @@ snet service publish testo tests -y -q
 
 # change group_id
 
-snet service metadata-init ./service_spec1/ ExampleService 0x52653A9091b5d5021bed06c5118D24b23620c529 --fixed-price 0.0001 --endpoints 8.8.8.8:2020 --metadata-file service_metadata2.json
+snet service metadata-init ./service_spec1/ ExampleService 0x52653A9091b5d5021bed06c5118D24b23620c529  --fixed-price 0.0001 --endpoints 8.8.8.8:2020 --metadata-file service_metadata2.json
 
 snet service update-metadata testo tests --metadata-file service_metadata2.json -yq && exit 1 || echo "fail as expected"
 
@@ -44,13 +44,13 @@ snet service metadata-init ./service_spec1/ ExampleService 0x52653A9091b5d5021be
 snet --print-traceback service metadata-add-assets ./service_spec1/test hero_image --metadata-file=service_asset_metadata.json
 snet --print-traceback service metadata-add-assets ./service_spec1/test terms_of_use --metadata-file=service_asset_metadata.json
 result=$(cat service_asset_metadata.json | jq '.assets.hero_image')
-test $result = '"QmbFMke1KXqnYyBBWxB74N4c5SBnJMVAiMNRcGu6x1AwQH"' && echo "add asset with single value  test case passed " || exit 1
+test $result = '"QmSW7UtAuqEekS44H3yTqDSJM2WV6GiTXG8crhSideUSF3/test"' && echo "add asset with single value  test case passed " || exit 1
 
 #add assets with multiple values
 snet --print-traceback service metadata-add-assets ./service_spec1/test images --metadata-file=service_asset_metadata.json
 snet --print-traceback service metadata-add-assets ./service_spec1/test images --metadata-file=service_asset_metadata.json
 result=$(cat service_asset_metadata.json | jq '.assets.images[1]')
-test $result = '"QmbFMke1KXqnYyBBWxB74N4c5SBnJMVAiMNRcGu6x1AwQH"' && echo "add asset with multiple value  test case passed " || exit 1
+test $result = '"QmSW7UtAuqEekS44H3yTqDSJM2WV6GiTXG8crhSideUSF3/test"' && echo "add asset with multiple value  test case passed " || exit 1
 
 #remove assets
 snet --print-traceback service metadata-remove-assets hero_image --metadata-file=service_asset_metadata.json

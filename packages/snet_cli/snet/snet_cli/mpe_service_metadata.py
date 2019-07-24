@@ -216,8 +216,7 @@ class MPEServiceMetadata:
                 group["endpoints"] = []
 
     def remove_all_endpoints_for_group(self, group_name):
-        self.m["endpoints"] = [e for e in self.m["endpoints"]
-                               if e["group_name"] != group_name]
+        self.m["endpoints"] = [e for e in self.m["endpoints"] if e["group_name"] != group_name]
 
     def is_group_name_exists(self, group_name):
         """ check if group with given name is already exists """

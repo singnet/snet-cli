@@ -66,6 +66,10 @@ class MPEServiceCommand(BlockchainCommand):
 
     def _metadata_add_group(self, metadata):
         metadata.add_group(self.args.group_name)
+        if (not web3.eth.is_checksum_address(self.args.payment_address)):
+            raise Exception(
+                "payment_address parameter is not a valid Ethereum checksum address")
+        metadata.add_group(self.args.group_name, self.args.payment_address)
 
     def metadata_add_group(self):
         metadata = load_mpe_service_metadata(self.args.metadata_file)
