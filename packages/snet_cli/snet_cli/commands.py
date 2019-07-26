@@ -419,7 +419,7 @@ class OrganizationCommand(BlockchainCommand):
             raise Exception("\nOrganization with id={} already exists!\n".format(org_id))
 
         members = self.get_members_from_args()
-        params = [type_converter("bytes32")(org_id), self.args.org_name, members]
+        params = [type_converter("bytes32")(org_id), type_converter("bytes")(self.args.org_name), members]
         self._printout("Creating transaction to create organization name={} id={}\n".format(self.args.org_name, org_id))
         self.transact_contract_command("Registry", "createOrganization", params)
         self._printout("id:\n%s"%org_id)
