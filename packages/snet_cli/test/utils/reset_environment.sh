@@ -14,7 +14,7 @@ fi
       
 
 # I. restart ipfs
-killall -w ipfs || echo "supress an error"
+ipfs shutdown || echo "supress an error"
 
 rm -rf ~/.ipfs
 ipfs init
@@ -25,7 +25,7 @@ nohup ipfs daemon > ipfs.log 2>&1 &
 
 
 # II. restart ganache and remigrate platform-contracts
-killall -w node || echo "supress an error"
+killall node || echo "supress an error"
 
 cd ../platform-contracts
 nohup ./node_modules/.bin/ganache-cli --mnemonic 'gauge enact biology destroy normal tunnel slight slide wide sauce ladder produce' --networkId 829257324 > /dev/null &
