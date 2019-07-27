@@ -1,29 +1,27 @@
 import getpass
 import json
+import secrets
+import string
 import sys
 from textwrap import indent
 from urllib.parse import urljoin
-import secrets
-import string
 
-from web3.eth import is_checksum_address
-from web3.gas_strategies.time_based import fast_gas_price_strategy, medium_gas_price_strategy, slow_gas_price_strategy
 import ipfsapi
 import yaml
 from rfc3986 import urlparse
+from web3.eth import is_checksum_address
+from web3.gas_strategies.time_based import fast_gas_price_strategy, medium_gas_price_strategy, slow_gas_price_strategy
 
 from build.lib.snet.snet_cli.utils_ipfs import publish_file_in_ipfs
+from snet.snet_cli.contract import Contract
 from snet.snet_cli.mpe_orgainzation_metadata import OrganizationMetadata, PaymentStorageClient, Payment, Group
-from snet.snet_cli.mpe_service_metadata import mpe_service_metadata_from_json
+from snet.snet_cli.utils import DefaultAttributeObject, get_web3, serializable, type_converter, get_contract_def, \
+    get_cli_version, bytes32_to_str
 from snet.snet_cli.utils_ipfs import bytesuri_to_hash, get_from_ipfs_and_checkhash, hash_to_bytesuri
-from snet_cli.utils_config import get_contract_address, get_field_from_args_or_session, read_default_contract_address
 from snet_cli.identity import RpcIdentityProvider, MnemonicIdentityProvider, TrezorIdentityProvider, \
     LedgerIdentityProvider, KeyIdentityProvider, KeyStoreIdentityProvider
 from snet_cli.identity import get_kws_for_identity_type
-
-from snet.snet_cli.contract import Contract
-from snet.snet_cli.utils import DefaultAttributeObject, get_web3, serializable, type_converter, get_contract_def, \
-    get_cli_version, bytes32_to_str
+from snet_cli.utils_config import get_contract_address, get_field_from_args_or_session, read_default_contract_address
 
 
 class Command(object):
