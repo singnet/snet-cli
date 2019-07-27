@@ -340,7 +340,7 @@ def add_organization_options(parser):
 
 
     p = subparsers.add_parser("update-group",
-                              help="Add group to organization ")
+                              help="Update group of organization ")
 
     p.set_defaults(fn="update_group")
     p.add_argument("group_id",
@@ -369,7 +369,7 @@ def add_organization_options(parser):
     add_metadatafile_argument_for_org(p)
 
     p = subparsers.add_parser("remove-group",
-                              help="Add group to organization ")
+                              help="Remove group of organization ")
     p.set_defaults(fn="remove_group")
 
     p.add_argument("group_id",
