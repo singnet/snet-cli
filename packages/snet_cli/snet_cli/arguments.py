@@ -278,23 +278,19 @@ def add_organization_options(parser):
 
     p = subparsers.add_parser("metadata-init",
                               help="Initalize matadata for organization ")
-    p.set_defaults(fn="initalize_metadata")
+    p.set_defaults(fn="initialize_metadata")
 
     p.add_argument("org_name",
                    help="Organization name")
-    pm = p.add_mutually_exclusive_group(required=True)
-    pm.add_argument("--org-id",
-                    default=None,
-                    help="Unique organization Id")
-    pm.add_argument("--auto",
-                    action='store_true',
-                    help="Generate organization Id (by default random id is generated)")
+    p.add_argument("org-id",
+                   default=None,
+                   help="Unique organization Id")
     add_metadatafile_argument_for_org(p)
 
 
 
     p = subparsers.add_parser("print-metadata",
-                              help="Initalize matadata for organization ")
+                              help="Print metadata for given organization")
     p.set_defaults(fn="print_metadata")
 
     p.add_argument("org_name",
@@ -305,7 +301,7 @@ def add_organization_options(parser):
 
 
     p = subparsers.add_parser("add-group",
-                              help="Add group to organization ")
+                              help="Add group to organization")
     p.set_defaults(fn="add_group")
 
     p.add_argument("group_name",
@@ -322,23 +318,24 @@ def add_organization_options(parser):
 
 
     p.add_argument("--payment-expiration-threshold",
-                   default=500,
                    type=int,
-                   help="Service metadata json file (default organization_metadata.json)")
+                   default=100,
+
+                   help="Payment Expiration threshold")
 
     p.add_argument("--payment-channel-storage-type",
                    default="etcd",
-                   help="Service metadata json file (default organization_metadata.json)")
+                   help="Storage channel for payment")
 
     p.add_argument("--payment-channel-connection-timeout",
-                   default=3000,
-                   type=int,
-                   help="Service metadata json file (default organization_metadata.json)")
+                   default="100s",
+
+                   help="Pyament channel connection timeout ")
 
     p.add_argument("--payment-channel-request-timeout",
-                   default=5,
-                   type=int,
-                   help="Service metadata json file (default organization_metadata.json)")
+                   default="5s",
+                   help="Payment channel request timeout")
+
     add_metadatafile_argument_for_org(p)
 
 
@@ -365,7 +362,7 @@ def add_organization_options(parser):
                    help="Payment Channel Connection timeout")
 
     p.add_argument("--payment-channel-request-timeout",
-                   help="Payment channel Request time out")
+                   help="Payment channel Request timeout")
 
 
 
@@ -429,21 +426,12 @@ def add_organization_options(parser):
 
     p = subparsers.add_parser("update-metadata",
                               help="Create an Organization")
-    p.set_defaults(fn="update")
+    p.set_defaults(fn="update_metadata")
     add_metadatafile_argument_for_org(p)
     p.add_argument("--members",
                    help="List of members to be added to the organization",
                    metavar="ORG_MEMBERS[]")
     add_organization_arguments(p)
-
-    # p = subparsers.add_parser("change-name",
-    #                           help="Change Organization's name")
-    # p.set_defaults(fn="change_name")
-    # add_p_org_id(p)
-    # p.add_argument("name",
-    #                help="The new Organization's name",
-    #                metavar="ORG_NEW_NAME")
-    # add_organization_arguments(p)
 
     p = subparsers.add_parser("change-owner",
                               help="Change Organization's owner")
@@ -992,21 +980,11 @@ def add_mpe_service_options(parser):
                    default="proto",
                    choices=['proto', 'json'],
                    help="Service encoding")
-    p.add_argument("--endpoints",
-                   default=[],
-                   nargs='*',
-                   help="Endpoints for the first group")
-    p.add_argument("--fixed-price",
-                   type=stragi2cogs,
-                   help="Set fixed price in AGI token for all methods")
+
     p.add_argument("--service-type",
                    default="grpc",
                    choices=['grpc', 'jsonrpc', 'process'],
                    help="Service type")
-    p.add_argument("--payment-expiration-threshold",
-                   type=int,
-                   default=40320,
-                   help="Service expiration threshold in blocks (default is 40320 ~ one week with 15s/block)")
 
     p = subparsers.add_parser("metadata-set-model",
                               help="Publish protobuf model in ipfs and update existed metadata file")
@@ -1019,25 +997,29 @@ def add_mpe_service_options(parser):
     p = subparsers.add_parser("metadata-set-fixed-price",
                               help="Set pricing model as fixed price for all methods")
     p.set_defaults(fn="metadata_set_fixed_price")
+
+    p.add_argument("group_name",
+                   help="group name for fixed price method")
     p.add_argument("price",
                    type=stragi2cogs,
                    help="Set fixed price in AGI token for all methods",
                    metavar="PRICE")
     add_p_metadata_file_opt(p)
 
+
+
     p = subparsers.add_parser("metadata-set-method-price",
                               help="Set pricing model as method price for all methods")
     p.set_defaults(fn="metadata_set_method_price")
 
     p.add_argument("group_name",
-                   help="Set fixed price in AGI token for all methods")
+                   help="group name")
     p.add_argument("package_name",
-                   help="Set fixed price in AGI token for all methods")
+                   help="package name ")
     p.add_argument("service_name",
-                   help="Set fixed price in AGI token for all methods")
-
+                   help="service name")
     p.add_argument("method",
-                   help="Set fixed price in AGI token for all methods",
+                   help="method for which price need to be set",
                    )
 
 
@@ -1054,13 +1036,16 @@ def add_mpe_service_options(parser):
     p.add_argument("group_name",
                    help="Name of the new payment group",
                    metavar="GROUP_NAME")
+    p.add_argument("group_id",
+                   help="Name of the new payment group",
+                   metavar="GROUP_ID")
 
     p = subparsers.add_parser("metadata-add-endpoints",
                               help="Add endpoints to the groups")
     p.set_defaults(fn="metadata_add_endpoints")
     p.add_argument("group_name",
                    default=None,
-                   help="Name of the payment group to which we want to add endpoints. Parameter should be specified in case of several payment groups")
+                   help="Name of the payment group to which we want to add endpoints")
 
     p.add_argument("endpoints",
                    nargs="+",
@@ -1072,7 +1057,7 @@ def add_mpe_service_options(parser):
                               help="Remove all endpoints from metadata")
     p.add_argument("group_name",
                    default=None,
-                   help="Name of the payment group to which we want to add endpoints. Parameter should be specified in case of several payment groups")
+                   help="Name of the payment group to which we want to remove endpoints")
 
     p.set_defaults(fn="metadata_remove_all_endpoints")
 
@@ -1126,9 +1111,9 @@ def add_mpe_service_options(parser):
     p.add_argument("endpoints",
                    nargs="+",
                    help="Endpoints")
-    p.add_argument("--group-name",
+    p.add_argument("group-name",
                    default=None,
-                   help="Name of the payment group to which we want to add endpoints. Parameter should be specified in case of several payment groups")
+                   help="Name of the payment group to which we want to update endpoints")
     add_p_metadata_file_opt(p)
 
     p = subparsers.add_parser("metadata-add-description",

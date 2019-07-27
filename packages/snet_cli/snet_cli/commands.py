@@ -22,7 +22,8 @@ from snet_cli.identity import RpcIdentityProvider, MnemonicIdentityProvider, Tre
 from snet_cli.identity import get_kws_for_identity_type
 
 from snet.snet_cli.contract import Contract
-from snet.snet_cli.utils import DefaultAttributeObject, get_web3, serializable, type_converter, get_contract_def, get_cli_version, bytes32_to_str
+from snet.snet_cli.utils import DefaultAttributeObject, get_web3, serializable, type_converter, get_contract_def, \
+    get_cli_version, bytes32_to_str
 
 
 class Command(object):
@@ -92,10 +93,12 @@ class cachedGasPriceStrategy:
     def __init__(self, gas_price_param):
         self.gas_price_param = gas_price_param
         self.cached_gas_price = None
+
     def __call__(self, w3, transaction_params):
         if (self.cached_gas_price is None):
             self.cached_gas_price = int(self.calc_gas_price(w3, transaction_params))
         return self.cached_gas_price
+
     def calc_gas_price(self, w3, transaction_params):
         gas_price_param = self.gas_price_param
         if (gas_price_param.isdigit()):
@@ -106,7 +109,8 @@ class cachedGasPriceStrategy:
             return (medium_gas_price_strategy(w3, transaction_params))
         if (gas_price_param == "slow"):
             return (slow_gas_price_strategy(w3, transaction_params))
-        raise Exception("Unknown gas price strategy: %s"%gas_price_param)
+        raise Exception("Unknown gas price strategy: %s" % gas_price_param)
+
     def is_going_to_calculate(self):
         return self.cached_gas_price is None and not self.gas_price_param.isdigit()
 
@@ -127,14 +131,14 @@ class BlockchainCommand(Command):
         return int(get_field_from_args_or_session(self.config, self.args, "wallet_index"))
 
     def get_gas_price_param(self):
-         return get_field_from_args_or_session(self.config, self.args, "gas_price")
+        return get_field_from_args_or_session(self.config, self.args, "gas_price")
 
     def get_gas_price_verbose(self):
         # gas price is not given explicitly in Wei
         if (self.w3.eth.gasPriceStrategy.is_going_to_calculate()):
             self._printerr("# Calculating gas price. It might take ~60 seconds.")
         g = self.w3.eth.generateGasPrice()
-        self._printerr("# gas_price = %f GWei"%(g * 1E-9))
+        self._printerr("# gas_price = %f GWei" % (g * 1E-9))
         return g
 
     def get_mpe_address(self):
@@ -172,9 +176,10 @@ class BlockchainCommand(Command):
             for k, v in named_inputs.items():
                 args_dict["contract_named_input_{}".format(k)] = v
             return DefaultAttributeObject(**args_dict)
+
         return f
 
-    def get_ContractCommand(self, contract_name, contract_address, contract_fn, contract_params, is_silent = True):
+    def get_ContractCommand(self, contract_name, contract_address, contract_fn, contract_params, is_silent=True):
         contract_def = get_contract_def(contract_name)
         if (is_silent):
             out_f = None
@@ -182,24 +187,25 @@ class BlockchainCommand(Command):
         else:
             out_f = self.out_f
             err_f = self.err_f
-        return ContractCommand(config= self.config,
-                               args  = self.get_contract_argser(
-                                             contract_address  = contract_address,
-                                             contract_function = contract_fn,
-                                             contract_def      = contract_def,
-                                             contract_name     = contract_name)(*contract_params),
-                               out_f = out_f,
-                               err_f = err_f,
-                               w3    = self.w3,
-                               ident = self.ident)
+        return ContractCommand(config=self.config,
+                               args=self.get_contract_argser(
+                                   contract_address=contract_address,
+                                   contract_function=contract_fn,
+                                   contract_def=contract_def,
+                                   contract_name=contract_name)(*contract_params),
+                               out_f=out_f,
+                               err_f=err_f,
+                               w3=self.w3,
+                               ident=self.ident)
 
-    def call_contract_command(self, contract_name, contract_fn, contract_params, is_silent = True):
+    def call_contract_command(self, contract_name, contract_fn, contract_params, is_silent=True):
         contract_address = get_contract_address(self, contract_name)
         return self.get_ContractCommand(contract_name, contract_address, contract_fn, contract_params, is_silent).call()
 
-    def transact_contract_command(self, contract_name, contract_fn, contract_params, is_silent = False):
+    def transact_contract_command(self, contract_name, contract_fn, contract_params, is_silent=False):
         contract_address = get_contract_address(self, contract_name)
-        return self.get_ContractCommand(contract_name, contract_address, contract_fn, contract_params, is_silent).transact()
+        return self.get_ContractCommand(contract_name, contract_address, contract_fn, contract_params,
+                                        is_silent).transact()
 
 
 class IdentityCommand(Command):
@@ -207,7 +213,8 @@ class IdentityCommand(Command):
         identity = {}
 
         identity_name = self.args.identity_name
-        self._ensure(not identity_name in self.config.get_all_identities_names(), "identity_name {} already exists".format(identity_name))
+        self._ensure(not identity_name in self.config.get_all_identities_names(),
+                     "identity_name {} already exists".format(identity_name))
 
         identity_type = self.args.identity_type
         identity["identity_type"] = identity_type
@@ -257,11 +264,12 @@ class NetworkCommand(Command):
         network_id = None
         if (not self.args.skip_check):
             # check endpoint by getting its network_id
-            w3         = get_web3(self.args.eth_rpc_endpoint)
+            w3 = get_web3(self.args.eth_rpc_endpoint)
             network_id = w3.version.network
 
-        self._printout("add network with name='%s' with networkId='%s'"%(self.args.network_name, str(network_id)))
+        self._printout("add network with name='%s' with networkId='%s'" % (self.args.network_name, str(network_id)))
         self.config.add_network(self.args.network_name, self.args.eth_rpc_endpoint, self.args.default_gas_price)
+
     def set(self):
         self.config.set_session_network(self.args.network_name, self.out_f)
 
@@ -273,10 +281,11 @@ class SessionSetCommand(Command):
     def unset(self):
         self.config.unset_session_field(self.args.key, self.out_f)
 
+
 class SessionShowCommand(BlockchainCommand):
     def show(self):
         rez = self.config.session_to_dict()
-        key =  "network.%s"%rez['session']['network']
+        key = "network.%s" % rez['session']['network']
         self.populate_contract_address(rez, key)
 
         # we don't want to who private_key and mnemonic
@@ -288,8 +297,10 @@ class SessionShowCommand(BlockchainCommand):
     def populate_contract_address(self, rez, key):
         try:
             rez[key]['default_registry_at'] = read_default_contract_address(w3=self.w3, contract_name="Registry")
-            rez[key]['default_multipartyescrow_at'] = read_default_contract_address(w3=self.w3, contract_name="MultiPartyEscrow")
-            rez[key]['default_singularitynettoken_at'] = read_default_contract_address(w3=self.w3, contract_name="SingularityNetToken")
+            rez[key]['default_multipartyescrow_at'] = read_default_contract_address(w3=self.w3,
+                                                                                    contract_name="MultiPartyEscrow")
+            rez[key]['default_singularitynettoken_at'] = read_default_contract_address(w3=self.w3,
+                                                                                       contract_name="SingularityNetToken")
         except Exception as e:
             pass
 
@@ -298,7 +309,8 @@ class SessionShowCommand(BlockchainCommand):
 
 class ContractCommand(BlockchainCommand):
     def call(self):
-        contract_address = get_contract_address(self, self.args.contract_name, "--at is required to specify target contract address")
+        contract_address = get_contract_address(self, self.args.contract_name,
+                                                "--at is required to specify target contract address")
 
         abi = self.args.contract_def["abi"]
 
@@ -315,7 +327,8 @@ class ContractCommand(BlockchainCommand):
         return result
 
     def transact(self):
-        contract_address = get_contract_address(self, self.args.contract_name, "--at is required to specify target contract address")
+        contract_address = get_contract_address(self, self.args.contract_name,
+                                                "--at is required to specify target contract address")
 
         abi = self.args.contract_def["abi"]
 
@@ -352,8 +365,7 @@ class ContractCommand(BlockchainCommand):
 class OrganizationCommand(BlockchainCommand):
 
     def add_group(self):
-
-        metadata_file=self.args.metadata_file
+        metadata_file = self.args.metadata_file
 
         try:
             with open(metadata_file, 'r') as f:
@@ -362,20 +374,17 @@ class OrganizationCommand(BlockchainCommand):
             print("Organization metadata json file not found ,Please check --metadata-file path ")
             raise e
 
-
-        payment_storage_client=PaymentStorageClient(self.args.payment_channel_connection_timeout,self.args.payment_channel_request_timeout,self.args.endpoints)
-        payment=Payment(self.args.payment_address,self.args.payment_expiration_threshold,self.args.payment_channel_storage_type,payment_storage_client)
-        group=Group(self.args.group_name,self.args.group_id,payment)
+        payment_storage_client = PaymentStorageClient(self.args.payment_channel_connection_timeout,
+                                                      self.args.payment_channel_request_timeout, self.args.endpoints)
+        payment = Payment(self.args.payment_address, self.args.payment_expiration_threshold,
+                          self.args.payment_channel_storage_type, payment_storage_client)
+        group = Group(self.args.group_name, self.args.group_id, payment)
         org_metadata.add_group(group)
         org_metadata.save_pretty(metadata_file)
 
-
-
-
     def remove_group(self):
-        group_id=self.args.group_id
+        group_id = self.args.group_id
         metadata_file = self.args.metadata_file
-
 
         try:
             with open(metadata_file, 'r') as f:
@@ -384,15 +393,13 @@ class OrganizationCommand(BlockchainCommand):
             print("Organization metadata json file not found ,Please check --metadata-file path ")
             raise e
 
-        existing_groups=org_metadata.groups
-        updated_groups = [group for group in existing_groups if  not group_id == group.group_id]
-        org_metadata.groups=updated_groups
+        existing_groups = org_metadata.groups
+        updated_groups = [group for group in existing_groups if not group_id == group.group_id]
+        org_metadata.groups = updated_groups
         org_metadata.save_pretty(metadata_file)
 
-
-
-    def set_changed_values_for_group(self,group):
-        #if value of a parameter is None that means it was not updated
+    def set_changed_values_for_group(self, group):
+        # if value of a parameter is None that means it was not updated
 
         if self.args.endpoints:
             group.update_endpoints(self.args.endpoints)
@@ -407,8 +414,6 @@ class OrganizationCommand(BlockchainCommand):
         if self.args.payment_channel_request_timeout:
             group.update_request_timeout(self.args.payment_channel_request_timeout)
 
-
-
     def update_group(self):
         group_id = self.args.group_id
         metadata_file = self.args.metadata_file
@@ -420,14 +425,14 @@ class OrganizationCommand(BlockchainCommand):
             raise e
         existing_groups = org_metadata.groups
         for group in existing_groups:
-            if  group_id == group.group_id:
+            if group_id == group.group_id:
                 self.set_changed_values_for_group(group)
 
         org_metadata.save_pretty(metadata_file)
 
-    def initalize_metadata(self):
-        org_id= self.args.org_id
-        metadata_file_name=self.args.metadata_file
+    def initialize_metadata(self):
+        org_id = self.args.org_id
+        metadata_file_name = self.args.metadata_file
 
         # create unique uuid if org_id haven't been specified manualy
         if (not org_id):
@@ -438,18 +443,15 @@ class OrganizationCommand(BlockchainCommand):
         found = self._getorganizationbyid(org_id)[0]
         if found:
             raise Exception("\nOrganization with id={} already exists!\n".format(org_id))
-        org_metadata = OrganizationMetadata(self.args.org_name,org_id)
+        org_metadata = OrganizationMetadata(self.args.org_name, org_id)
         org_metadata.save_pretty(metadata_file_name)
 
-
-    def print_metadata(self,org_id):
-        org_id=self.args.org_id
-        org_metadta=self._get_organization_metadata_from_registry(org_id)
-        #org_metadta=OrganizationMetadata.from_json(org_id)
-
+    def print_metadata(self):
+        org_id = self.args.org_id
+        org_metadta = self._get_organization_metadata_from_registry(org_id)
         self._printout(org_metadta)
 
-    def _get_service_registration(self,org_id):
+    def _get_service_registration(self, org_id):
         params = [type_converter("bytes32")(org_id)]
         rez = self.call_contract_command(
             "Registry", "getOrganizationById", params)
@@ -458,8 +460,7 @@ class OrganizationCommand(BlockchainCommand):
                 self.args.org_id))
         return {"orgMetadataURI": rez[2]}
 
-
-    def _get_organization_metadata_from_registry(self,org_id):
+    def _get_organization_metadata_from_registry(self, org_id):
         rez = self._get_service_registration(org_id)
         metadata_hash = bytesuri_to_hash(rez["orgMetadataURI"])
         metadata = get_from_ipfs_and_checkhash(
@@ -471,10 +472,11 @@ class OrganizationCommand(BlockchainCommand):
     def _getorganizationbyid(self, org_id):
         org_id_bytes32 = type_converter("bytes32")(org_id)
         if (len(org_id_bytes32) > 32):
-            raise Exception("Your org_id is too long, it should be 32 bytes or less. len(org_id_bytes32)=%i"%(len(org_id_bytes32)))
+            raise Exception("Your org_id is too long, it should be 32 bytes or less. len(org_id_bytes32)=%i" % (
+                len(org_id_bytes32)))
         return self.call_contract_command("Registry", "getOrganizationById", [org_id_bytes32])
 
-    #TODO: It would be better to have standard nargs="+" in argparse for members.
+    # TODO: It would be better to have standard nargs="+" in argparse for members.
     #      But we keep comma separated members for backward compatibility
     def get_members_from_args(self):
         if (not self.args.members):
@@ -482,7 +484,7 @@ class OrganizationCommand(BlockchainCommand):
         members = [m.replace("[", "").replace("]", "") for m in self.args.members.split(',')]
         for m in members:
             if not is_checksum_address(m):
-                raise Exception("Member account %s is not a valid Ethereum checksum address"%m)
+                raise Exception("Member account %s is not a valid Ethereum checksum address" % m)
         return members
 
     def list(self):
@@ -501,7 +503,7 @@ class OrganizationCommand(BlockchainCommand):
             if (not rez[0]):
                 raise Exception("Organization was removed during this call. Please retry.");
             org_name = rez[2]
-            self._printout("%s  %s"%(org_name, bytes32_to_str(org_id)))
+            self._printout("%s  %s" % (org_name, bytes32_to_str(org_id)))
 
     def error_organization_not_found(self, org_id, found):
         if not found:
@@ -512,8 +514,8 @@ class OrganizationCommand(BlockchainCommand):
         (found, org_id, org_name, owner, members, serviceNames, repositoryNames) = self._getorganizationbyid(org_id)
         self.error_organization_not_found(self.args.org_id, found)
 
-        self._printout("\nOrganization Name:\n - %s"%org_name)
-        self._printout("\nOrganization Id:\n - %s"%bytes32_to_str(org_id))
+        self._printout("\nOrganization Name:\n - %s" % org_name)
+        self._printout("\nOrganization Id:\n - %s" % bytes32_to_str(org_id))
         self._printout("\nOwner:\n - {}".format(owner))
         if members:
             self._printout("\nMembers:")
@@ -530,7 +532,6 @@ class OrganizationCommand(BlockchainCommand):
 
     def create(self):
 
-
         metadata_file = self.args.metadata_file
 
         try:
@@ -539,40 +540,46 @@ class OrganizationCommand(BlockchainCommand):
         except Exception as e:
             print("Organization metadata json file not found ,Please check --metadata-file path ")
             raise e
-        org_id=org_metadata.org_id
-        #validate the metadata before creating
+        org_id = org_metadata.org_id
+        # validate the metadata before creating
         org_metadata.validate()
 
-        #R Check if Organization already exists
+        # R Check if Organization already exists
         found = self._getorganizationbyid(org_id)[0]
         if found:
             raise Exception("\nOrganization with id={} already exists!\n".format(org_id))
 
         members = self.get_members_from_args()
 
-
-        ipfs_metatdata_uri = publish_file_in_ipfs(self._get_ipfs_client(),metadata_file)
-        params = [type_converter("bytes32")(org_id),hash_to_bytesuri(ipfs_metatdata_uri) , members]
+        ipfs_metatdata_uri = self._get_ipfs_client().add_bytes(org_metadata.get_json_pretty().encode("utf-8"))
+        params = [type_converter("bytes32")(org_id), hash_to_bytesuri(ipfs_metatdata_uri), members]
         self._printout("Creating transaction to create organization name={} id={}\n".format(self.args.org_name, org_id))
         self.transact_contract_command("Registry", "createOrganization", params)
-        self._printout("id:\n%s"%org_id)
+        self._printout("id:\n%s" % org_id)
 
     def delete(self):
         org_id = self.args.org_id
         # Check if Organization exists
-        (found,_,org_name,_,_,_,_) = self._getorganizationbyid(org_id)
+        (found, _, org_name, _, _, _, _) = self._getorganizationbyid(org_id)
         self.error_organization_not_found(org_id, found)
 
         self._printout("Creating transaction to delete organization with name={} id={}".format(org_name, org_id))
         try:
             self.transact_contract_command("Registry", "deleteOrganization", [type_converter("bytes32")(org_id)])
         except Exception as e:
-            self._printerr("\nTransaction error!\nHINT: Check if you are the owner of organization with id={}\n".format(org_id))
+            self._printerr(
+                "\nTransaction error!\nHINT: Check if you are the owner of organization with id={}\n".format(org_id))
             raise
 
     def update_metadata(self):
         metadata_file = self.args.metadata_file
-        org_metadata = OrganizationMetadata.from_json(json.load(metadata_file))
+
+        try:
+            with open(metadata_file, 'r') as f:
+                org_metadata = OrganizationMetadata.from_json(json.load(f));
+        except Exception as e:
+            print("Organization metadata json file not found ,Please check --metadata-file path ")
+            raise e
         # validate the metadata before updating
         org_metadata.validate()
 
@@ -582,22 +589,17 @@ class OrganizationCommand(BlockchainCommand):
         if not found:
             raise Exception("\nOrganization with id={} does not  exists!\n".format(org_id))
 
-        members = self.get_members_from_args()
-
         ipfs_metatdata_uri = publish_file_in_ipfs(self._get_ipfs_client(), metadata_file)
-        params = [type_converter("bytes32")(org_id), ipfs_metatdata_uri, members]
-        self._printout("Creating transaction to create organization name={} id={}\n".format(self.args.org_name, org_id))
+        params = [type_converter("bytes32")(org_id), hash_to_bytesuri(ipfs_metatdata_uri)]
+        self._printout(
+            "Creating transaction to create organization name={} id={}\n".format(org_metadata.org_name, org_id))
         self.transact_contract_command("Registry", "changeOrganizationMetadataURI", params)
         self._printout("id:\n%s" % org_id)
 
-
-
-
-
-
     def list_services(self):
         org_id = self.args.org_id
-        (found, org_service_list) = self.call_contract_command("Registry", "listServicesForOrganization", [type_converter("bytes32")(org_id)])
+        (found, org_service_list) = self.call_contract_command("Registry", "listServicesForOrganization",
+                                                               [type_converter("bytes32")(org_id)])
         self.error_organization_not_found(org_id, found)
         if org_service_list:
             self._printout("\nList of {}'s Services:".format(org_id))
@@ -605,7 +607,6 @@ class OrganizationCommand(BlockchainCommand):
                 self._printout("- {}".format(bytes32_to_str(org_service)))
         else:
             self._printout("Organization with id={} exists but has no registered services.".format(org_id))
-
 
     def change_owner(self):
         org_id = self.args.org_id
@@ -615,14 +616,15 @@ class OrganizationCommand(BlockchainCommand):
 
         new_owner = self.args.owner
         if not is_checksum_address(new_owner):
-            raise Exception("New owner account %s is not a valid Ethereum checksum address"%new_owner)
+            raise Exception("New owner account %s is not a valid Ethereum checksum address" % new_owner)
 
         if new_owner.lower() == owner.lower():
             raise Exception("\n{} is the owner of Organization with id={}!\n".format(new_owner, org_id))
 
         self._printout("Creating transaction to change organization {}'s owner...\n".format(org_id))
         try:
-            self.transact_contract_command("Registry", "changeOrganizationOwner", [type_converter("bytes32")(org_id), self.args.owner])
+            self.transact_contract_command("Registry", "changeOrganizationOwner",
+                                           [type_converter("bytes32")(org_id), self.args.owner])
         except Exception as e:
             self._printerr("\nTransaction error!\nHINT: Check if you are the owner of {}\n".format(org_id))
             raise
@@ -646,7 +648,8 @@ class OrganizationCommand(BlockchainCommand):
             return
 
         params = [type_converter("bytes32")(org_id), add_members]
-        self._printout("Creating transaction to add {} members into organization {}...\n".format(len(add_members), org_id))
+        self._printout(
+            "Creating transaction to add {} members into organization {}...\n".format(len(add_members), org_id))
         try:
             self.transact_contract_command("Registry", "addOrganizationMembers", params)
         except Exception as e:
@@ -672,7 +675,9 @@ class OrganizationCommand(BlockchainCommand):
             return
 
         params = [type_converter("bytes32")(org_id), rem_members]
-        self._printout("Creating transaction to remove {} members from organization with id={}...\n".format(len(rem_members), org_id))
+        self._printout(
+            "Creating transaction to remove {} members from organization with id={}...\n".format(len(rem_members),
+                                                                                                 org_id))
         try:
             self.transact_contract_command("Registry", "removeOrganizationMembers", params)
         except Exception as e:
@@ -683,10 +688,11 @@ class OrganizationCommand(BlockchainCommand):
         """ Find organization that has the current identity as the owner or as the member """
         org_list = self.call_contract_command("Registry", "listOrganizations", [])
 
-        rez_owner  = []
+        rez_owner = []
         rez_member = []
         for idx, org_id in enumerate(org_list):
-            (found, org_id, org_name, owner, members, serviceNames, repositoryNames) = self.call_contract_command("Registry", "getOrganizationById", [org_id])
+            (found, org_id, org_name, owner, members, serviceNames, repositoryNames) = self.call_contract_command(
+                "Registry", "getOrganizationById", [org_id])
             if (not found):
                 raise Exception("Organization was removed during this call. Please retry.");
             if self.ident.address == owner:
@@ -698,11 +704,11 @@ class OrganizationCommand(BlockchainCommand):
         if (rez_owner):
             self._printout("# Organizations you are the owner of")
             self._printout("# OrgName OrgId")
-            for n,i in rez_owner:
-                self._printout("%s   %s"%(n,i))
+            for n, i in rez_owner:
+                self._printout("%s   %s" % (n, i))
 
         if (rez_member):
             self._printout("# Organizations you are the member of")
             self._printout("# OrgName OrgId")
-            for n,i in rez_member:
-                self._printout("%s   %s"%(n,i))
+            for n, i in rez_member:
+                self._printout("%s   %s" % (n, i))

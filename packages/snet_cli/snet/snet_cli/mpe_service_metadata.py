@@ -70,12 +70,9 @@ class MPEServiceMetadata:
                   "encoding": "grpc",  # grpc by default
                   "service_type": "grpc",  # grpc by default
                   # one week by default (15 sec block,  24*60*60*7/15)
-                  "payment_expiration_threshold": 40320,
                   "model_ipfs_hash": "",
                   "mpe_address": "",
-                  # "pricing": [],
                   "groups": [],
-                  # "endpoints": [],
                   "assets": {}
                   }
 
@@ -85,16 +82,22 @@ class MPEServiceMetadata:
             raise Exception("unknown field in MPEServiceMetadata")
         self.m[f] = v
 
-    def set_fixed_price_in_cogs(self, price):
+    def set_fixed_price_in_cogs(self, group_name, price):
         if (type(price) != int):
             raise Exception("Price should have int type")
 
-        if self.m["pricing"]:
-            self.m["pricing"].append({"price_model": "fixed_price",
-                                      "price_in_cogs": price, "default": True})
-        else:
-            self.m["pricing"] = [{"price_model": "fixed_price",
-                                  "price_in_cogs": price, "default": True}]
+        if (not self.is_group_name_exists(group_name)):
+            raise Exception("the group %s is not present" % str(group_name))
+
+        for group in self.m["groups"]:
+            if group["group_name"] == group_name:
+                # default=True  it will change when we will go live with method level pricing
+                if "pricing" in group:
+                    group["pricing"].append({"price_model": "fixed_price",
+                                             "price_in_cogs": price, "default": True})
+                else:
+                    group["pricing"] = [{"price_model": "fixed_price",
+                                         "price_in_cogs": price, "default": True}]
 
     def set_method_price_in_cogs(self, group_name, package_name, service_name, method, price):
         if (type(price) != int):
@@ -206,7 +209,7 @@ class MPEServiceMetadata:
                 else:
                     group['endpoints'] = [endpoint]
 
-    def remove_all_endpoints(self, group_name):
+    def remove_all_endpoints_for_group(self, group_name):
         if not self.is_group_name_exists(group_name):
             raise Exception("Group name does not exist %s", group_name)
 
@@ -215,8 +218,6 @@ class MPEServiceMetadata:
             if group["group_name"] == group_name:
                 group["endpoints"] = []
 
-    def remove_all_endpoints_for_group(self, group_name):
-        self.m["endpoints"] = [e for e in self.m["endpoints"] if e["group_name"] != group_name]
 
     def is_group_name_exists(self, group_name):
         """ check if group with given name is already exists """
@@ -294,6 +295,14 @@ class MPEServiceMetadata:
                 if "endpoints" in group:
                     return group["endpoints"];
                 return []
+
+    def get_all_endpoints(self):
+        group_endpoints=[]
+        for group in self.m["groups"]:
+            if "endpoints" in group:
+                group_endpoints.extend({group["group_name"]:group['endpoints']})
+        return group_endpoints
+
 
     def get_all_endpoints_with_group_name(self):
         endpts_with_grp = defaultdict(list)

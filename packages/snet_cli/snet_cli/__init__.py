@@ -8,11 +8,8 @@ from snet_cli.config import Config
 import argcomplete
 
 
-if __name__== "__main__":
-
-    print("hello")
+def main():
     try:
-        print(123)
         argv = sys.argv[1:]
         conf   = Config()
         parser = arguments.get_root_parser(conf)

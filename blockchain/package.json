@@ -1,6 +1,6 @@
 {
   "dependencies": {
-      "singularitynet-platform-contracts": "file:/home/sohit/snet/src/pc1/build/npm-module",
-      "singularitynet-token-contracts": "2.0.1"
+    "singularitynet-platform-contracts": "0.3.0",
+    "singularitynet-token-contracts": "2.0.1"
   }
 }
