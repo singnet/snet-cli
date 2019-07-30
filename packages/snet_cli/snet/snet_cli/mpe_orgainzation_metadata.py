@@ -1,3 +1,4 @@
+import base64
 from json import JSONEncoder
 
 import json
@@ -115,6 +116,14 @@ class Group(object):
     def update_endpoints(self, endpoints):
         self.payment.update_endpoints(endpoints)
 
+    def get_group_id(self, group_name=None):
+        return base64.b64decode(self.get_group_id_base64(group_name))
+
+    def get_payment_address(self):
+            return self.payment.payment_address
+
+
+
 
 class OrganizationMetadata(object):
     """
@@ -183,6 +192,11 @@ class OrganizationMetadata(object):
             groups = list(map(Group.from_json, json_data["groups"]))
         return cls(json_data['org_name'], json_data['org_id'], groups)
 
+    @classmethod
+    def from_file(cls,filepath):
+        with open(filepath) as f:
+            return OrganizationMetadata.from_json(json.load(f))
+
     def validate(self):
         if self.org_id is None:
             raise Exception("Org_id cannot be null")
@@ -194,3 +208,23 @@ class OrganizationMetadata(object):
         else:
             for group in self.groups:
                 group.validate()
+
+    def get_payment_address_for_group(self,group_name):
+        for group in self.groups:
+            if group.group_name == group_name:
+                return  group.get_payment_address()
+
+    def get_group_id_by_group_name(self,group_name):
+        for group in self.groups:
+            if group.group_name == group_name:
+                return  group.group_id
+
+    # def get_group_id_by_group_name(self,group_name):
+    #     return base64.b64decode(group_name)
+
+
+
+
+
+
+

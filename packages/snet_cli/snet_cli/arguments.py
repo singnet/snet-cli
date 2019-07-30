@@ -415,9 +415,9 @@ def add_organization_options(parser):
     p = subparsers.add_parser("create",
                               help="Create an Organization")
     p.set_defaults(fn="create")
-    p.add_argument("--org_name",
-                   help="Name of the Organization",
-                   metavar="ORG_NAME")
+    p.add_argument("org_id",
+                   help="Unique Organization Id",
+                   metavar="ORG_ID")
     add_metadatafile_argument_for_org(p)
     p.add_argument("--members",
                    help="List of members to be added to the organization",
@@ -426,6 +426,9 @@ def add_organization_options(parser):
 
     p = subparsers.add_parser("update-metadata",
                               help="Create an Organization")
+    p.add_argument("org_id",
+                   help="Unique Organization Id",
+                   metavar="ORG_ID")
     p.set_defaults(fn="update_metadata")
     add_metadatafile_argument_for_org(p)
     p.add_argument("--members",
@@ -679,6 +682,14 @@ def add_p_endpoint(p):
                    metavar="ENDPOINT")
 
 
+
+def add_group_name(p):
+    p.add_argument("group_name",
+                   default=None,
+                   help="Name of the payment group. Parameter should be specified only for services with several payment groups")
+
+
+
 def add_p_group_name(p):
     p.add_argument("--group-name",
                    default=None,
@@ -703,6 +714,9 @@ def add_p_open_channel_basic(p):
                    type=stragi2cogs,
                    help="Amount of AGI tokens to put in the new channel",
                    metavar="AMOUNT")
+    p.add_argument("group_name",
+                   default=None,
+                   help="Name of the payment group. Parameter should be specified only for services with several payment groups")
     add_p_expiration(p, is_optional=False)
     p.add_argument("--signer",
                    default=None,
@@ -747,13 +761,16 @@ def add_mpe_channel_options(parser):
     p = subparsers.add_parser("open-init",
                               help="Open and initialize channel using metadata from Registry")
     p.set_defaults(fn="open_init_channel_from_registry")
-    add_p_service_in_registry(p)
+
+    add_p_org_id(p)
+    add_p_registry_address_opt(p)
     add_p_open_channel_basic(p)
 
     p = subparsers.add_parser("open-init-metadata",
                               help="Open and initialize channel using service metadata")
     p.set_defaults(fn="open_init_channel_from_metadata")
-    add_p_service_in_registry(p)
+    add_p_org_id(p)
+    add_p_registry_address_opt(p)
     add_p_open_channel_basic(p)
     add_p_metadata_file_opt(p)
 
@@ -900,6 +917,7 @@ def add_mpe_client_options(parser):
                              "JSON-serialized parameters object (leave emtpy to read from stdin)",
                         metavar="PARAMS")
         add_eth_call_arguments(_p)
+        add_group_name(p)
         add_p_mpe_address_opt(_p)
         _p.add_argument("--save-response",
                         default=None,
@@ -911,7 +929,9 @@ def add_mpe_client_options(parser):
                         help="Save specific field in the file (two arguments 'field' and 'file_name' should be specified)")
         _p.add_argument("--endpoint",
                         help="Service endpoint (by default we read it from metadata)")
-        add_p_group_name(_p)
+        # p.add_argument("group-name",
+        #                default=None,
+        #                help="Name of the payment group. Parameter should be specified only for services with several payment groups")
 
     # call: testo tests method params --endpoint --group-name
     p = subparsers.add_parser("call",

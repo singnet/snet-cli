@@ -165,15 +165,15 @@ class MPEServiceCommand(BlockchainCommand):
         # first we check that we do not change payment_address or group_id in existed payment groups
         old_metadata = self._get_service_metadata_from_registry()
         new_metadata = load_mpe_service_metadata(self.args.metadata_file)
-        for old_group in old_metadata["groups"]:
-            if (new_metadata.is_group_name_exists(old_group["group_name"])):
-                new_group = new_metadata.get_group(old_group["group_name"])
-                if (new_group["group_id"] != old_group["group_id"] or new_group["payment_address"] != old_group["payment_address"]):
-                    raise Exception("\n\nYou are trying to change group_id or payment_address in group '%s'.\n" % old_group["group_name"] +
-                                    "It would make all open channels invalid.\n" +
-                                    "You shoudn't use 'metadata-init' for existed service, because it reinitialize group_id\n" +
-                                    "Please use 'metadata-set-model' for change your protobuf file\n" +
-                                    "Please use 'metadata-remove-all-endpoints/metadata-add-endpoints to update endpoints'\n\n")
+        # for old_group in old_metadata["groups"]:
+        #     if (new_metadata.is_group_name_exists(old_group["group_name"])):
+        #         new_group = new_metadata.get_group(old_group["group_name"])
+        #         if (new_group["group_id"] != old_group["group_id"] or new_group["payment_address"] != old_group["payment_address"]):
+        #             raise Exception("\n\nYou are trying to change group_id or payment_address in group '%s'.\n" % old_group["group_name"] +
+        #                             "It would make all open channels invalid.\n" +
+        #                             "You shoudn't use 'metadata-init' for existed service, because it reinitialize group_id\n" +
+        #                             "Please use 'metadata-set-model' for change your protobuf file\n" +
+        #                             "Please use 'metadata-remove-all-endpoints/metadata-add-endpoints to update endpoints'\n\n")
         metadata_uri = hash_to_bytesuri(
             self._publish_metadata_in_ipfs(self.args.metadata_file))
         params = [type_converter("bytes32")(self.args.org_id), type_converter(

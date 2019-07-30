@@ -9,22 +9,27 @@ from collections import defaultdict
 from web3.utils.encoding import pad_hex
 from web3.utils.events import get_event_data
 
+from commands import OrganizationCommand
+from snet.snet_cli.mpe_orgainzation_metadata import OrganizationMetadata
 from snet_cli.mpe_service_command import MPEServiceCommand
 from snet_cli.utils_agi2cogs import cogs2stragi
 
-from snet.snet_cli.utils_ipfs import safe_extract_proto_from_ipfs
-from snet.snet_cli.mpe_service_metadata import load_mpe_service_metadata
-from snet.snet_cli.utils import compile_proto, get_contract_def, abi_get_element_by_name, abi_decode_struct_to_dict
+from snet.snet_cli.utils_ipfs import safe_extract_proto_from_ipfs, get_from_ipfs_and_checkhash, bytesuri_to_hash
+from snet.snet_cli.mpe_service_metadata import  mpe_service_metadata_from_json
+from snet.snet_cli.utils import compile_proto, get_contract_def, abi_get_element_by_name, abi_decode_struct_to_dict, \
+    type_converter
 
 
 # we inherit MPEServiceCommand because we need _get_service_metadata_from_registry
-class MPEChannelCommand(MPEServiceCommand):
+class MPEChannelCommand(OrganizationCommand):
 
     def _get_persistent_mpe_dir(self):
         """ get persistent storage for mpe """
         mpe_address      = self.get_mpe_address().lower()
         registry_address = self.get_registry_address().lower()
         return Path.home().joinpath(".snet", "mpe_client", "%s_%s"%(mpe_address, registry_address))
+
+
 
     def _get_service_base_dir(self, org_id, service_id):
         """ get persistent storage for the given service (~/.snet/mpe_client/<mpe_address>_<registry_address>/<org_id>/<service_id>/) """
@@ -34,111 +39,136 @@ class MPEChannelCommand(MPEServiceCommand):
         """ get persistent storage for the given service (~/.snet/mpe_client/<mpe_address>/<org_id>/<service_id>/service/) """
         return self._get_service_base_dir(org_id, service_id).joinpath("service")
 
-    def _get_channels_info_file(self, org_id, service_id):
-        return os.path.join(self._get_service_base_dir(org_id, service_id), "channels_info.pickle")
-
-    def _add_channel_to_initialized(self, org_id, service_id, channel):
-        channels_dict = self._get_initialized_channels_dict_for_service(org_id, service_id)
-        channels_dict[channel["channelId"]] = channel
-
-        # replace old file atomically (os.rename is more or less atomic)
-        tmp = tempfile.NamedTemporaryFile(delete=False)
-        pickle.dump( channels_dict, open( tmp.name, "wb" ) )
-        os.rename(tmp.name, self._get_channels_info_file(org_id, service_id))
-
-    def _get_initialized_channels_dict_for_service(self, org_id, service_id):
-        '''return {channel_id: channel}'''
-        fn = self._get_channels_info_file(org_id, service_id)
-        if (os.path.isfile(fn)):
-            return pickle.load( open( fn, "rb" ) )
-        else:
-            return {}
-
-    def _get_initialized_channels_for_service(self, org_id, service_id):
-        '''return [channel]'''
-        channels_dict = self._get_initialized_channels_dict_for_service(org_id, service_id)
-        return list(channels_dict.values())
-
     def _get_service_info_file(self, org_id, service_id):
         return os.path.join(self._get_service_base_dir(org_id, service_id), "service_info.pickle")
 
     def _save_service_info(self, org_id, service_id, service_info):
         fn = self._get_service_info_file(org_id, service_id)
-        pickle.dump( service_info, open( fn, "wb" ) )
+        pickle.dump(service_info, open(fn, "wb"))
 
     def _read_service_info(self, org_id, service_id):
-        fn = self._get_service_info_file(org_id, service_id)
-        return pickle.load( open( fn, "rb" ) )
+        fn = self._get_service_info_file(org_id,service_id)
+        return pickle.load(open(fn, "rb"))
 
     def is_service_initialized(self):
         return os.path.isfile(self._get_service_info_file(self.args.org_id, self.args.service_id))
 
+
+    def _get_org_base_dir(self, org_id):
+        """ get persistent storage for the given service (~/.snet/mpe_client/<mpe_address>_<registry_address>/<org_id>/) """
+        return self._get_persistent_mpe_dir().joinpath(org_id)
+    #
+    def get_org_spec_dir(self, org_id):
+        """ get persistent storage for the given service (~/.snet/mpe_client/<mpe_address>/<org_id>/) """
+        return self._get_org_base_dir(org_id)
+
+    def _get_channels_info_file(self, org_id):
+        return os.path.join(self._get_org_base_dir(org_id), "channels_info.pickle")
+
+    def _add_channel_to_initialized(self, org_id, channel):
+        channels_dict = self._get_initialized_channels_dict_for_org(org_id)
+        channels_dict[channel["channelId"]] = channel
+
+        # replace old file atomically (os.rename is more or less atomic)
+        tmp = tempfile.NamedTemporaryFile(delete=False)
+        pickle.dump( channels_dict, open( tmp.name, "wb" ) )
+        os.rename(tmp.name, self._get_channels_info_file(org_id))
+
+    def _get_initialized_channels_dict_for_org(self, org_id):
+        '''return {channel_id: channel}'''
+        fn = self._get_channels_info_file(org_id)
+        if (os.path.isfile(fn)):
+            return pickle.load( open( fn, "rb" ) )
+        else:
+            return {}
+
+    def _get_initialized_channels_for_org(self, org_id):
+        '''return [channel]'''
+        channels_dict = self._get_initialized_channels_dict_for_org(org_id)
+        return list(channels_dict.values())
+
+    def _get_org_info_file(self, org_id):
+        return os.path.join(self._get_org_base_dir(org_id), "org_info.pickle")
+
+    def _save_org_info(self, org_id,org_info):
+        fn = self._get_org_info_file(org_id)
+        pickle.dump( org_info, open( fn, "wb" ) )
+
+    def _read_org_info(self, org_id):
+        fn = self._get_org_info_file(org_id)
+        return pickle.load( open( fn, "rb" ) )
+
+    def is_org_initialized(self):
+        return os.path.isfile(self._get_org_info_file(self.args.org_id))
+
     def _check_mpe_address_metadata(self, metadata):
         """ we make sure that MultiPartyEscrow address from metadata is correct """
+        #TODO check this with sridhar before merging code
         mpe_address = self.get_mpe_address()
+        return True
         if (str(mpe_address).lower() != str(metadata["mpe_address"]).lower()):
             raise Exception("MultiPartyEscrow contract address from metadata %s do not correspond to current MultiPartyEscrow address %s"%(metadata["mpe_address"], mpe_address))
 
-    def _init_or_update_service_if_needed(self, metadata, service_registration):
+    def _init_or_update_org_if_needed(self, metadata, org_registration):
         # if service was already initialized and metadataURI hasn't changed we do nothing
-        if self.is_service_initialized():
-            if self.is_metadataURI_has_changed(service_registration):
+        if self.is_org_initialized():
+            if self.is_metadataURI_has_changed(org_registration):
                 self._printerr("# Service with org_id=%s and service_id=%s was updated"%(self.args.org_id, self.args.service_id))
                 self._printerr("# ATTENTION!!! price or other paramaters might have been changed!\n")
             else:
                 return # we do nothing
-        self._printerr("# Initilize service with org_id=%s and service_id=%s"%(self.args.org_id, self.args.service_id))
+        self._printerr("# Initilize service with org_id=%s"%(self.args.org_id))
         self._check_mpe_address_metadata(metadata)
-        service_dir = self.get_service_spec_dir(self.args.org_id, self.args.service_id)
+        org_dir = self.get_org_spec_dir(self.args.org_id)
 
         # remove old service_dir
         # it is relatevely safe to remove service_dir because we know that service_dir = self.get_service_spec_dir() so it is not a normal dir
-        if (os.path.exists(service_dir)):
-            shutil.rmtree(service_dir)
+        if (os.path.exists(org_dir)):
+            shutil.rmtree(org_dir)
 
-        os.makedirs(service_dir, mode=0o700)
+        os.makedirs(org_dir, mode=0o700)
         try:
-            spec_dir = os.path.join(service_dir, "service_spec")
-            os.makedirs(spec_dir, mode=0o700)
-            safe_extract_proto_from_ipfs(self._get_ipfs_client(), metadata["model_ipfs_hash"], spec_dir)
-
-            # compile .proto files
-            if (not compile_proto(Path(spec_dir), service_dir)):
-                raise Exception("Fail to compile %s/*.proto"%spec_dir)
+            # spec_dir = os.path.join(org_dir, "org_spec")
+            # os.makedirs(spec_dir, mode=0o700)
+            # safe_extract_proto_from_ipfs(self._get_ipfs_client(), metadata["model_ipfs_hash"], spec_dir)
+            #
+            # # compile .proto files
+            # if (not compile_proto(Path(spec_dir), org_dir)):
+            #     raise Exception("Fail to compile %s/*.proto"%spec_dir)
 
             # save service_metadata.json in channel_dir
-            metadata.save_pretty(os.path.join(service_dir, "service_metadata.json"))
+            metadata.save_pretty(os.path.join(org_dir, "organization_metadata.json"))
         except:
             # it is secure to remove channel_dir, because we've created it
-            shutil.rmtree(service_dir)
+            shutil.rmtree(org_dir)
             raise
-        self._save_service_info(self.args.org_id, self.args.service_id, service_registration)
+        self._save_org_info(self.args.org_id, org_registration)
 
-    def _init_or_update_registered_service_if_needed(self):
+    def _init_or_update_registered_org_if_needed(self):
         '''
         similar to _init_or_update_service_if_needed but we get service_registraion from registry,
         so we can update only registered services
         '''
-        if (self.is_service_initialized()):
-            old_reg = self._read_service_info(self.args.org_id, self.args.service_id)
+        if (self.is_org_initialized()):
+            old_reg = self._read_org_info(self.args.org_id)
 
             # metadataURI will be in old_reg only for service which was initilized from registry (not from metadata)
             # we do nothing for services which were initilized from metadata
             if ("metadataURI" not in old_reg):
                 return
 
-            service_registration = self._get_service_registration()
+            org_registration = self._get_organization_registration()
             # if metadataURI hasn't been changed we do nothing
-            if (not self.is_metadataURI_has_changed(service_registration)):
+            if (not self.is_metadataURI_has_changed(org_registration)):
                 return
         else:
-            service_registration = self._get_service_registration()
+            org_registration = self._get_organization_registration()
 
-        service_metadata     = self._get_service_metadata_from_registry()
-        self._init_or_update_service_if_needed(service_metadata, service_registration)
+        org_metadata     = self._get_organization_registration()
+        self._init_or_update_service_if_needed(org_metadata, org_registration)
 
     def is_metadataURI_has_changed(self, new_reg):
-        old_reg = self._read_service_info(self.args.org_id, self.args.service_id)
+        old_reg = self._read_org_info(self.args.org_id)
         return new_reg.get("metadataURI") != old_reg.get("metadataURI")
 
     def _check_channel_is_mine(self, channel):
@@ -147,7 +177,7 @@ class MPEChannelCommand(MPEServiceCommand):
                 raise Exception("Channel does not correspond to the current Ethereum identity " +
                                  "(address=%s sender=%s signer=%s)"%(self.ident.address.lower(), channel["sender"].lower(), channel["signer"].lower()))
 
-    def _init_channel_from_metadata(self, metadata, service_registration):
+    def _init_channel_from_metadata(self, metadata, org_registration):
         channel_id = self.args.channel_id
         channel = self._get_channel_state_from_blockchain(channel_id)
         self._check_channel_is_mine(channel)
@@ -158,17 +188,18 @@ class MPEChannelCommand(MPEServiceCommand):
                              "We can't find the following group_id in metadata: " + group_id_base64)
         self._printout("#group_name")
         self._printout(group["group_name"])
-        self._init_or_update_service_if_needed(metadata, service_registration)
-        self._add_channel_to_initialized(self.args.org_id, self.args.service_id, channel)
+        self._init_or_update_service_if_needed(metadata, org_registration)
+        self._add_channel_to_initialized(self.args.org_id, channel)
 
     def init_channel_from_metadata(self):
-        metadata  = load_mpe_service_metadata(self.args.metadata_file)
+
+        metadata  =  OrganizationMetadata.from_file(self.args.metadata_file)
         self._init_channel_from_metadata(metadata, {})
 
     def init_channel_from_registry(self):
-        metadata             = self._get_service_metadata_from_registry()
-        service_registration = self._get_service_registration()
-        self._init_channel_from_metadata(metadata, service_registration)
+        metadata             = self._get_organization_metadata_from_registry()
+        org_registration = self._get_organization_registration()
+        self._init_channel_from_metadata(metadata, org_registration)
 
     def _get_expiration_from_args(self):
         """
@@ -199,8 +230,8 @@ class MPEChannelCommand(MPEServiceCommand):
         if (mpe_cogs < self.args.amount):
             raise Exception("insufficient funds. You MPE balance is %s AGI "%cogs2stragi(mpe_cogs))
 
-        group_id    = metadata.get_group_id(self.args.group_name)
-        recipient   = metadata.get_payment_address(self.args.group_name)
+        group_id    = base64.b64decode(metadata.get_group_id_by_group_name(self.args.group_name))
+        recipient   = metadata.get_payment_address_for_group(self.args.group_name)
 
         signer = self.get_address_from_arg_or_ident(self.args.signer)
 
@@ -216,20 +247,23 @@ class MPEChannelCommand(MPEServiceCommand):
         return channel_info
 
     def _initialize_already_opened_channel(self, metadata, sender, signer):
-        group_id  = metadata.get_group_id(self.args.group_name)
-        recipient = metadata.get_group(self.args.group_name)["payment_address"]
+
+
+
+        group_id  = base64.b64decode(metadata.get_group_id_by_group_name(self.args.group_name))
+        recipient = metadata.get_payment_address_for_group(self.args.group_name)
         channels_ids = self._get_all_channels_filter_sender_recipient_group(sender, recipient, group_id)
         for i in sorted(channels_ids):
             channel = self._get_channel_state_from_blockchain(i)
             if (channel["signer"].lower() == signer.lower()):
                 self._printerr("# Channel with given sender, signer and group_id is already exists we simply initialize it (channel_id = %i)"%channel["channelId"])
 #                self._printerr("# Please run 'snet channel extend-add %i --expiration <EXPIRATION> --amount <AMOUNT>' if necessary"%channel["channelId"])
-                self._add_channel_to_initialized(self.args.org_id, self.args.service_id, channel)
+                self._add_channel_to_initialized(self.args.org_id, channel)
                 return channel
         return None
 
-    def _open_init_channel_from_metadata(self, metadata, service_registration):
-        self._init_or_update_service_if_needed(metadata, service_registration)
+    def _open_init_channel_from_metadata(self, metadata, org_registration):
+        self._init_or_update_org_if_needed(metadata, org_registration)
 
         # Before open new channel we try to find already openned channel
         if (not self.args.open_new_anyway):
@@ -245,16 +279,16 @@ class MPEChannelCommand(MPEServiceCommand):
         self._printout(channel["channelId"])
 
         # initialize channel
-        self._add_channel_to_initialized(self.args.org_id, self.args.service_id, channel)
+        self._add_channel_to_initialized(self.args.org_id,channel)
 
     def open_init_channel_from_metadata(self):
-        metadata  = load_mpe_service_metadata(self.args.metadata_file)
+        metadata  = OrganizationMetadata.from_file(self.args.metadata_file)
         self._open_init_channel_from_metadata(metadata, {})
 
     def open_init_channel_from_registry(self):
-        metadata     = self._get_service_metadata_from_registry()
-        service_registration = self._get_service_registration()
-        self._open_init_channel_from_metadata(metadata, service_registration)
+        metadata     = self._get_organization_metadata_from_registry(self.args.org_id)
+        org_registration = self._get_organization_registration(self.args.org_id)
+        self._open_init_channel_from_metadata(metadata, org_registration)
 
     def channel_claim_timeout(self):
         rez = self._get_channel_state_from_blockchain(self.args.channel_id)
@@ -296,18 +330,18 @@ class MPEChannelCommand(MPEServiceCommand):
         if (new_expiration < channel["expiration"]):
             raise Exception("New expiration (%i) is smaller then old one (%i)"%(new_expiration, channel["expiration"]))
 
-    def _smart_get_initialized_channel_for_service(self, metadata, filter_by, is_try_initailize = True):
+    def _smart_get_initialized_channel_for_org(self, metadata, filter_by, is_try_initailize = True):
         '''
          - filter_by can be sender or signer
         '''
-        channels = self._get_initialized_channels_for_service(self.args.org_id, self.args.service_id)
-        group_id = metadata.get_group_id(self.args.group_name)
+        channels = self._get_initialized_channels_for_org(self.args.org_id)
+        group_id = base64.b64decode(metadata.get_group_id_by_group_name(self.args.group_name))
         channels = [c for c in channels if c[filter_by].lower() == self.ident.address.lower() and c["groupId"] == group_id]
 
         if (len(channels) == 0 and is_try_initailize):
            # this will work only in simple case where signer == sender
            self._initialize_already_opened_channel(metadata, self.ident.address, self.ident.address)
-           return self._smart_get_initialized_channel_for_service(metadata, filter_by, is_try_initailize = False)
+           return self._smart_get_initialized_channel_for_org(metadata, filter_by, is_try_initailize = False)
 
         if (len(channels) == 0):
             raise Exception("Cannot find initialized channel for service with org_id=%s service_id=%s and signer=%s"%(self.args.org_id, self.args.service_id, self.ident.address))
@@ -321,13 +355,13 @@ class MPEChannelCommand(MPEServiceCommand):
                 return channel
         raise Exception("Channel %i has not been initialized or your are not the sender/signer of it"%self.args.channel_id)
 
-    def _smart_get_channel_for_service(self):
-        self._init_or_update_registered_service_if_needed()
-        metadata   = self._read_metadata_for_service(self.args.org_id, self.args.service_id)
-        return self._smart_get_initialized_channel_for_service(metadata, "sender")
+    def _smart_get_channel_for_org(self):
+        self._init_or_update_registered_org_if_needed()
+        metadata   = self._read_metadata_for_org(self.args.org_id)
+        return self._smart_get_initialized_channel_for_org(metadata, "sender")
 
     def channel_extend_and_add_funds_for_service(self):
-        channel_id = self._smart_get_channel_for_service()["channelId"]
+        channel_id = self._smart_get_channel_for_org()["channelId"]
         self._channel_extend_add_funds_with_channel_id(channel_id)
 
     def _get_all_initialized_channels(self):
@@ -336,9 +370,9 @@ class MPEChannelCommand(MPEServiceCommand):
         for service_base_dir in self._get_persistent_mpe_dir().glob("*/*"):
             org_id     = service_base_dir.parent.name
             service_id = service_base_dir.name
-            channels   = self._get_initialized_channels_for_service(org_id, service_id)
+            channels   = self._get_initialized_channels_for_org(org_id)
             if (channels):
-                channels_dict[(org_id, service_id)] = channels
+                channels_dict[(org_id)] = channels
         return channels_dict
 
     def _get_channel_state_from_blockchain(self, channel_id):
@@ -349,11 +383,11 @@ class MPEChannelCommand(MPEServiceCommand):
         channel["channelId"] = channel_id
         return channel
 
-    def _read_metadata_for_service(self, org_id, service_id):
-        sdir = self.get_service_spec_dir(org_id, service_id)
+    def _read_metadata_for_org(self, org_id):
+        sdir = self.get_org_spec_dir(org_id)
         if (not os.path.exists(sdir)):
-            raise Exception("Service with org_id=%s and service_id=%s is not initialized"%(org_id, service_id))
-        return load_mpe_service_metadata(sdir.joinpath("service_metadata.json"))
+            raise Exception("Service with org_id=%s is not initialized"%(org_id))
+        return OrganizationMetadata.from_file(sdir.joinpath("organization_metadata.json"))
 
     def _print_channels_from_blockchain(self, channels_ids):
         channels_ids = sorted(channels_ids)
@@ -377,7 +411,7 @@ class MPEChannelCommand(MPEServiceCommand):
             self._printout("#organization_id service_id group_name channel_id nonce value(AGI) expiration(blocks)")
         for org_id, service_id in channels_dict:
             channels = self._filter_channels_sender_or_signer(channels_dict[org_id, service_id])
-            metadata = self._read_metadata_for_service(org_id, service_id)
+            metadata = self._read_metadata_for_org(org_id)
             for channel in channels:
                 channel_id = channel["channelId"]
                 group = metadata.get_group_by_group_id(channel["groupId"])
@@ -411,7 +445,7 @@ class MPEChannelCommand(MPEServiceCommand):
         self._print_channels_dict_from_blockchain(channels_dict)
 
     def print_initialized_channels_filter_service(self):
-        channels = self._get_initialized_channels_for_service(self.args.org_id, self.args.service_id)
+        channels = self._get_initialized_channels_for_org(self.args.org_id)
         self._print_channels_dict_from_blockchain({(self.args.org_id, self.args.service_id):channels})
 
     def _get_all_filtered_channels(self, topics_without_signature):
@@ -472,3 +506,81 @@ class MPEChannelCommand(MPEServiceCommand):
     def print_block_number(self):
          self._printout(self.ident.w3.eth.blockNumber)
 
+
+    def _get_service_registration(self):
+        params = [type_converter("bytes32")(self.args.org_id), type_converter(
+            "bytes32")(self.args.service_id)]
+        rez = self.call_contract_command(
+            "Registry", "getServiceRegistrationById", params)
+        if (rez[0] == False):
+            raise Exception("Cannot find Service with id=%s in Organization with id=%s" % (
+                self.args.service_id, self.args.org_id))
+        return {"metadataURI": rez[2], "tags": rez[3]}
+
+    def _get_service_metadata_from_registry(self):
+        rez = self._get_service_registration()
+        metadata_hash = bytesuri_to_hash(rez["metadataURI"])
+        metadata = get_from_ipfs_and_checkhash(
+            self._get_ipfs_client(), metadata_hash)
+        metadata = metadata.decode("utf-8")
+        metadata = mpe_service_metadata_from_json(metadata)
+        return metadata
+
+    def _init_or_update_service_if_needed(self, metadata, service_registration):
+        # if service was already initialized and metadataURI hasn't changed we do nothing
+        if self.is_service_initialized():
+            if self.is_metadataURI_has_changed(service_registration):
+                self._printerr("# Service with org_id=%s and service_id=%s was updated"%(self.args.org_id, self.args.service_id))
+                self._printerr("# ATTENTION!!! price or other paramaters might have been changed!\n")
+            else:
+                return # we do nothing
+        self._printerr("# Initilize service with org_id=%s and service_id=%s"%(self.args.org_id, self.args.service_id))
+        self._check_mpe_address_metadata(metadata)
+        service_dir = self.get_service_spec_dir(self.args.org_id, self.args.service_id)
+
+        # remove old service_dir
+        # it is relatevely safe to remove service_dir because we know that service_dir = self.get_service_spec_dir() so it is not a normal dir
+        if (os.path.exists(service_dir)):
+            shutil.rmtree(service_dir)
+
+        os.makedirs(service_dir, mode=0o700)
+        try:
+            spec_dir = os.path.join(service_dir, "service_spec")
+            os.makedirs(spec_dir, mode=0o700)
+            safe_extract_proto_from_ipfs(self._get_ipfs_client(), metadata["model_ipfs_hash"], spec_dir)
+
+            # compile .proto files
+            if (not compile_proto(Path(spec_dir), service_dir)):
+                raise Exception("Fail to compile %s/*.proto"%spec_dir)
+
+            # save service_metadata.json in channel_dir
+            metadata.save_pretty(os.path.join(service_dir, "service_metadata.json"))
+        except Exception as e:
+            # it is secure to remove channel_dir, because we've created it
+            print(e)
+            shutil.rmtree(service_dir)
+            raise
+        self._save_service_info(self.args.org_id, self.args.service_id, service_registration)
+
+    def _init_or_update_registered_service_if_needed(self):
+        '''
+        similar to _init_or_update_service_if_needed but we get service_registraion from registry,
+        so we can update only registered services
+        '''
+        if (self.is_service_initialized()):
+            old_reg = self._read_service_info(self.args.org_id, self.args.service_id)
+
+            # metadataURI will be in old_reg only for service which was initilized from registry (not from metadata)
+            # we do nothing for services which were initilized from metadata
+            if ("metadataURI" not in old_reg):
+                return
+
+            service_registration = self._get_service_registration()
+            # if metadataURI hasn't been changed we do nothing
+            if (not self.is_metadataURI_has_changed(service_registration)):
+                return
+        else:
+            service_registration = self._get_service_registration()
+
+        service_metadata     = self._get_service_metadata_from_registry()
+        self._init_or_update_service_if_needed(service_metadata, service_registration)

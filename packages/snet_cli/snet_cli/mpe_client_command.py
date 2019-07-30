@@ -1,9 +1,11 @@
 import base64
+import os
 from pathlib import Path
 import json
 import sys
 
 from eth_account.messages import defunct_hash_message
+from snet.snet_cli.mpe_service_metadata import load_mpe_service_metadata
 
 from snet_cli.utils_agi2cogs import cogs2stragi
 
@@ -142,7 +144,7 @@ class MPEClientCommand(MPEChannelCommand):
     def _get_endpoint_from_metadata_or_args(self, metadata):
         if (self.args.endpoint):
             return self.args.endpoint
-        endpoints = metadata.get_endpoints_for_group(self.args.group_name)
+        endpoints = metadata.get_all_endpoints_for_group(self.args.group_name)
         if (not endpoints):
             raise Exception("Cannot find endpoint in metadata for the given payment group.")
         if (len(endpoints) > 1):
@@ -223,26 +225,36 @@ class MPEClientCommand(MPEChannelCommand):
         self._printout("current_signed_amount_in_cogs  = %i"%current_amount)
         self._printout("current_unspent_amount_in_cogs = %s"%str(unspent_amount))
 
-    def _get_price_from_metadata(self, service_metadata):
-        pricing = service_metadata["pricing"]
-        if (pricing["price_model"] == "fixed_price"):
-            return pricing["price_in_cogs"]
+    def _get_price_from_metadata(self, service_metadata,group_name):
+        for group in service_metadata.m["groups"]:
+            if group["group_name"] ==group_name:
+                pricings = group["pricing"]
+                for pricing in pricings:
+                    if (pricing["price_model"] == "fixed_price"):
+                        # TODO return pricing["price_in_cogs"]
+                        return 1
         raise Exception("We do not support price model: %s"%(pricing["price_model"]))
 
-    def call_server_statelessly_with_params(self, params):
+    def call_server_statelessly_with_params(self, params,group_name):
 
         # if service is not initilized we will initialize it (unless we want skip registry check for update)
         if (not self.args.skip_update_check):
-            self._init_or_update_registered_service_if_needed()
+            self._init_or_update_registered_org_if_needed()
 
-        service_metadata = self._read_metadata_for_service(self.args.org_id, self.args.service_id)
+        org_metadata = self._read_metadata_for_org(self.args.org_id)
+
+        self._init_or_update_registered_service_if_needed()
+
+        service_dir = self.get_service_spec_dir(self.args.org_id, self.args.service_id)
+        spec_dir = os.path.join(service_dir, "service_spec")
+        service_metadata = load_mpe_service_metadata(os.path.join(service_dir, "service_metadata.json"))
         endpoint         = self._get_endpoint_from_metadata_or_args(service_metadata)
         grpc_channel     = open_grpc_channel(endpoint)
 
         # if channel was not initilized we will try to initailize it (it will work only in simple case of signer == sender)
-        channel       = self._smart_get_initialized_channel_for_service(service_metadata, filter_by = "signer")
+        channel       = self._smart_get_initialized_channel_for_org(org_metadata, filter_by = "signer")
         channel_id    = channel["channelId"]
-        price         = self._get_price_from_metadata(service_metadata)
+        price         = self._get_price_from_metadata(service_metadata,group_name)
         server_state  = self._get_channel_state_from_server(grpc_channel, channel_id)
 
         proceed = self.args.yes or input("Price for this call will be %s AGI (use -y to remove this warning). Proceed? (y/n): "%(cogs2stragi(price))) == "y"
@@ -252,6 +264,7 @@ class MPEClientCommand(MPEChannelCommand):
         return self._call_server_via_grpc_channel(grpc_channel, channel_id, server_state["current_nonce"], server_state["current_signed_amount"] + price, params, service_metadata)
 
     def call_server_statelessly(self):
+        group_name = self.args.group_name
         params           = self._get_call_params()
-        response = self.call_server_statelessly_with_params(params)
+        response = self.call_server_statelessly_with_params(params,group_name)
         self._deal_with_call_response(response)

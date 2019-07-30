@@ -17,7 +17,8 @@ from snet.snet_cli.contract import Contract
 from snet.snet_cli.mpe_orgainzation_metadata import OrganizationMetadata, PaymentStorageClient, Payment, Group
 from snet.snet_cli.utils import DefaultAttributeObject, get_web3, serializable, type_converter, get_contract_def, \
     get_cli_version, bytes32_to_str
-from snet.snet_cli.utils_ipfs import bytesuri_to_hash, get_from_ipfs_and_checkhash, hash_to_bytesuri
+from snet.snet_cli.utils_ipfs import bytesuri_to_hash, get_from_ipfs_and_checkhash, hash_to_bytesuri, \
+    publish_proto_in_ipfs
 from snet_cli.identity import RpcIdentityProvider, MnemonicIdentityProvider, TrezorIdentityProvider, \
     LedgerIdentityProvider, KeyIdentityProvider, KeyStoreIdentityProvider
 from snet_cli.identity import get_kws_for_identity_type
@@ -449,7 +450,7 @@ class OrganizationCommand(BlockchainCommand):
         org_metadta = self._get_organization_metadata_from_registry(org_id)
         self._printout(org_metadta)
 
-    def _get_service_registration(self, org_id):
+    def _get_organization_registration(self, org_id):
         params = [type_converter("bytes32")(org_id)]
         rez = self.call_contract_command(
             "Registry", "getOrganizationById", params)
@@ -459,13 +460,12 @@ class OrganizationCommand(BlockchainCommand):
         return {"orgMetadataURI": rez[2]}
 
     def _get_organization_metadata_from_registry(self, org_id):
-        rez = self._get_service_registration(org_id)
+        rez = self._get_organization_registration(org_id)
         metadata_hash = bytesuri_to_hash(rez["orgMetadataURI"])
         metadata = get_from_ipfs_and_checkhash(
             self._get_ipfs_client(), metadata_hash)
         metadata = metadata.decode("utf-8")
-
-        return metadata
+        return OrganizationMetadata.from_json(json.loads(metadata))
 
     def _getorganizationbyid(self, org_id):
         org_id_bytes32 = type_converter("bytes32")(org_id)
@@ -538,7 +538,7 @@ class OrganizationCommand(BlockchainCommand):
         except Exception as e:
             print("Organization metadata json file not found ,Please check --metadata-file path ")
             raise e
-        org_id = org_metadata.org_id
+        org_id = self.args.org_id
         # validate the metadata before creating
         org_metadata.validate()
 
@@ -549,9 +549,9 @@ class OrganizationCommand(BlockchainCommand):
 
         members = self.get_members_from_args()
 
-        ipfs_metatdata_uri = self._get_ipfs_client().add_bytes(org_metadata.get_json_pretty().encode("utf-8"))
+        ipfs_metatdata_uri =  publish_file_in_ipfs(self._get_ipfs_client(), metadata_file,False)
         params = [type_converter("bytes32")(org_id), hash_to_bytesuri(ipfs_metatdata_uri), members]
-        self._printout("Creating transaction to create organization name={} id={}\n".format(self.args.org_name, org_id))
+        self._printout("Creating transaction to create organization name={} id={}\n".format(org_metadata.org_name, org_id))
         self.transact_contract_command("Registry", "createOrganization", params)
         self._printout("id:\n%s" % org_id)
 
@@ -581,13 +581,13 @@ class OrganizationCommand(BlockchainCommand):
         # validate the metadata before updating
         org_metadata.validate()
 
-        org_id = org_metadata.org_id
+        org_id = self.args.org_id
         # Check if Organization already exists
         found = self._getorganizationbyid(org_id)[0]
         if not found:
             raise Exception("\nOrganization with id={} does not  exists!\n".format(org_id))
 
-        ipfs_metatdata_uri = publish_file_in_ipfs(self._get_ipfs_client(), metadata_file)
+        ipfs_metatdata_uri = publish_file_in_ipfs(self._get_ipfs_client(), metadata_file,False)
         params = [type_converter("bytes32")(org_id), hash_to_bytesuri(ipfs_metatdata_uri)]
         self._printout(
             "Creating transaction to create organization name={} id={}\n".format(org_metadata.org_name, org_id))
