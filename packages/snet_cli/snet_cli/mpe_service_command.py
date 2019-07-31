@@ -39,6 +39,12 @@ class MPEServiceCommand(BlockchainCommand):
                                   self.args.service_type)
         if self.args.group_name:
             self._metadata_add_group(metadata)
+            if self.args.endpoints:
+                self.metadata_add_endpoints()
+            if self.args.fixed_price:
+                self.metadata_set_fixed_price()
+        elif self.args.group_name or self.args.fixed_price:
+            raise Exception("endpoints / fixed price can be attached to a group please pass group_name")
         metadata.save_pretty(self.args.metadata_file)
 
     def publish_proto_metadata_update(self):

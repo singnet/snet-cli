@@ -5,7 +5,7 @@ import json
 import sys
 
 from eth_account.messages import defunct_hash_message
-from snet.snet_cli.mpe_service_metadata import load_mpe_service_metadata
+
 
 from snet_cli.utils_agi2cogs import cogs2stragi
 
@@ -16,12 +16,13 @@ from snet.snet_cli.utils_proto import import_protobuf_from_dir, switch_to_json_p
 
 # we inherit MPEChannelCommand because client needs channels
 class MPEClientCommand(MPEChannelCommand):
+    prefixInSignature = "__MPE_claim_message"
 
     # I. Signature related functions
     def _compose_message_to_sign(self, mpe_address, channel_id, nonce, amount):
         return self.w3.soliditySha3(
-               ["address",   "uint256", "uint256", "uint256"],
-               [mpe_address, channel_id, nonce,     amount])
+               ["string" , "address",   "uint256", "uint256", "uint256"],
+               [self.prefixInSignature,mpe_address, channel_id, nonce,     amount])
 
     def _sign_message(self, mpe_address, channel_id, nonce, amount):
         message = self._compose_message_to_sign(mpe_address, channel_id, nonce, amount)
@@ -151,9 +152,10 @@ class MPEClientCommand(MPEChannelCommand):
             self._printerr("There are several endpoints for the given payment group. We will select %s"%endpoints[0])
         return endpoints[0]
 
+
     def call_server_lowlevel(self):
         params           = self._get_call_params()
-        service_metadata = self._read_metadata_for_service(self.args.org_id, self.args.service_id)
+        service_metadata = self._get_service_metadata()
         endpoint         = self._get_endpoint_from_metadata_or_args(service_metadata)
         grpc_channel     = open_grpc_channel(endpoint)
 
@@ -240,14 +242,8 @@ class MPEClientCommand(MPEChannelCommand):
         # if service is not initilized we will initialize it (unless we want skip registry check for update)
         if (not self.args.skip_update_check):
             self._init_or_update_registered_org_if_needed()
-
         org_metadata = self._read_metadata_for_org(self.args.org_id)
-
-        self._init_or_update_registered_service_if_needed()
-
-        service_dir = self.get_service_spec_dir(self.args.org_id, self.args.service_id)
-        spec_dir = os.path.join(service_dir, "service_spec")
-        service_metadata = load_mpe_service_metadata(os.path.join(service_dir, "service_metadata.json"))
+        service_metadata = self._get_service_metadata()
         endpoint         = self._get_endpoint_from_metadata_or_args(service_metadata)
         grpc_channel     = open_grpc_channel(endpoint)
 

@@ -9,13 +9,12 @@ from collections import defaultdict
 from web3.utils.encoding import pad_hex
 from web3.utils.events import get_event_data
 
-from commands import OrganizationCommand
+from snet_cli.commands import OrganizationCommand
 from snet.snet_cli.mpe_orgainzation_metadata import OrganizationMetadata
-from snet_cli.mpe_service_command import MPEServiceCommand
 from snet_cli.utils_agi2cogs import cogs2stragi
 
 from snet.snet_cli.utils_ipfs import safe_extract_proto_from_ipfs, get_from_ipfs_and_checkhash, bytesuri_to_hash
-from snet.snet_cli.mpe_service_metadata import  mpe_service_metadata_from_json
+from snet.snet_cli.mpe_service_metadata import mpe_service_metadata_from_json, load_mpe_service_metadata
 from snet.snet_cli.utils import compile_proto, get_contract_def, abi_get_element_by_name, abi_decode_struct_to_dict, \
     type_converter
 
@@ -65,6 +64,12 @@ class MPEChannelCommand(OrganizationCommand):
     def _get_channels_info_file(self, org_id):
         return os.path.join(self._get_org_base_dir(org_id), "channels_info.pickle")
 
+    def _get_service_metadata(self):
+        self._init_or_update_registered_service_if_needed()
+        service_dir = self.get_service_spec_dir(self.args.org_id, self.args.service_id)
+        service_metadata = load_mpe_service_metadata(os.path.join(service_dir, "service_metadata.json"))
+        return service_metadata
+
     def _add_channel_to_initialized(self, org_id, channel):
         channels_dict = self._get_initialized_channels_dict_for_org(org_id)
         channels_dict[channel["channelId"]] = channel
@@ -113,7 +118,7 @@ class MPEChannelCommand(OrganizationCommand):
         # if service was already initialized and metadataURI hasn't changed we do nothing
         if self.is_org_initialized():
             if self.is_metadataURI_has_changed(org_registration):
-                self._printerr("# Service with org_id=%s and service_id=%s was updated"%(self.args.org_id, self.args.service_id))
+                self._printerr("# Service with org_id=%s "%(self.args.org_id))
                 self._printerr("# ATTENTION!!! price or other paramaters might have been changed!\n")
             else:
                 return # we do nothing
@@ -128,14 +133,6 @@ class MPEChannelCommand(OrganizationCommand):
 
         os.makedirs(org_dir, mode=0o700)
         try:
-            # spec_dir = os.path.join(org_dir, "org_spec")
-            # os.makedirs(spec_dir, mode=0o700)
-            # safe_extract_proto_from_ipfs(self._get_ipfs_client(), metadata["model_ipfs_hash"], spec_dir)
-            #
-            # # compile .proto files
-            # if (not compile_proto(Path(spec_dir), org_dir)):
-            #     raise Exception("Fail to compile %s/*.proto"%spec_dir)
-
             # save service_metadata.json in channel_dir
             metadata.save_pretty(os.path.join(org_dir, "organization_metadata.json"))
         except:
@@ -192,7 +189,6 @@ class MPEChannelCommand(OrganizationCommand):
         self._add_channel_to_initialized(self.args.org_id, channel)
 
     def init_channel_from_metadata(self):
-
         metadata  =  OrganizationMetadata.from_file(self.args.metadata_file)
         self._init_channel_from_metadata(metadata, {})
 
@@ -369,7 +365,6 @@ class MPEChannelCommand(OrganizationCommand):
         channels_dict = defaultdict(list)
         for service_base_dir in self._get_persistent_mpe_dir().glob("*/*"):
             org_id     = service_base_dir.parent.name
-            service_id = service_base_dir.name
             channels   = self._get_initialized_channels_for_org(org_id)
             if (channels):
                 channels_dict[(org_id)] = channels
