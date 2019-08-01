@@ -1,3 +1,4 @@
+import base64
 import getpass
 import json
 import secrets
@@ -377,7 +378,9 @@ class OrganizationCommand(BlockchainCommand):
                                                       self.args.payment_channel_request_timeout, self.args.endpoints)
         payment = Payment(self.args.payment_address, self.args.payment_expiration_threshold,
                           self.args.payment_channel_storage_type, payment_storage_client)
-        group = Group(self.args.group_name, self.args.group_id, payment)
+        group_id= base64.b64encode(secrets.token_bytes(32))
+
+        group = Group(self.args.group_name, group_id.decode("ascii") , payment)
         org_metadata.add_group(group)
         org_metadata.save_pretty(metadata_file)
 
@@ -433,10 +436,6 @@ class OrganizationCommand(BlockchainCommand):
         org_id = self.args.org_id
         metadata_file_name = self.args.metadata_file
 
-        # create unique uuid if org_id haven't been specified manualy
-        if (not org_id):
-            alphabet = string.ascii_letters + string.digits
-            org_id = ''.join(secrets.choice(alphabet) for i in range(32))
 
         # Check if Organization already exists
         found = self._getorganizationbyid(org_id)[0]
@@ -448,7 +447,7 @@ class OrganizationCommand(BlockchainCommand):
     def print_metadata(self):
         org_id = self.args.org_id
         org_metadta = self._get_organization_metadata_from_registry(org_id)
-        self._printout(org_metadta)
+        self._printout(org_metadta.get_json_pretty())
 
     def _get_organization_registration(self, org_id):
         params = [type_converter("bytes32")(org_id)]

@@ -282,9 +282,10 @@ def add_organization_options(parser):
 
     p.add_argument("org_name",
                    help="Organization name")
-    p.add_argument("org-id",
+    p.add_argument("org_id",
                    default=None,
                    help="Unique organization Id")
+    add_p_registry_address_opt(p)
     add_metadatafile_argument_for_org(p)
 
 
@@ -306,9 +307,6 @@ def add_organization_options(parser):
 
     p.add_argument("group_name",
                    help="Group Name ")
-
-    p.add_argument("group_id",
-                   help="Group Id")
 
     p.add_argument("payment_address",
                       help="Payment address")
@@ -337,6 +335,7 @@ def add_organization_options(parser):
                    help="Payment channel request timeout")
 
     add_metadatafile_argument_for_org(p)
+    add_p_registry_address_opt(p)
 
 
     p = subparsers.add_parser("update-group",
@@ -367,6 +366,7 @@ def add_organization_options(parser):
 
 
     add_metadatafile_argument_for_org(p)
+    add_p_registry_address_opt(p)
 
     p = subparsers.add_parser("remove-group",
                               help="Remove group of organization ")
@@ -375,6 +375,7 @@ def add_organization_options(parser):
     p.add_argument("group_id",
                    help="Group Id ")
     add_metadatafile_argument_for_org(p)
+    add_p_registry_address_opt(p)
 
 
 
@@ -590,6 +591,11 @@ def add_p_metadata_file_opt(p):
                    help="Service metadata json file (default service_metadata.json)")
 
 
+def add_p_organization_metadata_file_opt(p):
+    p.add_argument("--metadata-file",
+                   default="organization_metadata.json",
+                   help="Service metadata json file (default service_metadata.json)")
+
 def add_p_org_id_service_id(p):
     add_p_org_id(p)
     p.add_argument("service_id",
@@ -710,18 +716,21 @@ def add_p_expiration(p, is_optional):
 
 
 def add_p_open_channel_basic(p):
+    add_group_name(p)
+
     p.add_argument("amount",
                    type=stragi2cogs,
                    help="Amount of AGI tokens to put in the new channel",
                    metavar="AMOUNT")
-    p.add_argument("group_name",
-                   default=None,
-                   help="Name of the payment group. Parameter should be specified only for services with several payment groups")
+    # p.add_argument("group_name",
+    #                default=None,
+    #                help="Name of the payment group. Parameter should be specified only for services with several payment groups")
+
     add_p_expiration(p, is_optional=False)
     p.add_argument("--signer",
                    default=None,
                    help="Signer for the channel (by default is equal to the sender)")
-    add_p_group_name(p)
+
     add_p_mpe_address_opt(p)
     add_transaction_arguments(p)
     p.add_argument("--open-new-anyway",
@@ -745,15 +754,20 @@ def add_mpe_channel_options(parser):
     p = subparsers.add_parser("init",
                               help="Initialize channel taking service metadata from Registry")
     p.set_defaults(fn="init_channel_from_registry")
-    add_p_service_in_registry(p)
+
+    add_p_org_id(p)
+    add_group_name(p)
+    add_p_registry_address_opt(p)
     add_p_mpe_address_opt(p)
     add_p_channel_id(p)
 
     p = subparsers.add_parser("init-metadata",
-                              help="Initialize channel using service metadata")
+                              help="Initialize channel using org metadata")
     p.set_defaults(fn="init_channel_from_metadata")
-    add_p_service_in_registry(p)
-    add_p_metadata_file_opt(p)
+    add_p_org_id(p)
+    add_group_name(p)
+    add_p_registry_address_opt(p)
+    add_p_organization_metadata_file_opt(p)
     add_p_mpe_address_opt(p)
     add_p_channel_id(p)
     add_eth_call_arguments(p)
@@ -767,12 +781,12 @@ def add_mpe_channel_options(parser):
     add_p_open_channel_basic(p)
 
     p = subparsers.add_parser("open-init-metadata",
-                              help="Open and initialize channel using service metadata")
+                              help="Open and initialize channel using organization metadata")
     p.set_defaults(fn="open_init_channel_from_metadata")
     add_p_org_id(p)
     add_p_registry_address_opt(p)
     add_p_open_channel_basic(p)
-    add_p_metadata_file_opt(p)
+    add_p_organization_metadata_file_opt(p)
 
     def add_p_set_for_extend_add(_p):
         expiration_amount_g = _p.add_argument_group(
@@ -834,10 +848,12 @@ def add_mpe_channel_options(parser):
     add_eth_call_arguments(p)
     add_p_registry_address_opt(p)
 
-    p = subparsers.add_parser("print-initialized-filter-service",
-                              help="Print initialized channels for the given service (all payment group).")
-    p.set_defaults(fn="print_initialized_channels_filter_service")
-    add_p_service_in_registry(p)
+    p = subparsers.add_parser("print-initialized-filter-org",
+                              help="Print initialized channels for the given org (all payment group).")
+    p.set_defaults(fn="print_initialized_channels_filter_org")
+    add_p_org_id(p)
+    add_group_name(p)
+    add_p_registry_address_opt(p)
     add_p_only_id(p)
     add_p_only_sender_signer(p)
     add_p_mpe_address_opt(p)
@@ -866,8 +882,10 @@ def add_mpe_channel_options(parser):
     p = subparsers.add_parser("print-all-filter-group",
                               help="Print all channels for the given service.")
     p.set_defaults(fn="print_all_channels_filter_group")
-    add_p_service_in_registry(p)
-    add_p_group_name(p)
+
+    add_p_org_id(p)
+    add_group_name(p)
+    add_p_registry_address_opt(p)
     add_p_only_id(p)
     add_p_mpe_address_opt(p)
     add_p_from_block(p)
@@ -876,8 +894,10 @@ def add_mpe_channel_options(parser):
     p = subparsers.add_parser("print-all-filter-group-sender",
                               help="Print all channels for the given group and sender.")
     p.set_defaults(fn="print_all_channels_filter_group_sender")
-    add_p_service_in_registry(p)
-    add_p_group_name(p)
+
+    add_p_org_id(p)
+    add_group_name(p)
+    add_p_registry_address_opt(p)
     add_p_only_id(p)
     add_p_mpe_address_opt(p)
     add_p_from_block(p)
@@ -996,6 +1016,14 @@ def add_mpe_service_options(parser):
     p.add_argument("--group-name",
                    default="default_group",
                    help="Name of the first payment group")
+    p.add_argument("--endpoints",
+                   default=[],
+                   nargs='*',
+                   help="Endpoints for the first group")
+    p.add_argument("--fixed-price",
+                   type=stragi2cogs,
+                   help="Set fixed price in AGI token for all methods")
+
     p.add_argument("--encoding",
                    default="proto",
                    choices=['proto', 'json'],
@@ -1128,12 +1156,13 @@ def add_mpe_service_options(parser):
     p = subparsers.add_parser("metadata-update-endpoints",
                               help="Remove all endpoints from the group and add new ones")
     p.set_defaults(fn="metadata_update_endpoints")
+    p.add_argument("group_name",
+                   default=None,
+                   help="Name of the payment group to which we want to update endpoints")
     p.add_argument("endpoints",
                    nargs="+",
                    help="Endpoints")
-    p.add_argument("group-name",
-                   default=None,
-                   help="Name of the payment group to which we want to update endpoints")
+
     add_p_metadata_file_opt(p)
 
     p = subparsers.add_parser("metadata-add-description",

@@ -219,8 +219,15 @@ class OrganizationMetadata(object):
             if group.group_name == group_name:
                 return  group.group_id
 
-    # def get_group_id_by_group_name(self,group_name):
-    #     return base64.b64decode(group_name)
+    def get_group_by_group_id(self,group_id):
+        for group in self.groups:
+            if group.group_id == group_id:
+                return  group
+
+
+
+    # def get_group_by_group_name(self,group_name):
+    #      return base64.b64decode(group_name)
 
 
 

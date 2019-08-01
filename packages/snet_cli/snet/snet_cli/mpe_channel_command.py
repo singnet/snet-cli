@@ -178,14 +178,15 @@ class MPEChannelCommand(OrganizationCommand):
         channel_id = self.args.channel_id
         channel = self._get_channel_state_from_blockchain(channel_id)
         self._check_channel_is_mine(channel)
-        group = metadata.get_group_by_group_id(channel["groupId"])
-        if (group is None):
-            group_id_base64 = base64.b64encode(channel["groupId"]).decode('ascii')
+        group_id = metadata.get_group_id_by_group_name(self.args.group_name)
+        if (group_id is None):
+
             raise Exception("Channel %i does not correspond to the given metadata.\n"%channel_id +
-                             "We can't find the following group_id in metadata: " + group_id_base64)
+                             "We can't find the following group_id in metadata: " + self.args.group_name)
+
         self._printout("#group_name")
-        self._printout(group["group_name"])
-        self._init_or_update_service_if_needed(metadata, org_registration)
+        #self._printout(group.group_name)
+        self._init_or_update_org_if_needed(metadata, org_registration)
         self._add_channel_to_initialized(self.args.org_id, channel)
 
     def init_channel_from_metadata(self):
@@ -193,8 +194,8 @@ class MPEChannelCommand(OrganizationCommand):
         self._init_channel_from_metadata(metadata, {})
 
     def init_channel_from_registry(self):
-        metadata             = self._get_organization_metadata_from_registry()
-        org_registration = self._get_organization_registration()
+        metadata             = self._get_organization_metadata_from_registry(self.args.org_id)
+        org_registration = self._get_organization_registration(self.args.org_id)
         self._init_channel_from_metadata(metadata, org_registration)
 
     def _get_expiration_from_args(self):
@@ -221,12 +222,15 @@ class MPEChannelCommand(OrganizationCommand):
                             "Set --force parameter if your really want to do it.")
         return rez
 
-    def _open_channel_for_service(self, metadata):
+    def _open_channel_for_org(self, metadata):
         mpe_cogs = self.call_contract_command("MultiPartyEscrow",    "balances",  [self.ident.address])
         if (mpe_cogs < self.args.amount):
             raise Exception("insufficient funds. You MPE balance is %s AGI "%cogs2stragi(mpe_cogs))
 
         group_id    = base64.b64decode(metadata.get_group_id_by_group_name(self.args.group_name))
+        if not group_id:
+            raise Exception("group  %s is associated with organization",self.args.group_name)
+
         recipient   = metadata.get_payment_address_for_group(self.args.group_name)
 
         signer = self.get_address_from_arg_or_ident(self.args.signer)
@@ -270,7 +274,7 @@ class MPEChannelCommand(OrganizationCommand):
                 return
 
         # open payment channel
-        channel = self._open_channel_for_service(metadata)
+        channel = self._open_channel_for_org(metadata)
         self._printout("#channel_id")
         self._printout(channel["channelId"])
 
@@ -367,7 +371,7 @@ class MPEChannelCommand(OrganizationCommand):
             org_id     = service_base_dir.parent.name
             channels   = self._get_initialized_channels_for_org(org_id)
             if (channels):
-                channels_dict[(org_id)] = channels
+                channels_dict[org_id] = channels
         return channels_dict
 
     def _get_channel_state_from_blockchain(self, channel_id):
@@ -404,22 +408,23 @@ class MPEChannelCommand(OrganizationCommand):
             self._printout("#organization_id service_id channelId")
         else:
             self._printout("#organization_id service_id group_name channel_id nonce value(AGI) expiration(blocks)")
-        for org_id, service_id in channels_dict:
-            channels = self._filter_channels_sender_or_signer(channels_dict[org_id, service_id])
+        for org_id in channels_dict:
+            channels = self._filter_channels_sender_or_signer(channels_dict[org_id])
             metadata = self._read_metadata_for_org(org_id)
             for channel in channels:
                 channel_id = channel["channelId"]
-                group = metadata.get_group_by_group_id(channel["groupId"])
+                group_id_base64 = base64.b64encode(channel["groupId"]).decode('ascii')
+                group = metadata.get_group_by_group_id(group_id_base64)
                 if (group is None):
                     group_name = "UNDIFINED"
                 else:
-                    group_name = group["group_name"]
+                    group_name = group.group_name
                 if (self.args.only_id):
-                    self._printout("%s %s %s %i"%(org_id, service_id, group_name, channel_id))
+                    self._printout("%s %s %i"%(org_id, group_name, channel_id))
                 else:
                     channel_blockchain = self._get_channel_state_from_blockchain(channel_id)
                     value_agi  = cogs2stragi(channel_blockchain["value"])
-                    self._printout("%s %s %s %i %i %s %i"%(org_id, service_id, group_name, channel_id, channel_blockchain["nonce"], value_agi, channel_blockchain["expiration"]))
+                    self._printout("%s %s %i %i %s %i"%(org_id, group_name, channel_id, channel_blockchain["nonce"], value_agi, channel_blockchain["expiration"]))
 
     def _filter_channels_sender_or_signer(self, channels):
         good_channels = []
@@ -439,9 +444,9 @@ class MPEChannelCommand(OrganizationCommand):
         channels_dict = self._get_all_initialized_channels()
         self._print_channels_dict_from_blockchain(channels_dict)
 
-    def print_initialized_channels_filter_service(self):
+    def print_initialized_channels_filter_org(self):
         channels = self._get_initialized_channels_for_org(self.args.org_id)
-        self._print_channels_dict_from_blockchain({(self.args.org_id, self.args.service_id):channels})
+        self._print_channels_dict_from_blockchain({self.args.org_id:channels})
 
     def _get_all_filtered_channels(self, topics_without_signature):
         """ get all filtered chanels from blockchain logs """
@@ -471,8 +476,8 @@ class MPEChannelCommand(OrganizationCommand):
         self._print_channels_from_blockchain(channels_ids)
 
     def print_all_channels_filter_group(self):
-        metadata = self._get_service_metadata_from_registry()
-        group_id = metadata.get_group_id(self.args.group_name)
+        metadata = self._get_organization_metadata_from_registry(self.args.org_id)
+        group_id = base64.b64decode(metadata.get_group_id_by_group_name(self.args.group_name))
         group_id_hex = "0x" + group_id.hex()
         channels_ids = self._get_all_filtered_channels([None, None, group_id_hex])
         self._print_channels_from_blockchain(channels_ids)
@@ -480,8 +485,8 @@ class MPEChannelCommand(OrganizationCommand):
     def print_all_channels_filter_group_sender(self):
         address        = self.get_address_from_arg_or_ident(self.args.sender)
         address_padded = pad_hex(address.lower(), 256)
-        metadata = self._get_service_metadata_from_registry()
-        group_id = metadata.get_group_id(self.args.group_name)
+        metadata = self._get_organization_metadata_from_registry(self.args.org_id)
+        group_id = base64.b64decode(metadata.get_group_id_by_group_name(self.args.group_name))
         group_id_hex = "0x" + group_id.hex()
         channels_ids = self._get_all_filtered_channels([address_padded, None, group_id_hex])
         self._print_channels_from_blockchain(channels_ids)

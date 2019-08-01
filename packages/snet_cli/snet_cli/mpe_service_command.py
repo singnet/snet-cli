@@ -37,12 +37,14 @@ class MPEServiceCommand(BlockchainCommand):
                                   self.args.encoding)
         metadata.set_simple_field("service_type",
                                   self.args.service_type)
+
         if self.args.group_name:
-            self._metadata_add_group(metadata)
+            metadata.add_group(self.args.group_name)
             if self.args.endpoints:
-                self.metadata_add_endpoints()
-            if self.args.fixed_price:
-                self.metadata_set_fixed_price()
+                for endpoint in self.args.endpoints:
+                    metadata.add_endpoint_to_group(self.args.group_name, endpoint)
+            if self.args.fixed_price is not None:
+                metadata.set_fixed_price_in_cogs(self.args.group_name, self.args.fixed_price)
         elif self.args.group_name or self.args.fixed_price:
             raise Exception("endpoints / fixed price can be attached to a group please pass group_name")
         metadata.save_pretty(self.args.metadata_file)

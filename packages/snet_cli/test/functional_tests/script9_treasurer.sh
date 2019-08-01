@@ -11,7 +11,12 @@ snet account deposit 12345 -y -q
 
 # service provider has --wallet-index==9 (0x52653A9091b5d5021bed06c5118D24b23620c529)
 # make two endpoints (both are actually valid)
-snet service metadata-init ./service_spec1/ ExampleService 0x52653A9091b5d5021bed06c5118D24b23620c529 --fixed-price 0.0001 --endpoints 127.0.0.1:50051
+snet  organization metadata-init org1 testo
+snet  organization add-group group1 0x42A605c07EdE0E1f648aB054775D6D4E38496144  5.5.6.7:8089
+snet  organization add-group group2 0x42A605c07EdE0E1f648aB054775D6D4E38496144 1.2.1.1:8089
+snet organization create test0  -y -q
+
+snet service metadata-init ./service_spec1/ ExampleService 0x52653A9091b5d5021bed06c5118D24b23620c529 --fixed-price 0.0001 --endpoints 127.0.0.1:50051  --group-name group1
 
 
 assert_balance () {
