@@ -242,24 +242,25 @@ class MPEServiceCommand(BlockchainCommand):
 
     def print_service_status(self):
         metadata = self._get_service_metadata_from_registry()
-        groups=[]
+        groups = []
         if self.args.group_name != None:
             groups = {self.args.group_name: metadata.get_all_endpoints_for_group(
                 self.args.group_name)}
         else:
-            groups = metadata.get_all_endpoints()
+            groups = metadata.get_all_group_endpoints()
         srvc_status = defaultdict(list)
-        for grp in groups:
-            for endpoint in groups[grp]:
+        for name, group_endpoints in groups.items():
+            for endpoint in group_endpoints:
                 status = "Available" if self._service_status(
                     url=endpoint) else "Not Available"
-                srvc_status[grp].append(
+                srvc_status[name].append(
                     {"endpoint": endpoint, "status": status})
         if srvc_status == {}:
             self._printout(
                 "Error: No endpoints found to check service status.")
             return
         self._pprint(srvc_status)
+
 
     def print_service_tags_from_registry(self):
         rez = self._get_service_registration()

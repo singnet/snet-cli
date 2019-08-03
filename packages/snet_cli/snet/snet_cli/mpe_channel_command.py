@@ -65,7 +65,6 @@ class MPEChannelCommand(OrganizationCommand):
         return os.path.join(self._get_org_base_dir(org_id), "channels_info.pickle")
 
     def _get_service_metadata(self):
-        self._init_or_update_registered_service_if_needed()
         service_dir = self.get_service_spec_dir(self.args.org_id, self.args.service_id)
         service_metadata = load_mpe_service_metadata(os.path.join(service_dir, "service_metadata.json"))
         return service_metadata
@@ -108,64 +107,63 @@ class MPEChannelCommand(OrganizationCommand):
 
     def _check_mpe_address_metadata(self, metadata):
         """ we make sure that MultiPartyEscrow address from metadata is correct """
-        #TODO check this with sridhar before merging code
         mpe_address = self.get_mpe_address()
-        return True
         if (str(mpe_address).lower() != str(metadata["mpe_address"]).lower()):
-            raise Exception("MultiPartyEscrow contract address from metadata %s do not correspond to current MultiPartyEscrow address %s"%(metadata["mpe_address"], mpe_address))
+            raise Exception("MultiPartyEscrow contract address from metadata %s do not correspond to current MultiPartyEscrow address %s" % (
+                metadata["mpe_address"], mpe_address))
 
     def _init_or_update_org_if_needed(self, metadata, org_registration):
         # if service was already initialized and metadataURI hasn't changed we do nothing
         if self.is_org_initialized():
             if self.is_metadataURI_has_changed(org_registration):
-                self._printerr("# Service with org_id=%s "%(self.args.org_id))
+                self._printerr("# Organization with org_id=%s "%(self.args.org_id))
                 self._printerr("# ATTENTION!!! price or other paramaters might have been changed!\n")
             else:
                 return # we do nothing
         self._printerr("# Initilize service with org_id=%s"%(self.args.org_id))
-        self._check_mpe_address_metadata(metadata)
+        #self._check_mpe_address_metadata(metadata)
         org_dir = self.get_org_spec_dir(self.args.org_id)
 
-        # remove old service_dir
-        # it is relatevely safe to remove service_dir because we know that service_dir = self.get_service_spec_dir() so it is not a normal dir
-        if (os.path.exists(org_dir)):
-            shutil.rmtree(org_dir)
+        if (not os.path.exists(org_dir)):
+            os.makedirs(org_dir, mode=0o700)
 
-        os.makedirs(org_dir, mode=0o700)
         try:
-            # save service_metadata.json in channel_dir
+            # save orgainzaiton_metadata.json in channel_dir
             metadata.save_pretty(os.path.join(org_dir, "organization_metadata.json"))
         except:
             # it is secure to remove channel_dir, because we've created it
-            shutil.rmtree(org_dir)
+            #shutil.rmtree(org_dir)
             raise
         self._save_org_info(self.args.org_id, org_registration)
 
     def _init_or_update_registered_org_if_needed(self):
         '''
-        similar to _init_or_update_service_if_needed but we get service_registraion from registry,
-        so we can update only registered services
+        similar to _init_or_update_org_if_needed but we get organization_registraion from registry,
+        so we can update only registered organization
         '''
         if (self.is_org_initialized()):
             old_reg = self._read_org_info(self.args.org_id)
 
             # metadataURI will be in old_reg only for service which was initilized from registry (not from metadata)
             # we do nothing for services which were initilized from metadata
-            if ("metadataURI" not in old_reg):
+            if ("orgMetadataURI" not in old_reg):
                 return
-
-            org_registration = self._get_organization_registration()
+            org_registration = self._get_organization_registration(self.args.org_id)
             # if metadataURI hasn't been changed we do nothing
             if (not self.is_metadataURI_has_changed(org_registration)):
                 return
         else:
-            org_registration = self._get_organization_registration()
+            org_registration = self._get_organization_registration(self.args.org_id)
 
-        org_metadata     = self._get_organization_registration()
-        self._init_or_update_service_if_needed(org_metadata, org_registration)
+        org_metadata     = self._get_organization_metadata_from_registry(self.args.org_id)
+        self._init_or_update_org_if_needed(org_metadata, org_registration)
 
     def is_metadataURI_has_changed(self, new_reg):
         old_reg = self._read_org_info(self.args.org_id)
+        return new_reg.get("orgMetadataURI") != old_reg.get("orgMetadataURI")
+
+    def is_service_metadataURI_has_changed(self, new_reg):
+        old_reg = self._read_service_info(self.args.org_id,self.args.service_id)
         return new_reg.get("metadataURI") != old_reg.get("metadataURI")
 
     def _check_channel_is_mine(self, channel):
@@ -360,7 +358,7 @@ class MPEChannelCommand(OrganizationCommand):
         metadata   = self._read_metadata_for_org(self.args.org_id)
         return self._smart_get_initialized_channel_for_org(metadata, "sender")
 
-    def channel_extend_and_add_funds_for_service(self):
+    def channel_extend_and_add_funds_for_org(self):
         channel_id = self._smart_get_channel_for_org()["channelId"]
         self._channel_extend_add_funds_with_channel_id(channel_id)
 
@@ -529,7 +527,7 @@ class MPEChannelCommand(OrganizationCommand):
     def _init_or_update_service_if_needed(self, metadata, service_registration):
         # if service was already initialized and metadataURI hasn't changed we do nothing
         if self.is_service_initialized():
-            if self.is_metadataURI_has_changed(service_registration):
+            if self.is_service_metadataURI_has_changed(service_registration):
                 self._printerr("# Service with org_id=%s and service_id=%s was updated"%(self.args.org_id, self.args.service_id))
                 self._printerr("# ATTENTION!!! price or other paramaters might have been changed!\n")
             else:
@@ -577,7 +575,7 @@ class MPEChannelCommand(OrganizationCommand):
 
             service_registration = self._get_service_registration()
             # if metadataURI hasn't been changed we do nothing
-            if (not self.is_metadataURI_has_changed(service_registration)):
+            if (not self.is_service_metadataURI_has_changed(service_registration)):
                 return
         else:
             service_registration = self._get_service_registration()

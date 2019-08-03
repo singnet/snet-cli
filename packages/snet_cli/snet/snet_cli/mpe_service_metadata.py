@@ -296,11 +296,11 @@ class MPEServiceMetadata:
                     return group["endpoints"];
                 return []
 
-    def get_all_endpoints(self):
-        group_endpoints=[]
+    def  get_all_group_endpoints(self):
+        group_endpoints={}
         for group in self.m["groups"]:
             if "endpoints" in group:
-                group_endpoints.extend({group["group_name"]:group['endpoints']})
+                group_endpoints[group["group_name"]]=group['endpoints']
         return group_endpoints
 
 

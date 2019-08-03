@@ -804,10 +804,12 @@ def add_mpe_channel_options(parser):
     add_p_channel_id(p)
     add_p_set_for_extend_add(p)
 
-    p = subparsers.add_parser("extend-add-for-service",
+    p = subparsers.add_parser("extend-add-for-org",
                               help="Set new expiration and add funds for the channel for the given service")
-    p.set_defaults(fn="channel_extend_and_add_funds_for_service")
-    add_p_service_in_registry(p)
+    p.set_defaults(fn="channel_extend_and_add_funds_for_org")
+    add_p_org_id(p)
+    add_group_name(p)
+    add_p_registry_address_opt(p)
     add_p_set_for_extend_add(p)
     add_p_group_name(p)
     add_p_channel_id_opt(p)
@@ -937,7 +939,7 @@ def add_mpe_client_options(parser):
                              "JSON-serialized parameters object (leave emtpy to read from stdin)",
                         metavar="PARAMS")
         add_eth_call_arguments(_p)
-        add_group_name(p)
+
         add_p_mpe_address_opt(_p)
         _p.add_argument("--save-response",
                         default=None,
@@ -958,7 +960,9 @@ def add_mpe_client_options(parser):
                               help="Call server. We ask state of the channel from the server if needed. Channel should be already initialized.")
     p.set_defaults(fn="call_server_statelessly")
     add_p_org_id_service_id(p)
+    add_group_name(p)
     add_p_set1_for_call(p)
+
     add_p_channel_id_opt(p)
     add_p_from_block(p)
     p.add_argument("--yes", "-y",
@@ -974,6 +978,7 @@ def add_mpe_client_options(parser):
                               help="Low level function for calling the server. Service should be already initialized.")
     p.set_defaults(fn="call_server_lowlevel")
     add_p_org_id_service_id(p)
+    add_group_name(p)
     add_p_channel_id(p)
     p.add_argument("nonce",
                    type=int,
