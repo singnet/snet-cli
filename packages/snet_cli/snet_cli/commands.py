@@ -13,7 +13,7 @@ from rfc3986 import urlparse
 from web3.eth import is_checksum_address
 from web3.gas_strategies.time_based import fast_gas_price_strategy, medium_gas_price_strategy, slow_gas_price_strategy
 
-from build.lib.snet.snet_cli.utils_ipfs import publish_file_in_ipfs
+from snet.snet_cli.utils_ipfs import publish_file_in_ipfs
 from snet.snet_cli.contract import Contract
 from snet.snet_cli.mpe_orgainzation_metadata import OrganizationMetadata, PaymentStorageClient, Payment, Group
 from snet.snet_cli.utils import DefaultAttributeObject, get_web3, serializable, type_converter, get_contract_def, \
