@@ -2,7 +2,6 @@
 
 # run daemon
 cd simple_daemon
-source ../../../cli3.6/bin/activate
 python test_simple_daemon.py &
 DAEMON=$!
 cd ..

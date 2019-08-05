@@ -1,9 +1,6 @@
 # Test get-channel-state
 # run daemon
 cd simple_daemon
-sudo pkill -f  test_simple
-source ../../../cli3.6/bin/activate
-
 python test_simple_daemon.py &
 DAEMON=$!
 cd ..
