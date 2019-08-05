@@ -69,6 +69,7 @@ snet channel print-initialized | grep 4321
 #reinitializing the channel use the existing chnanels.
 snet channel open-init testo group2 2222.33333 1 -yq
 
+snet channel print-initialized
 snet channel extend-add-for-org testo group2 --amount 0.0001 --expiration 4444 -yq
 snet channel extend-add-for-org testo group2 --amount 0.0001  -yq
 snet channel extend-add-for-org testo group2 --expiration 5643  -yq
@@ -83,5 +84,5 @@ snet channel extend-add-for-org testo group2 --amount 0.00001 --expiration 7654 
 snet channel extend-add-for-org testo group2 --amount 0.00001   -yq
 snet channel extend-add-for-org testo group2 --expiration 7655  -yq
 snet channel print-initialized
-snet channel print-initialized | grep 2222.33355
+snet channel print-initialized | grep 2222.33555
 snet channel print-initialized | grep 7655
