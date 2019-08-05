@@ -103,12 +103,16 @@ snet account withdraw 1 -y -q
 
 #open channel usig org and group
 snet --print-traceback channel open-init-metadata testo group1  42 1   -y  -q
+snet channel print-initialized
 snet channel claim-timeout 0 -y -q
+snet channel print-initialized
 # we do not send transaction second time
 snet channel claim-timeout 0 -y -q && exit 1 || echo "fail as expected"
 
 snet channel extend-add 0 --expiration 10000 --amount 42 -y  -q
+snet channel print-initialized
 snet channel extend-add 0 --amount 42 -y  -q
+snet channel print-initialized
 snet channel extend-add 0 --expiration +10000blocks   -y  -q
 snet channel extend-add 0 --expiration +10000days  -y  -q && exit 1 || echo "fail as expected"
 snet channel extend-add 0 --expiration +10000days --force  -y  -q
@@ -120,7 +124,8 @@ snet channel extend-add 0 --expiration $EXPIRATION1 --force  --amount 0  -y  -q
 snet channel open-init  testo group1 9712.1234 +14days -y -q
 
 # test print_initialized_channels and print_all_channels. We should have channels openned for specific identity
-snet --print-traceback channel print-initialized | grep 42
+snet channel print-initialized
+snet --print-traceback channel print-initialized | grep 84
 snet channel print-all-filter-sender |grep 0x42A605c07EdE0E1f648aB054775D6D4E38496144
 
 # we have two initilized channels one for group1 and anther for group1 (recipient=0x42A605c07EdE0E1f648aB054775D6D4E38496144)
