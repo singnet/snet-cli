@@ -76,7 +76,7 @@ class MPEChannelCommand(OrganizationCommand):
         # replace old file atomically (os.rename is more or less atomic)
         tmp = tempfile.NamedTemporaryFile(delete=False)
         pickle.dump( channels_dict, open( tmp.name, "wb" ) )
-        os.rename(tmp.name, self._get_channels_info_file(org_id))
+        shutil.move(tmp.name, self._get_channels_info_file(org_id))
 
     def _get_initialized_channels_dict_for_org(self, org_id):
         '''return {channel_id: channel}'''
@@ -196,6 +196,17 @@ class MPEChannelCommand(OrganizationCommand):
         org_registration = self._get_organization_registration(self.args.org_id)
         self._init_channel_from_metadata(metadata, org_registration)
 
+
+    def _expiration_str_to_blocks(self, expiration_str, current_block):
+        s = expiration_str
+        if (s.startswith("+") and s.endswith("days")):
+            rez = current_block + int(s[1:-4]) * 4 * 60 * 24
+        elif (s.startswith("+") and s.endswith("blocks")):
+            rez = current_block + int(s[1:-6])
+        else:
+            rez = int(s)
+        return rez
+
     def _get_expiration_from_args(self):
         """
         read expiration from args.
@@ -207,13 +218,8 @@ class MPEChannelCommand(OrganizationCommand):
         If expiration > current_block + 1036800 (~6 month) we generate an exception if "--force" flag haven't been set
         """
         current_block = self.ident.w3.eth.blockNumber
-        s = self.args.expiration
-        if (s.startswith("+") and s.endswith("days")):
-            rez = current_block + int(s[1:-4]) * 4 * 60 * 24
-        elif (s.startswith("+") and s.endswith("blocks")):
-            rez = current_block + int(s[1:-6])
-        else:
-            rez = int(s)
+
+        rez = self._expiration_str_to_blocks(self.args.expiration, current_block)
         if (rez > current_block + 1036800 and not self.args.force):
             d = (rez - current_block) // (4 * 60 * 24)
             raise Exception("You try to set expiration time too far in the future: approximately %i days. "%d +
