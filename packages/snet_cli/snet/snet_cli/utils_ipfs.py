@@ -8,20 +8,19 @@ import base58
 import multihash
 
 
-def publish_file_in_ipfs(ipfs_client, filepath,wrap_with_directory=True):
+def publish_file_in_ipfs(ipfs_client, filepath, wrap_with_directory=True):
     """
         push a file to ipfs given its path
     """
     try:
         with open(filepath, 'r+b') as file:
-            result = ipfs_client.add(file, pin=True, wrap_with_directory=wrap_with_directory)
+            result = ipfs_client.add(
+                file, pin=True, wrap_with_directory=wrap_with_directory)
             if wrap_with_directory:
                 return result[1]['Hash']+'/'+result[0]['Name']
             return result['Hash']
     except Exception as err:
         print("File error ", err)
-
-
 
 
 def publish_proto_in_ipfs(ipfs_client, protodir):

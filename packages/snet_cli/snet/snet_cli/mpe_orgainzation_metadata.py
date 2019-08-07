@@ -27,7 +27,8 @@ class PaymentStorageClient(object):
 
     def validate(self):
         if len(self.endpoints) < 1:
-            raise Exception("At least on ednpoint is required for payment channel ")
+            raise Exception(
+                "At least on ednpoint is required for payment channel ")
 
 
 class Payment(object):
@@ -41,7 +42,8 @@ class Payment(object):
 
     @classmethod
     def from_json(cls, json_data: dict):
-        payment_channel_storage_client = PaymentStorageClient.from_json(json_data['payment_channel_storage_client'])
+        payment_channel_storage_client = PaymentStorageClient.from_json(
+            json_data['payment_channel_storage_client'])
         return cls(json_data['payment_address'], json_data['payment_expiration_threshold'],
                    json_data['payment_channel_storage_type'], payment_channel_storage_client)
 
@@ -94,7 +96,8 @@ class Group(object):
             raise Exception("group_id is cannot be null")
 
         if self.payment is None:
-            raise Exception("payment details cannot be null for group_name %s", self.group_name)
+            raise Exception(
+                "payment details cannot be null for group_name %s", self.group_name)
         else:
             self.payment.validate()
 
@@ -120,9 +123,7 @@ class Group(object):
         return base64.b64decode(self.get_group_id_base64(group_name))
 
     def get_payment_address(self):
-            return self.payment.payment_address
-
-
+        return self.payment.payment_address
 
 
 class OrganizationMetadata(object):
@@ -193,7 +194,7 @@ class OrganizationMetadata(object):
         return cls(json_data['org_name'], json_data['org_id'], groups)
 
     @classmethod
-    def from_file(cls,filepath):
+    def from_file(cls, filepath):
         with open(filepath) as f:
             return OrganizationMetadata.from_json(json.load(f))
 
@@ -204,34 +205,26 @@ class OrganizationMetadata(object):
             raise Exception("Org_name cannot be null")
 
         if len(self.groups) < 1:
-            raise Exception("At least One group is required to create an organization")
+            raise Exception(
+                "At least One group is required to create an organization")
         else:
             for group in self.groups:
                 group.validate()
 
-    def get_payment_address_for_group(self,group_name):
+    def get_payment_address_for_group(self, group_name):
         for group in self.groups:
             if group.group_name == group_name:
-                return  group.get_payment_address()
+                return group.get_payment_address()
 
-    def get_group_id_by_group_name(self,group_name):
+    def get_group_id_by_group_name(self, group_name):
         for group in self.groups:
             if group.group_name == group_name:
-                return  group.group_id
+                return group.group_id
 
-    def get_group_by_group_id(self,group_id):
+    def get_group_by_group_id(self, group_id):
         for group in self.groups:
             if group.group_id == group_id:
-                return  group
-
-
+                return group
 
     # def get_group_by_group_name(self,group_name):
     #      return base64.b64decode(group_name)
-
-
-
-
-
-
-

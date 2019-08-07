@@ -125,13 +125,14 @@ class MPEServiceMetadata:
                         fixed_price_method_model_exist = True
 
                         if 'details' in pricing:
-                            fixed_price_method_pricing_for_service_exist = False;
+                            fixed_price_method_pricing_for_service_exist = False
                             for detail in pricing['details']:
 
                                 if detail['service_name'] == service_name:
                                     # adding new method pricing for existing service
                                     fixed_price_method_pricing_for_service_exist = True
-                                    detail['method_pricing'].append(method_pricing)
+                                    detail['method_pricing'].append(
+                                        method_pricing)
 
                             if not fixed_price_method_pricing_for_service_exist:
                                 # pricing for new method for new service
@@ -218,7 +219,6 @@ class MPEServiceMetadata:
             if group["group_name"] == group_name:
                 group["endpoints"] = []
 
-
     def is_group_name_exists(self, group_name):
         """ check if group with given name is already exists """
         groups = self.m["groups"]
@@ -293,16 +293,15 @@ class MPEServiceMetadata:
         for group in self.m["groups"]:
             if group["group_name"] == group_name:
                 if "endpoints" in group:
-                    return group["endpoints"];
+                    return group["endpoints"]
                 return []
 
-    def  get_all_group_endpoints(self):
-        group_endpoints={}
+    def get_all_group_endpoints(self):
+        group_endpoints = {}
         for group in self.m["groups"]:
             if "endpoints" in group:
-                group_endpoints[group["group_name"]]=group['endpoints']
+                group_endpoints[group["group_name"]] = group['endpoints']
         return group_endpoints
-
 
     def get_all_endpoints_with_group_name(self):
         endpts_with_grp = defaultdict(list)
