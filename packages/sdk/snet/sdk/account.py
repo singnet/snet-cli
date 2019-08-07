@@ -24,6 +24,12 @@ class Account:
         self.mpe_contract = mpe_contract
         self.token_contract = get_contract_object(
             self.web3, "SingularityNetToken.json")
+
+        # Get Token contract address from config if specified; mostly for local testing
+        _token_contract_address = self.config.get("token_contract_address", None)
+        if _token_contract_address is not None:
+            self.token_contract.address = _token_contract_address
+
         private_key = config.get("private_key", None)
         signer_private_key = config.get("signer_private_key", None)
         if private_key is not None:
