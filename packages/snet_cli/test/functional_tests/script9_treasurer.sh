@@ -1,4 +1,4 @@
-echo  test
+echo test
 
 ## Test 'snet treasurer'
 #
