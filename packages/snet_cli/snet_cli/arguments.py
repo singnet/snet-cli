@@ -275,7 +275,6 @@ def add_organization_options(parser):
         title="Organization commands", metavar="COMMAND")
     subparsers.required = True
 
-
     p = subparsers.add_parser("metadata-init",
                               help="Initalize matadata for organization ")
     p.set_defaults(fn="initalize_metadata")
@@ -291,8 +290,6 @@ def add_organization_options(parser):
                     help="Generate organization Id (by default random id is generated)")
     add_metadatafile_argument_for_org(p)
 
-
-
     p = subparsers.add_parser("print-metadata",
                               help="Initalize matadata for organization ")
     p.set_defaults(fn="print_metadata")
@@ -301,8 +298,6 @@ def add_organization_options(parser):
                    help="Organization name")
     p.add_argument("org_id",
                    help="Organization Id")
-
-
 
     p = subparsers.add_parser("add-group",
                               help="Add group to organization ")
@@ -315,11 +310,10 @@ def add_organization_options(parser):
                    help="Group Id")
 
     p.add_argument("payment_address",
-                      help="Payment address")
+                   help="Payment address")
     p.add_argument("endpoints",
                    nargs='*',
                    help="Endpoints for the first group")
-
 
     p.add_argument("--payment-expiration-threshold",
                    default=500,
@@ -340,7 +334,6 @@ def add_organization_options(parser):
                    type=int,
                    help="Service metadata json file (default organization_metadata.json)")
     add_metadatafile_argument_for_org(p)
-
 
     p = subparsers.add_parser("update-group",
                               help="Add group to organization ")
@@ -367,8 +360,6 @@ def add_organization_options(parser):
     p.add_argument("--payment-channel-request-timeout",
                    help="Payment channel Request time out")
 
-
-
     add_metadatafile_argument_for_org(p)
 
     p = subparsers.add_parser("remove-group",
@@ -378,10 +369,6 @@ def add_organization_options(parser):
     p.add_argument("group_id",
                    help="Group Id ")
     add_metadatafile_argument_for_org(p)
-
-
-
-
 
     p = subparsers.add_parser("list",
                               help="List of Organizations Ids")
@@ -1039,7 +1026,6 @@ def add_mpe_service_options(parser):
     p.add_argument("method",
                    help="Set fixed price in AGI token for all methods",
                    )
-
 
     p.add_argument("price",
                    type=stragi2cogs,

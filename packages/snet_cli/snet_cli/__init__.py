@@ -8,13 +8,13 @@ from snet_cli.config import Config
 import argcomplete
 
 
-if __name__== "__main__":
+if __name__ == "__main__":
 
     print("hello")
     try:
         print(123)
         argv = sys.argv[1:]
-        conf   = Config()
+        conf = Config()
         parser = arguments.get_root_parser(conf)
         argcomplete.autocomplete(parser)
 

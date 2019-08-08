@@ -122,13 +122,14 @@ class MPEServiceMetadata:
                         fixed_price_method_model_exist = True
 
                         if 'details' in pricing:
-                            fixed_price_method_pricing_for_service_exist = False;
+                            fixed_price_method_pricing_for_service_exist = False
                             for detail in pricing['details']:
 
                                 if detail['service_name'] == service_name:
                                     # adding new method pricing for existing service
                                     fixed_price_method_pricing_for_service_exist = True
-                                    detail['method_pricing'].append(method_pricing)
+                                    detail['method_pricing'].append(
+                                        method_pricing)
 
                             if not fixed_price_method_pricing_for_service_exist:
                                 # pricing for new method for new service
@@ -293,7 +294,7 @@ class MPEServiceMetadata:
         for group in self.m["groups"]:
             if group["group_name"] == group_name:
                 if "endpoints" in group:
-                    return group["endpoints"];
+                    return group["endpoints"]
                 return []
 
     def get_all_endpoints_with_group_name(self):

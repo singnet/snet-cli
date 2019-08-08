@@ -61,7 +61,8 @@ class MPEServiceCommand(BlockchainCommand):
 
     def metadata_set_method_price(self):
         metadata = load_mpe_service_metadata(self.args.metadata_file)
-        metadata.set_method_price_in_cogs(self.args.group_name,self.args.package_name,self.args.service_name,self.args.method, self.args.price)
+        metadata.set_method_price_in_cogs(
+            self.args.group_name, self.args.package_name, self.args.service_name, self.args.method, self.args.price)
         metadata.save_pretty(self.args.metadata_file)
 
     def _metadata_add_group(self, metadata):
