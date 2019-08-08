@@ -42,11 +42,14 @@ class MPEServiceCommand(BlockchainCommand):
             metadata.add_group(self.args.group_name)
             if self.args.endpoints:
                 for endpoint in self.args.endpoints:
-                    metadata.add_endpoint_to_group(self.args.group_name, endpoint)
+                    metadata.add_endpoint_to_group(
+                        self.args.group_name, endpoint)
             if self.args.fixed_price is not None:
-                metadata.set_fixed_price_in_cogs(self.args.group_name, self.args.fixed_price)
+                metadata.set_fixed_price_in_cogs(
+                    self.args.group_name, self.args.fixed_price)
         elif self.args.group_name or self.args.fixed_price:
-            raise Exception("endpoints / fixed price can be attached to a group please pass group_name")
+            raise Exception(
+                "endpoints / fixed price can be attached to a group please pass group_name")
         metadata.save_pretty(self.args.metadata_file)
 
     def publish_proto_metadata_update(self):
@@ -64,7 +67,8 @@ class MPEServiceCommand(BlockchainCommand):
 
     def metadata_set_method_price(self):
         metadata = load_mpe_service_metadata(self.args.metadata_file)
-        metadata.set_method_price_in_cogs(self.args.group_name,self.args.package_name,self.args.service_name,self.args.method, self.args.price)
+        metadata.set_method_price_in_cogs(
+            self.args.group_name, self.args.package_name, self.args.service_name, self.args.method, self.args.price)
         metadata.save_pretty(self.args.metadata_file)
 
     def _metadata_add_group(self, metadata):
@@ -260,7 +264,6 @@ class MPEServiceCommand(BlockchainCommand):
                 "Error: No endpoints found to check service status.")
             return
         self._pprint(srvc_status)
-
 
     def print_service_tags_from_registry(self):
         rez = self._get_service_registration()

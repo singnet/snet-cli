@@ -5,23 +5,21 @@ python test_simple_daemon.py &
 DAEMON=$!
 cd ..
 
-
-snet service metadata-init ./service_spec1/ ExampleService 0xc7973537517BfDeA79EE11Fa2D52584241a34dF2  --fixed-price 0.0001 --endpoints 127.0.0.1:50051 --group-name group1
+snet service metadata-init ./service_spec1/ ExampleService 0xc7973537517BfDeA79EE11Fa2D52584241a34dF2 --fixed-price 0.0001 --endpoints 127.0.0.1:50051 --group-name group1
 snet account deposit 12345 -y -q
-snet  organization metadata-init org1 testo
-snet  organization add-group group1 0xc7973537517BfDeA79EE11Fa2D52584241a34dF2   127.0.0.1:50051
+snet organization metadata-init org1 testo
+snet organization add-group group1 0xc7973537517BfDeA79EE11Fa2D52584241a34dF2 127.0.0.1:50051
 
-snet organization create testo  -y -q
+snet organization create testo -y -q
 
 snet service publish testo tests -y -q
 snet channel open-init testo group1 1 +10days -yq
 snet channel print-initialized
 
 test_get_channel_state() {
-MPE_BALANCE=$(snet client get-channel-state 0 localhost:50051 |grep current_unspent_amount_in_cogs)
-test ${MPE_BALANCE##*=} = $1
+	MPE_BALANCE=$(snet client get-channel-state 0 localhost:50051 | grep current_unspent_amount_in_cogs)
+	test ${MPE_BALANCE##*=} = $1
 }
-
 
 test_get_channel_state 100000000
 
@@ -30,7 +28,7 @@ snet client call testo tests group1 classify {} -y
 test_get_channel_state 99990000
 
 snet channel print-initialized
-snet --print-traceback treasurer claim-all --endpoint 127.0.0.1:50051  --wallet-index 7 -yq
+snet --print-traceback treasurer claim-all --endpoint 127.0.0.1:50051 --wallet-index 7 -yq
 #
 #test_get_channel_state 99990000
 #
