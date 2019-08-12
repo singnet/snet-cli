@@ -1,4 +1,5 @@
-snet service metadata-init ./service_spec1/ ExampleService  --group-name group0 --fixed-price 0.0001 --endpoints 8.8.8.8:2020 9.8.9.8:8080
+snet service metadata-init ./service_spec1/ ExampleService  --group-name group0 --fixed-price 0.0001 --endpoints 8.8.8.8:2020 9.8.9.8:8080 && exit 1 || echo "fail as expected"
+snet service metadata-init ./service_spec1/ ExampleService
 snet service metadata-add-group group1
 snet service metadata-add-endpoints group1 8.8.8.8:22 1.2.3.4:8080
 
