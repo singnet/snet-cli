@@ -3,7 +3,7 @@ snet organization add-group group1 0x52653A9091b5d5021bed06c5118D24b23620c529 5.
 snet organization add-group group2 0x0067b427E299Eb2A4CBafc0B04C723F77c6d8a18 1.2.1.1:8089
 snet organization create test0 -y -q
 
-snet service metadata-init ./service_spec1/ ExampleService 0x52653A9091b5d5021bed06c5118D24b23620c529 --fixed-price 0.0001 --endpoints 8.8.8.8:2020 --group-name group1
+snet service metadata-init ./service_spec1/ ExampleService  --fixed-price 0.0001 --endpoints 8.8.8.8:2020 --group-name group1
 
 snet organization create testo -y -q
 snet service publish testo tests -y -q

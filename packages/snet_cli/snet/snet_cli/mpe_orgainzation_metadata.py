@@ -203,7 +203,12 @@ class OrganizationMetadata(object):
             raise Exception("Org_id cannot be null")
         if self.org_name is None:
             raise Exception("Org_name cannot be null")
-
+        if self.groups:
+            unique_group_names=set()
+            for group in self.groups:
+                unique_group_names.add(group.group_name)
+            if len(unique_group_names) < len(self.groups):
+                raise Exception("Cannot create group with duplicate names")
         if len(self.groups) < 1:
             raise Exception(
                 "At least One group is required to create an organization")

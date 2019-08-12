@@ -6,7 +6,7 @@ python test_simple_daemon.py &
 DAEMON=$!
 cd ..
 
-snet service metadata-init ./service_spec1/ ExampleService 0x52653A9091b5d5021bed06c5118D24b23620c529 --fixed-price 0.0001 --endpoints 127.0.0.1:50051 --group-name group1
+snet service metadata-init ./service_spec1/ ExampleService  --fixed-price 0.0001 --endpoints 127.0.0.1:50051 --group-name group1
 snet account deposit 12345 -y -q
 snet organization metadata-init org1 testo
 snet organization add-group group1 0x52653A9091b5d5021bed06c5118D24b23620c529 127.0.0.1:50051
@@ -43,7 +43,7 @@ snet --print-traceback client call testo tests group1 classify {} -y
 
 # multiply payment groups case
 # multiply payment groups case
-snet service metadata-init ./service_spec1/ ExampleService 0x52653A9091b5d5021bed06c5118D24b23620c529 --fixed-price 0.0001 --endpoints 127.0.0.1:50051 --group-name group1
+snet service metadata-init ./service_spec1/ ExampleService  --fixed-price 0.0001 --endpoints 127.0.0.1:50051 --group-name group1
 
 snet organization add-group group2 0x52653A9091b5d5021bed06c5118D24b23620c529 127.0.0.1:50051
 snet organization update-metadata testo -yq

@@ -738,7 +738,7 @@ def add_mpe_channel_options(parser):
     subparsers.required = True
 
     p = subparsers.add_parser("init",
-                              help="Initialize channel taking service metadata from Registry")
+                              help="Initialize channel taking org metadata from Registry")
     p.set_defaults(fn="init_channel_from_registry")
 
     add_p_org_id(p)
@@ -748,7 +748,7 @@ def add_mpe_channel_options(parser):
     add_p_channel_id(p)
 
     p = subparsers.add_parser("init-metadata",
-                              help="Initialize channel using org metadata")
+                              help="Initialize channel using organization metadata")
     p.set_defaults(fn="init_channel_from_metadata")
     add_p_org_id(p)
     add_group_name(p)
@@ -759,7 +759,7 @@ def add_mpe_channel_options(parser):
     add_eth_call_arguments(p)
 
     p = subparsers.add_parser("open-init",
-                              help="Open and initialize channel using metadata from Registry")
+                              help="Open and initialize channel using organization metadata from Registry")
     p.set_defaults(fn="open_init_channel_from_registry")
 
     add_p_org_id(p)
@@ -1001,11 +1001,7 @@ def add_mpe_service_options(parser):
     p.add_argument("display_name",
                    help="Service display name",
                    metavar="DISPLAY_NAME")
-    p.add_argument("payment_address",
-                   help="The payment_address for the first payment group",
-                   metavar="PAYMENT_ADDRESS")
     p.add_argument("--group-name",
-                   default="default_group",
                    help="Name of the first payment group")
     p.add_argument("--endpoints",
                    default=[],
@@ -1070,14 +1066,14 @@ def add_mpe_service_options(parser):
     p.set_defaults(fn="metadata_add_group")
     add_p_metadata_file_opt(p)
     p.add_argument("group_name",
-                   help="Name of the new payment group",
+                   help="Name of the  payment group",
                    metavar="GROUP_NAME")
     p.add_argument("group_id",
-                   help="Name of the new payment group",
+                   help="Id of the payment group",
                    metavar="GROUP_ID")
 
     p = subparsers.add_parser("metadata-add-endpoints",
-                              help="Add endpoints to the groups")
+                              help="Add deamon endpoints to the groups")
     p.set_defaults(fn="metadata_add_endpoints")
     p.add_argument("group_name",
                    default=None,

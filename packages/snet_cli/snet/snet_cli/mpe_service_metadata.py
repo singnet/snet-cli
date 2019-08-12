@@ -91,10 +91,15 @@ class MPEServiceMetadata:
 
         for group in self.m["groups"]:
             if group["group_name"] == group_name:
+                is_fixed_price_enabled = False
                 # default=True  it will change when we will go live with method level pricing
                 if "pricing" in group:
-                    group["pricing"].append({"price_model": "fixed_price",
-                                             "price_in_cogs": price, "default": True})
+                    for pricing in group['pricing']:
+                        if pricing["price_model"] == "fixed_price":
+                            is_fixed_price_enabled = True
+                    if not is_fixed_price_enabled:
+                        group["pricing"].append({"price_model": "fixed_price",
+                                                 "price_in_cogs": price, "default": True})
                 else:
                     group["pricing"] = [{"price_model": "fixed_price",
                                          "price_in_cogs": price, "default": True}]

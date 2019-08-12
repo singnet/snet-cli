@@ -3,13 +3,13 @@ snet session
 # service side
 
 #should fail (not existed directory)
-snet service metadata-init ./bad_dir/ ExampleService 0x42A605c07EdE0E1f648aB054775D6D4E38496144 --encoding json --service-type jsonrpc --group-name group1 && exit 1 || echo "fail as expected"
+snet service metadata-init ./bad_dir/ ExampleService  --encoding json --service-type jsonrpc --group-name group1 && exit 1 || echo "fail as expected"
 
 #should fail (directory doesn't contain any *.proto files)
-snet service metadata-init ./ ExampleService 0x42A605c07EdE0E1f648aB054775D6D4E38496144 --encoding json --service-type jsonrpc --group-name group1 && exit 1 || echo "fail as expected"
+snet service metadata-init ./ ExampleService  --encoding json --service-type jsonrpc --group-name group1 && exit 1 || echo "fail as expected"
 
 # happy flow
-snet --print-traceback service metadata-init ./service_spec1/ ExampleService 0x42A605c07EdE0E1f648aB054775D6D4E38496144 --encoding json --service-type jsonrpc --group-name group1
+snet --print-traceback service metadata-init ./service_spec1/ ExampleService  --encoding json --service-type jsonrpc --group-name group1
 jq .model_ipfs_hash=1 service_metadata.json >tmp.txt
 mv -f tmp.txt service_metadata.json
 snet service metadata-set-model ./service_spec1/
@@ -41,9 +41,9 @@ grep "1.2.3.4:8080" service_metadata.json && exit 1 || echo "fail as expected"
 snet service metadata-set-fixed-price group1 0.0001
 
 # test --endpoints and --fixed-price options in 'snet service metadata-init'
-snet --print-traceback service metadata-init ./service_spec1/ ExampleService 0x42A605c07EdE0E1f648aB054775D6D4E38496144 --encoding json --service-type jsonrpc --group-name group1 --fixed-price 0 --endpoints 8.8.8.8:2020 9.8.9.8:8080 --metadata-file service_metadata2.json
+snet --print-traceback service metadata-init ./service_spec1/ ExampleService  --encoding json --service-type jsonrpc --group-name group1 --fixed-price 0 --endpoints 8.8.8.8:2020 9.8.9.8:8080 --metadata-file service_metadata2.json
 grep fixed_price service_metadata2.json
-snet service metadata-init ./service_spec1/ ExampleService 0x42A605c07EdE0E1f648aB054775D6D4E38496144 --encoding json --service-type jsonrpc --group-name group1 --fixed-price 0.0001 --endpoints 8.8.8.8:2020 9.8.9.8:8080 --metadata-file service_metadata2.json
+snet service metadata-init ./service_spec1/ ExampleService  --encoding json --service-type jsonrpc --group-name group1 --fixed-price 0.0001 --endpoints 8.8.8.8:2020 9.8.9.8:8080 --metadata-file service_metadata2.json
 grep fixed_price service_metadata2.json
 grep 9.8.9.8:8080 service_metadata2.json
 
@@ -126,7 +126,7 @@ snet channel print-all-filter-sender | grep 0x42A605c07EdE0E1f648aB054775D6D4E38
 
 # we have two initilized channels one for group1 and anther for group1 (recipient=0x42A605c07EdE0E1f648aB054775D6D4E38496144)
 
-snet --print-traceback service metadata-init ./service_spec1/ ExampleService 0x52653A9091b5d5021bed06c5118D24b23620c529 --group-name group2 --fixed-price 0.0001 --endpoints 8.8.8.8:2020 --metadata-file service_metadata2.json
+snet --print-traceback service metadata-init ./service_spec1/ ExampleService  --group-name group2 --fixed-price 0.0001 --endpoints 8.8.8.8:2020 --metadata-file service_metadata2.json
 grep "8.8.8.8:2020" service_metadata2.json
 snet service metadata-update-endpoints group2 8.8.8.8:2025 --metadata-file service_metadata2.json
 grep "8.8.8.8:2025" service_metadata2.json
