@@ -1,4 +1,4 @@
-snet service metadata-init ./service_spec1/ ExampleService  --group-name group0 --fixed-price 0.0001 --endpoints 8.8.8.8:2020 9.8.9.8:8080
+snet service metadata-init ./service_spec1/ ExampleService --group-name group0 --fixed-price 0.0001 --endpoints 8.8.8.8:2020 9.8.9.8:8080
 snet service metadata-init ./service_spec1/ ExampleService
 snet service metadata-add-group group1
 snet service metadata-add-endpoints group1 8.8.8.8:22 1.2.3.4:8080
@@ -13,7 +13,6 @@ snet organization add-group group2 0x32267d505B1901236508DcDa64C1D0d5B9DF639a 1.
 snet organization create testo -y -q
 snet service metadata-remove-group group0
 snet service publish testo tests -y -q
-
 
 EXPIRATION0=$(($(snet channel block-number) - 1))
 EXPIRATION1=$(($(snet channel block-number) - 1))
