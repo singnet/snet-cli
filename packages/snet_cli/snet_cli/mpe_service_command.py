@@ -37,13 +37,19 @@ class MPEServiceCommand(BlockchainCommand):
                                   self.args.encoding)
         metadata.set_simple_field("service_type",
                                   self.args.service_type)
-        metadata.set_simple_field(
-            "payment_expiration_threshold", self.args.payment_expiration_threshold)
-        self._metadata_add_group(metadata)
-        for endpoint in self.args.endpoints:
-            metadata.add_endpoint(self.args.group_name, endpoint)
-        if (self.args.fixed_price is not None):
-            metadata.set_fixed_price_in_cogs(self.args.fixed_price)
+
+        if self.args.group_name:
+            metadata.add_group(self.args.group_name)
+            if self.args.endpoints:
+                for endpoint in self.args.endpoints:
+                    metadata.add_endpoint_to_group(
+                        self.args.group_name, endpoint)
+            if self.args.fixed_price is not None:
+                metadata.set_fixed_price_in_cogs(
+                    self.args.group_name, self.args.fixed_price)
+        elif self.args.group_name or self.args.fixed_price:
+            raise Exception(
+                "endpoints / fixed price can be attached to a group please pass group_name")
         metadata.save_pretty(self.args.metadata_file)
 
     def publish_proto_metadata_update(self):
@@ -56,14 +62,17 @@ class MPEServiceCommand(BlockchainCommand):
 
     def metadata_set_fixed_price(self):
         metadata = load_mpe_service_metadata(self.args.metadata_file)
-        metadata.set_fixed_price_in_cogs(self.args.price)
+        metadata.set_fixed_price_in_cogs(self.args.group_name, self.args.price)
+        metadata.save_pretty(self.args.metadata_file)
+
+    def metadata_set_method_price(self):
+        metadata = load_mpe_service_metadata(self.args.metadata_file)
+        metadata.set_method_price_in_cogs(
+            self.args.group_name, self.args.package_name, self.args.service_name, self.args.method, self.args.price)
         metadata.save_pretty(self.args.metadata_file)
 
     def _metadata_add_group(self, metadata):
-        if (not web3.eth.is_checksum_address(self.args.payment_address)):
-            raise Exception(
-                "payment_address parameter is not a valid Ethereum checksum address")
-        metadata.add_group(self.args.group_name, self.args.payment_address)
+        metadata.add_group(self.args.group_name)
 
     def metadata_add_group(self):
         metadata = load_mpe_service_metadata(self.args.metadata_file)
@@ -75,13 +84,13 @@ class MPEServiceCommand(BlockchainCommand):
         metadata = load_mpe_service_metadata(self.args.metadata_file)
         group_name = metadata.get_group_name_nonetrick(self.args.group_name)
         for endpoint in self.args.endpoints:
-            metadata.add_endpoint(group_name, endpoint)
+            metadata.add_endpoint_to_group(group_name, endpoint)
         metadata.save_pretty(self.args.metadata_file)
 
     def metadata_remove_all_endpoints(self):
         """ Metadata: remove all endpoints from all groups """
         metadata = load_mpe_service_metadata(self.args.metadata_file)
-        metadata.remove_all_endpoints()
+        metadata.remove_all_endpoints_for_group(self.args.group_name)
         metadata.save_pretty(self.args.metadata_file)
 
     def metadata_update_endpoints(self):
@@ -90,7 +99,7 @@ class MPEServiceCommand(BlockchainCommand):
         group_name = metadata.get_group_name_nonetrick(self.args.group_name)
         metadata.remove_all_endpoints_for_group(group_name)
         for endpoint in self.args.endpoints:
-            metadata.add_endpoint(group_name, endpoint)
+            metadata.add_endpoint_to_group(group_name, endpoint)
         metadata.save_pretty(self.args.metadata_file)
 
     def metadata_add_asset_to_ipfs(self):
@@ -168,15 +177,15 @@ class MPEServiceCommand(BlockchainCommand):
         # first we check that we do not change payment_address or group_id in existed payment groups
         old_metadata = self._get_service_metadata_from_registry()
         new_metadata = load_mpe_service_metadata(self.args.metadata_file)
-        for old_group in old_metadata["groups"]:
-            if (new_metadata.is_group_name_exists(old_group["group_name"])):
-                new_group = new_metadata.get_group(old_group["group_name"])
-                if (new_group["group_id"] != old_group["group_id"] or new_group["payment_address"] != old_group["payment_address"]):
-                    raise Exception("\n\nYou are trying to change group_id or payment_address in group '%s'.\n" % old_group["group_name"] +
-                                    "It would make all open channels invalid.\n" +
-                                    "You shoudn't use 'metadata-init' for existed service, because it reinitialize group_id\n" +
-                                    "Please use 'metadata-set-model' for change your protobuf file\n" +
-                                    "Please use 'metadata-remove-all-endpoints/metadata-add-endpoints to update endpoints'\n\n")
+        # for old_group in old_metadata["groups"]:
+        #     if (new_metadata.is_group_name_exists(old_group["group_name"])):
+        #         new_group = new_metadata.get_group(old_group["group_name"])
+        #         if (new_group["group_id"] != old_group["group_id"] or new_group["payment_address"] != old_group["payment_address"]):
+        #             raise Exception("\n\nYou are trying to change group_id or payment_address in group '%s'.\n" % old_group["group_name"] +
+        #                             "It would make all open channels invalid.\n" +
+        #                             "You shoudn't use 'metadata-init' for existed service, because it reinitialize group_id\n" +
+        #                             "Please use 'metadata-set-model' for change your protobuf file\n" +
+        #                             "Please use 'metadata-remove-all-endpoints/metadata-add-endpoints to update endpoints'\n\n")
         metadata_uri = hash_to_bytesuri(
             self._publish_metadata_in_ipfs(self.args.metadata_file))
         params = [type_converter("bytes32")(self.args.org_id), type_converter(
@@ -237,17 +246,18 @@ class MPEServiceCommand(BlockchainCommand):
 
     def print_service_status(self):
         metadata = self._get_service_metadata_from_registry()
+        groups = []
         if self.args.group_name != None:
-            groups = {self.args.group_name: metadata.get_endpoints_for_group(
+            groups = {self.args.group_name: metadata.get_all_endpoints_for_group(
                 self.args.group_name)}
         else:
-            groups = metadata.get_all_endpoints_with_group_name()
+            groups = metadata.get_all_group_endpoints()
         srvc_status = defaultdict(list)
-        for grp in groups:
-            for endpoint in groups[grp]:
+        for name, group_endpoints in groups.items():
+            for endpoint in group_endpoints:
                 status = "Available" if self._service_status(
                     url=endpoint) else "Not Available"
-                srvc_status[grp].append(
+                srvc_status[name].append(
                     {"endpoint": endpoint, "status": status})
         if srvc_status == {}:
             self._printout(

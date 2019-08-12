@@ -19,7 +19,7 @@ jobs:
             sudo cp ./go-ipfs/ipfs /usr/local/bin
     - checkout
     - run:
-        name: Install snet-cli 
+        name: Install snet-cli
         command: |
             ./packages/snet_cli/scripts/blockchain install
             sudo pip3 install -e ./packages/snet_cli
@@ -32,7 +32,7 @@ jobs:
             git clone https://github.com/singnet/platform-contracts
             cd platform-contracts
             npm install
-            npm install ganache-cli
+            npm install ganache-cli@6.3.0
             npm run-script compile
     - run:
         name: Unit tests

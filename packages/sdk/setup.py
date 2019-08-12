@@ -6,7 +6,9 @@ PACKAGE_NAME = 'snet.sdk'
 
 
 def is_package_installed(package_name):
-    installed_modules = [p.project_name for p in pkg_resources.working_set] 
+    installed_modules = [p.project_name for p in pkg_resources.working_set]
+    print("Installed modules:")
+    print(installed_modules)
     return package_name in installed_modules
 
 
@@ -14,13 +16,14 @@ dependencies = []
 
 
 if is_package_installed('snet-cli'):
-    # The default setup.py in the snet_cli package for local development installs the whole snet_cli package, 
+    # The default setup.py in the snet_cli package for local development installs the whole snet_cli package,
     # not the standalone snet.snet_cli namespace package; if a strict dependency on snet.snet_cli was enforced,
     # this setup.py would fetch it from PyPI. So, if snet_cli is installed and in your Python path, the
     # dependency on snet.snet_cli will be skipped.
     # If snet_cli is not available, snet.snet_cli will be fetched from PyPI.
     print("Package 'snet_cli' is installed and in your PYTHONPATH: skipping snet.snet_cli dependency")
 else:
+    print("Package 'snet_cli is not installed: installing required snet.snet_cli dependency'")
     dependencies.append('snet.snet_cli')
 
 
@@ -38,6 +41,6 @@ setup(
     author='SingularityNET Foundation',
     author_email='info@singularitynet.io',
     description='SingularityNET Python SDK',
-    python_requires='>=3.6',
+    python_requires='>=3.7',
     install_requires=dependencies
 )
