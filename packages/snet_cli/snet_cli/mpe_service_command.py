@@ -5,6 +5,7 @@ from collections import defaultdict
 
 from grpc_health.v1 import health_pb2 as heartb_pb2
 from grpc_health.v1 import health_pb2_grpc as heartb_pb2_grpc
+from snet.snet_cli.mpe_orgainzation_metadata import OrganizationMetadata
 
 from snet_cli.commands import BlockchainCommand
 
@@ -164,7 +165,43 @@ class MPEServiceCommand(BlockchainCommand):
     def _get_converted_tags(self):
         return [type_converter("bytes32")(tag) for tag in self.args.tags]
 
+
+    def _get_organization_metadata_from_registry(self, org_id):
+        rez = self._get_organization_registration(org_id)
+        metadata_hash = bytesuri_to_hash(rez["orgMetadataURI"])
+        metadata = get_from_ipfs_and_checkhash(
+            self._get_ipfs_client(), metadata_hash)
+        metadata = metadata.decode("utf-8")
+        return OrganizationMetadata.from_json(json.loads(metadata))
+
+    def _get_organization_registration(self, org_id):
+        params = [type_converter("bytes32")(org_id)]
+        rez = self.call_contract_command(
+            "Registry", "getOrganizationById", params)
+        if (rez[0] == False):
+            raise Exception("Cannot find  Organization with id=%s" % (
+                self.args.org_id))
+        return {"orgMetadataURI": rez[2]}
+
+
+    def _validate_service_group_with_org_group_and_update_group_id(self,org_id,metadata_file):
+        org_metadata = self._get_organization_metadata_from_registry(org_id)
+        new_service_metadata = load_mpe_service_metadata(metadata_file)
+        org_groups = {}
+        for group in org_metadata.groups:
+            org_groups[group.group_name] = group
+
+        for group in new_service_metadata.m["groups"]:
+            if group["group_name"] in org_groups:
+                group["group_id"] = org_groups[group["group_name"]].group_id
+                new_service_metadata.save_pretty(metadata_file)
+            else:
+                raise Exception("Group name %s does not exist in organization", group["group_name"])
+
+
     def publish_service_with_metadata(self):
+
+        self._validate_service_group_with_org_group_and_update_group_id(self.args.org_id,self.args.metadata_file)
         metadata_uri = hash_to_bytesuri(
             self._publish_metadata_in_ipfs(self.args.metadata_file))
         tags = self._get_converted_tags()
@@ -175,17 +212,7 @@ class MPEServiceCommand(BlockchainCommand):
 
     def publish_metadata_in_ipfs_and_update_registration(self):
         # first we check that we do not change payment_address or group_id in existed payment groups
-        old_metadata = self._get_service_metadata_from_registry()
-        new_metadata = load_mpe_service_metadata(self.args.metadata_file)
-        # for old_group in old_metadata["groups"]:
-        #     if (new_metadata.is_group_name_exists(old_group["group_name"])):
-        #         new_group = new_metadata.get_group(old_group["group_name"])
-        #         if (new_group["group_id"] != old_group["group_id"] or new_group["payment_address"] != old_group["payment_address"]):
-        #             raise Exception("\n\nYou are trying to change group_id or payment_address in group '%s'.\n" % old_group["group_name"] +
-        #                             "It would make all open channels invalid.\n" +
-        #                             "You shoudn't use 'metadata-init' for existed service, because it reinitialize group_id\n" +
-        #                             "Please use 'metadata-set-model' for change your protobuf file\n" +
-        #                             "Please use 'metadata-remove-all-endpoints/metadata-add-endpoints to update endpoints'\n\n")
+        self._validate_service_group_with_org_group_and_update_group_id(self.args.org_id, self.args.metadata_file)
         metadata_uri = hash_to_bytesuri(
             self._publish_metadata_in_ipfs(self.args.metadata_file))
         params = [type_converter("bytes32")(self.args.org_id), type_converter(

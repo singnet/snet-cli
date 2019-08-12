@@ -20,10 +20,10 @@ snet service publish testo tests -y -q
 
 # case with several groups
 snet service metadata-init ./service_spec1/ ExampleService  --group-name group0 --fixed-price 0.0001 --endpoints 8.8.8.8:2020 9.8.9.8:8080
-snet service metadata-add-group group1 0x0067b427E299Eb2A4CBafc0B04C723F77c6d8a18
+snet service metadata-add-group group1
 snet service metadata-add-endpoints group1 8.8.8.8:22 1.2.3.4:8080
 
-snet service metadata-add-group group2 0x32267d505B1901236508DcDa64C1D0d5B9DF639a
+snet service metadata-add-group group2
 snet service metadata-add-endpoints group2 8.8.8.8:2 1.2.3.4:800
 
 # this should be fine because we've completly removed default_group

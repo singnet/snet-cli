@@ -1068,9 +1068,7 @@ def add_mpe_service_options(parser):
     p.add_argument("group_name",
                    help="Name of the  payment group",
                    metavar="GROUP_NAME")
-    p.add_argument("group_id",
-                   help="Id of the payment group",
-                   metavar="GROUP_ID")
+
 
     p = subparsers.add_parser("metadata-add-endpoints",
                               help="Add deamon endpoints to the groups")

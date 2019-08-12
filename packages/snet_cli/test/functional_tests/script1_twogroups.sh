@@ -22,7 +22,7 @@ snet service metadata-add-description --json '{"description":"s"}' --description
 snet service metadata-add-description --json '{"url":"http://127.0.0.1"}' --url "http://127.0.0.2" && exit 1 || echo "fail as expected"
 
 #seconf argument is group_id should be removed
-snet service metadata-add-group group2 0x0067b427E299Eb2A4CBafc0B04C723F77c6d8a18
+snet service metadata-add-group group2
 snet service metadata-add-endpoints group1 8.8.8.8:2020 9.8.9.8:8080
 snet service metadata-add-endpoints group2 8.8.8.8:22 1.2.3.4:8080
 grep "8.8.8.8:2020" service_metadata.json
@@ -234,8 +234,8 @@ snet service publish testo tests6 --update-mpe-address -yq
 snet service publish testo tests7 -yq
 
 # test snet service update-metadata
-snet service metadata-add-group group1 0x0067b427E299Eb2A4CBafc0B04C723F77c6d8a18
+snet service metadata-add-group group1
 #group already added
-snet service metadata-add-group group2 0x0067b427E299Eb2A4CBafc0B04C723F77c6d8a18 && exit 1 || echo "fail as expected"
+snet service metadata-add-group group2  && exit 1 || echo "fail as expected"
 snet service metadata-add-endpoints group1 8.8.8.8:22 1.2.3.4:8080
 snet service update-metadata testo tests7 -y

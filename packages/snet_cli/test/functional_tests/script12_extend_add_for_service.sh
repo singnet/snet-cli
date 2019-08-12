@@ -40,7 +40,7 @@ snet channel print-initialized | grep 31477
 
 # multiply payment groups case
 #snet service metadata-init ./service_spec1/ ExampleService 0x52653A9091b5d5021bed06c5118D24b23620c529  --fixed-price 0.0001 --endpoints 8.8.8.8:2020 --group-name group2
-snet service metadata-add-group group2 0x0067b427E299Eb2A4CBafc0B04C723F77c6d8a18
+snet service metadata-add-group group2
 snet service metadata-add-endpoints group2 8.8.8.8:20202 9.10.9.8:8080
 
 snet service update-metadata testo tests -yq

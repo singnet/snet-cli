@@ -51,7 +51,7 @@ snet --print-traceback service publish testo tests2 -y -q
 snet service print-service-status testo tests2
 snet --print-traceback client call testo tests2 group2 classify {} -y && exit 1 || echo "fail as expected"
 
-snet service metadata-add-group group2 zT4oz1G2gEJ8q9Z9AqOio2wuFAkDXnTgTZ7sJhtozW0=
+snet service metadata-add-group group2
 snet service metadata-set-fixed-price group2 0.0001
 snet service metadata-add-endpoints group2 127.0.0.1:50051
 snet service update-metadata testo tests2 -y
