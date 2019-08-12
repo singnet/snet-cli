@@ -85,7 +85,6 @@ class MPEServiceCommand(BlockchainCommand):
         metadata.remove_group(self.args.group_name)
         metadata.save_pretty(self.args.metadata_file)
 
-
     def metadata_add_endpoints(self):
         """ Metadata: add endpoint to the group """
         metadata = load_mpe_service_metadata(self.args.metadata_file)
@@ -171,7 +170,6 @@ class MPEServiceCommand(BlockchainCommand):
     def _get_converted_tags(self):
         return [type_converter("bytes32")(tag) for tag in self.args.tags]
 
-
     def _get_organization_metadata_from_registry(self, org_id):
         rez = self._get_organization_registration(org_id)
         metadata_hash = bytesuri_to_hash(rez["orgMetadataURI"])
@@ -189,8 +187,7 @@ class MPEServiceCommand(BlockchainCommand):
                 self.args.org_id))
         return {"orgMetadataURI": rez[2]}
 
-
-    def _validate_service_group_with_org_group_and_update_group_id(self,org_id,metadata_file):
+    def _validate_service_group_with_org_group_and_update_group_id(self, org_id, metadata_file):
         org_metadata = self._get_organization_metadata_from_registry(org_id)
         new_service_metadata = load_mpe_service_metadata(metadata_file)
         org_groups = {}
@@ -202,12 +199,13 @@ class MPEServiceCommand(BlockchainCommand):
                 group["group_id"] = org_groups[group["group_name"]].group_id
                 new_service_metadata.save_pretty(metadata_file)
             else:
-                raise Exception("Group name %s does not exist in organization" % group["group_name"])
-
+                raise Exception(
+                    "Group name %s does not exist in organization" % group["group_name"])
 
     def publish_service_with_metadata(self):
 
-        self._validate_service_group_with_org_group_and_update_group_id(self.args.org_id,self.args.metadata_file)
+        self._validate_service_group_with_org_group_and_update_group_id(
+            self.args.org_id, self.args.metadata_file)
         metadata_uri = hash_to_bytesuri(
             self._publish_metadata_in_ipfs(self.args.metadata_file))
         tags = self._get_converted_tags()
@@ -218,7 +216,8 @@ class MPEServiceCommand(BlockchainCommand):
 
     def publish_metadata_in_ipfs_and_update_registration(self):
         # first we check that we do not change payment_address or group_id in existed payment groups
-        self._validate_service_group_with_org_group_and_update_group_id(self.args.org_id, self.args.metadata_file)
+        self._validate_service_group_with_org_group_and_update_group_id(
+            self.args.org_id, self.args.metadata_file)
         metadata_uri = hash_to_bytesuri(
             self._publish_metadata_in_ipfs(self.args.metadata_file))
         params = [type_converter("bytes32")(self.args.org_id), type_converter(

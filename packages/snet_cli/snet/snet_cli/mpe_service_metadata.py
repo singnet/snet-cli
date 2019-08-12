@@ -162,9 +162,9 @@ class MPEServiceMetadata:
 
         self.m["groups"] += [{"group_name": group_name}]
 
-    def remove_group(self,group_name):
+    def remove_group(self, group_name):
         for group in self.m["groups"]:
-            if group["group_name"]== group_name:
+            if group["group_name"] == group_name:
                 self.m["groups"].remove(group)
 
     def add_asset(self, asset_ipfs_hash, asset_type):

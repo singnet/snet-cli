@@ -204,7 +204,7 @@ class OrganizationMetadata(object):
         if self.org_name is None:
             raise Exception("Org_name cannot be null")
         if self.groups:
-            unique_group_names=set()
+            unique_group_names = set()
             for group in self.groups:
                 unique_group_names.add(group.group_name)
             if len(unique_group_names) < len(self.groups):
