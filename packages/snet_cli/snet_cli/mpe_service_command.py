@@ -80,6 +80,12 @@ class MPEServiceCommand(BlockchainCommand):
         self._metadata_add_group(metadata)
         metadata.save_pretty(self.args.metadata_file)
 
+    def metadata_remove_group(self):
+        metadata = load_mpe_service_metadata(self.args.metadata_file)
+        metadata.remove_group(self.args.group_name)
+        metadata.save_pretty(self.args.metadata_file)
+
+
     def metadata_add_endpoints(self):
         """ Metadata: add endpoint to the group """
         metadata = load_mpe_service_metadata(self.args.metadata_file)
@@ -196,7 +202,7 @@ class MPEServiceCommand(BlockchainCommand):
                 group["group_id"] = org_groups[group["group_name"]].group_id
                 new_service_metadata.save_pretty(metadata_file)
             else:
-                raise Exception("Group name %s does not exist in organization", group["group_name"])
+                raise Exception("Group name %s does not exist in organization" % group["group_name"])
 
 
     def publish_service_with_metadata(self):

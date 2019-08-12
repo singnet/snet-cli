@@ -1069,6 +1069,13 @@ def add_mpe_service_options(parser):
                    help="Name of the  payment group",
                    metavar="GROUP_NAME")
 
+    p = subparsers.add_parser("metadata-remove-group",
+                              help="remove group from service")
+    p.set_defaults(fn="metadata_remove_group")
+    add_p_metadata_file_opt(p)
+    p.add_argument("group_name",
+                   help="Name of the  payment group",
+                   metavar="GROUP_NAME")
 
     p = subparsers.add_parser("metadata-add-endpoints",
                               help="Add deamon endpoints to the groups")

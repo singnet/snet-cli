@@ -1,4 +1,4 @@
-snet service metadata-init ./service_spec1/ ExampleService  --group-name group0 --fixed-price 0.0001 --endpoints 8.8.8.8:2020 9.8.9.8:8080 && exit 1 || echo "fail as expected"
+snet service metadata-init ./service_spec1/ ExampleService  --group-name group0 --fixed-price 0.0001 --endpoints 8.8.8.8:2020 9.8.9.8:8080
 snet service metadata-init ./service_spec1/ ExampleService
 snet service metadata-add-group group1
 snet service metadata-add-endpoints group1 8.8.8.8:22 1.2.3.4:8080
@@ -11,7 +11,9 @@ snet organization add-group group0 0x42A605c07EdE0E1f648aB054775D6D4E38496144 5.
 snet organization add-group group1 0x0067b427E299Eb2A4CBafc0B04C723F77c6d8a18 1.2.1.1:8089
 snet organization add-group group2 0x32267d505B1901236508DcDa64C1D0d5B9DF639a 1.2.1.1:8089
 snet organization create testo -y -q
+snet service metadata-remove-group group0
 snet service publish testo tests -y -q
+
 
 EXPIRATION0=$(($(snet channel block-number) - 1))
 EXPIRATION1=$(($(snet channel block-number) - 1))

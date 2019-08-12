@@ -26,8 +26,11 @@ snet service metadata-add-endpoints group1 8.8.8.8:22 1.2.3.4:8080
 snet service metadata-add-group group2
 snet service metadata-add-endpoints group2 8.8.8.8:2 1.2.3.4:800
 
-# this should be fine because we've completly removed default_group
+# this should fail as group0 is not in organization
+snet service update-metadata testo tests -yq && exit 1 || echo "fail as expected"
+snet service metadata-remove-group group0
 snet service update-metadata testo tests -yq
+
 
 ## change group_id   wil now be grenerated by org level
 #cat service_metadata.json | jq '.groups[1].group_id = "B5r64fQiiB5kvkWZDo7lXmo4i8y0chUvob5/CmfqoP4="' >service_metadata2.json
