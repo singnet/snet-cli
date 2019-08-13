@@ -359,14 +359,14 @@ def add_organization_options(parser):
     add_metadatafile_argument_for_org(p)
     add_p_registry_address_opt(p)
 
-    p = subparsers.add_parser("remove-group",
-                              help="Remove group of organization ")
-    p.set_defaults(fn="remove_group")
-
-    p.add_argument("group_id",
-                   help="Group Id ")
-    add_metadatafile_argument_for_org(p)
-    add_p_registry_address_opt(p)
+    # p = subparsers.add_parser("remove-group",
+    #                           help="Remove group of organization ")
+    # p.set_defaults(fn="remove_group")
+    #
+    # p.add_argument("group_id",
+    #                help="Group Id ")
+    # add_metadatafile_argument_for_org(p)
+    # add_p_registry_address_opt(p)
 
     p = subparsers.add_parser("list",
                               help="List of Organizations Ids")

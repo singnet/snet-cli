@@ -28,7 +28,7 @@ class PaymentStorageClient(object):
     def validate(self):
         if len(self.endpoints) < 1:
             raise Exception(
-                "At least on ednpoint is required for payment channel ")
+                "At least one endpoint is required for payment channel ")
 
 
 class Payment(object):
@@ -198,7 +198,16 @@ class OrganizationMetadata(object):
         with open(filepath) as f:
             return OrganizationMetadata.from_json(json.load(f))
 
-    def validate(self):
+    def is_removing_existing_group_from_org(self, current_group_name, existing_registry_metadata_group_names):
+        if len(existing_registry_metadata_group_names-current_group_name) == 0:
+            pass
+        else:
+            remvoved_groups = existing_registry_metadata_group_names - current_group_name
+            raise Exception(
+                "Cannot remove existing group from organization as it might be attached to services, groups you are removing are  %s" % remvoved_groups)
+
+    def validate(self, existing_registry_metadata=None):
+
         if self.org_id is None:
             raise Exception("Org_id cannot be null")
         if self.org_name is None:
@@ -207,6 +216,7 @@ class OrganizationMetadata(object):
             unique_group_names = set()
             for group in self.groups:
                 unique_group_names.add(group.group_name)
+
             if len(unique_group_names) < len(self.groups):
                 raise Exception("Cannot create group with duplicate names")
         if len(self.groups) < 1:
@@ -215,6 +225,14 @@ class OrganizationMetadata(object):
         else:
             for group in self.groups:
                 group.validate()
+
+        existing_registry_metadata_group_names = set()
+        if existing_registry_metadata:
+            for group in existing_registry_metadata.groups:
+                existing_registry_metadata_group_names.add(group.group_name)
+
+        self.is_removing_existing_group_from_org(
+            unique_group_names, existing_registry_metadata_group_names)
 
     def get_payment_address_for_group(self, group_name):
         for group in self.groups:
