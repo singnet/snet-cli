@@ -615,9 +615,11 @@ class OrganizationCommand(BlockchainCommand):
                 "Organization metadata json file not found ,Please check --metadata-file path ")
             raise e
         # validate the metadata before updating
-        org_metadata.validate()
 
         org_id = self.args.org_id
+        existing_registry_org_metadata = self._get_organization_metadata_from_registry(org_id)
+        org_metadata.validate(existing_registry_org_metadata)
+
         # Check if Organization already exists
         found = self._getorganizationbyid(org_id)[0]
         if not found:
