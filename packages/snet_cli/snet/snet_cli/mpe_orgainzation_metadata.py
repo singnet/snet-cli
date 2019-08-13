@@ -199,22 +199,21 @@ class OrganizationMetadata(object):
             return OrganizationMetadata.from_json(json.load(f))
 
     def is_removing_existing_group_from_org(self, current_group_name, existing_registry_metadata_group_names):
-        if len(existing_registry_metadata_group_names-current_group_name) ==0:
+        if len(existing_registry_metadata_group_names-current_group_name) == 0:
             pass
         else:
-            remvoved_groups=existing_registry_metadata_group_names - current_group_name
-            raise Exception("Cannot remove existing group from organization as it might be attached to services, groups you are removing are  %s"%remvoved_groups)
+            remvoved_groups = existing_registry_metadata_group_names - current_group_name
+            raise Exception(
+                "Cannot remove existing group from organization as it might be attached to services, groups you are removing are  %s" % remvoved_groups)
 
-
-
-    def validate(self,existing_registry_metadata=None):
+    def validate(self, existing_registry_metadata=None):
 
         if self.org_id is None:
             raise Exception("Org_id cannot be null")
         if self.org_name is None:
             raise Exception("Org_name cannot be null")
         if self.groups:
-            unique_group_names=set()
+            unique_group_names = set()
             for group in self.groups:
                 unique_group_names.add(group.group_name)
 
@@ -232,7 +231,8 @@ class OrganizationMetadata(object):
             for group in existing_registry_metadata.groups:
                 existing_registry_metadata_group_names.add(group.group_name)
 
-        self.is_removing_existing_group_from_org(unique_group_names, existing_registry_metadata_group_names)
+        self.is_removing_existing_group_from_org(
+            unique_group_names, existing_registry_metadata_group_names)
 
     def get_payment_address_for_group(self, group_name):
         for group in self.groups:
