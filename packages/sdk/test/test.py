@@ -1,36 +1,50 @@
+import sys
 from snet.sdk import SnetSDK
 
-from config import config
+config = {
+    "private_key": "0xc71478a6d0fe44e763649de0a0deb5a080b788eefbbcf9c6f7aef0dd5dbd67e0",
+    "eth_rpc_endpoint": "http://localhost:8545",
+    "ipfs_rpc_endpoint": "http://localhost:5002",
+    "token_contract_address": "0x6e5f20669177f5bdf3703ec5ea9c4d4fe3aabd14",
+    "registry_contract_address": "0x4e74fefa82e83e0964f0d9f53c68e03f7298a8b2",
+    "mpe_contract_address": "0x5c7a4290f6f8ff64c69eeffdfafc8644a4ec3a4e"
+}
 
 sdk = SnetSDK(config)
 
+import ExampleService_pb2
+import ExampleService_pb2_grpc
+
+
 # Examples using the "get_method" utility function
-service_client = sdk.create_dynamic_service_client("snet", "example-service")
+service_client = sdk.create_dynamic_service_client("testo", "tests")
 
-method, request_type, _ = service_client.get_method("add")
-request = request_type(a=20, b=3)
-print("Performing {} + {}:".format(request.a, request.b))
+method, request_type, _ = service_client.get_method("classify")
+print("Performing request")
+request = request_type()
 result = method(request)
-print("Result: {}".format(result.value))
-
-# Example using the "get_method" utility function and a fully qualified method name ([<package>].service.method)
-method, request_type, _ = service_client.get_method("example_service.Calculator.mul")
-request = request_type(a=7, b=12)
-print("Performing {} * {}:".format(request.a, request.b))
-result = method(request)
-print("Result: {}".format(result.value))
-
-
-# Examples without the get_method utility function
-service_client = sdk.create_dynamic_service_client("snet", "i3d-video-action-recognition")
-request = service_client.message.Input(model="400", url="http://crcv.ucf.edu/THUMOS14/UCF101/UCF101/v_CricketShot_g04_c02.avi")
-print("Performing video action recognition")
-result = service_client.service.VideoActionRecognition.service.video_action_recon(request)
 print("Result: {}".format(result))
 
 
-service_client = sdk.create_dynamic_service_client("snet", "cntk-image-recon")
-request = service_client.message.Input(model="ResNet152", img_path="https://www.fiftyflowers.com/site_files/FiftyFlowers/Image/Product/Mini-Black-Eye-bloom-350_c7d02e72.jpg")
-print("Performing image recognition")
-result = service_client.service.Recognizer.service.flowers(request)
+# Example using the "get_method" utility function and a fully qualified method name ([<package>].service.method)
+method, request_type, _ = service_client.get_method("ExampleService.classify")
+print("Performing request")
+request = request_type()
+result = method(request)
+print("Result: {}".format(result))
+
+
+# Example without the get_method utility function
+request = service_client.message.ClassifyRequest()
+print("Performing request")
+result = service_client.service.ExampleService.service.classify(request)
+print("Result: {}".format(result))
+
+
+# Examples with static service client
+service_client = sdk.create_service_client(
+    "testo", "tests", ExampleService_pb2_grpc.ExampleServiceStub)
+request = ExampleService_pb2.ClassifyRequest()
+print("Performing request")
+result = service_client.service.classify(request)
 print("Result: {}".format(result))

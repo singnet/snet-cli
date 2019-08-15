@@ -54,23 +54,36 @@ class DynamicServiceClient:
                     if request_type is not None or response_type is not None:
                         raise Exception("Multiple methods found for method {}. Please specify the fully qualified method name (<package>.<service>.<method>)".format(method_name))
                     else:
-                        services_object = getattr(self, package, self).service
-                        service_object = getattr(services_object, service).service
-                        method_function = getattr(service_object, method)
-                        request_type = request
-                        response_type = response
+                        if package is None:
+                            service_object = getattr(self.service, service).service
+                            method_function = getattr(service_object, method)
+                            request_type = request
+                            response_type = response
+                        else:
+                            services_object = getattr(self, package, self).service
+                            service_object = getattr(services_object, service).service
+                            method_function = getattr(service_object, method)
+                            request_type = request
+                            response_type = response
         else: # User is providing a fully qualified method name (<package>.<service>.<method>)
             if method_name in self._services:
+                package = None
                 try:
                     package, service, method = method_fields
                 except:
                     service, method = method_fields
 
-                services_object = getattr(self, package, self).service
-                service_object = getattr(services_object, service).service
-                method_function = getattr(service_object, method)
-                request_type = self._services[method_name][1]
-                response_type = self._services[method_name][2]
+                if package is None:
+                    service_object = getattr(self.service, service).service
+                    method_function = getattr(service_object, method)
+                    request_type = self._services[method_name][1]
+                    response_type = self._services[method_name][2]
+                else:
+                    services_object = getattr(self, package, self).service
+                    service_object = getattr(services_object, service).service
+                    method_function = getattr(service_object, method)
+                    request_type = self._services[method_name][1]
+                    response_type = self._services[method_name][2]
             else:
                 raise Exception("No method found for fully qualified name {}".format(method_name))
 

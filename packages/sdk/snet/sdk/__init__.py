@@ -45,11 +45,12 @@ class SnetSDK:
         self.web3 = web3.Web3(provider)
         self.web3.eth.setGasPriceStrategy(medium_gas_price_strategy)
 
-        self.mpe_contract = MPEContract(self.web3)
         # Get MPE contract address from config if specified; mostly for local testing
         _mpe_contract_address = self._config.get("mpe_contract_address", None)
-        if _mpe_contract_address is not None:
-            self.mpe_contract.contract.address = _mpe_contract_address
+        if _mpe_contract_address is None:
+            self.mpe_contract = MPEContract(self.web3)
+        else:
+            self.mpe_contract = MPEContract(self.web3, _mpe_contract_address)
 
         # Instantiate IPFS client
         ipfs_rpc_endpoint = self._config.get("ipfs_rpc_endpoint", "https://ipfs.singularitynet.io:80")
@@ -58,12 +59,12 @@ class SnetSDK:
         ipfs_port = ipfs_rpc_endpoint.port if ipfs_rpc_endpoint.port else 5001
         self.ipfs_client = ipfsapi.connect(urljoin(ipfs_scheme, ipfs_rpc_endpoint.hostname), ipfs_port)
 
-        self.registry_contract = get_contract_object(self.web3, "Registry.json")
-
         # Get Registry contract address from config if specified; mostly for local testing
         _registry_contract_address = self._config.get("registry_contract_address", None)
-        if _registry_contract_address is not None:
-            self.registry_contract.address = _registry_contract_address
+        if _registry_contract_address is None:
+            self.registry_contract = get_contract_object(self.web3, "Registry.json")
+        else:
+            self.registry_contract = get_contract_object(self.web3, "Registry.json", _registry_contract_address)
 
         self.account = Account(self.web3, config, self.mpe_contract)
 
