@@ -1,3 +1,5 @@
+import ExampleService_pb2_grpc
+import ExampleService_pb2
 import sys
 from snet.sdk import SnetSDK
 
@@ -11,9 +13,6 @@ config = {
 }
 
 sdk = SnetSDK(config)
-
-import ExampleService_pb2
-import ExampleService_pb2_grpc
 
 
 # Examples using the "get_method" utility function
