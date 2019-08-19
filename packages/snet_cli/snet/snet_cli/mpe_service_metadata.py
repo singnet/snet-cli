@@ -91,10 +91,15 @@ class MPEServiceMetadata:
 
         for group in self.m["groups"]:
             if group["group_name"] == group_name:
+                is_fixed_price_enabled = False
                 # default=True  it will change when we will go live with method level pricing
                 if "pricing" in group:
-                    group["pricing"].append({"price_model": "fixed_price",
-                                             "price_in_cogs": price, "default": True})
+                    for pricing in group['pricing']:
+                        if pricing["price_model"] == "fixed_price":
+                            is_fixed_price_enabled = True
+                    if not is_fixed_price_enabled:
+                        group["pricing"].append({"price_model": "fixed_price",
+                                                 "price_in_cogs": price, "default": True})
                 else:
                     group["pricing"] = [{"price_model": "fixed_price",
                                          "price_in_cogs": price, "default": True}]
@@ -154,10 +159,13 @@ class MPEServiceMetadata:
         if (self.is_group_name_exists(group_name)):
             raise Exception("the group \"%s\" is already present" %
                             str(group_name))
-        group_id_base64 = base64.b64encode(secrets.token_bytes(32))
-        self.m["groups"] += [{"group_name": group_name,
-                              "group_id": group_id_base64.decode("ascii")}]
-        return group_id_base64
+
+        self.m["groups"] += [{"group_name": group_name}]
+
+    def remove_group(self, group_name):
+        for group in self.m["groups"]:
+            if group["group_name"] == group_name:
+                self.m["groups"].remove(group)
 
     def add_asset(self, asset_ipfs_hash, asset_type):
         # Check if we need to validation if ssame asset type is added twice if we need to add it or replace the existing one
