@@ -19,19 +19,24 @@ class _ClientCallDetails(
 
 
 class ServiceClient:
-    def __init__(self, sdk, metadata, group, service_stub, payment_channel_management_strategy, options):
+    def __init__(self, sdk, service_metadata,org_metadata, group, service_stub, payment_channel_management_strategy, options):
         self.sdk = sdk
         self.options = options
         self.group = group
-        self.metadata = metadata
+        self.service_metadata = service_metadata
+        self.org_metadata = org_metadata
         self.payment_channel_management_strategy = payment_channel_management_strategy
-        self.expiry_threshold = self.metadata["payment_expiration_threshold"]
+        self.expiry_threshold = self.org_metadata.groups["payment_expiration_threshold"]
         self._base_grpc_channel = self._get_grpc_channel()
         self.grpc_channel = grpc.intercept_channel(self._base_grpc_channel, generic_client_interceptor.create(self._intercept_call))
         self.payment_channel_state_service_client = self._generate_payment_channel_state_service_client()
         self.service = self._generate_grpc_stub(service_stub)
         self.payment_channels = []
         self.last_read_block = 0
+
+
+    def _get_payment_expiration_threshold_for_group(self):
+        pass
 
 
     def _generate_grpc_stub(self, service_stub):
@@ -46,11 +51,11 @@ class ServiceClient:
     def _get_grpc_channel(self):
         endpoint = self.options.get("endpoint", None)
         if endpoint is None:
-            endpoint = self.metadata.get_endpoints_for_group(self.group["group_name"])[0]
+            endpoint = self.servcie_metadata.get_endpoints_for_group(self.group["group_name"])[0]
         endpoint_object = urlparse(endpoint)
         if endpoint_object.port is not None:
             channel_endpoint = endpoint_object.hostname + ":" + str(endpoint_object.port)
-        else: 
+        else:
             channel_endpoint = endpoint_object.hostname
 
         if endpoint_object.scheme == "http":
@@ -63,7 +68,7 @@ class ServiceClient:
 
     def _get_service_call_metadata(self):
         channel = self.payment_channel_management_strategy.select_channel(self)
-        amount = channel.state["last_signed_amount"] + int(self.metadata["pricing"]["price_in_cogs"])
+        amount = channel.state["last_signed_amount"] + int(self.servcie_metadata["pricing"]["price_in_cogs"])
         message = web3.Web3.soliditySha3(
             ["address", "uint256", "uint256", "uint256"],
             [self.sdk.mpe_contract.contract.address, channel.channel_id, channel.state["nonce"], amount]

@@ -59,10 +59,11 @@ class SnetSDK:
         if options is None:
             options = dict()
 
-        service_metadata = self.get_service_metadata(org_id, service_id)
-        group = service_metadata.get_group(group_name)
+        org_metadata = self.get_org_metadata(org_id)
+        service_metadata= self.get_service_metadata(org_id,service_id)
+        group = self.get_group_from_org_metadata(org_metadata)
         strategy = payment_channel_management_strategy(self)
-        service_client = ServiceClient(self, service_metadata, group, service_stub, strategy, options)
+        service_client = ServiceClient(self, org_metadata,service_metadata, group, service_stub, strategy, options)
         return service_client
 
 
@@ -76,3 +77,25 @@ class SnetSDK:
         metadata_json = get_from_ipfs_and_checkhash(self.ipfs_client, metadata_hash)
         metadata = mpe_service_metadata_from_json(metadata_json)
         return metadata
+    def _get_organization_metadata_from_registry(self, org_id):
+        rez = self._get_organization_registration(org_id)
+        metadata_hash = bytesuri_to_hash(rez["orgMetadataURI"])
+        metadata = get_from_ipfs_and_checkhash(
+            self._get_ipfs_client(), metadata_hash)
+        metadata = metadata.decode("utf-8")
+        return json.loads(metadata)
+
+    def _get_organization_registration(self, org_id):
+        params = [type_converter("bytes32")(org_id)]
+        rez = self.call_contract_command(
+            "Registry", "getOrganizationById", params)
+        if (rez[0] == False):
+            raise Exception("Cannot find  Organization with id=%s" % (
+                self.args.org_id))
+        return {"orgMetadataURI": rez[2]}
+
+    def get_org_metadata(self,org_id):
+        return self.__get_organization_metadata_from_registry(org_id)
+
+    def get_group_from_org_metadata(self,org_metadata,group_name):
+        return org_metadata.groups
