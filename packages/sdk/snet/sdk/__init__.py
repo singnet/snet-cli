@@ -1,12 +1,13 @@
 import google.protobuf.internal.api_implementation
 
+from packages.sdk.snet.sdk.metadata_provider.ipfs_metadata_provider import IPFSMetadataProvider
+
 google.protobuf.internal.api_implementation.Type = lambda: 'python'
 
 from google.protobuf import symbol_database as _symbol_database
 
 _sym_db = _symbol_database.Default()
 _sym_db.RegisterMessage = lambda x: None
-
 
 import json
 import base64
@@ -30,11 +31,13 @@ from snet.snet_cli.mpe_service_metadata import mpe_service_metadata_from_json
 
 class SnetSDK:
     """Base Snet SDK"""
+
     def __init__(
         self,
-        config
+        config, metadata_provider=None
     ):
         self._config = config
+        self._metadata_provider = metadata_provider
 
         # Instantiate Ethereum client
         eth_rpc_endpoint = self._config.get("eth_rpc_endpoint", "https://mainnet.infura.io")
@@ -54,48 +57,19 @@ class SnetSDK:
         self.registry_contract = get_contract_object(self.web3, "Registry.json")
         self.account = Account(self.web3, config, self.mpe_contract)
 
-
-    def create_service_client(self, org_id, service_id, service_stub, group_name=None, payment_channel_management_strategy=PaymentChannelManagementStrategy, options=None):
+    def create_service_client(self, org_id, service_id, service_stub, group_name,
+                              payment_channel_management_strategy=PaymentChannelManagementStrategy, options=None):
         if options is None:
             options = dict()
 
-        org_metadata = self.get_org_metadata(org_id)
-        service_metadata= self.get_service_metadata(org_id,service_id)
-        group = self.get_group_from_org_metadata(org_metadata)
+        if self._metadata_provider is None:
+            self._metadata_provider = IPFSMetadataProvider()
+
+        service_metadata = self._metadata_provider.enhance_service_metadata(org_id, service_id)
+        group = self.get_service_group_details(service_metadata, service_id, group_name)
         strategy = payment_channel_management_strategy(self)
-        service_client = ServiceClient(self, org_metadata,service_metadata, group, service_stub, strategy, options)
+        service_client = ServiceClient(self, service_metadata, service_stub, group, strategy, options)
         return service_client
 
-
-    def get_service_metadata(self, org_id, service_id):
-        (found, registration_id, metadata_uri, tags) = self.registry_contract.functions.getServiceRegistrationById(bytes(org_id, "utf-8"), bytes(service_id, "utf-8")).call()
-
-        if found is not True:
-            raise Exception('No service "{}" found in organization "{}"'.format(service_id, org_id))
-
-        metadata_hash = bytesuri_to_hash(metadata_uri)
-        metadata_json = get_from_ipfs_and_checkhash(self.ipfs_client, metadata_hash)
-        metadata = mpe_service_metadata_from_json(metadata_json)
-        return metadata
-    def _get_organization_metadata_from_registry(self, org_id):
-        rez = self._get_organization_registration(org_id)
-        metadata_hash = bytesuri_to_hash(rez["orgMetadataURI"])
-        metadata = get_from_ipfs_and_checkhash(
-            self._get_ipfs_client(), metadata_hash)
-        metadata = metadata.decode("utf-8")
-        return json.loads(metadata)
-
-    def _get_organization_registration(self, org_id):
-        params = [type_converter("bytes32")(org_id)]
-        rez = self.call_contract_command(
-            "Registry", "getOrganizationById", params)
-        if (rez[0] == False):
-            raise Exception("Cannot find  Organization with id=%s" % (
-                self.args.org_id))
-        return {"orgMetadataURI": rez[2]}
-
-    def get_org_metadata(self,org_id):
-        return self.__get_organization_metadata_from_registry(org_id)
-
-    def get_group_from_org_metadata(self,org_metadata,group_name):
-        return org_metadata.groups
+    def get_service_group_details(self, service_metadata, service_id, group_name):
+        pass

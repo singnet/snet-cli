@@ -19,7 +19,8 @@ class _ClientCallDetails(
 
 
 class ServiceClient:
-    def __init__(self, sdk, service_metadata,org_metadata, group, service_stub, payment_channel_management_strategy, options):
+    def __init__(self, sdk, service_metadata, org_metadata, group, service_stub, payment_channel_management_strategy,
+                 options, metadata_provider):
         self.sdk = sdk
         self.options = options
         self.group = group
@@ -28,11 +29,13 @@ class ServiceClient:
         self.payment_channel_management_strategy = payment_channel_management_strategy
         self.expiry_threshold = self.org_metadata.groups["payment_expiration_threshold"]
         self._base_grpc_channel = self._get_grpc_channel()
-        self.grpc_channel = grpc.intercept_channel(self._base_grpc_channel, generic_client_interceptor.create(self._intercept_call))
+        self.grpc_channel = grpc.intercept_channel(self._base_grpc_channel,
+                                                   generic_client_interceptor.create(self._intercept_call))
         self.payment_channel_state_service_client = self._generate_payment_channel_state_service_client()
         self.service = self._generate_grpc_stub(service_stub)
         self.payment_channels = []
         self.last_read_block = 0
+        self.metadata_provider = metadata_provider
 
 
     def _get_payment_expiration_threshold_for_group(self):
@@ -71,7 +74,7 @@ class ServiceClient:
         amount = channel.state["last_signed_amount"] + int(self.servcie_metadata["pricing"]["price_in_cogs"])
         message = web3.Web3.soliditySha3(
             ["address", "uint256", "uint256", "uint256"],
-            [self.sdk.mpe_contract.contract.address, channel.channel_id, channel.state["nonce"], amount]
+            [self.sdk.mpe_contract.contract.address,    channel.channel_id, channel.state["nonce"], amount]
         )
         signature = bytes(self.sdk.web3.eth.account.signHash(defunct_hash_message(message), self.sdk.account.signer_private_key).signature)
         metadata = [
