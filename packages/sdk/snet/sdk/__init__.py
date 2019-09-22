@@ -63,13 +63,15 @@ class SnetSDK:
             options = dict()
 
         if self._metadata_provider is None:
-            self._metadata_provider = IPFSMetadataProvider()
+            self._metadata_provider = IPFSMetadataProvider( self.ipfs_client ,self.web3)
 
         service_metadata = self._metadata_provider.enhance_service_metadata(org_id, service_id)
-        group = self.get_service_group_details(service_metadata, service_id, group_name)
+        group = self.get_service_group_details(service_metadata, group_name)
         strategy = payment_channel_management_strategy(self)
         service_client = ServiceClient(self, service_metadata, service_stub, group, strategy, options)
         return service_client
 
-    def get_service_group_details(self, service_metadata, service_id, group_name):
-        pass
+    def get_service_group_details(self, service_metadata,group_name):
+        for group in service_metadata['groups']:
+            if group['group_name'] == group_name:
+                return group

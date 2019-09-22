@@ -1,62 +1,39 @@
+from urllib.parse import urljoin
+
+from rfc3986 import urlparse
+from snet.snet_cli.mpe_orgainzation_metadata import OrganizationMetadata
+
 from snet.snet_cli.mpe_service_metadata import mpe_service_metadata_from_json
-from snet.snet_cli.utils import type_converter, safe_address_converter
+from snet.snet_cli.utils import type_converter, safe_address_converter, get_contract_object
 
 from snet.snet_cli.utils_ipfs import bytesuri_to_hash, get_from_ipfs_and_checkhash
 import web3
 import json
-
+import ipfsapi
 
 class IPFSMetadataProvider(object):
 
-    def __init__(self, ipfs_endpoint, network_id, web3):
-        pass
+    def __init__(self, ipfs_client,web3):
+        self._web3 = web3
+        self.registry_contract = get_contract_object(self._web3, "Registry.json")
+        self._ipfs_client = ipfs_client
 
-    def safe_address_converter(a):
-        if not web3.eth.is_checksum_address(a):
-            raise Exception("%s is not is not a valid Ethereum checksum address" % a)
-        return a
-
-    def type_converter(t):
-        if t.endswith("[]"):
-            return lambda x: list(map(type_converter(t.replace("[]", "")), json.loads(x)))
-        else:
-            if "int" in t:
-                return lambda x: web3.Web3.toInt(text=x)
-            elif "bytes32" in t:
-                return lambda x: web3.Web3.toBytes(text=x).ljust(32, b"\0") if not x.startswith(
-                    "0x") else web3.Web3.toBytes(hexstr=x).ljust(32, b"\0")
-            elif "byte" in t:
-                return lambda x: web3.Web3.toBytes(text=x) if not x.startswith("0x") else web3.Web3.toBytes(hexstr=x)
-            elif "address" in t:
-                return safe_address_converter
-            else:
-                return str
-
-    def bytes32_to_str(b):
-        return b.rstrip(b"\0").decode("utf-8")
-
-    def _get_organization_metadata_from_registry(self, org_id):
-        rez = self._get_organization_registration(org_id)
-        metadata_hash = bytesuri_to_hash(rez["orgMetadataURI"])
-        metadata = get_from_ipfs_and_checkhash(
-            self._get_ipfs_client(), metadata_hash)
-        metadata = metadata.decode("utf-8")
-        return json.loads(metadata)
-
-    def _get_organization_registration(self, org_id):
-        params = [type_converter("bytes32")(org_id)]
-        rez = self.call_contract_command(
-            "Registry", "getOrganizationById", params)
-        if (rez[0] == False):
-            raise Exception("Cannot find  Organization with id=%s" % (
-                self.args.org_id))
-        return {"orgMetadataURI": rez[2]}
-
-    def get_org_metadata(self, org_id):
-        return self.__get_organization_metadata_from_registry(org_id)
 
     def fetch_org_metadata(self, org_id):
-        return self._get_organization_metadata_from_registry(org_id)
+        (found, id, metadata_uri, owner,members,serviceIds,repositoryIds) = self.registry_contract.functions.getOrganizationById(
+            bytes(org_id, "utf-8")).call()
+        print("dd")
+        if found is not True:
+            raise Exception('No  organization is foubd "{}"'.format( org_id))
+
+        metadata_hash = bytesuri_to_hash(metadata_uri)
+        metadata_json = get_from_ipfs_and_checkhash(self._ipfs_client, metadata_hash)
+        org_metadata = json.loads(metadata_json)
+        return org_metadata
+
+
+
+
 
     def fetch_service_metadata(self, org_id, service_id):
         (found, registration_id, metadata_uri, tags) = self.registry_contract.functions.getServiceRegistrationById(
@@ -66,10 +43,44 @@ class IPFSMetadataProvider(object):
             raise Exception('No service "{}" found in organization "{}"'.format(service_id, org_id))
 
         metadata_hash = bytesuri_to_hash(metadata_uri)
-        metadata_json = get_from_ipfs_and_checkhash(self.ipfs_client, metadata_hash)
+        metadata_json = get_from_ipfs_and_checkhash(self._ipfs_client, metadata_hash)
         metadata = mpe_service_metadata_from_json(metadata_json)
         return metadata
 
     def enhance_service_metadata(self, org_id, service_id):
         service_metadata = self.fetch_service_metadata(org_id, service_id)
         org_metadata = self.fetch_org_metadata(org_id)
+
+
+        org_group_map={}
+        for group in org_metadata['groups']:
+            org_group_map[group['group_name']]=group
+
+        for group in service_metadata.m['groups']:
+            #merge service group with org_group
+            group['payment']=org_group_map[group['group_name']]['payment']
+
+        return service_metadata
+
+
+
+#need to delete this once contract is finalized
+if __name__ == "__main__":
+
+
+    def _get_ipfs_client():
+        # Instantiate IPFS client
+        ipfs_rpc_endpoint = "https://ipfs.singularitynet.io:80"
+        ipfs_rpc_endpoint = urlparse(ipfs_rpc_endpoint)
+        ipfs_scheme = ipfs_rpc_endpoint.scheme if ipfs_rpc_endpoint.scheme else "http"
+        ipfs_port = ipfs_rpc_endpoint.port if ipfs_rpc_endpoint.port else 5001
+        return ipfsapi.connect(urljoin(ipfs_scheme, ipfs_rpc_endpoint.hostname), ipfs_port)
+
+    eth_rpc_endpoint =  "https://ropsten.infura.io/v3/e7732e1f679e461b9bb4da5653ac3fc2"
+    provider = web3.HTTPProvider(eth_rpc_endpoint)
+    web3 = web3.Web3(provider)
+    ip=IPFSMetadataProvider(_get_ipfs_client(), web3)
+    s_m=ip.enhance_service_metadata('nginx_snet','nginx_snet')
+    print("345")
+   # ip.fetch_org_metadata('nginx_snet')
+    pass
