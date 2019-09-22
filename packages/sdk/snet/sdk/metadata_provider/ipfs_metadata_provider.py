@@ -16,7 +16,8 @@ from snet.snet_cli.utils_ipfs import get_from_ipfs_and_checkhash
 class IPFSMetadataProvider(object):
     def __init__(self, ipfs_client, web3):
         self._web3 = web3
-        self.registry_contract = get_contract_object(self._web3, "Registry.json")
+        self.registry_contract = get_contract_object(self._web3,
+                                                     "Registry.json")
         self._ipfs_client = ipfs_client
 
     def fetch_org_metadata(self, org_id):
@@ -29,14 +30,14 @@ class IPFSMetadataProvider(object):
             serviceIds,
             repositoryIds,
         ) = self.registry_contract.functions.getOrganizationById(
-            bytes(org_id, "utf-8")
-        ).call()
+            bytes(org_id, "utf-8")).call()
         print("dd")
         if found is not True:
             raise Exception('No  organization is foubd "{}"'.format(org_id))
 
         metadata_hash = bytesuri_to_hash(metadata_uri)
-        metadata_json = get_from_ipfs_and_checkhash(self._ipfs_client, metadata_hash)
+        metadata_json = get_from_ipfs_and_checkhash(self._ipfs_client,
+                                                    metadata_hash)
         org_metadata = json.loads(metadata_json)
         return org_metadata
 
@@ -47,16 +48,16 @@ class IPFSMetadataProvider(object):
             metadata_uri,
             tags,
         ) = self.registry_contract.functions.getServiceRegistrationById(
-            bytes(org_id, "utf-8"), bytes(service_id, "utf-8")
-        ).call()
+            bytes(org_id, "utf-8"), bytes(service_id, "utf-8")).call()
 
         if found is not True:
             raise Exception(
-                'No service "{}" found in organization "{}"'.format(service_id, org_id)
-            )
+                'No service "{}" found in organization "{}"'.format(
+                    service_id, org_id))
 
         metadata_hash = bytesuri_to_hash(metadata_uri)
-        metadata_json = get_from_ipfs_and_checkhash(self._ipfs_client, metadata_hash)
+        metadata_json = get_from_ipfs_and_checkhash(self._ipfs_client,
+                                                    metadata_hash)
         metadata = mpe_service_metadata_from_json(metadata_json)
         return metadata
 
@@ -85,8 +86,7 @@ if __name__ == "__main__":
         ipfs_scheme = ipfs_rpc_endpoint.scheme if ipfs_rpc_endpoint.scheme else "http"
         ipfs_port = ipfs_rpc_endpoint.port if ipfs_rpc_endpoint.port else 5001
         return ipfsapi.connect(
-            urljoin(ipfs_scheme, ipfs_rpc_endpoint.hostname), ipfs_port
-        )
+            urljoin(ipfs_scheme, ipfs_rpc_endpoint.hostname), ipfs_port)
 
     eth_rpc_endpoint = "https://ropsten.infura.io/v3/e7732e1f679e461b9bb4da5653ac3fc2"
     provider = web3.HTTPProvider(eth_rpc_endpoint)
