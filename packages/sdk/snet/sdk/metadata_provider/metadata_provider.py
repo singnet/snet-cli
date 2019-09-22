@@ -1,5 +1,4 @@
 class MetadataProvider(object):
-
     def fetch_org_metadata(self, org_id):
         pass
 
