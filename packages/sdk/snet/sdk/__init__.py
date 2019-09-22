@@ -68,7 +68,7 @@ class SnetSDK:
         service_metadata = self._metadata_provider.enhance_service_metadata(org_id, service_id)
         group = self.get_service_group_details(service_metadata, group_name)
         strategy = payment_channel_management_strategy(self)
-        service_client = ServiceClient(self, service_metadata, service_stub, group, strategy, options)
+        service_client = ServiceClient(self, service_metadata, group, service_stub, strategy, options )
         return service_client
 
     def get_service_group_details(self, service_metadata,group_name):
