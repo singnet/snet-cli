@@ -68,9 +68,11 @@ class ServiceClient:
             raise ValueError('Unsupported scheme in service metadata ("{}")'.format(endpoint_object.scheme))
 
 
+
     def _get_service_call_metadata(self):
         channel = self.payment_channel_management_strategy.select_channel(self)
-        amount = channel.state["last_signed_amount"] + int(self.group["pricing"]["price_in_cogs"])
+        # change required for pricing strategy right now picking first one
+        amount = channel.state["last_signed_amount"] + int(self.group["pricing"][0]["price_in_cogs"])
         message = web3.Web3.soliditySha3(
             ["address", "uint256", "uint256", "uint256"],
             [self.sdk.mpe_contract.contract.address,    channel.channel_id, channel.state["nonce"], amount]
