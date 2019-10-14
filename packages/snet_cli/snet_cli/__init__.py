@@ -1,11 +1,10 @@
 #!/usr/bin/env python
 # PYTHON_ARGCOMPLETE_OK
-
 import sys
 
+import argcomplete
 from snet_cli import arguments
 from snet_cli.config import Config
-import argcomplete
 
 
 def main():

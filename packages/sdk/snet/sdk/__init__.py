@@ -1,22 +1,24 @@
-from snet.snet_cli.mpe_service_metadata import mpe_service_metadata_from_json
-from snet.snet_cli.utils_ipfs import bytesuri_to_hash, get_from_ipfs_and_checkhash
-from snet.snet_cli.utils import get_contract_object
+import base64
+import json
+from urllib.parse import urljoin
+
+import google.protobuf.internal.api_implementation
+import ipfsapi
+import web3
+from google.protobuf import symbol_database as _symbol_database
+from rfc3986 import urlparse
+from snet.sdk.account import Account
+from snet.sdk.mpe_contract import MPEContract
 from snet.sdk.payment_channel_management_strategies.default import (
     PaymentChannelManagementStrategy,
 )
-from snet.sdk.mpe_contract import MPEContract
-from snet.sdk.account import Account
 from snet.sdk.service_client import ServiceClient
+from snet.snet_cli.mpe_service_metadata import mpe_service_metadata_from_json
+from snet.snet_cli.utils import get_contract_object
+from snet.snet_cli.utils_ipfs import bytesuri_to_hash
+from snet.snet_cli.utils_ipfs import get_from_ipfs_and_checkhash
 from web3.datastructures import AttributeDict
-import ipfsapi
-from rfc3986 import urlparse
 from web3.gas_strategies.time_based import medium_gas_price_strategy
-import web3
-from urllib.parse import urljoin
-import base64
-import json
-from google.protobuf import symbol_database as _symbol_database
-import google.protobuf.internal.api_implementation
 
 from packages.sdk.snet.sdk.metadata_provider.ipfs_metadata_provider import (
     IPFSMetadataProvider,

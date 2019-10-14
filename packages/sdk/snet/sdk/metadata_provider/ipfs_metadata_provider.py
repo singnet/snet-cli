@@ -1,19 +1,16 @@
+import json
 from urllib.parse import urljoin
 
+import ipfsapi
+import web3
 from rfc3986 import urlparse
 from snet.snet_cli.mpe_orgainzation_metadata import OrganizationMetadata
-
 from snet.snet_cli.mpe_service_metadata import mpe_service_metadata_from_json
-from snet.snet_cli.utils import (
-    type_converter,
-    safe_address_converter,
-    get_contract_object,
-)
-
-from snet.snet_cli.utils_ipfs import bytesuri_to_hash, get_from_ipfs_and_checkhash
-import web3
-import json
-import ipfsapi
+from snet.snet_cli.utils import get_contract_object
+from snet.snet_cli.utils import safe_address_converter
+from snet.snet_cli.utils import type_converter
+from snet.snet_cli.utils_ipfs import bytesuri_to_hash
+from snet.snet_cli.utils_ipfs import get_from_ipfs_and_checkhash
 
 
 class IPFSMetadataProvider(object):

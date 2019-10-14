@@ -1,8 +1,9 @@
-import web3
 import importlib
-from eth_account.messages import defunct_hash_message
 
-from snet.snet_cli.utils import RESOURCES_PATH, add_to_path
+import web3
+from eth_account.messages import defunct_hash_message
+from snet.snet_cli.utils import add_to_path
+from snet.snet_cli.utils import RESOURCES_PATH
 
 
 class PaymentChannel:
