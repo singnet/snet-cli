@@ -39,8 +39,8 @@ class MPEClientCommand(MPEChannelCommand):
         return sign_address == self.ident.address
 
     def _assert_validity_of_my_signature_or_zero_amount(self, signature, channel_id, nonce, signed_amount, error_message):
-        if (signed_amount > 0):
-            if (not self._verify_my_signature(signature, self.get_mpe_address(), channel_id, nonce, signed_amount)):
+        if signed_amount > 0:
+            if not self._verify_my_signature(signature, self.get_mpe_address(), channel_id, nonce, signed_amount):
                 raise Exception(error_message)
 
     # II. Call related functions (low level)
@@ -91,16 +91,17 @@ class MPEClientCommand(MPEChannelCommand):
                 k_final = k_split[-1]
                 k_mods = k_split[:-1]
                 for m in k_mods:
-                    if (m == "file"):
+                    if m == "file":
                         with open(v, 'rb') as f:
                             v = f.read()
-                    elif (m == "b64encode"):
+                    elif m == "b64encode":
                         v = base64.b64encode(v)
-                    elif (m == "b64decode"):
+                    elif m == "b64decode":
                         v = base64.b64decode(v)
                     else:
                         raise Exception(
-                            "Unknown modifier ('%s') in call parameters. Possible modifiers: file, b64encode, b64decode" % m)
+                            "Unknown modifier ('%s') in call parameters. "
+                            "Possible modifiers: file, b64encode, b64decode" % m)
             rez[k_final] = v
         return rez
 
@@ -132,13 +133,13 @@ class MPEClientCommand(MPEChannelCommand):
                 ("snet-payment-channel-signature-bin", bytes(signature))]
 
     def _deal_with_call_response(self, response):
-        if (self.args.save_response):
+        if self.args.save_response:
             with open(self.args.save_response, "wb") as f:
                 f.write(response.SerializeToString())
-        elif (self.args.save_field):
+        elif self.args.save_field:
             field = rgetattr(response, self.args.save_field[0])
             file_name = self.args.save_field[1]
-            if (type(field) == bytes):
+            if isinstance(field, bytes):
                 with open(file_name, "wb") as f:
                     f.write(field)
             else:
@@ -148,13 +149,13 @@ class MPEClientCommand(MPEChannelCommand):
             self._printout(response)
 
     def _get_endpoint_from_metadata_or_args(self, metadata):
-        if (self.args.endpoint):
+        if self.args.endpoint:
             return self.args.endpoint
         endpoints = metadata.get_all_endpoints_for_group(self.args.group_name)
-        if (not endpoints):
+        if not endpoints:
             raise Exception(
                 "Cannot find endpoint in metadata for the given payment group.")
-        if (len(endpoints) > 1):
+        if len(endpoints) > 1:
             self._printerr(
                 "There are several endpoints for the given payment group. We will select %s" % endpoints[0])
         return endpoints[0]
@@ -197,25 +198,32 @@ class MPEClientCommand(MPEChannelCommand):
             response.current_signed_amount, byteorder='big')
 
         error_message = "Error in _get_channel_state_from_server. My own signature from the server is not valid."
-        self._assert_validity_of_my_signature_or_zero_amount(bytes(
-            response.current_signature),  channel_id, state["current_nonce"],     state["current_signed_amount"],  error_message)
+        self._assert_validity_of_my_signature_or_zero_amount(
+            bytes(response.current_signature),
+            channel_id,
+            state["current_nonce"],
+            state["current_signed_amount"],
+            error_message)
 
-        if (hasattr(response, "old_nonce_signed_amount")):
+        if hasattr(response, "old_nonce_signed_amount"):
             state["old_nonce_signed_amount"] = int.from_bytes(
                 response.old_nonce_signed_amount, byteorder='big')
-            self._assert_validity_of_my_signature_or_zero_amount(bytes(
-                response.old_nonce_signature), channel_id, state["current_nonce"] - 1, state["old_nonce_signed_amount"], error_message)
+            self._assert_validity_of_my_signature_or_zero_amount(
+                bytes(response.old_nonce_signature),
+                channel_id, state["current_nonce"] - 1,
+                state["old_nonce_signed_amount"],
+                error_message)
 
         return state
 
     def _calculate_unspent_amount(self, blockchain, server):
-        if (server["current_nonce"] == blockchain["nonce"]):
+        if server["current_nonce"] == blockchain["nonce"]:
             return blockchain["value"] - server["current_signed_amount"]
-        if (server["current_nonce"] - 1 != blockchain["nonce"]):
+        if server["current_nonce"] - 1 != blockchain["nonce"]:
             raise Exception("Server nonce is different from blockchain nonce to more then 1: server_nonce = %i blockchain_nonce = %i" % (
                 server["current_nonce"], blockchain["nonce"]))
 
-        if ("old_nonce_signed_amount" in server):
+        if "old_nonce_signed_amount" in server:
             return blockchain["value"] - server["old_nonce_signed_amount"] - server["current_signed_amount"]
 
         self._printerr(
@@ -233,7 +241,7 @@ class MPEClientCommand(MPEChannelCommand):
 
         unspent_amount = self._calculate_unspent_amount(blockchain, server)
 
-        return (server["current_nonce"], server["current_signed_amount"], unspent_amount)
+        return server["current_nonce"], server["current_signed_amount"], unspent_amount
 
     def print_channel_state_statelessly(self):
         grpc_channel = open_grpc_channel(self.args.endpoint)
@@ -250,15 +258,14 @@ class MPEClientCommand(MPEChannelCommand):
             if group["group_name"] == group_name:
                 pricings = group["pricing"]
                 for pricing in pricings:
-                    if (pricing["price_model"] == "fixed_price"):
+                    if pricing["price_model"] == "fixed_price":
                         return pricing["price_in_cogs"]
-        raise Exception("We do not support price model: %s" %
-                        (pricing["price_model"]))
+        raise Exception("We do not support price model: %s" % pricing["price_model"])
 
     def call_server_statelessly_with_params(self, params, group_name):
 
-        # if service is not initilized we will initialize it (unless we want skip registry check for update)
-        if (not self.args.skip_update_check):
+        # if service is not initialized we will initialize it (unless we want skip registry check for update)
+        if not self.args.skip_update_check:
             self._init_or_update_registered_org_if_needed()
             self._init_or_update_registered_service_if_needed()
 
@@ -276,11 +283,17 @@ class MPEClientCommand(MPEChannelCommand):
             grpc_channel, channel_id)
 
         proceed = self.args.yes or input(
-            "Price for this call will be %s AGI (use -y to remove this warning). Proceed? (y/n): " % (cogs2stragi(price))) == "y"
-        if (not proceed):
+            "Price for this call will be %s AGI (use -y to remove this warning). "
+            "Proceed? (y/n): " % (cogs2stragi(price))) == "y"
+        if not proceed:
             self._error("Cancelled")
 
-        return self._call_server_via_grpc_channel(grpc_channel, channel_id, server_state["current_nonce"], server_state["current_signed_amount"] + price, params, service_metadata)
+        return self._call_server_via_grpc_channel(grpc_channel,
+                                                  channel_id,
+                                                  server_state["current_nonce"],
+                                                  server_state["current_signed_amount"] + price,
+                                                  params,
+                                                  service_metadata)
 
     def call_server_statelessly(self):
         group_name = self.args.group_name

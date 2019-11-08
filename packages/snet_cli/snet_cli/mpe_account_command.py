@@ -9,7 +9,7 @@ class MPEAccountCommand(BlockchainCommand):
 
     def print_agi_and_mpe_balances(self):
         """ Print balance of ETH, AGI, and MPE wallet """
-        if (self.args.account):
+        if self.args.account:
             account = self.args.account
         else:
             account = self.ident.address
@@ -18,17 +18,18 @@ class MPEAccountCommand(BlockchainCommand):
         mpe_cogs = self.call_contract_command("MultiPartyEscrow",    "balances",  [account])
 
         # we cannot use _pprint here because it doesn't conserve order yet
-        self._printout("    account: %s"%account)
-        self._printout("    ETH: %s"%self.w3.fromWei(eth_wei, 'ether'))
-        self._printout("    AGI: %s"%cogs2stragi(agi_cogs))
-        self._printout("    MPE: %s"%cogs2stragi(mpe_cogs))
+        self._printout("    account: %s" % account)
+        self._printout("    ETH: %s" % self.w3.fromWei(eth_wei, 'ether'))
+        self._printout("    AGI: %s" % cogs2stragi(agi_cogs))
+        self._printout("    MPE: %s" % cogs2stragi(mpe_cogs))
 
     def deposit_to_mpe(self):
         amount      = self.args.amount
         mpe_address = self.get_mpe_address()
 
-        already_approved = self.call_contract_command("SingularityNetToken", "allowance", [self.ident.address, mpe_address])
-        if (already_approved < amount):
+        already_approved = self.call_contract_command("SingularityNetToken", "allowance", [self.ident.address,
+                                                                                           mpe_address])
+        if already_approved < amount:
             self.transact_contract_command("SingularityNetToken", "approve", [mpe_address, amount])
         self.transact_contract_command("MultiPartyEscrow", "deposit", [amount])
 

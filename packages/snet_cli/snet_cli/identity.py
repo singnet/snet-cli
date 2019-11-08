@@ -4,11 +4,11 @@ import struct
 import time
 import getpass
 
-import web3
 from pycoin.key.BIP32Node import BIP32Node
 import rlp
-from eth_account.internal.transactions import serializable_unsigned_transaction_from_dict, encode_transaction, \
-    UnsignedTransaction
+from eth_account.internal.transactions import (serializable_unsigned_transaction_from_dict,
+                                               encode_transaction,
+                                               UnsignedTransaction)
 from eth_account.messages import defunct_hash_message
 from mnemonic import Mnemonic
 from trezorlib.client import TrezorClient, proto

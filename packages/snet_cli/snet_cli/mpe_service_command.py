@@ -1,6 +1,4 @@
-import web3
 import json
-import grpc
 from collections import defaultdict
 
 from grpc_health.v1 import health_pb2 as heartb_pb2
@@ -31,7 +29,7 @@ class MPEServiceCommand(BlockchainCommand):
         mpe_address = self.get_mpe_address()
         metadata.set_simple_field("model_ipfs_hash",
                                   model_ipfs_hash_base58)
-        metadata.set_simple_field("mpe_address",                  mpe_address)
+        metadata.set_simple_field("mpe_address", mpe_address)
         metadata.set_simple_field("display_name",
                                   self.args.display_name)
         metadata.set_simple_field("encoding",
@@ -129,21 +127,21 @@ class MPEServiceCommand(BlockchainCommand):
     def metadata_add_description(self):
         """ Metadata: add description """
         service_description = {}
-        if (self.args.json):
+        if self.args.json:
             service_description = json.loads(self.args.json)
-        if (self.args.url):
+        if self.args.url:
             if "url" in service_description:
                 raise Exception(
                     "json service description already contains url field")
             service_description["url"] = self.args.url
-        if (self.args.description):
+        if self.args.description:
             if "description" in service_description:
                 raise Exception(
                     "json service description already contains description field")
             service_description["description"] = self.args.description
         metadata = load_mpe_service_metadata(self.args.metadata_file)
         # merge with old service_description if necessary
-        if ("service_description" in metadata):
+        if "service_description" in metadata:
             service_description = {
                 **metadata["service_description"], **service_description}
         metadata.set_simple_field("service_description", service_description)
@@ -152,11 +150,11 @@ class MPEServiceCommand(BlockchainCommand):
     def _publish_metadata_in_ipfs(self, metadata_file):
         metadata = load_mpe_service_metadata(metadata_file)
         mpe_address = self.get_mpe_address()
-        if (self.args.update_mpe_address):
+        if self.args.update_mpe_address:
             metadata.set_simple_field("mpe_address",  mpe_address)
             metadata.save_pretty(self.args.metadata_file)
 
-        if (mpe_address.lower() != metadata["mpe_address"].lower()):
+        if mpe_address.lower() != metadata["mpe_address"].lower():
             raise Exception("\n\nmpe_address in metadata does not correspond to the current MultiPartyEscrow contract address\n" +
                             "You have two possibilities:\n" +
                             "1. You can use --multipartyescrow-at to set current mpe address\n" +
@@ -180,9 +178,8 @@ class MPEServiceCommand(BlockchainCommand):
 
     def _get_organization_registration(self, org_id):
         params = [type_converter("bytes32")(org_id)]
-        rez = self.call_contract_command(
-            "Registry", "getOrganizationById", params)
-        if (rez[0] == False):
+        rez = self.call_contract_command("Registry", "getOrganizationById", params)
+        if not rez[0]:
             raise Exception("Cannot find  Organization with id=%s" % (
                 self.args.org_id))
         return {"orgMetadataURI": rez[2]}
@@ -246,7 +243,7 @@ class MPEServiceCommand(BlockchainCommand):
             "bytes32")(self.args.service_id)]
         rez = self.call_contract_command(
             "Registry", "getServiceRegistrationById", params)
-        if (rez[0] == False):
+        if not rez[0]:
             raise Exception("Cannot find Service with id=%s in Organization with id=%s" % (
                 self.args.service_id, self.args.org_id))
         return {"metadataURI": rez[2], "tags": rez[3]}
@@ -270,7 +267,7 @@ class MPEServiceCommand(BlockchainCommand):
             stub = heartb_pb2_grpc.HealthStub(channel)
             response = stub.Check(
                 heartb_pb2.HealthCheckRequest(service=""), timeout=10)
-            if response != None and response.status == 1:
+            if response and response.status == 1:
                 return True
             return False
         except Exception as e:
@@ -278,8 +275,7 @@ class MPEServiceCommand(BlockchainCommand):
 
     def print_service_status(self):
         metadata = self._get_service_metadata_from_registry()
-        groups = []
-        if self.args.group_name != None:
+        if self.args.group_name:
             groups = {self.args.group_name: metadata.get_all_endpoints_for_group(
                 self.args.group_name)}
         else:
@@ -289,11 +285,9 @@ class MPEServiceCommand(BlockchainCommand):
             for endpoint in group_endpoints:
                 status = "Available" if self._service_status(
                     url=endpoint) else "Not Available"
-                srvc_status[name].append(
-                    {"endpoint": endpoint, "status": status})
+                srvc_status[name].append({"endpoint": endpoint, "status": status})
         if srvc_status == {}:
-            self._printout(
-                "Error: No endpoints found to check service status.")
+            self._printout("Error: No endpoints found to check service status.")
             return
         self._pprint(srvc_status)
 

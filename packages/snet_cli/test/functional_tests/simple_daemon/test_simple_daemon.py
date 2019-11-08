@@ -27,6 +27,7 @@ import control_service_pb2_grpc
 payments_unclaimed   = dict()
 payments_in_progress = dict()
 
+
 # we use MPEChannelCommand._get_channel_state_from_blockchain to get channel state from blockchain
 # we need it to remove already claimed payments from payments_in_progress
 # remove all payments_in_progress with nonce < blockchain nonce
@@ -36,14 +37,15 @@ def remove_already_claimed_payments():
     to_remove = []
     for channel_id in payments_in_progress:
         blockchain = cc._get_channel_state_from_blockchain(channel_id)
-        if (blockchain["nonce"] > payments_in_progress[channel_id]["nonce"]):
+        if blockchain["nonce"] > payments_in_progress[channel_id]["nonce"]:
             to_remove.append(channel_id)
     for channel_id in to_remove:
         print("remove payment for channel %i from payments_in_progress"%channel_id)
         del payments_in_progress[channel_id]
 
+
 def get_current_channel_state(channel_id):
-    if (channel_id in payments_unclaimed):
+    if channel_id in payments_unclaimed:
         nonce         = payments_unclaimed[channel_id]["nonce"]
         amount        = payments_unclaimed[channel_id]["amount"]
         signature     = payments_unclaimed[channel_id]["signature"]
@@ -66,10 +68,10 @@ class ExampleService(ExampleService_pb2_grpc.ExampleServiceServicer):
         # we check nonce and amount, but we don't check signature
         current_nonce, current_signed_amount, _ = get_current_channel_state(channel_id)
 
-        if (current_nonce != nonce):
+        if current_nonce != nonce:
             raise Exception("nonce is incorrect")
 
-        if (current_signed_amount + PRICE != amount):
+        if current_signed_amount + PRICE != amount:
             raise Exception("Signed amount is incorrect %i vs %i"%(current_signed_amount + PRICE, amount))
 
         payments_unclaimed[channel_id] = payment
@@ -80,8 +82,8 @@ class PaymentChannelStateService(state_service_pb2_grpc.PaymentChannelStateServi
     def GetChannelState(self, request, context):
         channel_id = int.from_bytes(request.channel_id, byteorder='big')
         nonce, amount, signature = get_current_channel_state(channel_id)
-        if (channel_id in payments_in_progress):
-            if (payments_in_progress[channel_id]["nonce"] != nonce - 1):
+        if channel_id in payments_in_progress:
+            if payments_in_progress[channel_id]["nonce"] != nonce - 1:
                 raise Exception("Bad payment in payments_in_progress")
             return state_service_pb2.ChannelStateReply(current_nonce           = web3.Web3.toBytes(nonce),
                                                        current_signed_amount   = web3.Web3.toBytes(amount),
@@ -125,7 +127,7 @@ class ProviderControlService(control_service_pb2_grpc.ProviderControlServiceServ
 
         channel_id = int.from_bytes(request.channel_id, byteorder='big')
 
-        if (channel_id not in payments_unclaimed):
+        if channel_id not in payments_unclaimed:
             raise Exception("channel_id not in payments_unclaimed")
 
         p = payments_unclaimed[channel_id]
@@ -133,7 +135,7 @@ class ProviderControlService(control_service_pb2_grpc.ProviderControlServiceServ
         amount    = p["amount"]
         signature = p["signature"]
         payments_in_progress[channel_id] = p
-        payments_unclaimed[channel_id] = {"nonce" : nonce + 1, "amount" : 0, "signature" : bytes(0)}
+        payments_unclaimed[channel_id] = {"nonce": nonce + 1, "amount": 0, "signature": bytes(0)}
 
         return control_service_pb2.PaymentReply(
                         channel_id    = web3.Web3.toBytes(channel_id),

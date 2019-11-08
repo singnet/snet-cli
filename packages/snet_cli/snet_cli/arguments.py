@@ -291,8 +291,6 @@ def add_organization_options(parser):
                               help="Print metadata for given organization")
     p.set_defaults(fn="print_metadata")
 
-    p.add_argument("org_name",
-                   help="Organization name")
     p.add_argument("org_id",
                    help="Organization Id")
 
@@ -690,7 +688,7 @@ def add_p_group_name(p):
 
 def add_p_expiration(p, is_optional):
     h = "expiration time in blocks (<int>), or in blocks related to the current_block (+<int>blocks), or in days related to the current_block and assuming 15 sec/block (+<int>days)"
-    if (is_optional):
+    if is_optional:
         p.add_argument("--expiration", help=h)
     else:
         p.add_argument("expiration",

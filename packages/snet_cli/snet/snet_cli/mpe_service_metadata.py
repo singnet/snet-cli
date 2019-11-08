@@ -39,7 +39,6 @@ assets {}       -  asset type and its ipfs value/values
 import re
 import json
 import base64
-import secrets
 
 from collections import defaultdict
 from enum import Enum
@@ -56,7 +55,7 @@ class AssetType(Enum):
 
     @staticmethod
     def is_single_value(asset_type):
-        if asset_type == AssetType.HERO_IMAGE.value or asset_type == AssetType.DOCUMENTATION.value or asset_type == AssetType.TERMS_OF_USE.value:
+        if asset_type in [AssetType.HERO_IMAGE.value, AssetType.DOCUMENTATION.value, AssetType.TERMS_OF_USE.value]:
             return True
 
 
@@ -83,10 +82,10 @@ class MPEServiceMetadata:
         self.m[f] = v
 
     def set_fixed_price_in_cogs(self, group_name, price):
-        if (type(price) != int):
+        if not isinstance(price, int):
             raise Exception("Price should have int type")
 
-        if (not self.is_group_name_exists(group_name)):
+        if not self.is_group_name_exists(group_name):
             raise Exception("the group %s is not present" % str(group_name))
 
         for group in self.m["groups"]:
@@ -105,10 +104,10 @@ class MPEServiceMetadata:
                                          "price_in_cogs": price, "default": True}]
 
     def set_method_price_in_cogs(self, group_name, package_name, service_name, method, price):
-        if (type(price) != int):
+        if type(price) != int:
             raise Exception("Price should have int type")
 
-        if (not self.is_group_name_exists(group_name)):
+        if not self.is_group_name_exists(group_name):
             raise Exception("the group %s is not present" % str(group_name))
 
         groups = self.m["groups"]
@@ -156,7 +155,7 @@ class MPEServiceMetadata:
 
     def add_group(self, group_name):
         """ Return new group_id in base64 """
-        if (self.is_group_name_exists(group_name)):
+        if self.is_group_name_exists(group_name):
             raise Exception("the group \"%s\" is already present" %
                             str(group_name))
 
@@ -204,15 +203,15 @@ class MPEServiceMetadata:
             endpoint = 'http://' + endpoint
         if not is_valid_endpoint(endpoint):
             raise Exception("Endpoint is not a valid URL")
-        if (not self.is_group_name_exists(group_name)):
+        if not self.is_group_name_exists(group_name):
             raise Exception("the group %s is not present" % str(group_name))
-        if (endpoint in self.get_all_endpoints_for_group(group_name)):
+        if endpoint in self.get_all_endpoints_for_group(group_name):
             raise Exception("the endpoint %s is already present" %
                             str(endpoint))
 
         groups = self.m["groups"]
         for group in groups:
-            if (group["group_name"] == group_name):
+            if group["group_name"] == group_name:
                 if 'endpoints' in group:
                     group['endpoints'].append(endpoint)
                 else:
@@ -231,7 +230,7 @@ class MPEServiceMetadata:
         """ check if group with given name is already exists """
         groups = self.m["groups"]
         for g in groups:
-            if (g["group_name"] == group_name):
+            if g["group_name"] == group_name:
                 return True
         return False
 
@@ -240,7 +239,7 @@ class MPEServiceMetadata:
         group_id_base64 = base64.b64encode(group_id).decode('ascii')
         groups = self.m["groups"]
         for g in groups:
-            if (g["group_id"] == group_id_base64):
+            if g["group_id"] == group_id_base64:
                 return g
         return None
 
@@ -272,10 +271,10 @@ class MPEServiceMetadata:
     def get_group_name_nonetrick(self, group_name=None):
         """ In all getter function in case of single payment group, group_name can be None """
         groups = self.m["groups"]
-        if (len(groups) == 0):
+        if not len(groups):
             raise Exception("Cannot find any groups in metadata")
-        if (not group_name):
-            if (len(groups) > 1):
+        if not group_name:
+            if len(groups) > 1:
                 raise Exception(
                     "We have more than one payment group in metadata, so group_name should be specified")
             return groups[0]["group_name"]
@@ -284,7 +283,7 @@ class MPEServiceMetadata:
     def get_group(self, group_name=None):
         group_name = self.get_group_name_nonetrick(group_name)
         for g in self.m["groups"]:
-            if (g["group_name"] == group_name):
+            if g["group_name"] == group_name:
                 return g
         raise Exception('Cannot find group "%s" in metadata' % group_name)
 

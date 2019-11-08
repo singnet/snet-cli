@@ -68,6 +68,7 @@ def serializable(o):
     else:
         return o.__dict__
 
+
 def safe_address_converter(a):
     if not web3.eth.is_checksum_address(a):
         raise Exception("%s is not is not a valid Ethereum checksum address"%a)
@@ -160,7 +161,7 @@ def compile_proto(entry_path, codegen_dir, proto_file=None, target_language="pyt
         if target_language == "python":
             compiler_args.insert(0, "protoc")
             compiler_args.append("--python_out={}".format(codegen_dir))
-            compiler_args.append("--grpc_python_out={}".format(codegen_dir)) 
+            compiler_args.append("--grpc_python_out={}".format(codegen_dir))
             compiler = protoc
         elif target_language == "nodejs":
             protoc_node_compiler_path = Path(RESOURCES_PATH.joinpath("node_modules").joinpath("grpc-tools").joinpath("bin").joinpath("protoc.js")).absolute()
@@ -187,16 +188,18 @@ def compile_proto(entry_path, codegen_dir, proto_file=None, target_language="pyt
         print(e)
         return False
 
+
 def abi_get_element_by_name(abi, name):
     """ Return element of abi (return None if fails to find) """
-    if (abi and "abi" in abi):
+    if abi and "abi" in abi:
         for a in abi["abi"]:
-            if ("name" in a and a["name"] == name):
+            if "name" in a and a["name"] == name:
                 return a
     return None
 
+
 def abi_decode_struct_to_dict(abi, struct_list):
-    return {el_abi["name"] : el for el_abi, el in zip(abi["outputs"], struct_list)}
+    return {el_abi["name"]: el for el_abi, el in zip(abi["outputs"], struct_list)}
 
 
 def int4bytes_big(b):
@@ -236,6 +239,7 @@ def remove_http_https_prefix(endpoint):
     endpoint = endpoint.replace("http://","")
     return endpoint
 
+
 def open_grpc_channel(endpoint):
     """
        open grpc channel:
@@ -243,9 +247,10 @@ def open_grpc_channel(endpoint):
            - for https:// we open secure_channel (with default credentials)
            - without prefix we open insecure_channel
     """
-    if (endpoint.startswith("https://")):
+    if endpoint.startswith("https://"):
         return grpc.secure_channel(remove_http_https_prefix(endpoint), grpc.ssl_channel_credentials())
     return grpc.insecure_channel(remove_http_https_prefix(endpoint))
+
 
 def rgetattr(obj, attr):
     """
@@ -287,11 +292,13 @@ def get_address_from_private(private_key):
     return web3.eth.Account.privateKeyToAccount(private_key).address
 
 
-class add_to_path():
+class add_to_path:
     def __init__(self, path):
         self.path = path
+
     def __enter__(self):
         sys.path.insert(0, self.path)
+
     def __exit__(self, exc_type, exc_value, traceback):
         try:
             sys.path.remove(self.path)

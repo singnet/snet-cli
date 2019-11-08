@@ -11,10 +11,10 @@ class DefaultEncoder(JSONEncoder):
 
 class PaymentStorageClient(object):
 
-    def __init__(self, connection_timeout=None, request_timeout="", endpoints=[]):
+    def __init__(self, connection_timeout=None, request_timeout="", endpoints=None):
         self.connection_timeout = connection_timeout
         self.request_timeout = request_timeout
-        self.endpoints = endpoints
+        self.endpoints = endpoints if endpoints else []
 
     def add_payment_storage_client_details(self, connection_time_out, request_timeout, endpoints):
         self.connection_timeout = connection_time_out
@@ -171,10 +171,10 @@ class OrganizationMetadata(object):
 
     """
 
-    def __init__(self, org_name="", org_id="", groups=[]):
+    def __init__(self, org_name="", org_id="", groups=None):
         self.org_name = org_name
         self.org_id = org_id
-        self.groups = groups
+        self.groups = groups if groups else []
 
     def add_group(self, group):
         self.groups.append(group)
@@ -198,13 +198,15 @@ class OrganizationMetadata(object):
         with open(filepath) as f:
             return OrganizationMetadata.from_json(json.load(f))
 
-    def is_removing_existing_group_from_org(self, current_group_name, existing_registry_metadata_group_names):
+    @staticmethod
+    def is_removing_existing_group_from_org(current_group_name, existing_registry_metadata_group_names):
         if len(existing_registry_metadata_group_names-current_group_name) == 0:
             pass
         else:
             remvoved_groups = existing_registry_metadata_group_names - current_group_name
             raise Exception(
-                "Cannot remove existing group from organization as it might be attached to services, groups you are removing are  %s" % remvoved_groups)
+                "Cannot remove existing group from organization as it might be attached to services, "
+                "groups you are removing are  %s" % remvoved_groups)
 
     def validate(self, existing_registry_metadata=None):
 
@@ -212,8 +214,8 @@ class OrganizationMetadata(object):
             raise Exception("Org_id cannot be null")
         if self.org_name is None:
             raise Exception("Org_name cannot be null")
+        unique_group_names = set()
         if self.groups:
-            unique_group_names = set()
             for group in self.groups:
                 unique_group_names.add(group.group_name)
 
