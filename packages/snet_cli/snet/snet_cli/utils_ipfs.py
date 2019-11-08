@@ -14,9 +14,9 @@ def publish_file_in_ipfs(ipfs_client, filepath, wrap_with_directory=True):
     """
     try:
         with open(filepath, "r+b") as file:
-            result = ipfs_client.add(
-                file, pin=True, wrap_with_directory=wrap_with_directory
-            )
+            result = ipfs_client.add(file,
+                                     pin=True,
+                                     wrap_with_directory=wrap_with_directory)
             if wrap_with_directory:
                 return result[1]["Hash"] + "/" + result[0]["Name"]
             return result["Hash"]
@@ -36,9 +36,8 @@ def publish_proto_in_ipfs(ipfs_client, protodir):
     files = glob.glob(os.path.join(protodir, "*.proto"))
 
     if len(files) == 0:
-        raise Exception(
-            "Cannot find any %s files" % (os.path.join(protodir, "*.proto"))
-        )
+        raise Exception("Cannot find any %s files" %
+                        (os.path.join(protodir, "*.proto")))
 
     # We are sorting files before we add them to the .tar since an archive containing the same files in a different
     # order will produce a different content hash;
@@ -68,12 +67,12 @@ def get_from_ipfs_and_checkhash(ipfs_client, ipfs_hash_base58, validate=True):
         unixfs_data = Data()
         unixfs_data.ParseFromString(mn.Data)
         assert unixfs_data.Type == unixfs_data.DataType.Value(
-            "File"
-        ), "IPFS hash must be a file"
+            "File"), "IPFS hash must be a file"
         data = unixfs_data.Data
 
         # multihash has a badly registered base58 codec, overwrite it...
-        multihash.CodecReg.register("base58", base58.b58encode, base58.b58decode)
+        multihash.CodecReg.register("base58", base58.b58encode,
+                                    base58.b58decode)
         # create a multihash object from our ipfs hash
         mh = multihash.decode(ipfs_hash_base58.encode("ascii"), "base58")
 
@@ -111,9 +110,11 @@ def safe_extract_proto_from_ipfs(ipfs_client, ipfs_hash, protodir):
     with tarfile.open(fileobj=io.BytesIO(spec_tar)) as f:
         for m in f.getmembers():
             if os.path.dirname(m.name) != "":
-                raise Exception("tarball has directories. We do not support it.")
+                raise Exception(
+                    "tarball has directories. We do not support it.")
             if not m.isfile():
-                raise Exception("tarball contains %s which is not a files" % m.name)
+                raise Exception("tarball contains %s which is not a files" %
+                                m.name)
             fullname = os.path.join(protodir, m.name)
             if os.path.exists(fullname):
                 raise Exception("%s already exists." % fullname)

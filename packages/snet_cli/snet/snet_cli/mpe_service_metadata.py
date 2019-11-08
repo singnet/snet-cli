@@ -54,9 +54,9 @@ class AssetType(Enum):
     @staticmethod
     def is_single_value(asset_type):
         if asset_type in [
-            AssetType.HERO_IMAGE.value,
-            AssetType.DOCUMENTATION.value,
-            AssetType.TERMS_OF_USE.value,
+                AssetType.HERO_IMAGE.value,
+                AssetType.DOCUMENTATION.value,
+                AssetType.TERMS_OF_USE.value,
         ]:
             return True
 
@@ -78,15 +78,10 @@ class MPEServiceMetadata:
         }
 
     def set_simple_field(self, f, v):
-        if (
-            f != "display_name"
-            and f != "encoding"
-            and f != "model_ipfs_hash"
-            and f != "mpe_address"
-            and f != "service_type"
-            and f != "payment_expiration_threshold"
-            and f != "service_description"
-        ):
+        if (f != "display_name" and f != "encoding" and f != "model_ipfs_hash"
+                and f != "mpe_address" and f != "service_type"
+                and f != "payment_expiration_threshold"
+                and f != "service_description"):
             raise Exception("unknown field in MPEServiceMetadata")
         self.m[f] = v
 
@@ -106,25 +101,20 @@ class MPEServiceMetadata:
                         if pricing["price_model"] == "fixed_price":
                             is_fixed_price_enabled = True
                     if not is_fixed_price_enabled:
-                        group["pricing"].append(
-                            {
-                                "price_model": "fixed_price",
-                                "price_in_cogs": price,
-                                "default": True,
-                            }
-                        )
-                else:
-                    group["pricing"] = [
-                        {
+                        group["pricing"].append({
                             "price_model": "fixed_price",
                             "price_in_cogs": price,
                             "default": True,
-                        }
-                    ]
+                        })
+                else:
+                    group["pricing"] = [{
+                        "price_model": "fixed_price",
+                        "price_in_cogs": price,
+                        "default": True,
+                    }]
 
-    def set_method_price_in_cogs(
-        self, group_name, package_name, service_name, method, price
-    ):
+    def set_method_price_in_cogs(self, group_name, package_name, service_name,
+                                 method, price):
         if type(price) != int:
             raise Exception("Price should have int type")
 
@@ -137,7 +127,10 @@ class MPEServiceMetadata:
 
                 service_name = service_name
                 package_name = package_name
-                method_pricing = {"method_name": method, "price_in_cogs": price}
+                method_pricing = {
+                    "method_name": method,
+                    "price_in_cogs": price
+                }
                 pricings = []
 
                 if "pricings" in group:
@@ -155,41 +148,41 @@ class MPEServiceMetadata:
                                 if detail["service_name"] == service_name:
                                     # adding new method pricing for existing service
                                     fixed_price_method_pricing_for_service_exist = True
-                                    detail["method_pricing"].append(method_pricing)
+                                    detail["method_pricing"].append(
+                                        method_pricing)
 
                             if not fixed_price_method_pricing_for_service_exist:
                                 # pricing for new method for new service
-                                pricing["details"].append(
-                                    {
-                                        "service_name": service_name,
-                                        "method_pricing": [method_pricing],
-                                    }
-                                )
-                        else:
-                            pricing["details"] = [
-                                {
-                                    "service_name": service_name,
+                                pricing["details"].append({
+                                    "service_name":
+                                    service_name,
                                     "method_pricing": [method_pricing],
-                                }
-                            ]
+                                })
+                        else:
+                            pricing["details"] = [{
+                                "service_name":
+                                service_name,
+                                "method_pricing": [method_pricing],
+                            }]
 
                 if not fixed_price_method_model_exist:
                     fixed_price_per_method = {
-                        "package_name": package_name,
-                        "price_model": "fixed_price_per_method",
-                        "details": [
-                            {
-                                "service_name": service_name,
-                                "method_pricing": [method_pricing],
-                            }
-                        ],
+                        "package_name":
+                        package_name,
+                        "price_model":
+                        "fixed_price_per_method",
+                        "details": [{
+                            "service_name": service_name,
+                            "method_pricing": [method_pricing],
+                        }],
                     }
                     group["pricings"] = [fixed_price_per_method]
 
     def add_group(self, group_name):
         """ Return new group_id in base64 """
         if self.is_group_name_exists(group_name):
-            raise Exception('the group "%s" is already present' % str(group_name))
+            raise Exception('the group "%s" is already present' %
+                            str(group_name))
 
         self.m["groups"] += [{"group_name": group_name}]
 
@@ -238,7 +231,8 @@ class MPEServiceMetadata:
         if not self.is_group_name_exists(group_name):
             raise Exception("the group %s is not present" % str(group_name))
         if endpoint in self.get_all_endpoints_for_group(group_name):
-            raise Exception("the endpoint %s is already present" % str(endpoint))
+            raise Exception("the endpoint %s is already present" %
+                            str(endpoint))
 
         groups = self.m["groups"]
         for group in groups:
@@ -351,7 +345,8 @@ class MPEServiceMetadata:
     def get_endpoints_for_group(self, group_name=None):
         group_name = self.get_group_name_nonetrick(group_name)
         return [
-            e["endpoint"] for e in self.m["endpoints"] if e["group_name"] == group_name
+            e["endpoint"] for e in self.m["endpoints"]
+            if e["group_name"] == group_name
         ]
 
 

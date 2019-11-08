@@ -14,16 +14,14 @@ from snet.snet_cli.utils import compile_proto
 from snet.snet_cli.utils import DefaultAttributeObject
 from snet_cli.config import Config
 
-
 compile_proto("../service_spec1", ".", proto_file="ExampleService.proto")
-compile_proto(
-    "../../../snet/snet_cli/resources/proto/", ".", proto_file="state_service.proto"
-)
-compile_proto(
-    "../../../snet/snet_cli/resources/proto/", ".", proto_file="control_service.proto"
-)
+compile_proto("../../../snet/snet_cli/resources/proto/",
+              ".",
+              proto_file="state_service.proto")
+compile_proto("../../../snet/snet_cli/resources/proto/",
+              ".",
+              proto_file="control_service.proto")
 PRICE = 10000
-
 
 payments_unclaimed = dict()
 payments_in_progress = dict()
@@ -41,7 +39,8 @@ def remove_already_claimed_payments():
         if blockchain["nonce"] > payments_in_progress[channel_id]["nonce"]:
             to_remove.append(channel_id)
     for channel_id in to_remove:
-        print("remove payment for channel %i from payments_in_progress" % channel_id)
+        print("remove payment for channel %i from payments_in_progress" %
+              channel_id)
         del payments_in_progress[channel_id]
 
 
@@ -72,28 +71,26 @@ class ExampleService(ExampleService_pb2_grpc.ExampleServiceServicer):
         }
 
         # we check nonce and amount, but we don't check signature
-        current_nonce, current_signed_amount, _ = get_current_channel_state(channel_id)
+        current_nonce, current_signed_amount, _ = get_current_channel_state(
+            channel_id)
 
         if current_nonce != nonce:
             raise Exception("nonce is incorrect")
 
         if current_signed_amount + PRICE != amount:
-            raise Exception(
-                "Signed amount is incorrect %i vs %i"
-                % (current_signed_amount + PRICE, amount)
-            )
+            raise Exception("Signed amount is incorrect %i vs %i" %
+                            (current_signed_amount + PRICE, amount))
 
         payments_unclaimed[channel_id] = payment
         return ExampleService_pb2.ClassifyResponse(
             predictions=["prediction1", "prediction2"],
             confidences=[0.42, 0.43],
-            binary_field=int(12345 ** 5).to_bytes(10, byteorder="big"),
+            binary_field=int(12345**5).to_bytes(10, byteorder="big"),
         )
 
 
 class PaymentChannelStateService(
-    state_service_pb2_grpc.PaymentChannelStateServiceServicer
-):
+        state_service_pb2_grpc.PaymentChannelStateServiceServicer):
     def GetChannelState(self, request, context):
         channel_id = int.from_bytes(request.channel_id, byteorder="big")
         nonce, amount, signature = get_current_channel_state(channel_id)
@@ -105,9 +102,9 @@ class PaymentChannelStateService(
                 current_signed_amount=web3.Web3.toBytes(amount),
                 current_signature=signature,
                 old_nonce_signed_amount=web3.Web3.toBytes(
-                    payments_in_progress[channel_id]["amount"]
-                ),
-                old_nonce_signature=payments_in_progress[channel_id]["signature"],
+                    payments_in_progress[channel_id]["amount"]),
+                old_nonce_signature=payments_in_progress[channel_id]
+                ["signature"],
             )
         return state_service_pb2.ChannelStateReply(
             current_nonce=web3.Web3.toBytes(nonce),
@@ -116,7 +113,8 @@ class PaymentChannelStateService(
         )
 
 
-class ProviderControlService(control_service_pb2_grpc.ProviderControlServiceServicer):
+class ProviderControlService(
+        control_service_pb2_grpc.ProviderControlServiceServicer):
     def GetListUnclaimed(self, request, context):
         payments = []
         for channel_id in payments_unclaimed:
@@ -175,14 +173,11 @@ class ProviderControlService(control_service_pb2_grpc.ProviderControlServiceServ
 def serve():
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=1))
     ExampleService_pb2_grpc.add_ExampleServiceServicer_to_server(
-        ExampleService(), server
-    )
+        ExampleService(), server)
     state_service_pb2_grpc.add_PaymentChannelStateServiceServicer_to_server(
-        PaymentChannelStateService(), server
-    )
+        PaymentChannelStateService(), server)
     control_service_pb2_grpc.add_ProviderControlServiceServicer_to_server(
-        ProviderControlService(), server
-    )
+        ProviderControlService(), server)
     server.add_insecure_port("[::]:50051")
     server.start()
     try:

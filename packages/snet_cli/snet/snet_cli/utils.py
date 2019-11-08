@@ -12,8 +12,8 @@ import pkg_resources
 import web3
 from grpc_tools.protoc import main as protoc
 
-
-RESOURCES_PATH = PurePath(os.path.realpath(__file__)).parent.joinpath("resources")
+RESOURCES_PATH = PurePath(
+    os.path.realpath(__file__)).parent.joinpath("resources")
 
 
 class DefaultAttributeObject(object):
@@ -71,28 +71,25 @@ def serializable(o):
 
 def safe_address_converter(a):
     if not web3.eth.is_checksum_address(a):
-        raise Exception("%s is not is not a valid Ethereum checksum address" % a)
+        raise Exception("%s is not is not a valid Ethereum checksum address" %
+                        a)
     return a
 
 
 def type_converter(t):
     if t.endswith("[]"):
-        return lambda x: list(map(type_converter(t.replace("[]", "")), json.loads(x)))
+        return lambda x: list(
+            map(type_converter(t.replace("[]", "")), json.loads(x)))
     else:
         if "int" in t:
             return lambda x: web3.Web3.toInt(text=x)
         elif "bytes32" in t:
-            return (
-                lambda x: web3.Web3.toBytes(text=x).ljust(32, b"\0")
-                if not x.startswith("0x")
-                else web3.Web3.toBytes(hexstr=x).ljust(32, b"\0")
-            )
+            return (lambda x: web3.Web3.toBytes(text=x).ljust(32, b"\0")
+                    if not x.startswith("0x") else web3.Web3.toBytes(hexstr=x).
+                    ljust(32, b"\0"))
         elif "byte" in t:
-            return (
-                lambda x: web3.Web3.toBytes(text=x)
-                if not x.startswith("0x")
-                else web3.Web3.toBytes(hexstr=x)
-            )
+            return (lambda x: web3.Web3.toBytes(text=x)
+                    if not x.startswith("0x") else web3.Web3.toBytes(hexstr=x))
         elif "address" in t:
             return safe_address_converter
         else:
@@ -110,14 +107,14 @@ def _add_next_paths(path, entry_path, seen_paths, next_paths):
                 import_statement = "".join(line.split('"')[1::2])
                 if not import_statement.startswith("google/protobuf"):
                     import_statement_path = Path(
-                        path.parent.joinpath(import_statement)
-                    ).resolve()
+                        path.parent.joinpath(import_statement)).resolve()
                     if entry_path.parent in path.parents:
                         if import_statement_path not in seen_paths:
                             seen_paths.add(import_statement_path)
                             next_paths.append(import_statement_path)
                     else:
-                        raise ValueError("Path must not be a parent of entry path")
+                        raise ValueError(
+                            "Path must not be a parent of entry path")
 
 
 def walk_imports(entry_path):
@@ -138,31 +135,22 @@ def walk_imports(entry_path):
 
 
 def get_contract_def(
-    contract_name, contract_artifacts_root=RESOURCES_PATH.joinpath("contracts")
-):
+        contract_name,
+        contract_artifacts_root=RESOURCES_PATH.joinpath("contracts")):
     contract_def = {}
     with open(
-        Path(__file__)
-        .absolute()
-        .parent.joinpath(
-            contract_artifacts_root, "abi", "{}.json".format(contract_name)
-        )
-    ) as f:
+            Path(__file__).absolute().parent.joinpath(
+                contract_artifacts_root, "abi",
+                "{}.json".format(contract_name))) as f:
         contract_def["abi"] = json.load(f)
     if os.path.isfile(
-        Path(__file__)
-        .absolute()
-        .parent.joinpath(
-            contract_artifacts_root, "networks", "{}.json".format(contract_name)
-        )
-    ):
+            Path(__file__).absolute().parent.joinpath(
+                contract_artifacts_root, "networks",
+                "{}.json".format(contract_name))):
         with open(
-            Path(__file__)
-            .absolute()
-            .parent.joinpath(
-                contract_artifacts_root, "networks", "{}.json".format(contract_name)
-            )
-        ) as f:
+                Path(__file__).absolute().parent.joinpath(
+                    contract_artifacts_root, "networks",
+                    "{}.json".format(contract_name))) as f:
             contract_def["networks"] = json.load(f)
     return contract_def
 
@@ -177,13 +165,18 @@ def get_cli_version():
     return pkg_resources.get_distribution("snet-cli").version
 
 
-def compile_proto(entry_path, codegen_dir, proto_file=None, target_language="python"):
+def compile_proto(entry_path,
+                  codegen_dir,
+                  proto_file=None,
+                  target_language="python"):
     try:
         if not os.path.exists(codegen_dir):
             os.makedirs(codegen_dir)
         proto_include = pkg_resources.resource_filename("grpc_tools", "_proto")
 
-        compiler_args = ["-I{}".format(entry_path), "-I{}".format(proto_include)]
+        compiler_args = [
+            "-I{}".format(entry_path), "-I{}".format(proto_include)
+        ]
 
         if target_language == "python":
             compiler_args.insert(0, "protoc")
@@ -192,31 +185,23 @@ def compile_proto(entry_path, codegen_dir, proto_file=None, target_language="pyt
             compiler = protoc
         elif target_language == "nodejs":
             protoc_node_compiler_path = Path(
-                RESOURCES_PATH.joinpath("node_modules")
-                .joinpath("grpc-tools")
-                .joinpath("bin")
-                .joinpath("protoc.js")
-            ).absolute()
+                RESOURCES_PATH.joinpath("node_modules").joinpath("grpc-tools").
+                joinpath("bin").joinpath("protoc.js")).absolute()
             grpc_node_plugin_path = Path(
-                RESOURCES_PATH.joinpath("node_modules")
-                .joinpath("grpc-tools")
-                .joinpath("bin")
-                .joinpath("grpc_node_plugin")
-            ).resolve()
-            if not os.path.isfile(protoc_node_compiler_path) or not os.path.isfile(
-                grpc_node_plugin_path
-            ):
+                RESOURCES_PATH.joinpath("node_modules").joinpath("grpc-tools").
+                joinpath("bin").joinpath("grpc_node_plugin")).resolve()
+            if not os.path.isfile(
+                    protoc_node_compiler_path) or not os.path.isfile(
+                        grpc_node_plugin_path):
                 print(
                     "Missing required node.js protoc compiler. Retrieving from npm..."
                 )
                 subprocess.run(["npm", "install"], cwd=RESOURCES_PATH)
             compiler_args.append(
-                "--js_out=import_style=commonjs,binary:{}".format(codegen_dir)
-            )
+                "--js_out=import_style=commonjs,binary:{}".format(codegen_dir))
             compiler_args.append("--grpc_out={}".format(codegen_dir))
             compiler_args.append(
-                "--plugin=protoc-gen-grpc={}".format(grpc_node_plugin_path)
-            )
+                "--plugin=protoc-gen-grpc={}".format(grpc_node_plugin_path))
 
             def compiler(args):
                 return subprocess.run([str(protoc_node_compiler_path)] + args)
@@ -224,7 +209,8 @@ def compile_proto(entry_path, codegen_dir, proto_file=None, target_language="pyt
         if proto_file:
             compiler_args.append(str(proto_file))
         else:
-            compiler_args.extend([str(p) for p in entry_path.glob("**/*.proto")])
+            compiler_args.extend(
+                [str(p) for p in entry_path.glob("**/*.proto")])
 
         if not compiler(compiler_args):
             return True
@@ -246,7 +232,10 @@ def abi_get_element_by_name(abi, name):
 
 
 def abi_decode_struct_to_dict(abi, struct_list):
-    return {el_abi["name"]: el for el_abi, el in zip(abi["outputs"], struct_list)}
+    return {
+        el_abi["name"]: el
+        for el_abi, el in zip(abi["outputs"], struct_list)
+    }
 
 
 def int4bytes_big(b):
@@ -295,9 +284,8 @@ def open_grpc_channel(endpoint):
            - without prefix we open insecure_channel
     """
     if endpoint.startswith("https://"):
-        return grpc.secure_channel(
-            remove_http_https_prefix(endpoint), grpc.ssl_channel_credentials()
-        )
+        return grpc.secure_channel(remove_http_https_prefix(endpoint),
+                                   grpc.ssl_channel_credentials())
     return grpc.insecure_channel(remove_http_https_prefix(endpoint))
 
 
@@ -316,14 +304,16 @@ def rgetattr(obj, attr):
 def get_contract_object(w3, contract_file):
     with open(RESOURCES_PATH.joinpath("contracts", "abi", contract_file)) as f:
         abi = json.load(f)
-    with open(RESOURCES_PATH.joinpath("contracts", "networks", contract_file)) as f:
+    with open(RESOURCES_PATH.joinpath("contracts", "networks",
+                                      contract_file)) as f:
         networks = json.load(f)
         address = w3.toChecksumAddress(networks[w3.version.network]["address"])
     return w3.eth.contract(abi=abi, address=address)
 
 
 def get_contract_deployment_block(w3, contract_file):
-    with open(RESOURCES_PATH.joinpath("contracts", "networks", contract_file)) as f:
+    with open(RESOURCES_PATH.joinpath("contracts", "networks",
+                                      contract_file)) as f:
         networks = json.load(f)
         txn_hash = networks[w3.version.network]["transactionHash"]
     return w3.eth.getTransactionReceipt(txn_hash).blockNumber
