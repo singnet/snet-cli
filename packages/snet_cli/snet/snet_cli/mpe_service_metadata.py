@@ -55,29 +55,40 @@ class AssetType(Enum):
 
     @staticmethod
     def is_single_value(asset_type):
-        if asset_type in [AssetType.HERO_IMAGE.value, AssetType.DOCUMENTATION.value, AssetType.TERMS_OF_USE.value]:
+        if asset_type in [
+            AssetType.HERO_IMAGE.value,
+            AssetType.DOCUMENTATION.value,
+            AssetType.TERMS_OF_USE.value,
+        ]:
             return True
 
 
 # TODO: we should use some standard solution here
 class MPEServiceMetadata:
-
     def __init__(self):
         """ init with modelIPFSHash """
-        self.m = {"version": 1,
-                  "display_name": "",
-                  "encoding": "grpc",  # grpc by default
-                  "service_type": "grpc",  # grpc by default
-                  # one week by default (15 sec block,  24*60*60*7/15)
-                  "model_ipfs_hash": "",
-                  "mpe_address": "",
-                  "groups": [],
-                  "assets": {}
-                  }
+        self.m = {
+            "version": 1,
+            "display_name": "",
+            "encoding": "grpc",  # grpc by default
+            "service_type": "grpc",  # grpc by default
+            # one week by default (15 sec block,  24*60*60*7/15)
+            "model_ipfs_hash": "",
+            "mpe_address": "",
+            "groups": [],
+            "assets": {},
+        }
 
     def set_simple_field(self, f, v):
-        if (f != "display_name" and f != "encoding" and f != "model_ipfs_hash" and f != "mpe_address" and
-                f != "service_type" and f != "payment_expiration_threshold" and f != "service_description"):
+        if (
+            f != "display_name"
+            and f != "encoding"
+            and f != "model_ipfs_hash"
+            and f != "mpe_address"
+            and f != "service_type"
+            and f != "payment_expiration_threshold"
+            and f != "service_description"
+        ):
             raise Exception("unknown field in MPEServiceMetadata")
         self.m[f] = v
 
@@ -93,17 +104,29 @@ class MPEServiceMetadata:
                 is_fixed_price_enabled = False
                 # default=True  it will change when we will go live with method level pricing
                 if "pricing" in group:
-                    for pricing in group['pricing']:
+                    for pricing in group["pricing"]:
                         if pricing["price_model"] == "fixed_price":
                             is_fixed_price_enabled = True
                     if not is_fixed_price_enabled:
-                        group["pricing"].append({"price_model": "fixed_price",
-                                                 "price_in_cogs": price, "default": True})
+                        group["pricing"].append(
+                            {
+                                "price_model": "fixed_price",
+                                "price_in_cogs": price,
+                                "default": True,
+                            }
+                        )
                 else:
-                    group["pricing"] = [{"price_model": "fixed_price",
-                                         "price_in_cogs": price, "default": True}]
+                    group["pricing"] = [
+                        {
+                            "price_model": "fixed_price",
+                            "price_in_cogs": price,
+                            "default": True,
+                        }
+                    ]
 
-    def set_method_price_in_cogs(self, group_name, package_name, service_name, method, price):
+    def set_method_price_in_cogs(
+        self, group_name, package_name, service_name, method, price
+    ):
         if type(price) != int:
             raise Exception("Price should have int type")
 
@@ -116,48 +139,59 @@ class MPEServiceMetadata:
 
                 service_name = service_name
                 package_name = package_name
-                method_pricing = {"method_name": method,
-                                  "price_in_cogs": price}
+                method_pricing = {"method_name": method, "price_in_cogs": price}
                 pricings = []
 
-                if 'pricings' in group:
+                if "pricings" in group:
                     pricings = group["pricings"]
 
                 fixed_price_method_model_exist = False
                 for pricing in pricings:
-                    if pricing['price_model'] == 'fixed_price_per_method':
+                    if pricing["price_model"] == "fixed_price_per_method":
                         fixed_price_method_model_exist = True
 
-                        if 'details' in pricing:
+                        if "details" in pricing:
                             fixed_price_method_pricing_for_service_exist = False
-                            for detail in pricing['details']:
+                            for detail in pricing["details"]:
 
-                                if detail['service_name'] == service_name:
+                                if detail["service_name"] == service_name:
                                     # adding new method pricing for existing service
                                     fixed_price_method_pricing_for_service_exist = True
-                                    detail['method_pricing'].append(
-                                        method_pricing)
+                                    detail["method_pricing"].append(method_pricing)
 
                             if not fixed_price_method_pricing_for_service_exist:
                                 # pricing for new method for new service
-                                pricing['details'].append({"service_name": service_name,
-                                                           "method_pricing": [method_pricing]})
+                                pricing["details"].append(
+                                    {
+                                        "service_name": service_name,
+                                        "method_pricing": [method_pricing],
+                                    }
+                                )
                         else:
-                            pricing['details'] = [{"service_name": service_name,
-                                                   "method_pricing": [method_pricing]}]
+                            pricing["details"] = [
+                                {
+                                    "service_name": service_name,
+                                    "method_pricing": [method_pricing],
+                                }
+                            ]
 
                 if not fixed_price_method_model_exist:
-                    fixed_price_per_method = {"package_name": package_name,
-                                              "price_model": "fixed_price_per_method",
-                                              "details": [
-                                                  {"service_name": service_name, "method_pricing": [method_pricing]}]}
-                    group['pricings'] = [fixed_price_per_method]
+                    fixed_price_per_method = {
+                        "package_name": package_name,
+                        "price_model": "fixed_price_per_method",
+                        "details": [
+                            {
+                                "service_name": service_name,
+                                "method_pricing": [method_pricing],
+                            }
+                        ],
+                    }
+                    group["pricings"] = [fixed_price_per_method]
 
     def add_group(self, group_name):
         """ Return new group_id in base64 """
         if self.is_group_name_exists(group_name):
-            raise Exception("the group \"%s\" is already present" %
-                            str(group_name))
+            raise Exception('the group "%s" is already present' % str(group_name))
 
         self.m["groups"] += [{"group_name": group_name}]
 
@@ -169,53 +203,52 @@ class MPEServiceMetadata:
     def add_asset(self, asset_ipfs_hash, asset_type):
         # Check if we need to validation if ssame asset type is added twice if we need to add it or replace the existing one
 
-        if 'assets' not in self.m:
-            self.m['assets'] = {}
+        if "assets" not in self.m:
+            self.m["assets"] = {}
 
         # hero image will contain the single value
         if AssetType.is_single_value(asset_type):
-            self.m['assets'][asset_type] = asset_ipfs_hash
+            self.m["assets"][asset_type] = asset_ipfs_hash
 
         # images can contain multiple value
         elif asset_type == AssetType.IMAGES.value:
-            if asset_type in self.m['assets']:
-                self.m['assets'][asset_type].append(asset_ipfs_hash)
+            if asset_type in self.m["assets"]:
+                self.m["assets"][asset_type].append(asset_ipfs_hash)
             else:
-                self.m['assets'][asset_type] = [asset_ipfs_hash]
+                self.m["assets"][asset_type] = [asset_ipfs_hash]
         else:
             raise Exception("Invalid asset type %s" % asset_type)
 
     def remove_all_assets(self):
-        self.m['assets'] = {}
+        self.m["assets"] = {}
 
     def remove_assets(self, asset_type):
-        if 'assets' in self.m:
+        if "assets" in self.m:
             if AssetType.is_single_value(asset_type):
-                self.m['assets'][asset_type] = ""
+                self.m["assets"][asset_type] = ""
             elif asset_type == AssetType.IMAGES.value:
-                self.m['assets'][asset_type] = []
+                self.m["assets"][asset_type] = []
             else:
                 raise Exception("Invalid asset type %s" % asset_type)
 
     def add_endpoint_to_group(self, group_name, endpoint):
         if re.match("^\w+://", endpoint) is None:
             # TODO: Default to https when our tutorials show setting up a ssl certificate as well
-            endpoint = 'http://' + endpoint
+            endpoint = "http://" + endpoint
         if not is_valid_endpoint(endpoint):
             raise Exception("Endpoint is not a valid URL")
         if not self.is_group_name_exists(group_name):
             raise Exception("the group %s is not present" % str(group_name))
         if endpoint in self.get_all_endpoints_for_group(group_name):
-            raise Exception("the endpoint %s is already present" %
-                            str(endpoint))
+            raise Exception("the endpoint %s is already present" % str(endpoint))
 
         groups = self.m["groups"]
         for group in groups:
             if group["group_name"] == group_name:
-                if 'endpoints' in group:
-                    group['endpoints'].append(endpoint)
+                if "endpoints" in group:
+                    group["endpoints"].append(endpoint)
                 else:
-                    group['endpoints'] = [endpoint]
+                    group["endpoints"] = [endpoint]
 
     def remove_all_endpoints_for_group(self, group_name):
         if not self.is_group_name_exists(group_name):
@@ -236,7 +269,7 @@ class MPEServiceMetadata:
 
     def get_group_by_group_id(self, group_id):
         """ return group with given group_id (return None if doesn't exists) """
-        group_id_base64 = base64.b64encode(group_id).decode('ascii')
+        group_id_base64 = base64.b64encode(group_id).decode("ascii")
         groups = self.m["groups"]
         for g in groups:
             if g["group_id"] == group_id_base64:
@@ -259,7 +292,7 @@ class MPEServiceMetadata:
             self.set_from_json(f.read())
 
     def save_pretty(self, file_name):
-        with open(file_name, 'w') as f:
+        with open(file_name, "w") as f:
             f.write(self.get_json_pretty())
 
     def __getitem__(self, key):
@@ -276,7 +309,8 @@ class MPEServiceMetadata:
         if not group_name:
             if len(groups) > 1:
                 raise Exception(
-                    "We have more than one payment group in metadata, so group_name should be specified")
+                    "We have more than one payment group in metadata, so group_name should be specified"
+                )
             return groups[0]["group_name"]
         return group_name
 
@@ -307,18 +341,20 @@ class MPEServiceMetadata:
         group_endpoints = {}
         for group in self.m["groups"]:
             if "endpoints" in group:
-                group_endpoints[group["group_name"]] = group['endpoints']
+                group_endpoints[group["group_name"]] = group["endpoints"]
         return group_endpoints
 
     def get_all_endpoints_with_group_name(self):
         endpts_with_grp = defaultdict(list)
         for e in self.m["endpoints"]:
-            endpts_with_grp[e['group_name']].append(e['endpoint'])
+            endpts_with_grp[e["group_name"]].append(e["endpoint"])
         return endpts_with_grp
 
     def get_endpoints_for_group(self, group_name=None):
         group_name = self.get_group_name_nonetrick(group_name)
-        return [e["endpoint"] for e in self.m["endpoints"] if e["group_name"] == group_name]
+        return [
+            e["endpoint"] for e in self.m["endpoints"] if e["group_name"] == group_name
+        ]
 
 
 def load_mpe_service_metadata(f):

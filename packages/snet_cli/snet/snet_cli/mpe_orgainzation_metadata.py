@@ -10,13 +10,14 @@ class DefaultEncoder(JSONEncoder):
 
 
 class PaymentStorageClient(object):
-
     def __init__(self, connection_timeout=None, request_timeout="", endpoints=None):
         self.connection_timeout = connection_timeout
         self.request_timeout = request_timeout
         self.endpoints = endpoints if endpoints else []
 
-    def add_payment_storage_client_details(self, connection_time_out, request_timeout, endpoints):
+    def add_payment_storage_client_details(
+        self, connection_time_out, request_timeout, endpoints
+    ):
         self.connection_timeout = connection_time_out
         self.request_timeout = request_timeout
         self.endpoints = endpoints
@@ -27,14 +28,17 @@ class PaymentStorageClient(object):
 
     def validate(self):
         if len(self.endpoints) < 1:
-            raise Exception(
-                "At least one endpoint is required for payment channel ")
+            raise Exception("At least one endpoint is required for payment channel ")
 
 
 class Payment(object):
-
-    def __init__(self, payment_address="", payment_expiration_threshold="", payment_channel_storage_type="",
-                 payment_channel_storage_client=PaymentStorageClient()):
+    def __init__(
+        self,
+        payment_address="",
+        payment_expiration_threshold="",
+        payment_channel_storage_type="",
+        payment_channel_storage_client=PaymentStorageClient(),
+    ):
         self.payment_address = payment_address
         self.payment_expiration_threshold = payment_expiration_threshold
         self.payment_channel_storage_type = payment_channel_storage_type
@@ -43,9 +47,14 @@ class Payment(object):
     @classmethod
     def from_json(cls, json_data: dict):
         payment_channel_storage_client = PaymentStorageClient.from_json(
-            json_data['payment_channel_storage_client'])
-        return cls(json_data['payment_address'], json_data['payment_expiration_threshold'],
-                   json_data['payment_channel_storage_type'], payment_channel_storage_client)
+            json_data["payment_channel_storage_client"]
+        )
+        return cls(
+            json_data["payment_address"],
+            json_data["payment_expiration_threshold"],
+            json_data["payment_channel_storage_type"],
+            payment_channel_storage_client,
+        )
 
     def validate(self):
         if self.payment_address is None:
@@ -71,7 +80,6 @@ class Payment(object):
 
 
 class Group(object):
-
     def __init__(self, group_name="", group_id="", payment=Payment()):
         self.group_name = group_name
         self.group_id = group_id
@@ -80,9 +88,9 @@ class Group(object):
     @classmethod
     def from_json(cls, json_data: dict):
         payment = Payment()
-        if 'payment' in json_data:
-            payment = Payment.from_json(json_data['payment'])
-        return cls(json_data['group_name'], json_data['group_id'], payment)
+        if "payment" in json_data:
+            payment = Payment.from_json(json_data["payment"])
+        return cls(json_data["group_name"], json_data["group_id"], payment)
 
     def add_group_details(self, group_name, group_id, payment):
         self.group_name = group_name
@@ -97,7 +105,8 @@ class Group(object):
 
         if self.payment is None:
             raise Exception(
-                "payment details cannot be null for group_name %s", self.group_name)
+                "payment details cannot be null for group_name %s", self.group_name
+            )
         else:
             self.payment.validate()
 
@@ -183,15 +192,15 @@ class OrganizationMetadata(object):
         return json.dumps(self, indent=4, cls=DefaultEncoder)
 
     def save_pretty(self, file_name):
-        with open(file_name, 'w') as f:
+        with open(file_name, "w") as f:
             f.write(self.get_json_pretty())
 
     @classmethod
     def from_json(cls, json_data: dict):
         groups = []
-        if 'groups' in json_data:
+        if "groups" in json_data:
             groups = list(map(Group.from_json, json_data["groups"]))
-        return cls(json_data['org_name'], json_data['org_id'], groups)
+        return cls(json_data["org_name"], json_data["org_id"], groups)
 
     @classmethod
     def from_file(cls, filepath):
@@ -199,14 +208,19 @@ class OrganizationMetadata(object):
             return OrganizationMetadata.from_json(json.load(f))
 
     @staticmethod
-    def is_removing_existing_group_from_org(current_group_name, existing_registry_metadata_group_names):
-        if len(existing_registry_metadata_group_names-current_group_name) == 0:
+    def is_removing_existing_group_from_org(
+        current_group_name, existing_registry_metadata_group_names
+    ):
+        if len(existing_registry_metadata_group_names - current_group_name) == 0:
             pass
         else:
-            remvoved_groups = existing_registry_metadata_group_names - current_group_name
+            remvoved_groups = (
+                existing_registry_metadata_group_names - current_group_name
+            )
             raise Exception(
                 "Cannot remove existing group from organization as it might be attached to services, "
-                "groups you are removing are  %s" % remvoved_groups)
+                "groups you are removing are  %s" % remvoved_groups
+            )
 
     def validate(self, existing_registry_metadata=None):
 
@@ -222,8 +236,7 @@ class OrganizationMetadata(object):
             if len(unique_group_names) < len(self.groups):
                 raise Exception("Cannot create group with duplicate names")
         if len(self.groups) < 1:
-            raise Exception(
-                "At least One group is required to create an organization")
+            raise Exception("At least One group is required to create an organization")
         else:
             for group in self.groups:
                 group.validate()
@@ -234,7 +247,8 @@ class OrganizationMetadata(object):
                 existing_registry_metadata_group_names.add(group.group_name)
 
         self.is_removing_existing_group_from_org(
-            unique_group_names, existing_registry_metadata_group_names)
+            unique_group_names, existing_registry_metadata_group_names
+        )
 
     def get_payment_address_for_group(self, group_name):
         for group in self.groups:
