@@ -260,7 +260,8 @@ class MPEClientCommand(MPEChannelCommand):
                 for pricing in pricings:
                     if pricing["price_model"] == "fixed_price":
                         return pricing["price_in_cogs"]
-        raise Exception("We do not support price model: %s" % pricing["price_model"])
+        raise Exception("We do not support price model: %s" %
+                        pricing["price_model"])
 
     def call_server_statelessly_with_params(self, params, group_name):
 

@@ -178,7 +178,8 @@ class MPEServiceCommand(BlockchainCommand):
 
     def _get_organization_registration(self, org_id):
         params = [type_converter("bytes32")(org_id)]
-        rez = self.call_contract_command("Registry", "getOrganizationById", params)
+        rez = self.call_contract_command(
+            "Registry", "getOrganizationById", params)
         if not rez[0]:
             raise Exception("Cannot find  Organization with id=%s" % (
                 self.args.org_id))
@@ -285,9 +286,11 @@ class MPEServiceCommand(BlockchainCommand):
             for endpoint in group_endpoints:
                 status = "Available" if self._service_status(
                     url=endpoint) else "Not Available"
-                srvc_status[name].append({"endpoint": endpoint, "status": status})
+                srvc_status[name].append(
+                    {"endpoint": endpoint, "status": status})
         if srvc_status == {}:
-            self._printout("Error: No endpoints found to check service status.")
+            self._printout(
+                "Error: No endpoints found to check service status.")
             return
         self._pprint(srvc_status)
 

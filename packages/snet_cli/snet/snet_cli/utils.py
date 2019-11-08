@@ -13,7 +13,8 @@ import grpc
 from grpc_tools.protoc import main as protoc
 
 
-RESOURCES_PATH = PurePath(os.path.realpath(__file__)).parent.joinpath("resources")
+RESOURCES_PATH = PurePath(os.path.realpath(
+    __file__)).parent.joinpath("resources")
 
 
 class DefaultAttributeObject(object):
@@ -71,7 +72,8 @@ def serializable(o):
 
 def safe_address_converter(a):
     if not web3.eth.is_checksum_address(a):
-        raise Exception("%s is not is not a valid Ethereum checksum address"%a)
+        raise Exception(
+            "%s is not is not a valid Ethereum checksum address" % a)
     return a
 
 
@@ -101,13 +103,15 @@ def _add_next_paths(path, entry_path, seen_paths, next_paths):
             if line.strip().startswith("import"):
                 import_statement = "".join(line.split('"')[1::2])
                 if not import_statement.startswith("google/protobuf"):
-                    import_statement_path = Path(path.parent.joinpath(import_statement)).resolve()
+                    import_statement_path = Path(
+                        path.parent.joinpath(import_statement)).resolve()
                     if entry_path.parent in path.parents:
                         if import_statement_path not in seen_paths:
                             seen_paths.add(import_statement_path)
                             next_paths.append(import_statement_path)
                     else:
-                        raise ValueError("Path must not be a parent of entry path")
+                        raise ValueError(
+                            "Path must not be a parent of entry path")
 
 
 def walk_imports(entry_path):
@@ -164,20 +168,27 @@ def compile_proto(entry_path, codegen_dir, proto_file=None, target_language="pyt
             compiler_args.append("--grpc_python_out={}".format(codegen_dir))
             compiler = protoc
         elif target_language == "nodejs":
-            protoc_node_compiler_path = Path(RESOURCES_PATH.joinpath("node_modules").joinpath("grpc-tools").joinpath("bin").joinpath("protoc.js")).absolute()
-            grpc_node_plugin_path = Path(RESOURCES_PATH.joinpath("node_modules").joinpath("grpc-tools").joinpath("bin").joinpath("grpc_node_plugin")).resolve()
+            protoc_node_compiler_path = Path(RESOURCES_PATH.joinpath("node_modules").joinpath(
+                "grpc-tools").joinpath("bin").joinpath("protoc.js")).absolute()
+            grpc_node_plugin_path = Path(RESOURCES_PATH.joinpath("node_modules").joinpath(
+                "grpc-tools").joinpath("bin").joinpath("grpc_node_plugin")).resolve()
             if not os.path.isfile(protoc_node_compiler_path) or not os.path.isfile(grpc_node_plugin_path):
                 print("Missing required node.js protoc compiler. Retrieving from npm...")
                 subprocess.run(["npm", "install"], cwd=RESOURCES_PATH)
-            compiler_args.append("--js_out=import_style=commonjs,binary:{}".format(codegen_dir))
+            compiler_args.append(
+                "--js_out=import_style=commonjs,binary:{}".format(codegen_dir))
             compiler_args.append("--grpc_out={}".format(codegen_dir))
-            compiler_args.append("--plugin=protoc-gen-grpc={}".format(grpc_node_plugin_path))
-            compiler = lambda args: subprocess.run([str(protoc_node_compiler_path)] + args)
+            compiler_args.append(
+                "--plugin=protoc-gen-grpc={}".format(grpc_node_plugin_path))
+
+            def compiler(args): return subprocess.run(
+                [str(protoc_node_compiler_path)] + args)
 
         if proto_file:
             compiler_args.append(str(proto_file))
         else:
-            compiler_args.extend([str(p) for p in entry_path.glob("**/*.proto")])
+            compiler_args.extend([str(p)
+                                  for p in entry_path.glob("**/*.proto")])
 
         if not compiler(compiler_args):
             return True
@@ -235,8 +246,8 @@ def is_valid_endpoint(url):
 
 def remove_http_https_prefix(endpoint):
     """remove http:// or https:// prefix if presented in endpoint"""
-    endpoint = endpoint.replace("https://","")
-    endpoint = endpoint.replace("http://","")
+    endpoint = endpoint.replace("https://", "")
+    endpoint = endpoint.replace("http://", "")
     return endpoint
 
 

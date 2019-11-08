@@ -39,7 +39,8 @@ class MPETreasurerCommand(MPEClientCommand):
             compile_proto(proto_dir, codegen_dir,
                           proto_file="control_service.proto")
 
-        stub_class, request_class, _ = import_protobuf_from_dir(codegen_dir, service_name)
+        stub_class, request_class, _ = import_protobuf_from_dir(
+            codegen_dir, service_name)
         return stub_class, request_class
 
     def _decode_PaymentReply(self, p):
@@ -113,7 +114,8 @@ class MPETreasurerCommand(MPEClientCommand):
             amount = payment["amount"]
             sig = payment["signature"]
             if len(sig) != 65:
-                raise Exception("Length of signature is incorrect: %i instead of 65" % (len(sig)))
+                raise Exception(
+                    "Length of signature is incorrect: %i instead of 65" % (len(sig)))
             v, r, s = int(sig[-1]), sig[:32], sig[32:64]
             v = v % 27 + 27
             params = [channel_id, amount, amount, v, r, s, False]

@@ -470,7 +470,8 @@ class OrganizationCommand(BlockchainCommand):
 
     def _get_organization_registration(self, org_id):
         params = [type_converter("bytes32")(org_id)]
-        rez = self.call_contract_command("Registry", "getOrganizationById", params)
+        rez = self.call_contract_command(
+            "Registry", "getOrganizationById", params)
         if not rez[0]:
             raise Exception("Cannot find  Organization with id=%s" % (
                 self.args.org_id))

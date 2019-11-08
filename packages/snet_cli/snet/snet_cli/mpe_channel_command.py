@@ -181,8 +181,9 @@ class MPEChannelCommand(OrganizationCommand):
                 channel["signer"].lower() != self.ident.address.lower()):
             raise Exception("Channel does not correspond to the current Ethereum identity " +
                             "(address=%s sender=%s signer=%s)" % (self.ident.address.lower(),
-                                                                  channel["sender"].lower(),
-                                                                  channel["signer"].lower()))
+                                                                  channel["sender"].lower(
+                            ),
+                                channel["signer"].lower()))
 
     def _init_channel_from_metadata(self, metadata, org_registration):
         channel_id = self.args.channel_id
