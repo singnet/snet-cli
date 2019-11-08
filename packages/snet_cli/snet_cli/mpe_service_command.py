@@ -1,25 +1,21 @@
 import json
 from collections import defaultdict
 
+import snet.snet_cli.utils_ipfs as utils_ipfs
 from grpc_health.v1 import health_pb2 as heartb_pb2
 from grpc_health.v1 import health_pb2_grpc as heartb_pb2_grpc
 from snet.snet_cli.mpe_orgainzation_metadata import OrganizationMetadata
-
+from snet.snet_cli.mpe_service_metadata import load_mpe_service_metadata
+from snet.snet_cli.mpe_service_metadata import mpe_service_metadata_from_json
+from snet.snet_cli.mpe_service_metadata import MPEServiceMetadata
+from snet.snet_cli.utils import bytes32_to_str
+from snet.snet_cli.utils import open_grpc_channel
+from snet.snet_cli.utils import type_converter
+from snet.snet_cli.utils_ipfs import bytesuri_to_hash
+from snet.snet_cli.utils_ipfs import get_from_ipfs_and_checkhash
+from snet.snet_cli.utils_ipfs import hash_to_bytesuri
+from snet.snet_cli.utils_ipfs import safe_extract_proto_from_ipfs
 from snet_cli.commands import BlockchainCommand
-
-import snet.snet_cli.utils_ipfs as utils_ipfs
-from snet.snet_cli.utils_ipfs import (
-    hash_to_bytesuri,
-    bytesuri_to_hash,
-    get_from_ipfs_and_checkhash,
-    safe_extract_proto_from_ipfs,
-)
-from snet.snet_cli.mpe_service_metadata import (
-    MPEServiceMetadata,
-    load_mpe_service_metadata,
-    mpe_service_metadata_from_json,
-)
-from snet.snet_cli.utils import type_converter, bytes32_to_str, open_grpc_channel
 
 
 class MPEServiceCommand(BlockchainCommand):

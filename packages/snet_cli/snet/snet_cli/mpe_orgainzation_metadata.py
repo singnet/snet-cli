@@ -1,7 +1,6 @@
 import base64
-from json import JSONEncoder
-
 import json
+from json import JSONEncoder
 
 
 class DefaultEncoder(JSONEncoder):

@@ -1,15 +1,15 @@
+import functools
 import json
 import os
 import subprocess
-import functools
 import sys
-
+from pathlib import Path
+from pathlib import PurePath
 from urllib.parse import urlparse
-from pathlib import Path, PurePath
 
-import web3
-import pkg_resources
 import grpc
+import pkg_resources
+import web3
 from grpc_tools.protoc import main as protoc
 
 

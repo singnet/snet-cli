@@ -1,7 +1,8 @@
 """ Utils related to protobuf """
+import os
 import sys
 from pathlib import Path
-import os
+
 from google.protobuf import json_format
 
 

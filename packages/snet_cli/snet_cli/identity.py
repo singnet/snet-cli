@@ -1,25 +1,23 @@
 import abc
+import getpass
 import json
 import struct
 import time
-import getpass
 
-from pycoin.key.BIP32Node import BIP32Node
 import rlp
-from eth_account.internal.transactions import (
-    serializable_unsigned_transaction_from_dict,
-    encode_transaction,
-    UnsignedTransaction,
-)
+from eth_account.internal.transactions import encode_transaction
+from eth_account.internal.transactions import serializable_unsigned_transaction_from_dict
+from eth_account.internal.transactions import UnsignedTransaction
 from eth_account.messages import defunct_hash_message
-from mnemonic import Mnemonic
-from trezorlib.client import TrezorClient, proto
-from trezorlib.transport_hid import HidTransport
-
 from ledgerblue.comm import getDongle
 from ledgerblue.commException import CommException
-
-from snet.snet_cli.utils import get_address_from_private, normalize_private_key
+from mnemonic import Mnemonic
+from pycoin.key.BIP32Node import BIP32Node
+from snet.snet_cli.utils import get_address_from_private
+from snet.snet_cli.utils import normalize_private_key
+from trezorlib.client import proto
+from trezorlib.client import TrezorClient
+from trezorlib.transport_hid import HidTransport
 
 
 BIP32_HARDEN = 0x80000000

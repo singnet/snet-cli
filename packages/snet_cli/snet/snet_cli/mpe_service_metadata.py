@@ -35,11 +35,9 @@ endpoints[]     - address in the off-chain network to provide a service
 
 assets {}       -  asset type and its ipfs value/values
 """
-
-import re
-import json
 import base64
-
+import json
+import re
 from collections import defaultdict
 from enum import Enum
 

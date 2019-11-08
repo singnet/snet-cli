@@ -1,8 +1,8 @@
 """ Utilities related to ipfs """
-import tarfile
 import glob
 import io
 import os
+import tarfile
 
 import base58
 import multihash

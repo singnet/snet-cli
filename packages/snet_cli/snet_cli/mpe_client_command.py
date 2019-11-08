@@ -1,20 +1,17 @@
 import base64
-import os
-from pathlib import Path
 import json
+import os
 import sys
+from pathlib import Path
 
 from eth_account.messages import defunct_hash_message
-
-
-from snet_cli.utils_agi2cogs import cogs2stragi
-
-from snet.snet_cli.utils import open_grpc_channel, rgetattr, RESOURCES_PATH
 from snet.snet_cli.mpe_channel_command import MPEChannelCommand
-from snet.snet_cli.utils_proto import (
-    import_protobuf_from_dir,
-    switch_to_json_payload_encoding,
-)
+from snet.snet_cli.utils import open_grpc_channel
+from snet.snet_cli.utils import RESOURCES_PATH
+from snet.snet_cli.utils import rgetattr
+from snet.snet_cli.utils_proto import import_protobuf_from_dir
+from snet.snet_cli.utils_proto import switch_to_json_payload_encoding
+from snet_cli.utils_agi2cogs import cogs2stragi
 
 
 # we inherit MPEChannelCommand because client needs channels

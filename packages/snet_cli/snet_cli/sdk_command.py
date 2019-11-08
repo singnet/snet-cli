@@ -1,15 +1,15 @@
 import os
-from pathlib import Path, PurePath
+from pathlib import Path
+from pathlib import PurePath
 from tempfile import TemporaryDirectory
 
+from snet.snet_cli.utils import bytes32_to_str
+from snet.snet_cli.utils import compile_proto
+from snet.snet_cli.utils import type_converter
+from snet.snet_cli.utils_ipfs import bytesuri_to_hash
+from snet.snet_cli.utils_ipfs import get_from_ipfs_and_checkhash
+from snet.snet_cli.utils_ipfs import safe_extract_proto_from_ipfs
 from snet_cli.mpe_service_command import MPEServiceCommand
-
-from snet.snet_cli.utils_ipfs import (
-    bytesuri_to_hash,
-    get_from_ipfs_and_checkhash,
-    safe_extract_proto_from_ipfs,
-)
-from snet.snet_cli.utils import type_converter, bytes32_to_str, compile_proto
 
 
 class SDKCommand(MPEServiceCommand):

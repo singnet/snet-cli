@@ -1,18 +1,18 @@
-import control_service_pb2_grpc
-import control_service_pb2
-import state_service_pb2_grpc
-import state_service_pb2
-import ExampleService_pb2_grpc
-import ExampleService_pb2
-import grpc
-from concurrent import futures
 import time
+from concurrent import futures
+
+import control_service_pb2
+import control_service_pb2_grpc
+import ExampleService_pb2
+import ExampleService_pb2_grpc
+import grpc
+import state_service_pb2
+import state_service_pb2_grpc
 import web3
-
-from snet_cli.config import Config
-
 from snet.snet_cli.mpe_channel_command import MPEChannelCommand
-from snet.snet_cli.utils import compile_proto, DefaultAttributeObject
+from snet.snet_cli.utils import compile_proto
+from snet.snet_cli.utils import DefaultAttributeObject
+from snet_cli.config import Config
 
 
 compile_proto("../service_spec1", ".", proto_file="ExampleService.proto")

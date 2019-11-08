@@ -1,34 +1,26 @@
 import base64
-from pathlib import Path
 import os
+import pickle
 import shutil
 import tempfile
-import pickle
 from collections import defaultdict
+from pathlib import Path
 
+from snet.snet_cli.mpe_orgainzation_metadata import OrganizationMetadata
+from snet.snet_cli.mpe_service_metadata import load_mpe_service_metadata
+from snet.snet_cli.mpe_service_metadata import mpe_service_metadata_from_json
+from snet.snet_cli.utils import abi_decode_struct_to_dict
+from snet.snet_cli.utils import abi_get_element_by_name
+from snet.snet_cli.utils import compile_proto
+from snet.snet_cli.utils import get_contract_def
+from snet.snet_cli.utils import type_converter
+from snet.snet_cli.utils_ipfs import bytesuri_to_hash
+from snet.snet_cli.utils_ipfs import get_from_ipfs_and_checkhash
+from snet.snet_cli.utils_ipfs import safe_extract_proto_from_ipfs
+from snet_cli.commands import OrganizationCommand
+from snet_cli.utils_agi2cogs import cogs2stragi
 from web3.utils.encoding import pad_hex
 from web3.utils.events import get_event_data
-
-from snet_cli.commands import OrganizationCommand
-from snet.snet_cli.mpe_orgainzation_metadata import OrganizationMetadata
-from snet_cli.utils_agi2cogs import cogs2stragi
-
-from snet.snet_cli.utils_ipfs import (
-    safe_extract_proto_from_ipfs,
-    get_from_ipfs_and_checkhash,
-    bytesuri_to_hash,
-)
-from snet.snet_cli.mpe_service_metadata import (
-    mpe_service_metadata_from_json,
-    load_mpe_service_metadata,
-)
-from snet.snet_cli.utils import (
-    compile_proto,
-    get_contract_def,
-    abi_get_element_by_name,
-    abi_decode_struct_to_dict,
-    type_converter,
-)
 
 
 # we inherit MPEServiceCommand because we need _get_service_metadata_from_registry

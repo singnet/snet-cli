@@ -1,4 +1,5 @@
-from configparser import ConfigParser, ExtendedInterpolation
+from configparser import ConfigParser
+from configparser import ExtendedInterpolation
 from pathlib import Path
 
 default_snet_folder = Path("~").expanduser().joinpath(".snet")

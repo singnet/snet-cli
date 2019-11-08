@@ -1,17 +1,13 @@
 from pathlib import Path
 
 import web3
-
+from snet.snet_cli.utils import compile_proto
+from snet.snet_cli.utils import int4bytes_big
+from snet.snet_cli.utils import open_grpc_channel
+from snet.snet_cli.utils import RESOURCES_PATH
+from snet.snet_cli.utils_proto import import_protobuf_from_dir
 from snet_cli.mpe_client_command import MPEClientCommand
 from snet_cli.utils_agi2cogs import cogs2stragi
-
-from snet.snet_cli.utils_proto import import_protobuf_from_dir
-from snet.snet_cli.utils import (
-    compile_proto,
-    open_grpc_channel,
-    int4bytes_big,
-    RESOURCES_PATH,
-)
 
 
 class MPETreasurerCommand(MPEClientCommand):
