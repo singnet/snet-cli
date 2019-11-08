@@ -48,8 +48,8 @@ grep fixed_price service_metadata2.json
 grep 9.8.9.8:8080 service_metadata2.json
 
 IPFS_HASH=$(snet service publish-in-ipfs)
-echo $IPFS_HASH
-ipfs cat $IPFS_HASH >service_metadata2.json
+echo "$IPFS_HASH"
+ipfs cat "$IPFS_HASH" >service_metadata2.json
 
 # compare service_metadata.json and service_metadata2.json
 cmp <(jq -S . service_metadata.json) <(jq -S . service_metadata2.json)
@@ -115,7 +115,7 @@ snet channel extend-add 0 --expiration +10000days --force -y -q
 snet channel extend-add 0 --expiration 57600000 --force -y -q && exit 1 || echo "fail as expected"
 
 EXPIRATION1=$(($(snet channel block-number) + 57600000))
-snet channel extend-add 0 --expiration $EXPIRATION1 --force --amount 0 -y -q
+snet channel extend-add 0 --expiration "$EXPIRATION1" --force --amount 0 -y -q
 
 snet channel open-init testo group1 9712.1234 +14days -y -q
 
