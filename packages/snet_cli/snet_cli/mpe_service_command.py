@@ -10,8 +10,10 @@ from snet.snet_cli.mpe_orgainzation_metadata import OrganizationMetadata
 from snet_cli.commands import BlockchainCommand
 
 import snet.snet_cli.utils_ipfs as utils_ipfs
-from snet.snet_cli.utils_ipfs import hash_to_bytesuri, bytesuri_to_hash, get_from_ipfs_and_checkhash, safe_extract_proto_from_ipfs
-from snet.snet_cli.mpe_service_metadata import MPEServiceMetadata, load_mpe_service_metadata, mpe_service_metadata_from_json
+from snet.snet_cli.utils_ipfs import hash_to_bytesuri, bytesuri_to_hash, get_from_ipfs_and_checkhash, \
+    safe_extract_proto_from_ipfs
+from snet.snet_cli.mpe_service_metadata import MPEServiceMetadata, load_mpe_service_metadata, \
+    mpe_service_metadata_from_json
 from snet.snet_cli.utils import type_converter, bytes32_to_str, open_grpc_channel
 
 
@@ -31,7 +33,7 @@ class MPEServiceCommand(BlockchainCommand):
         mpe_address = self.get_mpe_address()
         metadata.set_simple_field("model_ipfs_hash",
                                   model_ipfs_hash_base58)
-        metadata.set_simple_field("mpe_address",                  mpe_address)
+        metadata.set_simple_field("mpe_address", mpe_address)
         metadata.set_simple_field("display_name",
                                   self.args.display_name)
         metadata.set_simple_field("encoding",
@@ -85,6 +87,11 @@ class MPEServiceCommand(BlockchainCommand):
         metadata.remove_group(self.args.group_name)
         metadata.save_pretty(self.args.metadata_file)
 
+    def metadata_set_free_calls(self):
+        metadata = load_mpe_service_metadata(self.args.metadata_file)
+        metadata.set_free_calls_for_group(self.args.group_name, int(self.args.free_calls))
+        metadata.save_pretty(self.args.metadata_file)
+
     def metadata_add_endpoints(self):
         """ Metadata: add endpoint to the group """
         metadata = load_mpe_service_metadata(self.args.metadata_file)
@@ -126,6 +133,11 @@ class MPEServiceCommand(BlockchainCommand):
         metadata.remove_assets(self.args.asset_type)
         metadata.save_pretty(self.args.metadata_file)
 
+    def metadata_add_contributor(self):
+        metadata = load_mpe_service_metadata(self.args.metadata_file)
+        metadata.add_contributor(self.args.name, self.args.email_id)
+        metadata.save_pretty(self.args.metadata_file)
+
     def metadata_add_description(self):
         """ Metadata: add description """
         service_description = {}
@@ -141,6 +153,15 @@ class MPEServiceCommand(BlockchainCommand):
                 raise Exception(
                     "json service description already contains description field")
             service_description["description"] = self.args.description
+        if self.args.short_description:
+            if "short_description" in service_description:
+                raise Exception(
+                    "json service description already contains short description field")
+            if len(self.args.short_description) > 180:
+                raise Exception(
+                    "size of short description must be less than 181 characters"
+                )
+            service_description["short_description"] = self.args.short_description
         metadata = load_mpe_service_metadata(self.args.metadata_file)
         # merge with old service_description if necessary
         if ("service_description" in metadata):
@@ -153,14 +174,15 @@ class MPEServiceCommand(BlockchainCommand):
         metadata = load_mpe_service_metadata(metadata_file)
         mpe_address = self.get_mpe_address()
         if (self.args.update_mpe_address):
-            metadata.set_simple_field("mpe_address",  mpe_address)
+            metadata.set_simple_field("mpe_address", mpe_address)
             metadata.save_pretty(self.args.metadata_file)
 
         if (mpe_address.lower() != metadata["mpe_address"].lower()):
-            raise Exception("\n\nmpe_address in metadata does not correspond to the current MultiPartyEscrow contract address\n" +
-                            "You have two possibilities:\n" +
-                            "1. You can use --multipartyescrow-at to set current mpe address\n" +
-                            "2. You can use --update-mpe-address parameter to update mpe_address in metadata before publishing it\n")
+            raise Exception(
+                "\n\nmpe_address in metadata does not correspond to the current MultiPartyEscrow contract address\n" +
+                "You have two possibilities:\n" +
+                "1. You can use --multipartyescrow-at to set current mpe address\n" +
+                "2. You can use --update-mpe-address parameter to update mpe_address in metadata before publishing it\n")
         return self._get_ipfs_client().add_bytes(metadata.get_json().encode("utf-8"))
 
     def publish_metadata_in_ipfs(self):

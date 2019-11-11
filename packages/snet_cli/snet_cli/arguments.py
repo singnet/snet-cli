@@ -566,7 +566,7 @@ def add_mpe_account_options(parser):
     add_p_mpe_address_opt(p)
     add_eth_call_arguments(p)
 
-    p = subparsers.add_parser( "deposit", help="Deposit AGI tokens to MPE wallet")
+    p = subparsers.add_parser("deposit", help="Deposit AGI tokens to MPE wallet")
     p.set_defaults(fn="deposit_to_mpe")
     p.add_argument("amount", type=stragi2cogs, help="Amount of AGI tokens to deposit in MPE wallet", metavar="AMOUNT")
     add_p_snt_address_opt(p)
@@ -1034,6 +1034,12 @@ def add_mpe_service_options(parser):
 
     add_p_metadata_file_opt(p)
 
+    p = subparsers.add_parser("metadata-set-free-calls", help="Set free calls for group for service")
+    p.set_defaults(fn="metadata_set_free_calls")
+    add_p_metadata_file_opt(p)
+    p.add_argument("group_name", help="Name of the payment group to which we want to set freecalls")
+    p.add_argument("free_calls", default=0, help="Number of free calls")
+
     p = subparsers.add_parser("metadata-add-assets",
                               help="Add assets to metadata, valid asset types are [hero_image,images]")
     p.set_defaults(fn="metadata_add_asset_to_ipfs")
@@ -1079,7 +1085,16 @@ def add_mpe_service_options(parser):
     p.add_argument("--description",
                    default=None,
                    help="Some description of what the service does")
+    p.add_argument("--short-description",
+                   default=None,
+                   help="Some short description for overview")
     add_p_metadata_file_opt(p)
+
+    p = subparsers.add_parser("metadata-add-contributor", help="Add contributor")
+    p.set_defaults(fn="metadata_add_contributor")
+    add_p_metadata_file_opt(p)
+    p.add_argument("name", help="Name of the contributor")
+    p.add_argument("email_id", help="Email of the contributor")
 
     def add_p_publish_params(_p):
         add_p_metadata_file_opt(_p)
@@ -1171,7 +1186,6 @@ def add_mpe_service_options(parser):
     p.set_defaults(fn="delete_service_registration")
     add_p_service_in_registry(p)
     add_transaction_arguments(p)
-
 
 def add_mpe_treasurer_options(parser):
     parser.set_defaults(cmd=MPETreasurerCommand)
