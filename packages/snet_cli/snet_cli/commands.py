@@ -13,6 +13,7 @@ from rfc3986 import urlparse
 from web3.eth import is_checksum_address
 from web3.gas_strategies.time_based import fast_gas_price_strategy, medium_gas_price_strategy, slow_gas_price_strategy
 
+from snet.snet_cli import utils_ipfs
 from snet.snet_cli.utils_ipfs import publish_file_in_ipfs
 from snet.snet_cli.contract import Contract
 from snet.snet_cli.mpe_orgainzation_metadata import OrganizationMetadata, PaymentStorageClient, Payment, Group
@@ -766,3 +767,59 @@ class OrganizationCommand(BlockchainCommand):
             self._printout("# OrgName OrgId")
             for n, i in rez_member:
                 self._printout("%s   %s" % (n, i))
+
+    def metadata_add_asset_to_ipfs(self):
+        metadata_file = self.args.metadata_file
+        org_metadata = OrganizationMetadata.from_file(metadata_file)
+        asset_file_ipfs_hash_base58 = utils_ipfs.publish_file_in_ipfs(self._get_ipfs_client(),
+                                                                      self.args.asset_file_path)
+
+        org_metadata.add_asset(asset_file_ipfs_hash_base58, self.args.asset_type)
+        org_metadata.save_pretty(self.args.metadata_file)
+
+    def metadata_remove_assets_of_a_given_type(self):
+        metadata_file = self.args.metadata_file
+        org_metadata = OrganizationMetadata.from_file(metadata_file)
+        org_metadata.remove_assets(self.args.asset_type)
+        org_metadata.save_pretty(self.args.metadata_file)
+
+    def metadata_remove_all_assets(self):
+        metadata_file = self.args.metadata_file
+        org_metadata = OrganizationMetadata.from_file(metadata_file)
+        org_metadata.remove_all_assets()
+        org_metadata.save_pretty(self.args.metadata_file)
+
+    def metadata_add_description(self):
+        args = self.args.__dict__
+        description = args["description"]
+        metadata_file = args["metadata_file"]
+        org_metadata = OrganizationMetadata.from_file(metadata_file)
+        org_metadata.add_description(description)
+        org_metadata.save_pretty(metadata_file)
+
+    def metadata_remove_description(self):
+        args = self.args.__dict__
+        metadata_file = args["metadata_file"]
+        org_metadata = OrganizationMetadata.from_file(metadata_file)
+        org_metadata.remove_description()
+        org_metadata.save_pretty(metadata_file)
+
+    def metadata_add_contact(self):
+        args = self.args.__dict__
+        metadata_file = args["metadata_file"]
+        contact_type = args.get("contact_type", None)
+        phone = args.get("phone", None)
+        email = args.get("email", None)
+        if phone is None and email is None:
+            self._printout("email and phone both can not be empty")
+        else:
+            org_metadata = OrganizationMetadata.from_file(metadata_file)
+            org_metadata.add_contact(contact_type, phone, email)
+            org_metadata.save_pretty(metadata_file)
+
+    def metadata_remove_contact_by_type(self):
+        metadata_file = self.args.metadata_file
+        contact_type = self.args.contact_type
+        org_metadata = OrganizationMetadata.from_file(metadata_file)
+        org_metadata.remove_contact_by_type(contact_type)
+        org_metadata.save_pretty(org_metadata)
