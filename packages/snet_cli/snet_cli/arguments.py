@@ -336,12 +336,19 @@ def add_organization_options(parser):
 
     p = subparsers.add_parser("metadata-add-contact", help="Add contact in organization metadata")
     p.set_defaults(fn="metadata_add_contact")
-    p.add_argument("contact_type", help="Phone number for contact with country code")
+    p.add_argument("contact_type", help="Contact type of organization")
     p.add_argument("--phone", help="Phone number for contact with country code")
     p.add_argument("--email", help="Email ID for contact")
     add_p_organization_metadata_file_opt(p)
 
+    p = subparsers.add_parser("metadata-remove-all-contacts", help="Remove all contacts")
+    p.set_defaults(fn="metadata_remove_all_contacts")
+    add_p_organization_metadata_file_opt(p)
 
+    p = subparsers.add_parser("metadata-remove-contacts", help="Remove all contacts")
+    p.set_defaults(fn="metadata_remove_contact_by_type")
+    p.add_argument("contact_type", help="Contact type of organization")
+    add_p_organization_metadata_file_opt(p)
 
     p = subparsers.add_parser("list", help="List of Organizations Ids")
     p.set_defaults(fn="list")

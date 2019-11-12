@@ -298,7 +298,7 @@ class OrganizationMetadata(object):
 
     def remove_assets(self, asset_type):
         if asset_type == AssetType.HERO_IMAGE.value:
-            self.assets.pop(asset_type)
+            self.assets[asset_type] = ""
         else:
             raise Exception("Invalid asset type %s" % asset_type)
 
@@ -322,6 +322,7 @@ class OrganizationMetadata(object):
         self.contacts.append(contact)
 
     def remove_contact_by_type(self, contact_type):
-        for contact in self.contacts:
-            if contact_type == contact["contact_type"]:
-                contact_type.remove(contact)
+        self.contacts = [contact for contact in self.contacts if contact["contact_type"] != contact_type]
+
+    def remove_all_contacts(self):
+        self.contacts = []

@@ -822,4 +822,10 @@ class OrganizationCommand(BlockchainCommand):
         contact_type = self.args.contact_type
         org_metadata = OrganizationMetadata.from_file(metadata_file)
         org_metadata.remove_contact_by_type(contact_type)
-        org_metadata.save_pretty(org_metadata)
+        org_metadata.save_pretty(metadata_file)
+
+    def metadata_remove_all_contacts(self):
+        metadata_file = self.args.metadata_file
+        org_metadata = OrganizationMetadata.from_file(metadata_file)
+        org_metadata.remove_all_contacts()
+        org_metadata.save_pretty(metadata_file)

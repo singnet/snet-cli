@@ -41,6 +41,44 @@ snet organization list-org-names
 snet organization list-my | grep test2
 snet organization info test2
 
+snet --print-traceback organization metadata-add-assets ./service_spec1/test hero_image
+result=$(< organization_metadata.json jq '.assets.hero_image')
+test $result = '"QmWQhwwnvK4YHvEarEguTDhz8o2kwvyfPhv5favs1VS4xm/test"' && echo "add asset with single value  test case passed " || exit 1
+
+#remove assets
+snet --print-traceback organization metadata-remove-assets hero_image
+test "$(< organization_metadata.json jq '.assets.hero_image')" = '""' && echo "metadata-remove-assets  test case passed " || exit 1
+
+snet --print-traceback organization metadata-remove-all-assets
+test "$(< organization_metadata.json jq '.assets')" = '{}' && echo "metadata-remove-all-assets test case passed " || exit 1
+
+# description test
+snet --print-traceback organization metadata-add-description "this is the dummy description of my org"
+test "$(< organization_metadata.json jq '.description')" = '"this is the dummy description of my org"' || exit 1
+
+# contacts test
+# add contact
+snet --print-traceback organization metadata-add-contact support --email dummy@dummy.io --phone 1234567890
+(test "$(< organization_metadata.json jq '.contacts | length')" = 1 \
+&& test "$(< organization_metadata.json jq '.contacts[0].contact_type')" = '"support"' \
+&& test "$(< organization_metadata.json jq '.contacts[0].phone')" = '"1234567890"' \
+&& test "$(< organization_metadata.json jq '.contacts[0].email_id')" = '"dummy@dummy.io"' \
+&& echo "passed") || exit 1
+
+# add contact without email and phone
+test "$(snet --print-traceback organization metadata-add-contact support)" = "email and phone both can not be empty" \
+|| exit 1
+
+# remove contact by type
+snet --print-traceback organization metadata-add-contact support --email support@dummy.io --phone 0987654321
+snet --print-traceback organization metadata-add-contact dummy --email dummy@dummy.io --phone 6789012345
+snet --print-traceback organization metadata-remove-contacts dummy
+test "$(< organization_metadata.json jq '.contacts | length')" = 2 && echo "passed" || exit 1
+
+# remove all contacts
+snet --print-traceback organization metadata-remove-all-contacts
+test "$(< organization_metadata.json jq '.contacts | length')" = 0 && echo "passed" || exit 1
+
 ## change test2 organization name to NEW_TEST2_NAME
 #snet organization change-name test2 NEW_TEST2_NAME -y
 #snet organization change-name test2 NEW_TEST2_NAME -y && exit 1 || echo "fail as expected"
