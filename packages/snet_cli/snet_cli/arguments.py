@@ -282,7 +282,7 @@ def add_organization_options(parser):
     p.add_argument("group_name", help="Group Name ")
     p.add_argument("payment_address", help="Payment address")
     p.add_argument("endpoints", nargs='*', help="Endpoints for the first group")
-    p.add_argument("--payment-expiration-threshold", type=int, help="Payment Expiration threshold")
+    p.add_argument("--payment-expiration-threshold", type=int, default=100, help="Payment Expiration threshold")
     p.add_argument("--payment-channel-storage-type", default="etcd", help="Storage channel for payment")
     p.add_argument("--payment-channel-connection-timeout", default="100s", help="Pyament channel connection timeout ")
     p.add_argument("--payment-channel-request-timeout", default="5s", help="Payment channel request timeout")
@@ -1038,7 +1038,7 @@ def add_mpe_service_options(parser):
     p.set_defaults(fn="metadata_set_free_calls")
     add_p_metadata_file_opt(p)
     p.add_argument("group_name", help="Name of the payment group to which we want to set freecalls")
-    p.add_argument("free_calls", default=0, help="Number of free calls")
+    p.add_argument("free_calls", default=0, type=int, help="Number of free calls")
 
     p = subparsers.add_parser("metadata-add-assets",
                               help="Add assets to metadata, valid asset types are [hero_image,images]")
