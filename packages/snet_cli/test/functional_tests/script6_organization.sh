@@ -9,10 +9,10 @@ snet organization create test0 -y -q
 snet organization create test0 -y -q && exit 1 || echo "fail as expected"
 
 ## check if this feature is required  --org-id and --auto are mutually exclusive
-#snet organization create test1 --org-id test1 --auto -y -q && exit 1 || echo "fail as expected"
+snet organization create test1 --org-id test1 --auto -y -q && exit 1 || echo "fail as expected"
 
 ## create organization with random id
-#snet organization create test0 --auto -y -q
+snet organization create test0 --auto -y -q && exit 1 || echo "fail as expected"
 
 snet organization create test1 --members 0x3b2b3C2e2E7C93db335E69D827F3CC4bC2A2A2cB -y -q
 snet organization create test2 --members 0x3b2b3C2e2E7C93db335E69D827F3CC4bC2A2A2cB,0x0067b427E299Eb2A4CBafc0B04C723F77c6d8a18 -y -q

@@ -160,6 +160,11 @@ class MPEClientCommand(MPEChannelCommand):
         return endpoints[0]
 
     def call_server_lowlevel(self):
+
+
+        self._init_or_update_registered_org_if_needed()
+        self._init_or_update_registered_service_if_needed()
+
         params = self._get_call_params()
         service_metadata = self._get_service_metadata()
         endpoint = self._get_endpoint_from_metadata_or_args(service_metadata)
