@@ -341,6 +341,10 @@ class MPEServiceMetadata:
         )
         self.m["contributors"] = contributors
 
+    def remove_contributor_by_email(self, email_id):
+        self.m["contributors"] = [
+            contributor for contributor in self.m["contributors"] if contributor["email_id"] != email_id]
+
 
 def load_mpe_service_metadata(f):
     metadata = MPEServiceMetadata()

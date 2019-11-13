@@ -138,6 +138,11 @@ class MPEServiceCommand(BlockchainCommand):
         metadata.add_contributor(self.args.name, self.args.email_id)
         metadata.save_pretty(self.args.metadata_file)
 
+    def metadata_remove_contributor(self):
+        metadata = load_mpe_service_metadata(self.args.metadata_file)
+        metadata.remove_contributor_by_email(self.args.email_id)
+        metadata.save_pretty(self.args.metadata_file)
+
     def metadata_add_description(self):
         """ Metadata: add description """
         service_description = {}
