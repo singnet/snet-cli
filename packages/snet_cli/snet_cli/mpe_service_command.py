@@ -92,6 +92,11 @@ class MPEServiceCommand(BlockchainCommand):
         metadata.set_free_calls_for_group(self.args.group_name, int(self.args.free_calls))
         metadata.save_pretty(self.args.metadata_file)
 
+    def metadata_set_freecall_signer_address(self):
+        metadata = load_mpe_service_metadata(self.args.metadata_file)
+        metadata.set_freecall_signer_address(self.args.group_name, self.args.signer_address)
+        metadata.save_pretty(self.args.metadata_file)
+
     def metadata_add_endpoints(self):
         """ Metadata: add endpoint to the group """
         metadata = load_mpe_service_metadata(self.args.metadata_file)

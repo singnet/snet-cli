@@ -31,6 +31,7 @@ snet --print-traceback service update-metadata testo tests -yq && exit 1 || echo
 snet --print-traceback service metadata-remove-group group0
 snet --print-traceback service update-metadata testo tests -yq
 
+
 ## change group_id   wil now be grenerated by org level
 #cat service_metadata.json | jq '.groups[1].group_id = "B5r64fQiiB5kvkWZDo7lXmo4i8y0chUvob5/CmfqoP4="' >service_metadata2.json
 #mv -f service_metadata2.json service_metadata.json
@@ -69,3 +70,10 @@ snet --print-traceback service metadata-remove-all-assets --metadata-file=servic
 result=$(cat service_asset_metadata.json | jq '.assets')
 test $result = '{}' && echo "metadata-remove-all-assets test case passed " || exit 1
 rm service_asset_metadata.json
+
+snet --print-traceback service metadata-init ./service_spec1/ ExampleService --group-name group1 --fixed-price 0.0001 --endpoints 8.8.8.8:2020 9.8.9.8:8080
+snet --print-traceback service metadata-set-free-calls group1 12
+snet --print-traceback service metadata-set-freecall-signer-address group1 0x123
+test "$(< service_metadata.json jq '.groups[0].free_calls')" = 12 \
+&& test "$(< service_metadata.json jq '.groups[0].free_call_signer_address')" = '"0x123"' \
+&& echo "free call test passed" || exit 1

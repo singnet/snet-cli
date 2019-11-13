@@ -1047,6 +1047,15 @@ def add_mpe_service_options(parser):
     p.add_argument("group_name", help="Name of the payment group to which we want to set freecalls")
     p.add_argument("free_calls", default=0, type=int, help="Number of free calls")
 
+    p = subparsers.add_parser("metadata-set-freecall-signer-address", help="Set free calls for group for service")
+    p.set_defaults(fn="metadata_set_freecall_signer_address")
+    add_p_metadata_file_opt(p)
+    p.add_argument("group_name", help="Name of the payment group to which we want to set freecalls")
+    p.add_argument(
+        "signer_address",
+        help="This is used to define the public key address used for validating signatures "
+             "requested specially for free call. To be obtained as part of curation process")
+
     p = subparsers.add_parser("metadata-add-assets",
                               help="Add assets to metadata, valid asset types are [hero_image,images]")
     p.set_defaults(fn="metadata_add_asset_to_ipfs")

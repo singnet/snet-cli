@@ -250,6 +250,12 @@ class MPEServiceMetadata:
             if g["group_name"] == group_name:
                 g["free_calls"] = free_calls
 
+    def set_freecall_signer_address(self, group_name, signer_address):
+        groups = self.m["groups"]
+        for g in groups:
+            if g["group_name"] == group_name:
+                g["free_call_signer_address"] = signer_address
+
     def get_json(self):
         return json.dumps(self.m)
 
