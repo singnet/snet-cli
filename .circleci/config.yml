@@ -55,3 +55,47 @@ jobs:
               -d build_parameters[PARENT_BUILD_URL]="$CIRCLE_BUILD_URL" \
               https://circleci.com/api/v1.1/project/github/singnet/platform-pipeline/tree/${TRIGGER_BUILD_BRANCH}
           fi
+  test_sdk:
+    docker:
+    - image: circleci/python:3.7.4-node
+    working_directory: ~/singnet/snet-cli
+    environment:
+      TRIGGER_BUILD_BRANCH: master
+    steps:
+    - run:
+        name: Install tools and ipfs
+        command: |
+            cd ..
+            sudo apt-get update
+            sudo apt-get -y install libudev-dev libusb-1.0-0-dev curl jq
+            # install IPFS
+            wget https://dist.ipfs.io/go-ipfs/v0.4.17/go-ipfs_v0.4.17_linux-amd64.tar.gz
+            tar xvfz go-ipfs_*.tar.gz
+            sudo cp ./go-ipfs/ipfs /usr/local/bin
+    - checkout
+    - run:
+        name: Install platform-contracts from master
+        command: |
+            # Install platform-contracts (from master)
+            # we will deploy contracts from packages/snet_cli/test/utils/reset_enviroment.sh
+            cd ..
+            git clone --branch v0.3.0 https://github.com/singnet/platform-contracts
+            cd platform-contracts
+            npm install
+            npm install ganache-cli
+            npm run-script compile
+    - run:
+        name: Install snet-cli 
+        command: |
+            ./packages/snet_cli/scripts/blockchain install
+            sudo pip3 install -e ./packages/snet_cli
+    - run:
+        name: Install snet-sdk 
+        command: |
+            sudo pip3 install -e ./packages/sdk
+    - run:
+        name: Reset environment
+        command: |
+            bash -ex packages/snet_cli/test/utils/reset_environment.sh --i-no-what-i-am-doing
+            bash -ex -c "cd packages/sdk/test; bash -ex start_daemon.sh"
+            bash -ex -c "python3 packages/sdk/test/test.py";

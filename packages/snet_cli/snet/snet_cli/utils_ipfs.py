@@ -99,7 +99,7 @@ def bytesuri_to_hash(s):
     return s[7:]
 
 
-def safe_extract_proto_from_ipfs(ipfs_client, ipfs_hash, protodir):
+def safe_extract_proto_from_ipfs(ipfs_client, ipfs_hash, protodir, overwrite=False):
     """
     Tar files might be dangerous (see https://bugs.python.org/issue21109,
     and https://docs.python.org/3/library/tarfile.html, TarFile.extractall warning)
@@ -115,7 +115,7 @@ def safe_extract_proto_from_ipfs(ipfs_client, ipfs_hash, protodir):
                 raise Exception(
                     "tarball contains %s which is not a files" % m.name)
             fullname = os.path.join(protodir, m.name)
-            if (os.path.exists(fullname)):
+            if (os.path.exists(fullname) and overwrite == False):
                 raise Exception("%s already exists." % fullname)
         # now it is safe to call extractall
         f.extractall(protodir)

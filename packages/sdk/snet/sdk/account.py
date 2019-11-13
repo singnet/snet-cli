@@ -22,8 +22,16 @@ class Account:
         self.config = config
         self.web3 = w3
         self.mpe_contract = mpe_contract
-        self.token_contract = get_contract_object(
-            self.web3, "SingularityNetToken.json")
+
+        # Get Token contract address from config if specified; mostly for local testing
+        _token_contract_address = self.config.get("token_contract_address", None)
+        if _token_contract_address is None:
+            self.token_contract = get_contract_object(
+                self.web3, "SingularityNetToken.json")
+        else:
+            self.token_contract = get_contract_object(
+                self.web3, "SingularityNetToken.json", _token_contract_address)
+
         private_key = config.get("private_key", None)
         signer_private_key = config.get("signer_private_key", None)
         if private_key is not None:
@@ -39,20 +47,18 @@ class Account:
 
     def _get_nonce(self):
         nonce = self.web3.eth.getTransactionCount(self.address)
-        if self.nonce >= nonce:
-            nonce = self.nonce + 1
-        self.nonce = nonce
         return nonce
 
     def _get_gas_price(self):
         return int(self.web3.eth.generateGasPrice())
 
     def _send_signed_transaction(self, contract_fn, *args):
+        nonce = self._get_nonce()
         transaction = contract_fn(*args).buildTransaction({
             "chainId": int(self.web3.version.network),
             "gas": DEFAULT_GAS,
             "gasPrice": self._get_gas_price(),
-            "nonce": self._get_nonce()
+            "nonce": nonce
         })
         signed_txn = self.web3.eth.account.signTransaction(
             transaction, private_key=self.private_key)
@@ -78,7 +84,7 @@ class Account:
         return self.mpe_contract.deposit(self, amount_in_cogs)
 
     def approve_transfer(self, amount_in_cogs):
-        return self.send_transaction(self.token_contract.functions.approve(self.mpe_contract.contract.address, amount_in_cogs))
+        return self.send_transaction(self.token_contract.functions.approve, self.mpe_contract.contract.address, amount_in_cogs)
 
     def allowance(self):
         return self.token_contract.functions.allowance(self.address, self.mpe_contract.contract.address).call()

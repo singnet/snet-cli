@@ -259,20 +259,24 @@ def rgetattr(obj, attr):
     return functools.reduce(getattr, [obj] + attr.split('.'))
 
 
-def get_contract_object(w3, contract_file):
+def get_contract_object(w3, contract_file, address=None):
     with open(RESOURCES_PATH.joinpath("contracts", "abi", contract_file)) as f:
         abi = json.load(f)
     with open(RESOURCES_PATH.joinpath("contracts", "networks", contract_file)) as f:
         networks = json.load(f)
-        address = w3.toChecksumAddress(networks[w3.version.network]["address"])
-    return w3.eth.contract(abi=abi, address=address)
+        if address is None:
+            address = networks[w3.version.network]["address"]
+    return w3.eth.contract(abi=abi, address=w3.toChecksumAddress(address))
 
 
 def get_contract_deployment_block(w3, contract_file):
     with open(RESOURCES_PATH.joinpath("contracts", "networks", contract_file)) as f:
         networks = json.load(f)
-        txn_hash = networks[w3.version.network]["transactionHash"]
-    return w3.eth.getTransactionReceipt(txn_hash).blockNumber
+        if w3.version.network in networks:
+            txn_hash = networks[w3.version.network]["transactionHash"]
+            return w3.eth.getTransactionReceipt(txn_hash).blockNumber
+        else:
+            return 0
 
 
 def normalize_private_key(private_key):
