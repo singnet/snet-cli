@@ -39,7 +39,7 @@ def read_default_contract_address(w3, contract_name):
         if (not contract_address):
             raise Exception()
         contract_address = w3.toChecksumAddress(contract_address)
-    except:
+    except Exception as e:
         raise Exception()
 
     return contract_address

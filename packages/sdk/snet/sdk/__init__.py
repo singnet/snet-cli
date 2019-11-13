@@ -1,5 +1,7 @@
 import google.protobuf.internal.api_implementation
 
+from packages.sdk.snet.sdk.metadata_provider.ipfs_metadata_provider import IPFSMetadataProvider
+
 google.protobuf.internal.api_implementation.Type = lambda: 'python'
 
 from google.protobuf import symbol_database as _symbol_database
@@ -9,6 +11,7 @@ _sym_db.RegisterMessage = lambda x: None
 
 
 import sys
+
 import json
 import base64
 from urllib.parse import urljoin
@@ -33,11 +36,13 @@ from snet.snet_cli.mpe_service_metadata import mpe_service_metadata_from_json
 
 class SnetSDK:
     """Base Snet SDK"""
+
     def __init__(
         self,
-        config
+        config, metadata_provider=None
     ):
         self._config = config
+        self._metadata_provider = metadata_provider
 
         # Instantiate Ethereum client
         eth_rpc_endpoint = self._config.get("eth_rpc_endpoint", "https://mainnet.infura.io")
@@ -68,17 +73,19 @@ class SnetSDK:
 
         self.account = Account(self.web3, config, self.mpe_contract)
 
-
-    def create_service_client(self, org_id, service_id, service_stub, group_name=None, payment_channel_management_strategy=PaymentChannelManagementStrategy, options=None):
+    def create_service_client(self, org_id, service_id, service_stub, group_name,
+                              payment_channel_management_strategy=PaymentChannelManagementStrategy, options=None):
         if options is None:
             options = dict()
 
-        service_metadata = self.get_service_metadata(org_id, service_id)
-        group = service_metadata.get_group(group_name)
-        strategy = payment_channel_management_strategy(self)
-        service_client = ServiceClient(self, service_metadata, group, service_stub, strategy, options)
-        return service_client
+        if self._metadata_provider is None:
+            self._metadata_provider = IPFSMetadataProvider( self.ipfs_client ,self.web3)
 
+        service_metadata = self._metadata_provider.enhance_service_metadata(org_id, service_id)
+        group = self.get_service_group_details(service_metadata, group_name)
+        strategy = payment_channel_management_strategy(self)
+        service_client = ServiceClient(self, service_metadata, group, service_stub, strategy, options )
+        return service_client
 
     def create_dynamic_service_client(self, org_id, service_id, group_name=None, payment_channel_management_strategy=PaymentChannelManagementStrategy, options=None):
         if options is None:
@@ -102,3 +109,9 @@ class SnetSDK:
         metadata_json = get_from_ipfs_and_checkhash(self.ipfs_client, metadata_hash)
         metadata = mpe_service_metadata_from_json(metadata_json)
         return metadata
+
+    def get_service_group_details(self, service_metadata,group_name):
+        for group in service_metadata['groups']:
+            if group['group_name'] == group_name:
+                return group
+

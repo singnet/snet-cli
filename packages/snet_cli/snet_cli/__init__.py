@@ -29,3 +29,7 @@ def main():
             print("If you want to see full Traceback then run:")
             print("snet --print-traceback [parameters]")
             sys.exit(42)
+
+
+if __name__ == "__main__":
+    main()
