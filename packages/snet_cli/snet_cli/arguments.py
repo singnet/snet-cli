@@ -63,60 +63,50 @@ def add_root_options(parser, config):
         title="snet commands", metavar="COMMAND")
     subparsers.required = True
 
-    p = subparsers.add_parser("account",
-                              help="AGI account")
+    p = subparsers.add_parser("account", help="AGI account")
     add_mpe_account_options(p)
 
-    p = subparsers.add_parser("channel",
-                              help="Interact with SingularityNET payment channels")
+    p = subparsers.add_parser("channel", help="Interact with SingularityNET payment channels")
     add_mpe_channel_options(p)
 
-    mpe_client_p = subparsers.add_parser("client",
-                                         help="Interact with SingularityNET services")
+    mpe_client_p = subparsers.add_parser("client", help="Interact with SingularityNET services")
     add_mpe_client_options(mpe_client_p)
 
-    contract_p = subparsers.add_parser("contract",
-                                       help="Interact with contracts at a low level")
+    contract_p = subparsers.add_parser("contract", help="Interact with contracts at a low level")
     add_contract_options(contract_p)
 
-    identity_p = subparsers.add_parser("identity",
-                                       help="Manage identities")
+    identity_p = subparsers.add_parser("identity", help="Manage identities")
     add_identity_options(identity_p, config)
 
-    network_p = subparsers.add_parser("network",
-                                      help="Manage networks")
+    network_p = subparsers.add_parser("network", help="Manage networks")
     add_network_options(network_p, config)
 
-    organization_p = subparsers.add_parser("organization",
-                                           help="Interact with SingularityNET Organizations")
+    organization_p = subparsers.add_parser("organization", help="Interact with SingularityNET Organizations")
     add_organization_options(organization_p)
 
-    sdk_p = subparsers.add_parser("sdk",
-                                  help="Generate client libraries to call SingularityNET services using your language of choice")
+    sdk_p = subparsers.add_parser(
+        "sdk",
+        help="Generate client libraries to call SingularityNET services using your language of choice")
     add_sdk_options(sdk_p)
 
-    mpe_server_p = subparsers.add_parser("service",
-                                         help="Create, publish, register, and update SingularityNET services")
+    mpe_server_p = subparsers.add_parser(
+        "service",
+        help="Create, publish, register, and update SingularityNET services")
     add_mpe_service_options(mpe_server_p)
 
-    session_p = subparsers.add_parser("session",
-                                      help="View session state")
+    session_p = subparsers.add_parser("session", help="View session state")
     add_session_options(session_p)
 
-    set_p = subparsers.add_parser("set",
-                                  help="Set session keys")
+    set_p = subparsers.add_parser("set", help="Set session keys")
     add_set_options(set_p)
 
-    p = subparsers.add_parser("treasurer",
-                              help="Treasurer logic")
+    p = subparsers.add_parser("treasurer", help="Treasurer logic")
     add_mpe_treasurer_options(p)
 
-    unset_p = subparsers.add_parser("unset",
-                                    help="Unset session keys")
+    unset_p = subparsers.add_parser("unset", help="Unset session keys")
     add_unset_options(unset_p)
 
-    version_p = subparsers.add_parser("version",
-                                      help="Show version and exit")
+    version_p = subparsers.add_parser("version", help="Show version and exit")
     add_version_options(version_p)
 
 
@@ -275,87 +265,39 @@ def add_organization_options(parser):
         title="Organization commands", metavar="COMMAND")
     subparsers.required = True
 
-    p = subparsers.add_parser("metadata-init",
-                              help="Initalize matadata for organization ")
+    p = subparsers.add_parser("metadata-init", help="Initalize matadata for organization ")
     p.set_defaults(fn="initialize_metadata")
-
-    p.add_argument("org_name",
-                   help="Organization name")
-    p.add_argument("org_id",
-                   default=None,
-                   help="Unique organization Id")
+    p.add_argument("org_name", help="Organization name")
+    p.add_argument("org_id", default=None, help="Unique organization Id")
     add_p_registry_address_opt(p)
     add_metadatafile_argument_for_org(p)
 
-    p = subparsers.add_parser("print-metadata",
-                              help="Print metadata for given organization")
+    p = subparsers.add_parser("print-metadata", help="Print metadata for given organization")
     p.set_defaults(fn="print_metadata")
+    p.add_argument("org_name", help="Organization name")
+    p.add_argument("org_id", help="Organization Id")
 
-    p.add_argument("org_name",
-                   help="Organization name")
-    p.add_argument("org_id",
-                   help="Organization Id")
-
-    p = subparsers.add_parser("add-group",
-                              help="Add group to organization")
+    p = subparsers.add_parser("add-group", help="Add group to organization")
     p.set_defaults(fn="add_group")
-
-    p.add_argument("group_name",
-                   help="Group Name ")
-
-    p.add_argument("payment_address",
-                   help="Payment address")
-    p.add_argument("endpoints",
-                   nargs='*',
-                   help="Endpoints for the first group")
-
-    p.add_argument("--payment-expiration-threshold",
-                   type=int,
-                   default=100,
-
-                   help="Payment Expiration threshold")
-
-    p.add_argument("--payment-channel-storage-type",
-                   default="etcd",
-                   help="Storage channel for payment")
-
-    p.add_argument("--payment-channel-connection-timeout",
-                   default="100s",
-
-                   help="Pyament channel connection timeout ")
-
-    p.add_argument("--payment-channel-request-timeout",
-                   default="5s",
-                   help="Payment channel request timeout")
-
+    p.add_argument("group_name", help="Group Name ")
+    p.add_argument("payment_address", help="Payment address")
+    p.add_argument("endpoints", nargs='*', help="Endpoints for the first group")
+    p.add_argument("--payment-expiration-threshold", type=int, default=100, help="Payment Expiration threshold")
+    p.add_argument("--payment-channel-storage-type", default="etcd", help="Storage channel for payment")
+    p.add_argument("--payment-channel-connection-timeout", default="100s", help="Pyament channel connection timeout ")
+    p.add_argument("--payment-channel-request-timeout", default="5s", help="Payment channel request timeout")
     add_metadatafile_argument_for_org(p)
     add_p_registry_address_opt(p)
 
-    p = subparsers.add_parser("update-group",
-                              help="Update group of organization ")
-
+    p = subparsers.add_parser("update-group", help="Update group of organization ")
     p.set_defaults(fn="update_group")
-    p.add_argument("group_id",
-                   help="Group Id")
-
-    p.add_argument("--payment-address",
-                   help="Payment Address")
-    p.add_argument("--endpoints",
-                   nargs='*',
-                   help="Endpoints for the first group")
-
-    p.add_argument("--payment-expiration-threshold",
-                   help="Payment Expiration threshold")
-
-    p.add_argument("--payment-channel-storage-type",
-                   help="Payment Channel Storage Type")
-
-    p.add_argument("--payment-channel-connection-timeout",
-                   help="Payment Channel Connection timeout")
-
-    p.add_argument("--payment-channel-request-timeout",
-                   help="Payment channel Request timeout")
-
+    p.add_argument("group_id", help="Group Id")
+    p.add_argument("--payment-address", help="Payment Address")
+    p.add_argument("--endpoints", nargs='*', help="Endpoints for the first group")
+    p.add_argument("--payment-expiration-threshold", help="Payment Expiration threshold")
+    p.add_argument("--payment-channel-storage-type", help="Payment Channel Storage Type")
+    p.add_argument("--payment-channel-connection-timeout", help="Payment Channel Connection timeout")
+    p.add_argument("--payment-channel-request-timeout", help="Payment channel Request timeout")
     add_metadatafile_argument_for_org(p)
     add_p_registry_address_opt(p)
 
@@ -368,91 +310,111 @@ def add_organization_options(parser):
     # add_metadatafile_argument_for_org(p)
     # add_p_registry_address_opt(p)
 
-    p = subparsers.add_parser("list",
-                              help="List of Organizations Ids")
+    p = subparsers.add_parser("metadata-add-description", help="Add description to metadata")
+    p.set_defaults(fn="metadata_add_description")
+    p.add_argument("description", help="description about organization info")
+    add_p_organization_metadata_file_opt(p)
+
+    p = subparsers.add_parser(
+        "metadata-add-assets",
+        help="Add assets to metadata, valid asset types are [hero_image,images]")
+    p.set_defaults(fn="metadata_add_asset_to_ipfs")
+    p.add_argument("asset_file_path", help="Asset file path")
+    p.add_argument("asset_type", help="Type of the asset")
+    add_p_organization_metadata_file_opt(p)
+
+    p = subparsers.add_parser(
+        "metadata-remove-assets",
+        help="Remove asset of a given type valid asset types are [hero_image,images]")
+    p.set_defaults(fn="metadata_remove_assets_of_a_given_type")
+    p.add_argument("asset_type", help="Type of the asset to be removed , valid asset types are [hero_image,images]")
+    add_p_organization_metadata_file_opt(p)
+
+    p = subparsers.add_parser("metadata-remove-all-assets", help="Remove all assets from metadata")
+    p.set_defaults(fn="metadata_remove_all_assets")
+    add_p_organization_metadata_file_opt(p)
+
+    p = subparsers.add_parser("metadata-add-contact", help="Add contact in organization metadata")
+    p.set_defaults(fn="metadata_add_contact")
+    p.add_argument("contact_type", help="Contact type of organization")
+    p.add_argument("--phone", help="Phone number for contact with country code")
+    p.add_argument("--email", help="Email ID for contact")
+    add_p_organization_metadata_file_opt(p)
+
+    p = subparsers.add_parser("metadata-remove-all-contacts", help="Remove all contacts")
+    p.set_defaults(fn="metadata_remove_all_contacts")
+    add_p_organization_metadata_file_opt(p)
+
+    p = subparsers.add_parser("metadata-remove-contacts", help="Remove all contacts")
+    p.set_defaults(fn="metadata_remove_contact_by_type")
+    p.add_argument("contact_type", help="Contact type of organization")
+    add_p_organization_metadata_file_opt(p)
+
+    p = subparsers.add_parser("list", help="List of Organizations Ids")
     p.set_defaults(fn="list")
     add_contract_identity_arguments(p, [("registry", "registry_at")])
     add_eth_call_arguments(p)
 
-    p = subparsers.add_parser("list-org-names",
-                              help="List Organizations Names and Ids")
+    p = subparsers.add_parser("list-org-names", help="List Organizations Names and Ids")
     p.set_defaults(fn="list_orgnames")
     add_contract_identity_arguments(p, [("registry", "registry_at")])
     add_eth_call_arguments(p)
 
-    p = subparsers.add_parser("list-my",
-                              help="Print organization which has the current identity as the owner or as a member")
+    p = subparsers.add_parser(
+        "list-my",
+        help="Print organization which has the current identity as the owner or as a member")
     p.set_defaults(fn="list_my")
     add_contract_identity_arguments(p, [("registry", "registry_at")])
     add_eth_call_arguments(p)
 
-    p = subparsers.add_parser("list-services",
-                              help="List Organization's services")
+    p = subparsers.add_parser("list-services", help="List Organization's services")
     p.set_defaults(fn="list_services")
     add_p_org_id(p)
     add_contract_identity_arguments(p, [("registry", "registry_at")])
     add_eth_call_arguments(p)
 
-    p = subparsers.add_parser("info",
-                              help="Organization's Information")
+    p = subparsers.add_parser("info", help="Organization's Information")
     p.set_defaults(fn="info")
     add_p_org_id(p)
     add_contract_identity_arguments(p, [("registry", "registry_at")])
     add_eth_call_arguments(p)
 
-    p = subparsers.add_parser("create",
-                              help="Create an Organization")
+    p = subparsers.add_parser("create", help="Create an Organization")
     p.set_defaults(fn="create")
-    p.add_argument("org_id",
-                   help="Unique Organization Id",
-                   metavar="ORG_ID")
+    p.add_argument("org_id", help="Unique Organization Id", metavar="ORG_ID")
     add_metadatafile_argument_for_org(p)
-    p.add_argument("--members",
-                   help="List of members to be added to the organization",
-                   metavar="ORG_MEMBERS[]")
+    p.add_argument("--members", help="List of members to be added to the organization", metavar="ORG_MEMBERS[]")
     add_organization_arguments(p)
 
-    p = subparsers.add_parser("update-metadata",
-                              help="Create an Organization")
-    p.add_argument("org_id",
-                   help="Unique Organization Id",
-                   metavar="ORG_ID")
+    p = subparsers.add_parser("update-metadata", help="Create an Organization")
+    p.add_argument("org_id", help="Unique Organization Id", metavar="ORG_ID")
     p.set_defaults(fn="update_metadata")
     add_metadatafile_argument_for_org(p)
-    p.add_argument("--members",
-                   help="List of members to be added to the organization",
-                   metavar="ORG_MEMBERS[]")
+    p.add_argument(
+        "--members",
+        help="List of members to be added to the organization",
+        metavar="ORG_MEMBERS[]")
     add_organization_arguments(p)
 
-    p = subparsers.add_parser("change-owner",
-                              help="Change Organization's owner")
+    p = subparsers.add_parser("change-owner", help="Change Organization's owner")
     p.set_defaults(fn="change_owner")
     add_p_org_id(p)
-    p.add_argument("owner",
-                   help="Address of the new Organization's owner",
-                   metavar="OWNER_ADDRESS")
+    p.add_argument("owner", help="Address of the new Organization's owner", metavar="OWNER_ADDRESS")
     add_organization_arguments(p)
 
-    p = subparsers.add_parser("add-members",
-                              help="Add members to Organization")
+    p = subparsers.add_parser("add-members", help="Add members to Organization")
     p.set_defaults(fn="add_members")
     add_p_org_id(p)
-    p.add_argument("members",
-                   help="List of members to be added to the organization",
-                   metavar="ORG_MEMBERS[]")
+    p.add_argument("members", help="List of members to be added to the organization", metavar="ORG_MEMBERS[]")
     add_organization_arguments(p)
 
-    p = subparsers.add_parser("rem-members",
-                              help="Remove members from Organization")
+    p = subparsers.add_parser("rem-members", help="Remove members from Organization")
     p.set_defaults(fn="rem_members")
     add_p_org_id(p)
-    p.add_argument("members",
-                   help="List of members to be removed from the organization",
-                   metavar="ORG_MEMBERS[]")
+    p.add_argument("members", help="List of members to be removed from the organization", metavar="ORG_MEMBERS[]")
     add_organization_arguments(p)
 
-    p = subparsers.add_parser("delete",
-                              help="Delete an Organization")
+    p = subparsers.add_parser("delete", help="Delete an Organization")
     p.set_defaults(fn="delete")
     add_p_org_id(p)
     add_organization_arguments(p)
@@ -528,24 +490,22 @@ def add_eth_call_arguments(parser):
 
 def add_transaction_arguments(parser):
     transaction_g = parser.add_argument_group(title="transaction arguments")
-    transaction_g.add_argument("--gas-price",
-                               help="Ethereum gas price in Wei or time based gas price strategy ('fast' ~1min, 'medium' ~5min or 'slow' ~60min)  (defaults to session.default_gas_price)")
-    transaction_g.add_argument("--wallet-index", type=int,
-                               help="Wallet index of account to use for signing (defaults to session.identity.default_wallet_index)")
-    transaction_g.add_argument("--yes", "-y",
-                               action="store_true",
-                               help="Skip interactive confirmation of transaction payload",
-                               default=False)
+    transaction_g.add_argument(
+        "--gas-price",
+        help="Ethereum gas price in Wei or time based gas price strategy "
+             "('fast' ~1min, 'medium' ~5min or 'slow' ~60min)  (defaults to session.default_gas_price)"
+    )
+
+    transaction_g.add_argument(
+        "--wallet-index", type=int,
+        help="Wallet index of account to use for signing (defaults to session.identity.default_wallet_index)")
+    transaction_g.add_argument(
+        "--yes", "-y", action="store_true",
+        help="Skip interactive confirmation of transaction payload",
+        default=False)
     g = transaction_g.add_mutually_exclusive_group()
-    g.add_argument("--quiet", "-q",
-                   action="store_true",
-                   help="Quiet transaction printing",
-                   default=False)
-    g.add_argument("--verbose",
-                   "-v",
-                   action="store_true",
-                   help="Verbose transaction printing",
-                   default=False)
+    g.add_argument("--quiet", "-q", action="store_true", help="Quiet transaction printing", default=False)
+    g.add_argument("--verbose", "-v", action="store_true", help="Verbose transaction printing", default=False)
 
 
 class AppendPositionalAction(argparse.Action):
@@ -559,36 +519,32 @@ class AppendPositionalAction(argparse.Action):
 
 
 def add_p_mpe_address_opt(p):
-    p.add_argument("--multipartyescrow-at",
-                   "--mpe",
-                   default=None,
-                   help="Address of MultiPartyEscrow contract, if not specified we read address from \"networks\"")
+    p.add_argument(
+        "--multipartyescrow-at", "--mpe", default=None,
+        help="Address of MultiPartyEscrow contract, if not specified we read address from \"networks\"")
 
 
 def add_p_registry_address_opt(p):
-    p.add_argument("--registry-at",
-                   "--registry",
-                   default=None,
-                   help="Address of Registry contract, if not specified we read address from \"networks\"")
+    p.add_argument(
+        "--registry-at", "--registry", default=None,
+        help="Address of Registry contract, if not specified we read address from \"networks\"")
 
 
 def add_p_metadata_file_opt(p):
-    p.add_argument("--metadata-file",
-                   default="service_metadata.json",
-                   help="Service metadata json file (default service_metadata.json)")
+    p.add_argument(
+        "--metadata-file", default="service_metadata.json",
+        help="Service metadata json file (default service_metadata.json)")
 
 
 def add_p_organization_metadata_file_opt(p):
-    p.add_argument("--metadata-file",
-                   default="organization_metadata.json",
-                   help="Service metadata json file (default service_metadata.json)")
+    p.add_argument(
+        "--metadata-file", default="organization_metadata.json",
+        help="Service metadata json file (default service_metadata.json)")
 
 
 def add_p_org_id_service_id(p):
     add_p_org_id(p)
-    p.add_argument("service_id",
-                   help="Id of service",
-                   metavar="SERVICE_ID")
+    p.add_argument("service_id", help="Id of service", metavar="SERVICE_ID")
 
 
 def add_p_service_in_registry(p):
@@ -602,52 +558,37 @@ def add_mpe_account_options(parser):
     subparsers.required = True
 
     def add_p_snt_address_opt(p):
-        p.add_argument("--singularitynettoken-at",
-                       "--snt",
-                       default=None,
-                       help="Address of SingularityNetToken contract, if not specified we read address from \"networks\"")
+        p.add_argument(
+            "--singularitynettoken-at", "--snt", default=None,
+            help="Address of SingularityNetToken contract, if not specified we read address from \"networks\"")
 
     p = subparsers.add_parser("print", help="Print the current ETH account")
     p.set_defaults(fn="print_account")
     add_eth_call_arguments(p)
 
-    p = subparsers.add_parser(
-        "balance", help="Print balance of AGI tokens and balance of MPE wallet")
+    p = subparsers.add_parser("balance", help="Print balance of AGI tokens and balance of MPE wallet")
     p.set_defaults(fn="print_agi_and_mpe_balances")
-    p.add_argument("--account",
-                   default=None,
-                   help="Account to print balance for (default is the current identity)")
+    p.add_argument("--account", default=None, help="Account to print balance for (default is the current identity)")
     add_p_snt_address_opt(p)
     add_p_mpe_address_opt(p)
     add_eth_call_arguments(p)
 
-    p = subparsers.add_parser(
-        "deposit", help="Deposit AGI tokens to MPE wallet")
+    p = subparsers.add_parser("deposit", help="Deposit AGI tokens to MPE wallet")
     p.set_defaults(fn="deposit_to_mpe")
-    p.add_argument("amount",
-                   type=stragi2cogs,
-                   help="Amount of AGI tokens to deposit in MPE wallet",
-                   metavar="AMOUNT")
+    p.add_argument("amount", type=stragi2cogs, help="Amount of AGI tokens to deposit in MPE wallet", metavar="AMOUNT")
     add_p_snt_address_opt(p)
     add_p_mpe_address_opt(p)
     add_transaction_arguments(p)
 
-    p = subparsers.add_parser(
-        "withdraw", help="Withdraw AGI tokens from MPE wallet")
+    p = subparsers.add_parser("withdraw", help="Withdraw AGI tokens from MPE wallet")
     p.set_defaults(fn="withdraw_from_mpe")
-    p.add_argument("amount",
-                   type=stragi2cogs,
-                   help="Amount of AGI tokens to withdraw from MPE wallet",
-                   metavar="AMOUNT")
+    p.add_argument("amount", type=stragi2cogs, help="Amount of AGI tokens to withdraw from MPE wallet", metavar="AMOUNT")
     add_p_mpe_address_opt(p)
     add_transaction_arguments(p)
 
-    p = subparsers.add_parser(
-        "transfer", help="Transfer AGI tokens inside MPE wallet")
+    p = subparsers.add_parser("transfer", help="Transfer AGI tokens inside MPE wallet")
     p.set_defaults(fn="transfer_in_mpe")
-    p.add_argument("receiver",
-                   help="Address of the receiver",
-                   metavar="RECEIVER")
+    p.add_argument("receiver", help="Address of the receiver", metavar="RECEIVER")
     p.add_argument("amount",
                    type=stragi2cogs,
                    help="Amount of AGI tokens to be transferred to another account inside MPE wallet",
@@ -1100,26 +1041,20 @@ def add_mpe_service_options(parser):
 
     add_p_metadata_file_opt(p)
 
-    p = subparsers.add_parser("metadata-add-assets",
-                              help="Add assets to metadata, valid asset types are [hero_image,images]")
-    p.set_defaults(fn="metadata_add_asset_to_ipfs")
-    p.add_argument("asset_file_path",
-                   help="Asset file path")
-    p.add_argument("asset_type",
-                   help="Type of the asset")
+    p = subparsers.add_parser("metadata-set-free-calls", help="Set free calls for group for service")
+    p.set_defaults(fn="metadata_set_free_calls")
     add_p_metadata_file_opt(p)
+    p.add_argument("group_name", help="Name of the payment group to which we want to set freecalls")
+    p.add_argument("free_calls", default=0, type=int, help="Number of free calls")
 
-    p = subparsers.add_parser("metadata-remove-assets",
-                              help="Remove asset of a given type valid asset types are [hero_image,images]")
-    p.set_defaults(fn="metadata_remove_assets_of_a_given_type")
-    p.add_argument("asset_type",
-                   help="Type of the asset to be removed , valid asset types are [hero_image,images]")
+    p = subparsers.add_parser("metadata-set-freecall-signer-address", help="Set free calls for group for service")
+    p.set_defaults(fn="metadata_set_freecall_signer_address")
     add_p_metadata_file_opt(p)
-
-    p = subparsers.add_parser("metadata-remove-all-assets",
-                              help="Remove all assets from metadata")
-    p.set_defaults(fn="metadata_remove_all_assets")
-    add_p_metadata_file_opt(p)
+    p.add_argument("group_name", help="Name of the payment group to which we want to set freecalls")
+    p.add_argument(
+        "signer_address",
+        help="This is used to define the public key address used for validating signatures "
+             "requested specially for free call. To be obtained as part of curation process")
 
     p = subparsers.add_parser("metadata-add-assets",
                               help="Add assets to metadata, valid asset types are [hero_image,images]")
@@ -1166,7 +1101,21 @@ def add_mpe_service_options(parser):
     p.add_argument("--description",
                    default=None,
                    help="Some description of what the service does")
+    p.add_argument("--short-description",
+                   default=None,
+                   help="Some short description for overview")
     add_p_metadata_file_opt(p)
+
+    p = subparsers.add_parser("metadata-add-contributor", help="Add contributor")
+    p.set_defaults(fn="metadata_add_contributor")
+    add_p_metadata_file_opt(p)
+    p.add_argument("name", help="Name of the contributor")
+    p.add_argument("email_id", help="Email of the contributor")
+
+    p = subparsers.add_parser("metadata-remove-contributor", help="Add contributor")
+    p.set_defaults(fn="metadata_remove_contributor")
+    add_p_metadata_file_opt(p)
+    p.add_argument("email_id", help="Email of the contributor")
 
     def add_p_publish_params(_p):
         add_p_metadata_file_opt(_p)
@@ -1258,7 +1207,6 @@ def add_mpe_service_options(parser):
     p.set_defaults(fn="delete_service_registration")
     add_p_service_in_registry(p)
     add_transaction_arguments(p)
-
 
 def add_mpe_treasurer_options(parser):
     parser.set_defaults(cmd=MPETreasurerCommand)

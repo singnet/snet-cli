@@ -47,9 +47,9 @@ snet service update-metadata testo tests -yq
 
 snet channel open-init testo group2 2222.33333 1 -yq
 
-#snet --print-traceback channel extend-add-for-org testo group1 --amount 0.001 --expiration 314 -yq && exit 1 || echo "fail as expected"
-#snet channel extend-add-for-org testo group1 --amount 0.001 -yq && exit 1 || echo "fail as expected"
-#snet channel extend-add-for-org testo group1 --expiration 4321 -yq && exit 1 || echo "fail as expected"
+snet --print-traceback channel extend-add-for-org testo group1 --amount 0.001 --expiration 314 -yq && exit 1 || echo "fail as expected"
+snet channel extend-add-for-org testo group1 --amount 0.001 -yq && exit 1 || echo "fail as expected"
+snet channel extend-add-for-org testo group1 --expiration 4321 -yq && exit 1 || echo "fail as expected"
 
 snet channel extend-add-for-org testo group2 --amount 0.001 --expiration 4321 -yq
 snet channel extend-add-for-org testo group2 --amount 0.001 -yq
