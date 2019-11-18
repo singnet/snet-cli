@@ -198,7 +198,7 @@ org_id = "snet"
 service_id = "example-service"
 group_name="default_group"
 
-service_client = sdk.create_service_client(org_id, service_id,group_name,example_service_pb2_grpc.CalculatorStub)
+service_client = sdk.create_service_client(org_id, service_id,example_service_pb2_grpc.CalculatorStub,group_name)
 ```
 
 The generated `service_client` instance can be used to call the methods exposed by the service.  
