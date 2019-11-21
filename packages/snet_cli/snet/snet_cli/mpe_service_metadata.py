@@ -244,6 +244,18 @@ class MPEServiceMetadata:
                 return g
         return None
 
+    def set_free_calls_for_group(self, group_name, free_calls):
+        groups = self.m["groups"]
+        for g in groups:
+            if g["group_name"] == group_name:
+                g["free_calls"] = free_calls
+
+    def set_freecall_signer_address(self, group_name, signer_address):
+        groups = self.m["groups"]
+        for g in groups:
+            if g["group_name"] == group_name:
+                g["free_call_signer_address"] = signer_address
+
     def get_json(self):
         return json.dumps(self.m)
 
@@ -320,6 +332,24 @@ class MPEServiceMetadata:
     def get_endpoints_for_group(self, group_name=None):
         group_name = self.get_group_name_nonetrick(group_name)
         return [e["endpoint"] for e in self.m["endpoints"] if e["group_name"] == group_name]
+
+    def add_contributor(self, name, email_id):
+        if "contributors" in self.m:
+            contributors = self.m["contributors"]
+        else:
+            contributors = []
+
+        contributors.append(
+            {
+                "name": name,
+                "email_id": email_id
+            }
+        )
+        self.m["contributors"] = contributors
+
+    def remove_contributor_by_email(self, email_id):
+        self.m["contributors"] = [
+            contributor for contributor in self.m["contributors"] if contributor["email_id"] != email_id]
 
 
 def load_mpe_service_metadata(f):
