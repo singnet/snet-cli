@@ -213,6 +213,12 @@ class OrganizationMetadata(object):
         groups = []
         if 'groups' in json_data:
             groups = list(map(Group.from_json, json_data["groups"]))
+            if "contacts" not in json_data:
+                json_data["contacts"] = []
+            if "description" not in json_data:
+                json_data["description"] = ""
+            if "assets" not in json_data:
+                json_data["assets"] = {}
         return cls(
             org_name=json_data['org_name'],
             org_id=json_data['org_id'],
