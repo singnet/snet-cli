@@ -317,7 +317,7 @@ def add_organization_options(parser):
 
     p = subparsers.add_parser(
         "metadata-add-assets",
-        help="Add assets to metadata, valid asset types are [hero_image,images]")
+        help="Add assets to metadata, valid asset types are [hero_image]")
     p.set_defaults(fn="metadata_add_asset_to_ipfs")
     p.add_argument("asset_file_path", help="Asset file path")
     p.add_argument("asset_type", help="Type of the asset")
@@ -325,9 +325,9 @@ def add_organization_options(parser):
 
     p = subparsers.add_parser(
         "metadata-remove-assets",
-        help="Remove asset of a given type valid asset types are [hero_image,images]")
+        help="Remove asset of a given type valid asset types are [hero_image]")
     p.set_defaults(fn="metadata_remove_assets_of_a_given_type")
-    p.add_argument("asset_type", help="Type of the asset to be removed , valid asset types are [hero_image,images]")
+    p.add_argument("asset_type", help="Type of the asset to be removed , valid asset types are [hero_image]")
     add_p_organization_metadata_file_opt(p)
 
     p = subparsers.add_parser("metadata-remove-all-assets", help="Remove all assets from metadata")

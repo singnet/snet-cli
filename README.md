@@ -98,8 +98,8 @@ Complete documentation is available [here](http://snet-cli-docs.singularitynet.i
 
 * Clone the git repository  
 ```bash  
-$ git clone git@github.com:singnet/snet-cli.git
-$ cd snet-cli/snet_cli
+$ git clone https://github.com/singnet/snet-cli.git
+$ cd snet-cli/packages/snet_cli
 ```  
   
 * Install development/test blockchain dependencies  
