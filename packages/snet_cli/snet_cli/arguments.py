@@ -312,22 +312,23 @@ def add_organization_options(parser):
 
     p = subparsers.add_parser("metadata-add-description", help="Add description to metadata")
     p.set_defaults(fn="metadata_add_description")
-    p.add_argument("description", help="description about organization info")
+    p.add_argument("description", help="description about organization info", metavar="DESCRIPTION")
     add_p_organization_metadata_file_opt(p)
 
     p = subparsers.add_parser(
         "metadata-add-assets",
         help="Add assets to metadata, valid asset types are [hero_image]")
     p.set_defaults(fn="metadata_add_asset_to_ipfs")
-    p.add_argument("asset_file_path", help="Asset file path")
-    p.add_argument("asset_type", help="Type of the asset")
+    p.add_argument("asset_file_path", help="Asset file path", metavar="ASSET_FILE_PATH")
+    p.add_argument("asset_type", help="Type of the asset, valid asset types are [hero_image]", metavar="ASSET_TYPE")
     add_p_organization_metadata_file_opt(p)
 
     p = subparsers.add_parser(
         "metadata-remove-assets",
         help="Remove asset of a given type valid asset types are [hero_image]")
     p.set_defaults(fn="metadata_remove_assets_of_a_given_type")
-    p.add_argument("asset_type", help="Type of the asset to be removed , valid asset types are [hero_image]")
+    p.add_argument("asset_type", help="Type of the asset to be removed, valid asset types are [hero_image]",
+                   metavar="ASSET_TYPE")
     add_p_organization_metadata_file_opt(p)
 
     p = subparsers.add_parser("metadata-remove-all-assets", help="Remove all assets from metadata")
@@ -347,7 +348,7 @@ def add_organization_options(parser):
 
     p = subparsers.add_parser("metadata-remove-contacts", help="Remove all contacts")
     p.set_defaults(fn="metadata_remove_contact_by_type")
-    p.add_argument("contact_type", help="Contact type of organization")
+    p.add_argument("contact_type", help="Contact type of organization", metavar="CONTACT_TYPE")
     add_p_organization_metadata_file_opt(p)
 
     p = subparsers.add_parser("list", help="List of Organizations Ids")
@@ -1044,13 +1045,15 @@ def add_mpe_service_options(parser):
     p = subparsers.add_parser("metadata-set-free-calls", help="Set free calls for group for service")
     p.set_defaults(fn="metadata_set_free_calls")
     add_p_metadata_file_opt(p)
-    p.add_argument("group_name", help="Name of the payment group to which we want to set freecalls")
+    p.add_argument("group_name", help="Name of the payment group to which we want to set freecalls",
+                   metavar="GROUP_NAME")
     p.add_argument("free_calls", default=0, type=int, help="Number of free calls")
 
     p = subparsers.add_parser("metadata-set-freecall-signer-address", help="Set free calls for group for service")
     p.set_defaults(fn="metadata_set_freecall_signer_address")
     add_p_metadata_file_opt(p)
-    p.add_argument("group_name", help="Name of the payment group to which we want to set freecalls")
+    p.add_argument("group_name", help="Name of the payment group to which we want to set freecalls",
+                   metavar="GROUP_NAME")
     p.add_argument(
         "signer_address",
         help="This is used to define the public key address used for validating signatures "
@@ -1100,7 +1103,7 @@ def add_mpe_service_options(parser):
                    help="URL to provide more details of the service")
     p.add_argument("--description",
                    default=None,
-                   help="Some description of what the service does")
+                   help="Some description of what the service does", metavar="DESCRIPTION")
     p.add_argument("--short-description",
                    default=None,
                    help="Some short description for overview")
