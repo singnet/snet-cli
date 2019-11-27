@@ -136,6 +136,7 @@ class OrganizationMetadata(object):
         {
             "org_name": "organization_name",
             "org_id": "org_id1",
+            org_type: "organization"/"individual",
             "contacts": [
                 {
                     "contact_type": "support",
