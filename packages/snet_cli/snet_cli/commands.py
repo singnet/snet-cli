@@ -462,7 +462,7 @@ class OrganizationCommand(BlockchainCommand):
         if found:
             raise Exception(
                 "\nOrganization with id={} already exists!\n".format(org_id))
-        org_metadata = OrganizationMetadata(self.args.org_name, org_id)
+        org_metadata = OrganizationMetadata(self.args.org_name, org_id, self.args.org_type)
         org_metadata.save_pretty(metadata_file_name)
 
     def print_metadata(self):
