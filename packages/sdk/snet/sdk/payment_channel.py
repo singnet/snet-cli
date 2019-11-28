@@ -49,7 +49,7 @@ class PaymentChannel:
     def _get_current_channel_state(self):
         stub = self.payment_channel_state_service_client
         current_block_number = self.web3.eth.getBlock("latest").number
-        message = web3.Web3.soliditySha3(["string","uint256","uint256"], ["__get_channel_state",self.channel_id,current_block_number])
+        message = web3.Web3.soliditySha3(["string","address","uint256","uint256"], ["__get_channel_state",web3.Web3.toChecksumAddress(self.mpe_contract.contract.address),self.channel_id,current_block_number])
         signature = self.web3.eth.account.signHash(defunct_hash_message(message), self.account.signer_private_key).signature
         with add_to_path(str(RESOURCES_PATH.joinpath("proto"))):
             state_service_pb2 = importlib.import_module("state_service_pb2")
