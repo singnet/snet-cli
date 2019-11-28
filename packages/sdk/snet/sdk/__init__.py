@@ -20,7 +20,6 @@ import ipfsapi
 from web3.datastructures import AttributeDict
 
 from snet.sdk.service_client import ServiceClient
-from snet.sdk.dynamic_service_client import DynamicServiceClient
 from snet.sdk.account import Account
 from snet.sdk.mpe_contract import MPEContract
 from snet.sdk.payment_channel_management_strategies.default import PaymentChannelManagementStrategy

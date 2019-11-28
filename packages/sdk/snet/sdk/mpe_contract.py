@@ -38,9 +38,9 @@ class MPEContract:
 
         event_abi = self.contract._find_matching_event_abi(
             event_name="ChannelOpen")
-        group = service.metadata.get_group_id(service.group['group_name'])
+        group = service.service_metadata.get_group_id(service.group['group_name'])
         channels_opened = list(filter(
-            lambda channel: channel.sender == account.address and channel.signer == account.signer_address and channel.recipient == service.group[
+            lambda channel: channel.sender == account.address and channel.signer == account.signer_address and channel.recipient == service.group["payment"][
                 "payment_address"] and channel.groupId == group,
             [web3.utils.events.get_event_data(
                 event_abi, l)["args"] for l in logs]
@@ -54,13 +54,13 @@ class MPEContract:
         return account.send_transaction(self.contract.functions.deposit, amount_in_cogs)
 
     def open_channel(self, account, service, amount, expiration):
-        return account.send_transaction(self.contract.functions.openChannel, account.signer_address, service.group["payment_address"], base64.b64decode(str(service.group["group_id"])), amount, expiration)
+        return account.send_transaction(self.contract.functions.openChannel, account.signer_address, service.group["payment"]["payment_address"], base64.b64decode(str(service.group["group_id"])), amount, expiration)
 
     def deposit_and_open_channel(self, account, service, amount, expiration):
         already_approved_amount = account.allowance()
         if amount > already_approved_amount:
             account.approve_transfer(amount)
-        return account.send_transaction(self.contract.functions.depositAndOpenChannel, account.signer_address, service.group["payment_address"], base64.b64decode(str(service.group["group_id"])), amount, expiration)
+        return account.send_transaction(self.contract.functions.depositAndOpenChannel, account.signer_address, service.group["payment"]["payment_address"], base64.b64decode(str(service.group["group_id"])), amount, expiration)
 
     def channel_add_funds(self, account, channel_id, amount):
         self._fund_escrow_account(account, amount)
