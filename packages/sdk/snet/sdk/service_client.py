@@ -74,8 +74,8 @@ class ServiceClient:
         # change required for pricing strategy right now picking first one
         amount = channel.state["last_signed_amount"] + int(self.group["pricing"][0]["price_in_cogs"])
         message = web3.Web3.soliditySha3(
-            ["address", "uint256", "uint256", "uint256"],
-            [self.sdk.mpe_contract.contract.address,    channel.channel_id, channel.state["nonce"], amount]
+            ["string","address", "uint256", "uint256", "uint256"],
+            ["__MPE_claim_message",self.sdk.mpe_contract.contract.address,    channel.channel_id, channel.state["nonce"], amount]
         )
         signature = bytes(self.sdk.web3.eth.account.signHash(defunct_hash_message(message), self.sdk.account.signer_private_key).signature)
         metadata = [
@@ -138,4 +138,6 @@ class ServiceClient:
 
     def _get_newly_opened_channel(self, receipt):
         open_channels = self.sdk.mpe_contract.get_past_open_channels(self.sdk.account, self, receipt["blockNumber"], receipt["blockNumber"])
+        if len(open_channels) == 0:
+            raise Exception(f"Error while opening channel, please check transaction {receipt.transactionHash.hex()} ")
         return open_channels[0]

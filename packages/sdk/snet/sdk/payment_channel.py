@@ -53,6 +53,6 @@ class PaymentChannel:
         signature = self.web3.eth.account.signHash(defunct_hash_message(message), self.account.signer_private_key).signature
         with add_to_path(str(RESOURCES_PATH.joinpath("proto"))):
             state_service_pb2 = importlib.import_module("state_service_pb2")
-        request = state_service_pb2.ChannelStateRequest(channel_id=web3.Web3.toBytes(self.channel_id), signature=bytes(signature))
+        request = state_service_pb2.ChannelStateRequest(channel_id=web3.Web3.toBytes(self.channel_id), signature=bytes(signature),current_block=current_block_number)
         response = stub.GetChannelState(request)
         return int.from_bytes(response.current_nonce, byteorder="big"), int.from_bytes(response.current_signed_amount, byteorder="big")
