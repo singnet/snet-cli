@@ -18,6 +18,7 @@ def open_first_channel(service_client):
 def first_call_to_service_after_opening_first_channel(service_client):
     request = examples_service_pb2.Numbers(a=20, b=3)
     result = service_client.service.mul(request)
+    assert result.value == 60.0
 
 
 def verify_channel_state_after_opening_first_channel_and_first_call_to_service(service_client):
@@ -32,6 +33,7 @@ def verify_channel_state_after_opening_first_channel_and_first_call_to_service(s
 def second_call_to_service_after_opening_first_channel(service_client):
     request = examples_service_pb2.Numbers(a=20, b=3)
     result = service_client.service.mul(request)
+    assert result.value == 60.0
 
 
 def verify_channel_state_after_opening_first_channel_and_second_call_to_service(service_client):
@@ -66,6 +68,7 @@ def first_call_to_service_after_opening_second_channel(service_client):
     request = examples_service_pb2.Numbers(a=20, b=3)
 
     result = service_client.service.mul(request)
+    assert result.value == 60.0
 
 
 def verify_channel_state_after_opening_second_channel_and_first_call_to_service(service_client):
