@@ -271,10 +271,16 @@ def get_contract_object(w3, contract_file,address=None):
 
 
 def get_contract_deployment_block(w3, contract_file):
-    with open(RESOURCES_PATH.joinpath("contracts", "networks", contract_file)) as f:
-        networks = json.load(f)
-        txn_hash = networks[w3.version.network]["transactionHash"]
-    return w3.eth.getTransactionReceipt(txn_hash).blockNumber
+    try:
+        with open(RESOURCES_PATH.joinpath("contracts", "networks", contract_file)) as f:
+            networks = json.load(f)
+            txn_hash = networks[w3.version.network]["transactionHash"]
+        return w3.eth.getTransactionReceipt(txn_hash).blockNumber
+    except Exception:
+        # TODO Hack as currenlty dependecy is on snet-cli so for test purpose return 0,need to remove dependecies from snet-cli ,currently very tightly coupled with it
+        if w3.version.network == 1 or w3.version.network == 3:
+            raise Exception("Transaction hash not found for deployed mpe contract")
+        return 0
 
 
 def normalize_private_key(private_key):

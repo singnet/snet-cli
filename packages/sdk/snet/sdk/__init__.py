@@ -74,7 +74,7 @@ class SnetSDK:
             options = dict()
 
         if self._metadata_provider is None:
-            self._metadata_provider = IPFSMetadataProvider( self.ipfs_client ,self.web3)
+            self._metadata_provider = IPFSMetadataProvider( self.ipfs_client ,self.registry_contract,)
 
         service_metadata = self._metadata_provider.enhance_service_metadata(org_id, service_id)
         group = self.get_service_group_details(service_metadata, group_name)

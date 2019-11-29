@@ -99,11 +99,26 @@ class ServiceClient:
             client_call_details.credentials)
         return client_call_details, request_iterator, None
 
+    def filter_existing_channels(self, new_payment_channels):
+        new_channels_to_be_added = []
+
+        # need to change this logic ,use maps to manage channels so that we can easily navigate it
+        for new_payment_channel in new_payment_channels:
+            existing_channel = False
+            for existing_payment_channel in self.payment_channels:
+                if new_payment_channel.channel_id == existing_payment_channel.channel_id:
+                    existing_channel = True
+
+            if not existing_channel:
+                new_channels_to_be_added.append(new_payment_channel)
+
+
+        return new_channels_to_be_added
 
     def load_open_channels(self):
         current_block_number = self.sdk.web3.eth.getBlock("latest").number
         new_payment_channels = self.sdk.mpe_contract.get_past_open_channels(self.sdk.account, self, self.last_read_block)
-        self.payment_channels = self.payment_channels + new_payment_channels
+        self.payment_channels = self.payment_channels + self.filter_existing_channels(new_payment_channels)
         self.last_read_block = current_block_number
         return self.payment_channels
 

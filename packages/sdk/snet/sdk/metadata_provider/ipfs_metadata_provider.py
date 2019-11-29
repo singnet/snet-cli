@@ -10,9 +10,9 @@ import json
 
 class IPFSMetadataProvider(object):
 
-    def __init__(self, ipfs_client,web3):
-        self._web3 = web3
-        self.registry_contract = get_contract_object(self._web3, "Registry.json")
+    def __init__(self, ipfs_client,registry_contract):
+
+        self.registry_contract = registry_contract
         self._ipfs_client = ipfs_client
 
 
