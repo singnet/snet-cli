@@ -278,7 +278,7 @@ def get_contract_deployment_block(w3, contract_file):
         return w3.eth.getTransactionReceipt(txn_hash).blockNumber
     except Exception:
         # TODO Hack as currenlty dependecy is on snet-cli so for test purpose return 0,need to remove dependecies from snet-cli ,currently very tightly coupled with it
-        if w3.version.network == 1 or w3.version.network == 3:
+        if w3.version.network in [1, 3, 42]:
             raise Exception("Transaction hash not found for deployed mpe contract")
         return 0
 

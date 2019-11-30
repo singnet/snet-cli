@@ -68,7 +68,7 @@ class SnetSDK:
 
         self.account = Account(self.web3, config, self.mpe_contract)
 
-    def create_service_client(self, org_id, service_id, service_stub, group_name,
+    def create_service_client(self, org_id, service_id, service_stub, group_name=None,
                               payment_channel_management_strategy=PaymentChannelManagementStrategy, options=None):
         if options is None:
             options = dict()
@@ -77,7 +77,7 @@ class SnetSDK:
             self._metadata_provider = IPFSMetadataProvider( self.ipfs_client ,self.registry_contract,)
 
         service_metadata = self._metadata_provider.enhance_service_metadata(org_id, service_id)
-        group = self.get_service_group_details(service_metadata, group_name)
+        group = self._get_service_group_details(service_metadata, group_name)
         strategy = payment_channel_management_strategy(self)
         service_client = ServiceClient(self, service_metadata, group, service_stub, strategy, options )
         return service_client
@@ -94,7 +94,20 @@ class SnetSDK:
         metadata = mpe_service_metadata_from_json(metadata_json)
         return metadata
 
-    def get_service_group_details(self, service_metadata,group_name):
+    def _get_first_group(self, service_metadata):
+        return service_metadata['groups'][0]
+
+    def _get_group_by_group_name(self, service_metadata, group_name):
         for group in service_metadata['groups']:
             if group['group_name'] == group_name:
                 return group
+        return {}
+
+    def _get_service_group_details(self, service_metadata, group_name):
+        if len(service_metadata['groups']) == 0:
+            raise Exception("No Groups found for geivne service,Please add group to the service")
+
+        if group_name is None:
+            return self._get_first_group(service_metadata)
+
+        return self._get_group_by_group_name(service_metadata, group_name)
