@@ -11,8 +11,19 @@ snet --print-traceback service publish testo tests -y -q
 
 # case with several groups
 snet --print-traceback service metadata-init ./service_spec1/ ExampleService --group-name group0 --fixed-price 0.0001 --endpoints 8.8.8.8:2020 9.8.9.8:8080
+
+snet --print-traceback service metadata-add-daemon-addresses group0 0x123
+test "$(< service_metadata.json jq '.groups[0].daemon_addresses | length')" = 1 && echo "succes" || exit 1
+snet --print-traceback service metadata-add-daemon-addresses group0 0x234
+
+snet --print-traceback service metadata-update-daemon-addresses group0 0x123
+test "$(< service_metadata.json jq '.groups[0].daemon_addresses | length')" = 1 && echo "succes" || exit 1
+
+snet --print-traceback service metadata-add-daemon-addresses group10 0x123 || echo "fail as expected"
+
 snet --print-traceback service metadata-add-group group1
 snet --print-traceback service metadata-add-endpoints group1 8.8.8.8:22 1.2.3.4:8080
+
 
 snet --print-traceback service metadata-add-group group2
 snet --print-traceback service metadata-add-endpoints group2 8.8.8.8:2 1.2.3.4:800
