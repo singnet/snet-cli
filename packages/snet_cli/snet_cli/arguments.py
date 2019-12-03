@@ -1021,8 +1021,31 @@ def add_mpe_service_options(parser):
                    help="Name of the  payment group",
                    metavar="GROUP_NAME")
 
+    p = subparsers.add_parser("metadata-add-daemon-addresses", help="Add daemon addresses to the groups")
+    p.set_defaults(fn="metadata_add_daemon_addresses")
+    p.add_argument("group_name", default=None,
+                   help="Name of the payment group to which we want to add daemon addresses")
+    p.add_argument("daemon_addresses", nargs="+", help="Daemon addresses",
+                   metavar="DAEMON ADDRESSES")
+    add_p_metadata_file_opt(p)
+
+    p = subparsers.add_parser("metadata-remove-all-daemon-addresses",
+                              help="Remove all daemon addresses from metadata")
+    p.set_defaults(fn="metadata_remove_all_daemon_addresses")
+    p.add_argument("group_name", default=None,
+                   help="Name of the payment group to which we want to remove endpoints")
+    add_p_metadata_file_opt(p)
+
+    p = subparsers.add_parser("metadata-update-daemon-addresses", help="Update daemon addresses to the groups")
+    p.set_defaults(fn="metadata_update_daemon_addresses")
+    p.add_argument("group_name", default=None,
+                   help="Name of the payment group to which we want to update daemon addresses")
+    p.add_argument("daemon_addresses", nargs="+", help="Daemon addresses",
+                   metavar="DAEMON ADDRESSES")
+    add_p_metadata_file_opt(p)
+
     p = subparsers.add_parser("metadata-add-endpoints",
-                              help="Add deamon endpoints to the groups")
+                              help="Add daemon endpoints to the groups")
     p.set_defaults(fn="metadata_add_endpoints")
     p.add_argument("group_name",
                    default=None,

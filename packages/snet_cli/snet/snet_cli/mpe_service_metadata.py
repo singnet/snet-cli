@@ -309,6 +309,25 @@ class MPEServiceMetadata:
     def get_payment_address(self, group_name=None):
         return self.get_group(group_name)["payment_address"]
 
+    def add_daemon_address_to_group(self, group_name, daemon_address):
+        groups = self.m["groups"]
+        if not self.is_group_name_exists(group_name):
+            raise Exception('Cannot find group "%s" in metadata' % group_name)
+        for group in groups:
+            if group["group_name"] == group_name:
+                if 'daemon_addresses' in group:
+                    group['daemon_addresses'].append(daemon_address)
+                else:
+                    group['daemon_addresses'] = [daemon_address]
+
+    def remove_all_daemon_addresses_for_group(self, group_name):
+        groups = self.m["groups"]
+        if not self.is_group_name_exists(group_name):
+            raise Exception('Cannot find group "%s" in metadata' % group_name)
+        for group in groups:
+            if group["group_name"] == group_name:
+                group["daemon_addresses"] = []
+
     def get_all_endpoints_for_group(self, group_name):
         for group in self.m["groups"]:
             if group["group_name"] == group_name:

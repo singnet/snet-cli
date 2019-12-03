@@ -97,6 +97,29 @@ class MPEServiceCommand(BlockchainCommand):
         metadata.set_freecall_signer_address(self.args.group_name, self.args.signer_address)
         metadata.save_pretty(self.args.metadata_file)
 
+    def metadata_add_daemon_addresses(self):
+        """ Metadata: add daemon addresses to the group """
+        metadata = load_mpe_service_metadata(self.args.metadata_file)
+        group_name = metadata.get_group_name_nonetrick(self.args.group_name)
+        for daemon_address in self.args.daemon_addresses:
+            metadata.add_daemon_address_to_group(group_name, daemon_address)
+        metadata.save_pretty(self.args.metadata_file)
+
+    def metadata_remove_all_daemon_addresses(self):
+        """ Metadata: remove all daemon addresses from all groups """
+        metadata = load_mpe_service_metadata(self.args.metadata_file)
+        metadata.remove_all_daemon_addresses_for_group(self.args.group_name)
+        metadata.save_pretty(self.args.metadata_file)
+
+    def metadata_update_daemon_addresses(self):
+        """ Metadata: Remove all daemon addresses from the group and add new ones """
+        metadata = load_mpe_service_metadata(self.args.metadata_file)
+        group_name = metadata.get_group_name_nonetrick(self.args.group_name)
+        metadata.remove_all_daemon_addresses_for_group(group_name)
+        for daemon_address in self.args.daemon_addresses:
+            metadata.add_daemon_address_to_group(group_name, daemon_address)
+        metadata.save_pretty(self.args.metadata_file)
+
     def metadata_add_endpoints(self):
         """ Metadata: add endpoint to the group """
         metadata = load_mpe_service_metadata(self.args.metadata_file)
