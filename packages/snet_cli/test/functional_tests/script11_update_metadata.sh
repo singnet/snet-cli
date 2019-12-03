@@ -1,7 +1,7 @@
 # simple case of one group
 snet service metadata-init ./service_spec1/ ExampleService --fixed-price 0.0001 --endpoints 8.8.8.8:2020 --group-name group1
 
-snet --print-traceback organization metadata-init org1 testo
+snet --print-traceback organization metadata-init org1 testo individual
 snet --print-traceback organization add-group group1 0x52653A9091b5d5021bed06c5118D24b23620c529 5.5.6.7:8089
 snet --print-traceback organization add-group group2 0x52653A9091b5d5021bed06c5118D24b23620c529 1.2.1.1:8089
 snet --print-traceback organization create testo -y -q

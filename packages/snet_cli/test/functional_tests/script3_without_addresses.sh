@@ -15,7 +15,7 @@ snet unset current_multipartyescrow_at || echo "could fail if hasn't been set (i
 snet account balance && exit 1 || echo "fail as expected"
 snet organization create testo --org-id testo -y -q && exit 1 || echo "fail as expected"
 
-snet --print-traceback organization metadata-init org1 testo --registry-at 0x4e74fefa82e83e0964f0d9f53c68e03f7298a8b2
+snet --print-traceback organization metadata-init org1 testo individual --registry-at 0x4e74fefa82e83e0964f0d9f53c68e03f7298a8b2
 snet --print-traceback organization add-group group1 0x42A605c07EdE0E1f648aB054775D6D4E38496144 5.5.6.7:8089
 snet --print-traceback organization add-group group2 0x42A605c07EdE0E1f648aB054775D6D4E38496144 1.2.1.1:8089
 snet --print-traceback organization create testo -y -q --registry-at 0x4e74fefa82e83e0964f0d9f53c68e03f7298a8b2
