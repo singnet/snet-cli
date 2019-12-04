@@ -316,13 +316,13 @@ class OrganizationMetadata(object):
             raise Exception("Invalid asset type %s" % asset_type)
 
     def add_description(self, description):
-        self.description["description"]["description"] = description
+        self.description["description"] = description
 
     def add_short_description(self, short_description):
-        self.description["description"]["short_description"] = short_description
+        self.description["short_description"] = short_description
 
     def add_url(self, url):
-        self.description["description"]["url"] = url
+        self.description["url"] = url
 
     def remove_description(self):
         self.description = {}
