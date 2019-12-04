@@ -218,7 +218,7 @@ class OrganizationMetadata(object):
             if "contacts" not in json_data:
                 json_data["contacts"] = []
             if "description" not in json_data:
-                json_data["description"] = ""
+                json_data["description"] = {}
             if "assets" not in json_data:
                 json_data["assets"] = {}
         return cls(
