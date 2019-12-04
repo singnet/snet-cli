@@ -221,6 +221,8 @@ class OrganizationMetadata(object):
                 json_data["description"] = {}
             if "assets" not in json_data:
                 json_data["assets"] = {}
+            if "org_type" not in json_data:
+                json_data["org_type"] = ""
         return cls(
             org_name=json_data['org_name'],
             org_id=json_data['org_id'],
