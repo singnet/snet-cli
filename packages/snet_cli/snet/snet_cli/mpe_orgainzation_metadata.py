@@ -190,7 +190,7 @@ class OrganizationMetadata(object):
         }
     """
 
-    def __init__(self, org_name="", org_id="", org_type="",contacts=[], description="",
+    def __init__(self, org_name="", org_id="", org_type="",contacts=[], description={},
                  assets={}, groups=[]):
         self.org_name = org_name
         self.org_id = org_id
@@ -226,7 +226,7 @@ class OrganizationMetadata(object):
             org_id=json_data['org_id'],
             org_type=json_data['org_type'],
             contacts=json_data['contacts'],
-            description=json_data['description'],
+            description=json_data['org_description'],
             groups=groups,
             assets=json_data['assets']
         )
@@ -314,10 +314,16 @@ class OrganizationMetadata(object):
             raise Exception("Invalid asset type %s" % asset_type)
 
     def add_description(self, description):
-        self.description = description
+        self.description["org_description"]["description"] = description
+
+    def add_short_description(self, short_description):
+        self.description["org_description"]["short_description"] = short_description
+
+    def add_url(self, url):
+        self.description["org_description"]["url"] = url
 
     def remove_description(self):
-        self.description = ""
+        self.description = {}
 
     def add_contact(self, contact_type, phone, email):
         if phone is None:
