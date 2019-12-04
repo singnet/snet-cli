@@ -226,7 +226,7 @@ class OrganizationMetadata(object):
             org_id=json_data['org_id'],
             org_type=json_data['org_type'],
             contacts=json_data['contacts'],
-            description=json_data['org_description'],
+            description=json_data['description'],
             groups=groups,
             assets=json_data['assets']
         )
