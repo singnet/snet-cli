@@ -53,7 +53,7 @@ ipfs cat $IPFS_HASH >service_metadata2.json
 
 # compare service_metadata.json and service_metadata2.json
 cmp <(jq -S . service_metadata.json) <(jq -S . service_metadata2.json)
-snet organization metadata-init org1 testo
+snet organization metadata-init org1 testo individual
 grep org1 organization_metadata.json
 snet organization create testo && exit 1 || echo "fail as expected"
 #

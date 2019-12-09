@@ -1,6 +1,6 @@
 # Test "snet organization"
 
-snet organization metadata-init org1 testo
+snet organization metadata-init org1 testo individual
 snet organization add-group group1 0x42A605c07EdE0E1f648aB054775D6D4E38496144 5.5.6.7:8089
 snet organization add-group group2 0x42A605c07EdE0E1f648aB054775D6D4E38496144 1.2.1.1:8089
 snet organization create test0 -y -q
