@@ -803,6 +803,7 @@ class OrganizationCommand(BlockchainCommand):
             org_metadata.add_url(url)
         if description is None and url is None and short_description is None:
             raise Exception("No attributes are given")
+        org_metadata.save_pretty(metadata_file)
 
     def metadata_add_contact(self):
         args = self.args.__dict__
