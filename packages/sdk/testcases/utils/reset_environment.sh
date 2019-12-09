@@ -59,7 +59,7 @@ snet account deposit 10000000 -y -q
 cd ../snet-cli/packages/sdk/testcases/
 
 
-snet organization metadata-init test_org test_org
+snet organization metadata-init test_org test_org organization
 snet organization add-group default_group 0x52653A9091b5d5021bed06c5118D24b23620c529 http://localhost:2379
 snet organization create test_org -y -q
 
