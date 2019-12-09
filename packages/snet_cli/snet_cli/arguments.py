@@ -267,8 +267,10 @@ def add_organization_options(parser):
 
     p = subparsers.add_parser("metadata-init", help="Initalize matadata for organization ")
     p.set_defaults(fn="initialize_metadata")
-    p.add_argument("org_name", help="Organization name")
-    p.add_argument("org_id", default=None, help="Unique organization Id")
+    p.add_argument("org_name", help="Organization name", metavar="ORG_NAME")
+    p.add_argument("org_id", default=None, help="Unique organization Id", metavar="ORG_ID")
+    p.add_argument("org_type", help="Organization type [ individual | organization ]",
+                   choices=["individual", "organization"], metavar="ORG_TYPE")
     add_p_registry_address_opt(p)
     add_metadatafile_argument_for_org(p)
 
@@ -284,7 +286,7 @@ def add_organization_options(parser):
     p.add_argument("endpoints", nargs='*', help="Endpoints for the first group")
     p.add_argument("--payment-expiration-threshold", type=int, default=100, help="Payment Expiration threshold")
     p.add_argument("--payment-channel-storage-type", default="etcd", help="Storage channel for payment")
-    p.add_argument("--payment-channel-connection-timeout", default="100s", help="Pyament channel connection timeout ")
+    p.add_argument("--payment-channel-connection-timeout", default="100s", help="Payment channel connection timeout ")
     p.add_argument("--payment-channel-request-timeout", default="5s", help="Payment channel request timeout")
     add_metadatafile_argument_for_org(p)
     add_p_registry_address_opt(p)
@@ -1019,8 +1021,31 @@ def add_mpe_service_options(parser):
                    help="Name of the  payment group",
                    metavar="GROUP_NAME")
 
+    p = subparsers.add_parser("metadata-add-daemon-addresses", help="Add daemon addresses to the groups")
+    p.set_defaults(fn="metadata_add_daemon_addresses")
+    p.add_argument("group_name", default=None,
+                   help="Name of the payment group to which we want to add daemon addresses")
+    p.add_argument("daemon_addresses", nargs="+", help="Daemon addresses",
+                   metavar="DAEMON ADDRESSES")
+    add_p_metadata_file_opt(p)
+
+    p = subparsers.add_parser("metadata-remove-all-daemon-addresses",
+                              help="Remove all daemon addresses from metadata")
+    p.set_defaults(fn="metadata_remove_all_daemon_addresses")
+    p.add_argument("group_name", default=None,
+                   help="Name of the payment group to which we want to remove endpoints")
+    add_p_metadata_file_opt(p)
+
+    p = subparsers.add_parser("metadata-update-daemon-addresses", help="Update daemon addresses to the groups")
+    p.set_defaults(fn="metadata_update_daemon_addresses")
+    p.add_argument("group_name", default=None,
+                   help="Name of the payment group to which we want to update daemon addresses")
+    p.add_argument("daemon_addresses", nargs="+", help="Daemon addresses",
+                   metavar="DAEMON ADDRESSES")
+    add_p_metadata_file_opt(p)
+
     p = subparsers.add_parser("metadata-add-endpoints",
-                              help="Add deamon endpoints to the groups")
+                              help="Add daemon endpoints to the groups")
     p.set_defaults(fn="metadata_add_endpoints")
     p.add_argument("group_name",
                    default=None,

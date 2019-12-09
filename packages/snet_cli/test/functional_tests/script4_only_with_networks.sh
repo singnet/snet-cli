@@ -15,7 +15,7 @@ snet unset current_multipartyescrow_at || echo "could fail if hasn't been set (i
 snet session
 # this should fail without addresses
 snet account balance && exit 1 || echo "fail as expected"
-snet --print-traceback organization metadata-init org1 testo && exit 1 || echo "fail as expected"
+snet --print-traceback organization metadata-init org1 testo individual && exit 1 || echo "fail as expected"
 snet organization create testo testo -y -q && exit 1 || echo "fail as expected"
 
 # set networks
@@ -25,7 +25,7 @@ echo '{"829257324":{"events":{},"links":{},"address":"0x6e5f20669177f5bdf3703ec5
 
 # this should work
 snet account balance
-snet --print-traceback organization metadata-init org1 testo
+snet --print-traceback organization metadata-init org1 testo individual
 snet --print-traceback organization add-group group1 0x42A605c07EdE0E1f648aB054775D6D4E38496144 5.5.6.7:8089
 snet --print-traceback organization add-group group2 0x42A605c07EdE0E1f648aB054775D6D4E38496144 1.2.1.1:8089
 snet organization create testo -y -q
@@ -42,12 +42,12 @@ snet set current_multipartyescrow_at 0x1c7a4290f6f8ff64c69eeffdfafc8644a4ec3a4e
 
 # this should fail because INVALID address
 snet account balance && exit 1 || echo "fail as expected"
-snet --print-traceback organization metadata-init org1 testo && exit 1 || echo "fail as expected"
+snet --print-traceback organization metadata-init org1 testo individual && exit 1 || echo "fail as expected"
 snet organization create testo -y -q && exit 1 || echo "fail as expected"
 
 # this should work because command line has more priority
 snet account balance --snt 0x6e5f20669177f5bdf3703ec5ea9c4d4fe3aabd14 --mpe 0x5c7a4290f6f8ff64c69eeffdfafc8644a4ec3a4e
-snet --print-traceback organization metadata-init org1 testo --registry-at 0x4e74fefa82e83e0964f0d9f53c68e03f7298a8b2
+snet --print-traceback organization metadata-init org1 testo individual --registry-at 0x4e74fefa82e83e0964f0d9f53c68e03f7298a8b2
 snet --print-traceback organization add-group group1 0x42A605c07EdE0E1f648aB054775D6D4E38496144 5.5.6.7:8089 --registry-at 0x4e74fefa82e83e0964f0d9f53c68e03f7298a8b2
 snet --print-traceback organization add-group group2 0x42A605c07EdE0E1f648aB054775D6D4E38496144 1.2.1.1:8089 --registry-at 0x4e74fefa82e83e0964f0d9f53c68e03f7298a8b2
 
@@ -61,7 +61,7 @@ echo '{"829257324":{"events":{},"links":{},"address":"0x1e5f20669177f5bdf3703ec5
 
 # this should fail (because addresses in networks are invalid )
 snet account balance && exit 1 || echo "fail as expected"
-snet --print-traceback organization metadata-init org1 testo && exit 1 || echo "fail as expected"
+snet --print-traceback organization metadata-init org1 testo individual && exit 1 || echo "fail as expected"
 snet organization create testo -y -q && exit 1 || echo "fail as expected"
 
 # set VALID session
@@ -71,7 +71,7 @@ snet set current_multipartyescrow_at 0x5c7a4290f6f8ff64c69eeffdfafc8644a4ec3a4e
 
 # this should work
 snet account balance
-snet --print-traceback organization metadata-init org1 testo
+snet --print-traceback organization metadata-init org1 testo individual
 snet --print-traceback organization add-group group1 0x42A605c07EdE0E1f648aB054775D6D4E38496144 5.5.6.7:8089
 snet --print-traceback organization add-group group2 0x42A605c07EdE0E1f648aB054775D6D4E38496144 1.2.1.1:8089
 snet organization create testo -y -q
@@ -84,12 +84,12 @@ snet set current_multipartyescrow_at 0x1c7a4290f6f8ff64c69eeffdfafc8644a4ec3a4e
 
 # this should fail (because addresses in networks are invalid )
 snet account balance && exit 1 || echo "fail as expected"
-snet --print-traceback organization metadata-init org1 testo && exit 1 || echo "fail as expected"
+snet --print-traceback organization metadata-init org1 testo individual && exit 1 || echo "fail as expected"
 snet organization create testo -y -q && exit 1 || echo "fail as expected"
 
 # this should work because command line has more priority
 snet account balance --snt 0x6e5f20669177f5bdf3703ec5ea9c4d4fe3aabd14 --mpe 0x5c7a4290f6f8ff64c69eeffdfafc8644a4ec3a4e
-snet --print-traceback organization metadata-init org1 testo --registry-at 0x4e74fefa82e83e0964f0d9f53c68e03f7298a8b2
+snet --print-traceback organization metadata-init org1 testo individual --registry-at 0x4e74fefa82e83e0964f0d9f53c68e03f7298a8b2
 snet --print-traceback organization add-group group1 0x42A605c07EdE0E1f648aB054775D6D4E38496144 5.5.6.7:8089 --registry-at 0x4e74fefa82e83e0964f0d9f53c68e03f7298a8b2
 snet --print-traceback organization add-group group2 0x42A605c07EdE0E1f648aB054775D6D4E38496144 1.2.1.1:8089 --registry-at 0x4e74fefa82e83e0964f0d9f53c68e03f7298a8b2
 snet organization create testo -y -q --registry-at 0x4e74fefa82e83e0964f0d9f53c68e03f7298a8b2
