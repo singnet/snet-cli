@@ -160,7 +160,7 @@ def compile_proto(entry_path, codegen_dir, proto_file=None, target_language="pyt
         if target_language == "python":
             compiler_args.insert(0, "protoc")
             compiler_args.append("--python_out={}".format(codegen_dir))
-            compiler_args.append("--grpc_python_out={}".format(codegen_dir)) 
+            compiler_args.append("--grpc_python_out={}".format(codegen_dir))
             compiler = protoc
         elif target_language == "nodejs":
             protoc_node_compiler_path = Path(RESOURCES_PATH.joinpath("node_modules").joinpath("grpc-tools").joinpath("bin").joinpath("protoc.js")).absolute()
@@ -259,9 +259,11 @@ def rgetattr(obj, attr):
     return functools.reduce(getattr, [obj] + attr.split('.'))
 
 
-def get_contract_object(w3, contract_file):
+def get_contract_object(w3, contract_file,address=None):
     with open(RESOURCES_PATH.joinpath("contracts", "abi", contract_file)) as f:
         abi = json.load(f)
+    if address:
+        return w3.eth.contract(abi=abi, address=w3.toChecksumAddress(address))
     with open(RESOURCES_PATH.joinpath("contracts", "networks", contract_file)) as f:
         networks = json.load(f)
         address = w3.toChecksumAddress(networks[w3.version.network]["address"])
@@ -269,10 +271,16 @@ def get_contract_object(w3, contract_file):
 
 
 def get_contract_deployment_block(w3, contract_file):
-    with open(RESOURCES_PATH.joinpath("contracts", "networks", contract_file)) as f:
-        networks = json.load(f)
-        txn_hash = networks[w3.version.network]["transactionHash"]
-    return w3.eth.getTransactionReceipt(txn_hash).blockNumber
+    try:
+        with open(RESOURCES_PATH.joinpath("contracts", "networks", contract_file)) as f:
+            networks = json.load(f)
+            txn_hash = networks[w3.version.network]["transactionHash"]
+        return w3.eth.getTransactionReceipt(txn_hash).blockNumber
+    except Exception:
+        # TODO Hack as currenlty dependecy is on snet-cli so for test purpose return 0,need to remove dependecies from snet-cli ,currently very tightly coupled with it
+        if w3.version.network in [1, 3, 42]:
+            raise Exception("Transaction hash not found for deployed mpe contract")
+        return 0
 
 
 def normalize_private_key(private_key):
