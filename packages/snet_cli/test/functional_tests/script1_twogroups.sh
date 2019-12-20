@@ -239,3 +239,10 @@ snet service metadata-add-group group1
 snet service metadata-add-group group2 && exit 1 || echo "fail as expected"
 snet service metadata-add-endpoints group1 8.8.8.8:22 1.2.3.4:8080
 snet service update-metadata testo tests7 -y
+
+
+#testcase for updating fixed price
+snet --print-traceback service metadata-init ./service_spec1/ ExampleService --encoding json --service-type jsonrpc --group-name group1 --fixed-price 0.01212 --endpoints 8.8.8.8:2020 9.8.9.8:8080 --metadata-file service_metadata_fixed_price.json
+grep "0.01212" service_metadata.json
+snet service metadata-set-fixed-price group1 0.2323 --metadata-file service_metadata_fixed_price.json
+grep "0.2323" service_metadata.json
