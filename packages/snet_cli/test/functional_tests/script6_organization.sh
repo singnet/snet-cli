@@ -53,8 +53,8 @@ snet --print-traceback organization metadata-remove-all-assets
 test "$(< organization_metadata.json jq '.assets')" = '{}' && echo "metadata-remove-all-assets test case passed " || exit 1
 
 # description test
-snet --print-traceback organization metadata-add-description --description "this is the dummy description of my org" \
---short-description "this is short description" --url "dummy.com"
+snet --print-traceback organization metadata-add-description "this is the dummy description of my org" \
+"this is short description" "dummy.com"
 
 (test "$(< organization_metadata.json jq '.description.description')" = '"this is the dummy description of my org"' \
 && test "$(< organization_metadata.json jq '.description.short_description')" = '"this is short description"' \

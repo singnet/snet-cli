@@ -314,9 +314,9 @@ def add_organization_options(parser):
 
     p = subparsers.add_parser("metadata-add-description", help="Add description to metadata")
     p.set_defaults(fn="metadata_add_description")
-    p.add_argument("--description", help="description about organization info", metavar="DESCRIPTION")
-    p.add_argument("--short-description", help="description about organization info", metavar="SHORT_DESCRIPTION")
-    p.add_argument("--url", help="url for organization website", metavar="URL")
+    p.add_argument("description", help="description about organization info", metavar="DESCRIPTION")
+    p.add_argument("short_description", help="description about organization info", metavar="SHORT_DESCRIPTION")
+    p.add_argument("url", help="url for organization website", metavar="URL")
     add_p_organization_metadata_file_opt(p)
 
     p = subparsers.add_parser(
