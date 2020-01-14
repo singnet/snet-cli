@@ -97,6 +97,7 @@ class MPEServiceMetadata:
                     for pricing in group['pricing']:
                         if pricing["price_model"] == "fixed_price":
                             is_fixed_price_enabled = True
+                            pricing["price_in_cogs"] = price
                     if not is_fixed_price_enabled:
                         group["pricing"].append({"price_model": "fixed_price",
                                                  "price_in_cogs": price, "default": True})

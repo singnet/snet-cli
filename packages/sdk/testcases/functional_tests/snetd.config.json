@@ -1,0 +1,21 @@
+{
+  "payment_channel_storage_server": {
+    "enabled": true
+  },
+  "SERVICE_ID": "test_service",
+  "ORGANIZATION_ID": "test_org",
+  "DAEMON_END_POINT": "localhost:5051",
+  "ETHEREUM_JSON_RPC_ENDPOINT": "http://localhost:8545",
+  "PASSTHROUGH_ENABLED": true,
+  "PASSTHROUGH_ENDPOINT": "http://localhost:7003",
+  "IPFS_END_POINT": "http://localhost:5002",
+  "REGISTRY_ADDRESS_KEY": "0x4e74fefa82e83e0964f0d9f53c68e03f7298a8b2",
+  "pvt_key_for_metering": "efed2ea91d5ace7f9f7bd91e21223cfded31a6e3f1a746bc52821659e0c94e17",
+  "metering_end_point": "http://demo8325345.mockable.io",
+  "log": {
+    "level": "debug",
+    "output": {
+      "type": "stdout"
+    }
+  }
+}

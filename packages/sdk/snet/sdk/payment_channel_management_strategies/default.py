@@ -9,7 +9,8 @@ class PaymentChannelManagementStrategy:
         service_client.load_open_channels()
         service_client.update_channel_states()
         payment_channels = service_client.payment_channels
-        service_call_price = service_client.metadata["pricing"]["price_in_cogs"]
+        #picking the first pricing strategy as default for now
+        service_call_price = service_client.group["pricing"][0]["price_in_cogs"]
         mpe_balance = account.escrow_balance()
         default_expiration = service_client.default_channel_expiration()
 
