@@ -1,4 +1,5 @@
 import google.protobuf.internal.api_implementation
+from snet.mpe.payment_channel_provider import PaymentChannelProvider
 
 from snet.sdk.metadata_provider.ipfs_metadata_provider import IPFSMetadataProvider
 
@@ -17,16 +18,15 @@ import web3
 from web3.gas_strategies.time_based import medium_gas_price_strategy
 from rfc3986 import urlparse
 import ipfsapi
-from web3.datastructures import AttributeDict
 
 from snet.sdk.service_client import ServiceClient
 from snet.sdk.account import Account
-from snet.sdk.mpe_contract import MPEContract
+from snet.mpe.mpe_contract import MPEContract
 from snet.sdk.payment_channel_management_strategies.default import PaymentChannelManagementStrategy
 
-from snet.snet_cli.utils import get_contract_object, compile_proto
+from snet.snet_cli.utils import get_contract_object
 
-from snet.snet_cli.utils_ipfs import bytesuri_to_hash, get_from_ipfs_and_checkhash, safe_extract_proto_from_ipfs
+from snet.snet_cli.utils_ipfs import bytesuri_to_hash, get_from_ipfs_and_checkhash
 from snet.snet_cli.mpe_service_metadata import mpe_service_metadata_from_json
 
 class SnetSDK:
