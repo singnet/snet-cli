@@ -147,11 +147,11 @@ class ServiceClient:
     def open_channel(self, amount, expiration):
         payment_address = self.group["payment"]["payment_address"]
         group_id = base64.b64decode(str(self.group["group_id"]))
-        return self.payment_channel_provider.open_channel(self.sdk.account, payment_address, group_id, amount,
-                                                          expiration)
+        return self.payment_channel_provider.open_channel(self.sdk.account, amount, expiration, payment_address,
+                                                          group_id)
 
     def deposit_and_open_channel(self, amount, expiration):
         payment_address = self.group["payment"]["payment_address"]
         group_id = base64.b64decode(str(self.group["group_id"]))
-        return self.payment_channel_provider.deposit_and_open_channel(self.sdk.account, payment_address, group_id,
-                                                                      amount, expiration)
+        return self.payment_channel_provider.deposit_and_open_channel(self.sdk.account, amount, expiration,
+                                                                      payment_address, group_id)
