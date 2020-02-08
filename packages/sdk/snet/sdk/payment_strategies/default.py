@@ -17,7 +17,7 @@ class PaymentChannelManagementStrategy(PaymentStrategy):
 
     def get_payment_metadata(self,service_client):
         channel = self.select_channel(service_client)
-        amount = channel.state["last_signed_amount"] + int(self.get_price())
+        amount = channel.state["last_signed_amount"] + int(self.get_price(service_client))
         message = web3.Web3.soliditySha3(
             ["string", "address", "uint256", "uint256", "uint256"],
             ["__MPE_claim_message", service_client.sdk.mpe_contract.contract.address, channel.channel_id,

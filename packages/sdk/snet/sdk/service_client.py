@@ -19,6 +19,10 @@ class _ClientCallDetails(
     pass
 
 
+#Todo remove direct usage of sdk_context from service client.
+#todo fix mpe_contract dependency , it is getting created and being used at multiple place
+#TODO Law of Demeter not being followed properly
+
 class ServiceClient:
     def __init__(self, sdk, service_metadata,group, service_stub, payment_strategy,
                  options):
