@@ -20,7 +20,7 @@ class PaymentChannelManagementStrategy(PaymentStrategy):
         amount = channel.state["last_signed_amount"] + int(self.get_price(service_client))
         message = web3.Web3.soliditySha3(
             ["string", "address", "uint256", "uint256", "uint256"],
-            ["__MPE_claim_message", service_client.mpe_contract.contract.address, channel.channel_id,
+            ["__MPE_claim_message", service_client.mpe_address, channel.channel_id,
              channel.state["nonce"],
              amount]
         )

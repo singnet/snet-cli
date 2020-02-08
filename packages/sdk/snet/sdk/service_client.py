@@ -41,6 +41,7 @@ class ServiceClient:
         self.last_read_block = 0
         self.account=account
         self.sdk_web3=sdk_web3
+        self.mpe_address=mpe_contract.contract.address
 
 
     def _get_payment_expiration_threshold_for_group(self):
