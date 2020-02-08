@@ -68,12 +68,12 @@ jobs:
 #        command: |
 #            sudo pip3 install nose
 #            nosetests -v --with-doctest
-    - run:
-        name: Functional tests fro snet-cli
-        command: |
-            cd ..
-            cd snet-cli
-            bash -ex  packages/snet_cli/test/utils/run_all_functional.sh
+#    - run:
+#        name: Functional tests fro snet-cli
+#        command: |
+#            cd ..
+#            cd snet-cli
+#            bash -ex  packages/snet_cli/test/utils/run_all_functional.sh
 
     - run:
         name: Functional tests for sdk
