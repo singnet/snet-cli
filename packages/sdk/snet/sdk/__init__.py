@@ -1,5 +1,5 @@
 import google.protobuf.internal.api_implementation
-from snet.mpe.payment_channel_provider import PaymentChannelProvider
+from snet.sdk.mpe.payment_channel_provider import PaymentChannelProvider
 
 from snet.sdk.metadata_provider.ipfs_metadata_provider import IPFSMetadataProvider
 
@@ -21,7 +21,7 @@ import ipfsapi
 
 from snet.sdk.service_client import ServiceClient
 from snet.sdk.account import Account
-from snet.mpe.mpe_contract import MPEContract
+from snet.sdk.mpe import MPEContract
 from snet.sdk.payment_channel_management_strategies.default import PaymentChannelManagementStrategy
 
 from snet.snet_cli.utils import get_contract_object

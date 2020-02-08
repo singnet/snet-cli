@@ -1,6 +1,3 @@
-import web3
-from snet.sdk.payment_channel import PaymentChannel
-
 from snet.snet_cli.utils import get_contract_deployment_block, get_contract_object
 
 

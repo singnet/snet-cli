@@ -1,6 +1,6 @@
 import web3
 
-from snet.sdk.payment_channel import PaymentChannel
+from snet.sdk.mpe.payment_channel import PaymentChannel
 from snet.snet_cli.utils import get_contract_deployment_block, get_contract_object
 
 BLOCKS_PER_BATCH = 20000
