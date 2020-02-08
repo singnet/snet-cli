@@ -21,7 +21,7 @@ import ipfsapi
 
 from snet.sdk.service_client import ServiceClient
 from snet.sdk.account import Account
-from snet.sdk.mpe import MPEContract
+from snet.sdk.mpe.mpe_contract import MPEContract
 from snet.sdk.payment_channel_management_strategies.default import PaymentChannelManagementStrategy
 
 from snet.snet_cli.utils import get_contract_object
