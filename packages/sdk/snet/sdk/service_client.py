@@ -3,11 +3,10 @@ import collections
 import importlib
 
 import grpc
-import web3
-from rfc3986 import urlparse
-from eth_account.messages import defunct_hash_message
-
 import snet.sdk.generic_client_interceptor as generic_client_interceptor
+import web3
+from eth_account.messages import defunct_hash_message
+from rfc3986 import urlparse
 from snet.sdk.mpe.payment_channel_provider import PaymentChannelProvider
 from snet.snet_cli.utils import RESOURCES_PATH, add_to_path
 
@@ -33,7 +32,7 @@ class ServiceClient:
         self._base_grpc_channel = self._get_grpc_channel()
         self.grpc_channel = grpc.intercept_channel(self._base_grpc_channel,
                                                    generic_client_interceptor.create(self._intercept_call))
-        self.payment_channel_provider=PaymentChannelProvider(sdk.web3,self._generate_payment_channel_state_service_client())
+        self.payment_channel_provider=PaymentChannelProvider(sdk.web3,self._generate_payment_channel_state_service_client(),self.sdk.mpe_contract.contract.address)
         self.service = self._generate_grpc_stub(service_stub)
         self.payment_channels = []
         self.last_read_block = 0
@@ -145,25 +144,14 @@ class ServiceClient:
             state_service_pb2_grpc = importlib.import_module("state_service_pb2_grpc")
         return state_service_pb2_grpc.PaymentChannelStateServiceStub(grpc_channel)
 
-
     def open_channel(self, amount, expiration):
-        payment_addrss=self.group["payment"]["payment_address"]
-        group_id= base64.b64decode(str(self.group["group_id"]))
-        receipt = self.sdk.mpe_contract.open_channel(self.sdk.account, payment_addrss,group_id, amount, expiration)
-        return self._get_newly_opened_channel(receipt)
-
+        payment_address = self.group["payment"]["payment_address"]
+        group_id = base64.b64decode(str(self.group["group_id"]))
+        return self.payment_channel_provider.open_channel(self.sdk.account, payment_address, group_id, amount,
+                                                          expiration)
 
     def deposit_and_open_channel(self, amount, expiration):
-        payment_addrss=self.group["payment"]["payment_address"]
-        group_id= base64.b64decode(str(self.group["group_id"]))
-        receipt = self.sdk.mpe_contract.deposit_and_open_channel(self.sdk.account, payment_addrss,group_id, amount, expiration)
-        return self._get_newly_opened_channel(receipt)
-
-
-    def _get_newly_opened_channel(self, receipt):
-        payment_addrss=self.group["payment"]["payment_address"]
-        group_id= base64.b64decode(str(self.group["group_id"]))
-        open_channels = self.payment_channel_provider.get_past_open_channels(self.sdk.account, payment_addrss,group_id, receipt["blockNumber"], receipt["blockNumber"])
-        if len(open_channels) == 0:
-            raise Exception(f"Error while opening channel, please check transaction {receipt.transactionHash.hex()} ")
-        return open_channels[0]
+        payment_address = self.group["payment"]["payment_address"]
+        group_id = base64.b64decode(str(self.group["group_id"]))
+        return self.payment_channel_provider.deposit_and_open_channel(self.sdk.account, payment_address, group_id,
+                                                                      amount, expiration)

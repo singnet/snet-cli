@@ -1,9 +1,8 @@
-import json
-
 import web3
+from snet.sdk import MPEContract
 
 from snet.sdk.mpe.payment_channel import PaymentChannel
-from snet.snet_cli.utils import get_contract_deployment_block, get_contract_object, RESOURCES_PATH
+from snet.snet_cli.utils import get_contract_deployment_block
 
 BLOCKS_PER_BATCH = 20000
 
@@ -12,16 +11,12 @@ class PaymentChannelProvider(object):
 
     def __init__(self, w3, payment_channel_state_service_client, mpe_address=None):
         self.web3 = w3
+
         if mpe_address is None:
-            with open(RESOURCES_PATH.joinpath("contracts", "networks","MultiPartyEscrow.json" )) as f:
-                networks = json.load(f)
-                self.mpe_address = w3.toChecksumAddress(networks[w3.version.network]["address"])
+            self.mpe_contract = MPEContract(self.web3)
         else:
-            self.mpe_address=mpe_address
+            self.mpe_contract = MPEContract(self.web3, mpe_address)
 
-
-
-        self.contract = get_contract_object(self.web3, "MultiPartyEscrow.json", self.mpe_address)
         self.event_topics = [self.web3.sha3(
             text="ChannelOpen(uint256,uint256,address,address,address,bytes32,uint256,uint256)").hex()]
         self.deployment_block = get_contract_deployment_block(
@@ -40,10 +35,11 @@ class PaymentChannelProvider(object):
         while from_block <= to_block_number:
             to_block = min(from_block + BLOCKS_PER_BATCH, to_block_number)
             logs = logs + self.web3.eth.getLogs({"fromBlock": from_block, "toBlock": to_block,
-                                                 "address": self.contract.address, "topics": self.event_topics})
+                                                 "address": self.mpe_contract.contract.address,
+                                                 "topics": self.event_topics})
             from_block = to_block + 1
 
-        event_abi = self.contract._find_matching_event_abi(
+        event_abi = self.mpe_contract.contract._find_matching_event_abi(
             event_name="ChannelOpen")
 
         channels_opened = list(filter(
@@ -56,3 +52,20 @@ class PaymentChannelProvider(object):
         return list(map(lambda channel: PaymentChannel(channel["channelId"], self.web3, account,
                                                        self.payment_channel_state_service_client, self),
                         channels_opened))
+
+    def open_channel(self, account, amount, expiration, payment_address, group_id):
+
+        receipt = self.mpe_contract.open_channel(account, payment_address, group_id, amount, expiration)
+        return self._get_newly_opened_channel(receipt, account, payment_address, group_id)
+
+    def deposit_and_open_channel(self, account, amount, expiration, payment_address, group_id):
+        receipt = self.mpe_contract.deposit_and_open_channel(account, payment_address, group_id, amount,
+                                                             expiration)
+        return self._get_newly_opened_channel(receipt, account, payment_address, group_id)
+
+    def _get_newly_opened_channel(self, account, receipt, payment_address, group_id):
+        open_channels = self.get_past_open_channels(account, payment_address, group_id, receipt["blockNumber"],
+                                                    receipt["blockNumber"])
+        if len(open_channels) == 0:
+            raise Exception(f"Error while opening channel, please check transaction {receipt.transactionHash.hex()} ")
+        return open_channels[0]
