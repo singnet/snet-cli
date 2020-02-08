@@ -83,7 +83,7 @@ cd ~/singnet/snet-daemon/snet-daemon-v2.0.2-linux-amd64
 nohup ./snetd &
 
 
-wait for daemon to come up
+#wait for daemon to come up
 sleep 20
 cd ~/singnet/snet-cli
 
