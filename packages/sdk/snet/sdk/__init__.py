@@ -80,7 +80,7 @@ class SnetSDK:
         service_metadata = self._metadata_provider.enhance_service_metadata(org_id, service_id)
         group = self._get_service_group_details(service_metadata, group_name)
         strategy = payment_channel_management_strategy
-        service_client = ServiceClient(self, service_metadata, group, service_stub, strategy, options )
+        service_client = ServiceClient(service_metadata, group, service_stub, strategy, options,self.mpe_contract,self.account,self.web3 )
         return service_client
 
 

@@ -24,9 +24,8 @@ class _ClientCallDetails(
 #TODO Law of Demeter not being followed properly
 
 class ServiceClient:
-    def __init__(self, sdk, service_metadata,group, service_stub, payment_strategy,
-                 options):
-        self.sdk = sdk
+    def __init__(self, service_metadata,group, service_stub, payment_strategy,
+                 options,mpe_contract,account,sdk_web3):
         self.options = options
         self.group = group
         self.service_metadata = service_metadata
@@ -36,10 +35,12 @@ class ServiceClient:
         self._base_grpc_channel = self._get_grpc_channel()
         self.grpc_channel = grpc.intercept_channel(self._base_grpc_channel,
                                                    generic_client_interceptor.create(self._intercept_call))
-        self.payment_channel_provider=PaymentChannelProvider(sdk.web3,self._generate_payment_channel_state_service_client(),self.sdk.mpe_contract.contract.address)
+        self.payment_channel_provider=PaymentChannelProvider(sdk_web3,self._generate_payment_channel_state_service_client(),mpe_contract)
         self.service = self._generate_grpc_stub(service_stub)
         self.payment_channels = []
         self.last_read_block = 0
+        self.account=account
+        self.sdk_web3=sdk_web3
 
 
     def _get_payment_expiration_threshold_for_group(self):
@@ -108,10 +109,10 @@ class ServiceClient:
         return new_channels_to_be_added
 
     def load_open_channels(self):
-        current_block_number = self.sdk.web3.eth.getBlock("latest").number
+        current_block_number = self.sdk_web3.eth.getBlock("latest").number
         payment_addrss=self.group["payment"]["payment_address"]
         group_id= base64.b64decode(str(self.group["group_id"]))
-        new_payment_channels = self.payment_channel_provider.get_past_open_channels(self.sdk.account, payment_addrss,group_id, self.last_read_block)
+        new_payment_channels = self.payment_channel_provider.get_past_open_channels(self.account, payment_addrss,group_id, self.last_read_block)
         self.payment_channels = self.payment_channels + self._filter_existing_channels_from_new_payment_channels(new_payment_channels)
         self.last_read_block = current_block_number
         return self.payment_channels
@@ -124,7 +125,7 @@ class ServiceClient:
 
 
     def default_channel_expiration(self):
-        current_block_number = self.sdk.web3.eth.getBlock("latest").number
+        current_block_number = self.sdk_web3.eth.getBlock("latest").number
         return current_block_number + self.expiry_threshold
 
 
@@ -137,11 +138,11 @@ class ServiceClient:
     def open_channel(self, amount, expiration):
         payment_address = self.group["payment"]["payment_address"]
         group_id = base64.b64decode(str(self.group["group_id"]))
-        return self.payment_channel_provider.open_channel(self.sdk.account, amount, expiration, payment_address,
+        return self.payment_channel_provider.open_channel(self.account, amount, expiration, payment_address,
                                                           group_id)
 
     def deposit_and_open_channel(self, amount, expiration):
         payment_address = self.group["payment"]["payment_address"]
         group_id = base64.b64decode(str(self.group["group_id"]))
-        return self.payment_channel_provider.deposit_and_open_channel(self.sdk.account, amount, expiration,
+        return self.payment_channel_provider.deposit_and_open_channel(self.account, amount, expiration,
                                                                       payment_address, group_id)

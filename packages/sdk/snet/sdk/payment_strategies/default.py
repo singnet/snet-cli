@@ -39,7 +39,7 @@ class PaymentChannelManagementStrategy(PaymentStrategy):
         return metadata
 
     def select_channel(self,service_client):
-        account = service_client.sdk.account
+        account = service_client.account
         service_client.load_open_channels()
         service_client.update_channel_states()
         payment_channels = service_client.payment_channels

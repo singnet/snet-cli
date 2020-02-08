@@ -9,14 +9,10 @@ BLOCKS_PER_BATCH = 20000
 
 class PaymentChannelProvider(object):
 
-    def __init__(self, w3, payment_channel_state_service_client, mpe_address=None):
+    def __init__(self, w3, payment_channel_state_service_client, mpe_contract):
         self.web3 = w3
 
-        if mpe_address is None:
-            self.mpe_contract = MPEContract(self.web3)
-        else:
-            self.mpe_contract = MPEContract(self.web3, mpe_address)
-
+        self.mpe_contract = mpe_contract
         self.event_topics = [self.web3.sha3(
             text="ChannelOpen(uint256,uint256,address,address,address,bytes32,uint256,uint256)").hex()]
         self.deployment_block = get_contract_deployment_block(
