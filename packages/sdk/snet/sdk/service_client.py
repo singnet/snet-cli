@@ -20,14 +20,14 @@ class _ClientCallDetails(
 
 
 class ServiceClient:
-    def __init__(self, sdk, service_metadata,group, service_stub, payment_channel_management_strategy,
+    def __init__(self, sdk, service_metadata,group, service_stub, payment_strategy,
                  options):
         self.sdk = sdk
         self.options = options
         self.group = group
         self.service_metadata = service_metadata
 
-        self.payment_channel_management_strategy = payment_channel_management_strategy
+        self.payment_strategy = payment_strategy
         self.expiry_threshold = self.group["payment"]["payment_expiration_threshold"]
         self._base_grpc_channel = self._get_grpc_channel()
         self.grpc_channel = grpc.intercept_channel(self._base_grpc_channel,
@@ -71,21 +71,7 @@ class ServiceClient:
 
 
     def _get_service_call_metadata(self):
-        channel = self.payment_channel_management_strategy.select_channel(self)
-        # change required for pricing strategy right now picking first one
-        amount = channel.state["last_signed_amount"] + int(self.group["pricing"][0]["price_in_cogs"])
-        message = web3.Web3.soliditySha3(
-            ["string","address", "uint256", "uint256", "uint256"],
-            ["__MPE_claim_message",self.sdk.mpe_contract.contract.address,    channel.channel_id, channel.state["nonce"], amount]
-        )
-        signature = bytes(self.sdk.web3.eth.account.signHash(defunct_hash_message(message), self.sdk.account.signer_private_key).signature)
-        metadata = [
-            ("snet-payment-type", "escrow"),
-            ("snet-payment-channel-id", str(channel.channel_id)),
-            ("snet-payment-channel-nonce", str(channel.state["nonce"])),
-            ("snet-payment-channel-amount", str(amount)),
-            ("snet-payment-channel-signature-bin", signature)
-        ]
+        metadata = self.payment_strategy.get_payment_metadata(self)
         return metadata
 
 

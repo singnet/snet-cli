@@ -22,7 +22,7 @@ import ipfsapi
 from snet.sdk.service_client import ServiceClient
 from snet.sdk.account import Account
 from snet.sdk.mpe.mpe_contract import MPEContract
-from snet.sdk.payment_channel_management_strategies.default import PaymentChannelManagementStrategy
+from snet.sdk.payment_strategies.default import PaymentChannelManagementStrategy
 
 from snet.snet_cli.utils import get_contract_object
 
@@ -69,7 +69,7 @@ class SnetSDK:
         self.account = Account(self.web3, config, self.mpe_contract)
 
     def create_service_client(self, org_id, service_id, service_stub, group_name=None,
-                              payment_channel_management_strategy=PaymentChannelManagementStrategy, options=None):
+                              payment_channel_management_strategy=PaymentChannelManagementStrategy(), options=None):
         if options is None:
             options = dict()
 
@@ -78,7 +78,7 @@ class SnetSDK:
 
         service_metadata = self._metadata_provider.enhance_service_metadata(org_id, service_id)
         group = self._get_service_group_details(service_metadata, group_name)
-        strategy = payment_channel_management_strategy(self)
+        strategy = payment_channel_management_strategy
         service_client = ServiceClient(self, service_metadata, group, service_stub, strategy, options )
         return service_client
 
