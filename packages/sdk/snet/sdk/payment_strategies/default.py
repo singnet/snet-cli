@@ -20,12 +20,12 @@ class PaymentChannelManagementStrategy(PaymentStrategy):
         amount = channel.state["last_signed_amount"] + int(self.get_price(service_client))
         message = web3.Web3.soliditySha3(
             ["string", "address", "uint256", "uint256", "uint256"],
-            ["__MPE_claim_message", service_client.sdk.mpe_contract.contract.address, channel.channel_id,
+            ["__MPE_claim_message", service_client.mpe_contract.contract.address, channel.channel_id,
              channel.state["nonce"],
              amount]
         )
-        signature = bytes(service_client.sdk.web3.eth.account.signHash(defunct_hash_message(message),
-                                                                            service_client.sdk.account.signer_private_key).signature)
+        signature = bytes(service_client.sdk_web3.eth.account.signHash(defunct_hash_message(message),
+                                                                            service_client.account.signer_private_key).signature)
 
         # TODO create payment abstraction and return   metadata as payment.to_metadata()
         metadata = [
