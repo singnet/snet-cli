@@ -1,19 +1,27 @@
+import json
+
 import web3
 
 from snet.sdk.mpe.payment_channel import PaymentChannel
-from snet.snet_cli.utils import get_contract_deployment_block, get_contract_object
+from snet.snet_cli.utils import get_contract_deployment_block, get_contract_object, RESOURCES_PATH
 
 BLOCKS_PER_BATCH = 20000
 
 
 class PaymentChannelProvider(object):
 
-    def __init__(self, w3, payment_channel_state_service_client, address=None):
+    def __init__(self, w3, payment_channel_state_service_client, mpe_address=None):
         self.web3 = w3
-        if address is None:
-            self.contract = get_contract_object(self.web3, "MultiPartyEscrow.json")
+        if mpe_address is None:
+            with open(RESOURCES_PATH.joinpath("contracts", "networks","MultiPartyEscrow.json" )) as f:
+                networks = json.load(f)
+                self.mpe_address = w3.toChecksumAddress(networks[w3.version.network]["address"])
         else:
-            self.contract = get_contract_object(self.web3, "MultiPartyEscrow.json", address)
+            self.mpe_address=mpe_address
+
+
+
+        self.contract = get_contract_object(self.web3, "MultiPartyEscrow.json", self.mpe_address)
         self.event_topics = [self.web3.sha3(
             text="ChannelOpen(uint256,uint256,address,address,address,bytes32,uint256,uint256)").hex()]
         self.deployment_block = get_contract_deployment_block(
