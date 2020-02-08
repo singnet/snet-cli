@@ -2,6 +2,7 @@ import google.protobuf.internal.api_implementation
 from snet.sdk.mpe.payment_channel_provider import PaymentChannelProvider
 
 from snet.sdk.metadata_provider.ipfs_metadata_provider import IPFSMetadataProvider
+from snet.sdk.payment_strategies.freecall_payment_strategy import FreeCallPaymentStrategy
 
 google.protobuf.internal.api_implementation.Type = lambda: 'python'
 
@@ -69,7 +70,7 @@ class SnetSDK:
         self.account = Account(self.web3, config, self.mpe_contract)
 
     def create_service_client(self, org_id, service_id, service_stub, group_name=None,
-                              payment_channel_management_strategy=PaymentChannelManagementStrategy(), options=None):
+                              payment_channel_management_strategy=FreeCallPaymentStrategy(), options=None):
         if options is None:
             options = dict()
 
