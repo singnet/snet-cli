@@ -1,5 +1,5 @@
 import web3
-from snet.sdk import MPEContract
+from snet.sdk.mpe.mpe_contract import MPEContract
 
 from snet.sdk.mpe.payment_channel import PaymentChannel
 from snet.snet_cli.utils import get_contract_deployment_block
