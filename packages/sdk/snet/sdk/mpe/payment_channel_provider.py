@@ -50,7 +50,7 @@ class PaymentChannelProvider(object):
                 event_abi, l)["args"] for l in logs]
         ))
         return list(map(lambda channel: PaymentChannel(channel["channelId"], self.web3, account,
-                                                       self.payment_channel_state_service_client, self),
+                                                       self.payment_channel_state_service_client, self.mpe_contract),
                         channels_opened))
 
     def open_channel(self, account, amount, expiration, payment_address, group_id):
@@ -63,7 +63,7 @@ class PaymentChannelProvider(object):
                                                              expiration)
         return self._get_newly_opened_channel(receipt, account, payment_address, group_id)
 
-    def _get_newly_opened_channel(self, account, receipt, payment_address, group_id):
+    def _get_newly_opened_channel(self, receipt,account, payment_address, group_id):
         open_channels = self.get_past_open_channels(account, payment_address, group_id, receipt["blockNumber"],
                                                     receipt["blockNumber"])
         if len(open_channels) == 0:
