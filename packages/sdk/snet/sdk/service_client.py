@@ -147,3 +147,13 @@ class ServiceClient:
         group_id = base64.b64decode(str(self.group["group_id"]))
         return self.payment_channel_provider.deposit_and_open_channel(self.account, amount, expiration,
                                                                       payment_address, group_id)
+
+    def get_price(self):
+        return self.group["pricing"][0]["price_in_cogs"]
+
+    def generate_signature(self,message):
+        signature = bytes(self.sdk_web3.eth.account.signHash(defunct_hash_message(message),
+                                                                            self.account.signer_private_key).signature)
+
+        return signature
+

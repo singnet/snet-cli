@@ -13,7 +13,7 @@ class PaymentChannelManagementStrategy(PaymentStrategy):
     #TODO remove direct access to service_Client attributes, possibly remove direct dependcy on service_client
     # change in service_Client will leak here
     def get_price(self,service_client):
-        return service_client.group["pricing"][0]["price_in_cogs"]
+        return service_client.get_price()
 
     def get_payment_metadata(self,service_client):
         channel = self.select_channel(service_client)
@@ -24,8 +24,8 @@ class PaymentChannelManagementStrategy(PaymentStrategy):
              channel.state["nonce"],
              amount]
         )
-        signature = bytes(service_client.sdk_web3.eth.account.signHash(defunct_hash_message(message),
-                                                                            service_client.account.signer_private_key).signature)
+        signature = service_client.generate_signature(message)
+
 
         # TODO create payment abstraction and return   metadata as payment.to_metadata()
         metadata = [
@@ -44,7 +44,7 @@ class PaymentChannelManagementStrategy(PaymentStrategy):
         service_client.update_channel_states()
         payment_channels = service_client.payment_channels
         # picking the first pricing strategy as default for now
-        service_call_price = service_client.group["pricing"][0]["price_in_cogs"]
+        service_call_price = self.get_price(service_client)
         mpe_balance = account.escrow_balance()
         default_expiration = service_client.default_channel_expiration()
 
