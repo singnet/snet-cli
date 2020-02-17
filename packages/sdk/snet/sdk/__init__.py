@@ -1,7 +1,6 @@
 import google.protobuf.internal.api_implementation
-from snet.sdk.mpe.payment_channel_provider import PaymentChannelProvider
-
 from snet.sdk.metadata_provider.ipfs_metadata_provider import IPFSMetadataProvider
+from snet.sdk.mpe.payment_channel_provider import PaymentChannelProvider
 from snet.sdk.payment_strategies.freecall_payment_strategy import FreeCallPaymentStrategy
 
 google.protobuf.internal.api_implementation.Type = lambda: 'python'
@@ -74,13 +73,18 @@ class SnetSDK:
         if options is None:
             options = dict()
 
+        options['free_call_auth_token-bin'] = self._config.get("free_call_auth_token-bin", "")
+        options['free-call-token-expiry-block'] = self._config.get("free-call-token-expiry-block", 0)
+        options['email'] = self._config.get("email", "")
+
         if self._metadata_provider is None:
             self._metadata_provider = IPFSMetadataProvider( self.ipfs_client ,self.registry_contract,)
 
         service_metadata = self._metadata_provider.enhance_service_metadata(org_id, service_id)
         group = self._get_service_group_details(service_metadata, group_name)
         strategy = payment_channel_management_strategy
-        service_client = ServiceClient(service_metadata, group, service_stub, strategy, options,self.mpe_contract,self.account,self.web3 )
+        service_client = ServiceClient(org_id, service_id, service_metadata, group, service_stub, strategy, options,
+                                       self.mpe_contract, self.account, self.web3)
         return service_client
 
 

@@ -4,7 +4,6 @@ import importlib
 
 import grpc
 import snet.sdk.generic_client_interceptor as generic_client_interceptor
-import web3
 from eth_account.messages import defunct_hash_message
 from rfc3986 import urlparse
 from snet.sdk.mpe.payment_channel_provider import PaymentChannelProvider
@@ -24,8 +23,10 @@ class _ClientCallDetails(
 #TODO Law of Demeter not being followed properly
 
 class ServiceClient:
-    def __init__(self, service_metadata,group, service_stub, payment_strategy,
+    def __init__(self,org_id,service_id, service_metadata,group, service_stub, payment_strategy,
                  options,mpe_contract,account,sdk_web3):
+        self.org_id = org_id
+        self.service_id = service_id
         self.options = options
         self.group = group
         self.service_metadata = service_metadata
@@ -118,6 +119,8 @@ class ServiceClient:
         self.last_read_block = current_block_number
         return self.payment_channels
 
+    def get_current_block_number(self):
+        return self.sdk_web3.eth.getBlock("latest").number
 
     def update_channel_states(self):
         for channel in self.payment_channels:
@@ -151,9 +154,15 @@ class ServiceClient:
     def get_price(self):
         return self.group["pricing"][0]["price_in_cogs"]
 
-    def generate_signature(self,message):
+    def generate_signature(self, message):
         signature = bytes(self.sdk_web3.eth.account.signHash(defunct_hash_message(message),
-                                                                            self.account.signer_private_key).signature)
+                                                             self.account.signer_private_key).signature)
 
         return signature
 
+    def get_free_call_config(self):
+        return self.options['email'], self.options['free_call_auth_token-bin'], self.options[
+            'free-call-token-expiry-block']
+
+    def get_service_details(self):
+        return self.org_id, self.service_id, self.group["group_id"], self.group["endpoints"][0]
