@@ -48,7 +48,7 @@ class FreeCallPaymentStrategy(PaymentStrategy):
 
         message = web3.Web3.soliditySha3(
             ["string", "string", "string", "string", "string", "uint256", "bytes32"],
-            ["__prefix_free_trial", "sumitk002@gmail.com", org_id, service_id, group_id, current_block_number,
+            ["__prefix_free_trial", email, org_id, service_id, group_id, current_block_number,
              token_for_free_call]
         )
         signature = service_client.generate_signature(message)
