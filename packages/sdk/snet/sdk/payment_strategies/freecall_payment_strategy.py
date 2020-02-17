@@ -64,7 +64,7 @@ class FreeCallPaymentStrategy(PaymentStrategy):
             metadata = [("snet-free-call-auth-token-bin", token_for_free_call),
                         ("snet-free-call-token-expiry-block", str(token_expiry_date_block)),
                         ("snet-payment-type", "free-call"),
-                        ("snet-free-call-user-id", "sumitk002@gmail.com"),
+                        ("snet-free-call-user-id", email),
                         ("snet-current-block-number", str(current_block_number)),
                         ("snet-payment-channel-signature-bin", signature)
                         ]

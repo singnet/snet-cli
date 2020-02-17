@@ -165,4 +165,4 @@ class ServiceClient:
             'free-call-token-expiry-block']
 
     def get_service_details(self):
-        return self.org_id, self.service_id, self.group["group_id"], self.group["endpoints"][0]
+        return self.org_id, self.service_id, self.group["group_id"], self.service_metadata.get_all_endpoints_for_group(self.group["group_name"])[0]
