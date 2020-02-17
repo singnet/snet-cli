@@ -1,16 +1,23 @@
+import importlib
 from urllib.parse import urlparse
 
 import grpc
 import web3
 from snet.sdk.payment_strategies.default import PaymentChannelManagementStrategy
 from snet.sdk.payment_strategies.payment_staregy import PaymentStrategy
-from snet.snet_cli.resources.proto import state_service_pb2, state_service_pb2_grpc
+from snet.snet_cli.utils import RESOURCES_PATH, add_to_path
 
 
 class FreeCallPaymentStrategy(PaymentStrategy):
 
     def is_free_call_available(self, email, token_for_free_call, token_expiry_date_block, signature,
                                current_block_number, daemon_endpoint):
+
+        with add_to_path(str(RESOURCES_PATH.joinpath("proto"))):
+            state_service_pb2 = importlib.import_module("state_service_pb2")
+
+        with add_to_path(str(RESOURCES_PATH.joinpath("proto"))):
+            state_service_pb2_grpc = importlib.import_module("state_service_pb2_grpc")
 
         request = state_service_pb2.FreeCallStateRequest()
         request.user_id = email
@@ -37,7 +44,6 @@ class FreeCallPaymentStrategy(PaymentStrategy):
         if response.free_calls_available > 0:
             return True
         return False
-
 
     def get_payment_metadata(self, service_client):
 
@@ -68,6 +74,5 @@ class FreeCallPaymentStrategy(PaymentStrategy):
 
         return metadata
 
-    def select_channel(self,service_client):
+    def select_channel(self, service_client):
         pass
-
