@@ -58,9 +58,9 @@ jobs:
           cd snet-daemon
 
           wget https://github.com/singnet/snet-daemon/releases/download/v3.0.0/snet-daemon-v3.0.0-linux-amd64.tar.gz
-          tar -xvf snet-daemon-v2.0.2-linux-amd64.tar.gz
-          cd snet-daemon-v2.0.2-linux-amd64
-          cp ~/singnet/snet-cli/packages/sdk/testcases/functional_tests/snetd.config.json ~/singnet/snet-daemon/snet-daemon-v2.0.2-linux-amd64
+          tar -xvf snet-daemon-v3.0.0-linux-amd64.tar.gz
+          cd snet-daemon-v3.0.0-linux-amd64
+          cp ~/singnet/snet-cli/packages/sdk/testcases/functional_tests/snetd.config.json ~/singnet/snet-daemon/snet-daemon-v3.0.0-linux-amd64
 
 #
 #    - run:
