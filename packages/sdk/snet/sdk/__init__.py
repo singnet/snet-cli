@@ -69,11 +69,11 @@ class SnetSDK:
         self.account = Account(self.web3, config, self.mpe_contract)
 
     def create_service_client(self, org_id, service_id, service_stub, group_name=None,
-                              payment_channel_management_strategy=PaymentChannelManagementStrategy(), options=None):
+                              payment_channel_management_strategy=FreeCallPaymentStrategy(), options=None):
         if options is None:
             options = dict()
 
-        options['free_call_auth_token-bin'] = self._config.get("free_call_auth_token-bin", b"")
+        options['free_call_auth_token-bin'] = self._config.get("free_call_auth_token-bin", None)
         options['free-call-token-expiry-block'] = self._config.get("free-call-token-expiry-block", 0)
         options['email'] = self._config.get("email", "")
 

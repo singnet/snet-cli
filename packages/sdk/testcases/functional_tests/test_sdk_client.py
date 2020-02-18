@@ -8,6 +8,17 @@ def verify_when_no_open_channel(service_client):
     assert len(channels) == 0
 
 
+def make_first_free_call(service_client):
+    request = examples_service_pb2.Numbers(a=20, b=4)
+    result = service_client.service.mul(request)
+    assert result.value == 80.0
+
+def make_second_free_call(service_client):
+    request = examples_service_pb2.Numbers(a=20, b=5)
+    result = service_client.service.mul(request)
+    assert result.value == 100.0
+
+
 def open_first_channel(service_client):
     channel = service_client.open_channel(123456, 33333)
     assert channel.channel_id == 0
@@ -89,12 +100,17 @@ def test_sdk():
     group_name = "default_group"
 
     config = {
-        "private_key": "0xc71478a6d0fe44e763649de0a0deb5a080b788eefbbcf9c6f7aef0dd5dbd67e0",
+        "private_key": "ABD04636C7808C658FF173A695DA976A0D7FB46171852BB7CC847FF6F01A9BDF",
         "eth_rpc_endpoint": "http://localhost:8545",
         "mpe_contract_address": "0x5c7a4290f6f8ff64c69eeffdfafc8644a4ec3a4e",
         "registry_contract_address": "0x4e74fefa82e83e0964f0d9f53c68e03f7298a8b2",
         "token_contract_address": "0x6e5f20669177f5bdf3703ec5ea9c4d4fe3aabd14",
-        "ipfs_rpc_endpoint": "http://localhost:5002"
+        "ipfs_rpc_endpoint": "http://localhost:5002",
+        "free_call_auth_token-bin":b'\xc6\xae\x8d\x80\xc6\x0f\xcf\x14Q\x8an~\xbd\xc0;\xab\x8d\xda\xe4E\x00\xe0\xf8\x9e\xa3\xe9\x00 \xa2\x8c\x8f`e\x82\xb7\xd9\x89isF3\x1ei\x8b\x1d\x0c\xcb\x1c\xfb\x00\xcc\xd4\x04V(\xb2\xb5\x12\x13\xb2\x13\x80\xc5\x1c\x1b',
+        "free-call-token-expiry-block":172800,
+        "email":"test@test.com"
+
+
 
     }
 
@@ -103,6 +119,8 @@ def test_sdk():
                                                     group_name=group_name)
 
     verify_when_no_open_channel(service_client)
+    make_first_free_call(service_client)
+    make_second_free_call(service_client)
     open_first_channel(service_client)
     first_call_to_service_after_opening_first_channel(service_client)
     verify_channel_state_after_opening_first_channel_and_first_call_to_service(service_client)

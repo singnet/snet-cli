@@ -67,6 +67,8 @@ snet organization create test_org -y -q
 
 
 snet service metadata-init ./functional_tests/service_spec1/ ExampleService --group-name default_group --fixed-price 0.00001 --endpoints http://localhost:5051
+snet service metadata-set-free-calls default_group 2
+snet service metadata-set-freecall-signer-address default_group 0x7DF35C98f41F3Af0df1dc4c7F7D4C19a71Dd059F
 snet service publish test_org test_service -y -q
 
 snet organization print-metadata test_org test_org
@@ -82,9 +84,13 @@ nohup python3 run_example_service.py --no-daemon &
 cd ~/singnet/snet-daemon/snet-daemon-v3.0.0-linux-amd64
 nohup ./snetd &
 
-
+ps -ef
+netstat -luptn
 #wait for daemon to come up
-sleep 20
+sleep 60
+ps -ef
+sleep 10
+netstat -luptn
 cd ~/singnet/snet-cli
 
 
