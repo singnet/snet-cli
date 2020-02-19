@@ -50,6 +50,10 @@ class FreeCallPaymentStrategy(PaymentStrategy):
         org_id, service_id, group_id, daemon_endpoint = service_client.get_service_details()
         email, token_for_free_call, token_expiry_date_block = service_client.get_free_call_config()
 
+        if token_expiry_date_block == 0 or len(email) == 0 or len(token_for_free_call) == 0:
+            raise Exception(
+                "You are using default 'FreeCallPaymentStrategy' to use this strategy you need to pass 'free_call_auth_token-bin','email','free-call-token-expiry-block' in config")
+
         current_block_number = service_client.get_current_block_number()
 
         message = web3.Web3.soliditySha3(
