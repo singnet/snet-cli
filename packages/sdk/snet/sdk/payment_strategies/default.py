@@ -9,9 +9,6 @@ class PaymentChannelManagementStrategy(PaymentStrategy):
         self.call_allowance = call_allowance
 
 
-
-    #TODO remove direct access to service_Client attributes, possibly remove direct dependcy on service_client
-    # change in service_Client will leak here
     def get_price(self,service_client):
         return service_client.get_price()
 
@@ -27,7 +24,6 @@ class PaymentChannelManagementStrategy(PaymentStrategy):
         signature = service_client.generate_signature(message)
 
 
-        # TODO create payment abstraction and return   metadata as payment.to_metadata()
         metadata = [
             ("snet-payment-type", "escrow"),
             ("snet-payment-channel-id", str(channel.channel_id)),

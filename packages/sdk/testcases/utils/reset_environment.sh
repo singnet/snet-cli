@@ -84,13 +84,9 @@ nohup python3 run_example_service.py --no-daemon &
 cd ~/singnet/snet-daemon/snet-daemon-v3.0.0-linux-amd64
 nohup ./snetd &
 
-ps -ef
-netstat -luptn
 #wait for daemon to come up
-sleep 60
-ps -ef
-sleep 10
-netstat -luptn
+sleep 20
+
 cd ~/singnet/snet-cli
 
 
