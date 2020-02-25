@@ -5,12 +5,12 @@ from eth_account.messages import defunct_hash_message
 from snet.snet_cli.utils import RESOURCES_PATH, add_to_path
 
 class PaymentChannel:
-    def __init__(self, channel_id, w3, account, service, mpe_contract):
+    def __init__(self, channel_id, w3, account, payment_channel_state_service_client, mpe_contract):
         self.channel_id = channel_id
         self.web3 = w3
         self.account = account
         self.mpe_contract = mpe_contract
-        self.payment_channel_state_service_client = service.payment_channel_state_service_client
+        self.payment_channel_state_service_client = payment_channel_state_service_client
         self.state = {
             "nonce": 0,
             "last_signed_amount": 0
