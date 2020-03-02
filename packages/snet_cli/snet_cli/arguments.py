@@ -1024,11 +1024,11 @@ def add_mpe_service_options(parser):
                    help="Name of the  payment group",
                    metavar="GROUP_NAME")
 
-    p = subparsers.add_parser("metadata-add-daemon-addresses", help="Add daemon addresses to the groups")
+    p = subparsers.add_parser("metadata-add-daemon-addresses", help="add Ethereum public addresses of daemon in given payment group of service")
     p.set_defaults(fn="metadata_add_daemon_addresses")
     p.add_argument("group_name", default=None,
                    help="Name of the payment group to which we want to add daemon addresses")
-    p.add_argument("daemon_addresses", nargs="+", help="Daemon addresses",
+    p.add_argument("daemon_addresses", nargs="+", help="Ethereum public addresses of daemon",
                    metavar="DAEMON ADDRESSES")
     add_p_metadata_file_opt(p)
 
