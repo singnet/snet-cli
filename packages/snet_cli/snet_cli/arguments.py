@@ -269,7 +269,8 @@ def add_organization_options(parser):
     p.set_defaults(fn="initialize_metadata")
     p.add_argument("org_name", help="Organization name", metavar="ORG_NAME")
     p.add_argument("org_id", default=None, help="Unique organization Id", metavar="ORG_ID")
-    p.add_argument("org_type", help="Organization type [ individual | organization ]",
+    p.add_argument("org_type", help="organization type based on creator of organization whether it is individual or business/organization "
+                                    "[ individual | organization ]",
                    choices=["individual", "organization"], metavar="ORG_TYPE")
     add_p_registry_address_opt(p)
     add_metadatafile_argument_for_org(p)
