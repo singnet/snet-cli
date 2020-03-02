@@ -1,6 +1,7 @@
 import google.protobuf.internal.api_implementation
-
 from snet.sdk.metadata_provider.ipfs_metadata_provider import IPFSMetadataProvider
+from snet.sdk.mpe.payment_channel_provider import PaymentChannelProvider
+from snet.sdk.payment_strategies.freecall_payment_strategy import FreeCallPaymentStrategy
 
 google.protobuf.internal.api_implementation.Type = lambda: 'python'
 
@@ -17,16 +18,15 @@ import web3
 from web3.gas_strategies.time_based import medium_gas_price_strategy
 from rfc3986 import urlparse
 import ipfsapi
-from web3.datastructures import AttributeDict
 
 from snet.sdk.service_client import ServiceClient
 from snet.sdk.account import Account
-from snet.sdk.mpe_contract import MPEContract
-from snet.sdk.payment_channel_management_strategies.default import PaymentChannelManagementStrategy
+from snet.sdk.mpe.mpe_contract import MPEContract
+from snet.sdk.payment_strategies.default import PaymentChannelManagementStrategy
 
-from snet.snet_cli.utils import get_contract_object, compile_proto
+from snet.snet_cli.utils import get_contract_object
 
-from snet.snet_cli.utils_ipfs import bytesuri_to_hash, get_from_ipfs_and_checkhash, safe_extract_proto_from_ipfs
+from snet.snet_cli.utils_ipfs import bytesuri_to_hash, get_from_ipfs_and_checkhash
 from snet.snet_cli.mpe_service_metadata import mpe_service_metadata_from_json
 
 class SnetSDK:
@@ -69,17 +69,22 @@ class SnetSDK:
         self.account = Account(self.web3, config, self.mpe_contract)
 
     def create_service_client(self, org_id, service_id, service_stub, group_name=None,
-                              payment_channel_management_strategy=PaymentChannelManagementStrategy, options=None):
+                              payment_channel_management_strategy=FreeCallPaymentStrategy(), options=None):
         if options is None:
             options = dict()
+
+        options['free_call_auth_token-bin'] = self._config.get("free_call_auth_token-bin", bytes('',encoding='utf-8'))
+        options['free-call-token-expiry-block'] = self._config.get("free-call-token-expiry-block", 0)
+        options['email'] = self._config.get("email", "")
 
         if self._metadata_provider is None:
             self._metadata_provider = IPFSMetadataProvider( self.ipfs_client ,self.registry_contract,)
 
         service_metadata = self._metadata_provider.enhance_service_metadata(org_id, service_id)
         group = self._get_service_group_details(service_metadata, group_name)
-        strategy = payment_channel_management_strategy(self)
-        service_client = ServiceClient(self, service_metadata, group, service_stub, strategy, options )
+        strategy = payment_channel_management_strategy
+        service_client = ServiceClient(org_id, service_id, service_metadata, group, service_stub, strategy, options,
+                                       self.mpe_contract, self.account, self.web3)
         return service_client
 
 

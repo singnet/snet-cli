@@ -13,8 +13,8 @@ class IPFSMetadataProvider(object):
         self._ipfs_client = ipfs_client
 
     def fetch_org_metadata(self, org_id):
-        (found, id, metadata_uri, owner, members, serviceIds,
-         repositoryIds) = self.registry_contract.functions.getOrganizationById(
+        (found, id, metadata_uri, owner, members, service_ids,
+         repository_ids) = self.registry_contract.functions.getOrganizationById(
             bytes(org_id, "utf-8")).call()
         if found is not True:
             raise Exception('No  organization is foubd "{}"'.format(org_id))

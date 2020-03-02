@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package escrow;
 
+option java_package = "io.singularitynet.daemon.escrow";
+
 // PaymentChannelStateService contains methods to get the MultiPartyEscrow
 // payment channel state.
 // channel_id, channel_nonce, value and amount fields below in fact are
@@ -49,3 +51,31 @@ message ChannelStateReply {
     // last signature sent by client with nonce = current_nonce - 1
     bytes old_nonce_signature = 5;
  }
+
+//Used to determine free calls available for a given user.
+service FreeCallStateService {
+    rpc GetFreeCallsAvailable(FreeCallStateRequest) returns (FreeCallStateReply) {}
+}
+
+message FreeCallStateRequest {
+    //Has the user email id
+    string user_id = 1;
+    //signer-token = (user@mail, user-public-key, token_issue_date), this is generated my Market place Dapp
+    //to leverage free calls from SDK/ snet-cli, you will need this signer-token to be downloaded from Dapp
+    bytes token_for_free_call = 2;
+    //Token expiration date in Block number
+    uint64 token_expiry_date_block = 3 ;
+    //Signature is made up of the below, user signs with the private key corresponding with the public key used to generate the authorized token
+    //free-call-metadata = ("__prefix_free_trial",user_id,organization_id,service_id,group_id,current_block,authorized_token)
+    bytes signature = 4;
+    //current block number (signature will be valid only for short time around this block number)
+    uint64 current_block = 5;
+
+}
+
+message FreeCallStateReply {
+    //Has the user email id
+    string user_id = 1;
+    //Balance number of free calls available
+    uint64 free_calls_available = 2;
+}
