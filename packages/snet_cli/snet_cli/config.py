@@ -176,10 +176,10 @@ class Config(ConfigParser):
         """ Create default configuration if config file does not exist """
         # make config directory with the minimal possible permission
         self._config_file.parent.mkdir(mode=0o700, exist_ok=True)
-        self["network.kovan"]   = {"default_eth_rpc_endpoint": "https://kovan.infura.io",   "default_gas_price" : "medium"}
-        self["network.mainnet"] = {"default_eth_rpc_endpoint": "https://mainnet.infura.io", "default_gas_price" : "medium"}
-        self["network.ropsten"] = {"default_eth_rpc_endpoint": "https://ropsten.infura.io", "default_gas_price" : "medium"}
-        self["network.rinkeby"] = {"default_eth_rpc_endpoint": "https://rinkeby.infura.io", "default_gas_price" : "medium"}
+        self["network.kovan"]   = {"default_eth_rpc_endpoint": "https://kovan.infura.io/v3/09027f4a13e841d48dbfefc67e7685d5",   "default_gas_price" : "medium"}
+        self["network.mainnet"] = {"default_eth_rpc_endpoint": "https://mainnet.infura.io/v3/09027f4a13e841d48dbfefc67e7685d5", "default_gas_price" : "medium"}
+        self["network.ropsten"] = {"default_eth_rpc_endpoint": "https://ropsten.infura.io/v3/09027f4a13e841d48dbfefc67e7685d5", "default_gas_price" : "medium"}
+        self["network.rinkeby"] = {"default_eth_rpc_endpoint": "https://rinkeby.infura.io/v3/09027f4a13e841d48dbfefc67e7685d5", "default_gas_price" : "medium"}
         self["ipfs"] = {"default_ipfs_endpoint": "http://ipfs.singularitynet.io:80"}
         self["session"] = {
         "network": "kovan" }
