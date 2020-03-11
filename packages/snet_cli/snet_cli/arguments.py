@@ -267,8 +267,11 @@ def add_organization_options(parser):
 
     p = subparsers.add_parser("metadata-init", help="Initalize matadata for organization ")
     p.set_defaults(fn="initialize_metadata")
-    p.add_argument("org_name", help="Organization name")
-    p.add_argument("org_id", default=None, help="Unique organization Id")
+    p.add_argument("org_name", help="Organization name", metavar="ORG_NAME")
+    p.add_argument("org_id", default=None, help="Unique organization Id", metavar="ORG_ID")
+    p.add_argument("org_type", help="organization type based on creator of organization whether it is individual or business/organization "
+                                    "[ individual | organization ]",
+                   choices=["individual", "organization"], metavar="ORG_TYPE")
     add_p_registry_address_opt(p)
     add_metadatafile_argument_for_org(p)
 
@@ -284,7 +287,7 @@ def add_organization_options(parser):
     p.add_argument("endpoints", nargs='*', help="Endpoints for the first group")
     p.add_argument("--payment-expiration-threshold", type=int, default=100, help="Payment Expiration threshold")
     p.add_argument("--payment-channel-storage-type", default="etcd", help="Storage channel for payment")
-    p.add_argument("--payment-channel-connection-timeout", default="100s", help="Pyament channel connection timeout ")
+    p.add_argument("--payment-channel-connection-timeout", default="100s", help="Payment channel connection timeout ")
     p.add_argument("--payment-channel-request-timeout", default="5s", help="Payment channel request timeout")
     add_metadatafile_argument_for_org(p)
     add_p_registry_address_opt(p)
@@ -312,22 +315,25 @@ def add_organization_options(parser):
 
     p = subparsers.add_parser("metadata-add-description", help="Add description to metadata")
     p.set_defaults(fn="metadata_add_description")
-    p.add_argument("description", help="description about organization info")
+    p.add_argument("--description", help="description about organization info", metavar="DESCRIPTION")
+    p.add_argument("--short-description", help="description about organization info", metavar="SHORT_DESCRIPTION")
+    p.add_argument("--url", help="url for organization website", metavar="URL")
     add_p_organization_metadata_file_opt(p)
 
     p = subparsers.add_parser(
         "metadata-add-assets",
-        help="Add assets to metadata, valid asset types are [hero_image,images]")
+        help="Add assets to metadata, valid asset types are [hero_image]")
     p.set_defaults(fn="metadata_add_asset_to_ipfs")
-    p.add_argument("asset_file_path", help="Asset file path")
-    p.add_argument("asset_type", help="Type of the asset")
+    p.add_argument("asset_file_path", help="Asset file path", metavar="ASSET_FILE_PATH")
+    p.add_argument("asset_type", help="Type of the asset, valid asset types are [hero_image]", metavar="ASSET_TYPE")
     add_p_organization_metadata_file_opt(p)
 
     p = subparsers.add_parser(
         "metadata-remove-assets",
-        help="Remove asset of a given type valid asset types are [hero_image,images]")
+        help="Remove asset of a given type valid asset types are [hero_image]")
     p.set_defaults(fn="metadata_remove_assets_of_a_given_type")
-    p.add_argument("asset_type", help="Type of the asset to be removed , valid asset types are [hero_image,images]")
+    p.add_argument("asset_type", help="Type of the asset to be removed, valid asset types are [hero_image]",
+                   metavar="ASSET_TYPE")
     add_p_organization_metadata_file_opt(p)
 
     p = subparsers.add_parser("metadata-remove-all-assets", help="Remove all assets from metadata")
@@ -347,7 +353,7 @@ def add_organization_options(parser):
 
     p = subparsers.add_parser("metadata-remove-contacts", help="Remove all contacts")
     p.set_defaults(fn="metadata_remove_contact_by_type")
-    p.add_argument("contact_type", help="Contact type of organization")
+    p.add_argument("contact_type", help="Contact type of organization", metavar="CONTACT_TYPE")
     add_p_organization_metadata_file_opt(p)
 
     p = subparsers.add_parser("list", help="List of Organizations Ids")
@@ -1018,8 +1024,31 @@ def add_mpe_service_options(parser):
                    help="Name of the  payment group",
                    metavar="GROUP_NAME")
 
+    p = subparsers.add_parser("metadata-add-daemon-addresses", help="add Ethereum public addresses of daemon in given payment group of service")
+    p.set_defaults(fn="metadata_add_daemon_addresses")
+    p.add_argument("group_name", default=None,
+                   help="Name of the payment group to which we want to add daemon addresses")
+    p.add_argument("daemon_addresses", nargs="+", help="Ethereum public addresses of daemon",
+                   metavar="DAEMON ADDRESSES")
+    add_p_metadata_file_opt(p)
+
+    p = subparsers.add_parser("metadata-remove-all-daemon-addresses",
+                              help="Remove all daemon addresses from metadata")
+    p.set_defaults(fn="metadata_remove_all_daemon_addresses")
+    p.add_argument("group_name", default=None,
+                   help="Name of the payment group to which we want to remove endpoints")
+    add_p_metadata_file_opt(p)
+
+    p = subparsers.add_parser("metadata-update-daemon-addresses", help="Update daemon addresses to the groups")
+    p.set_defaults(fn="metadata_update_daemon_addresses")
+    p.add_argument("group_name", default=None,
+                   help="Name of the payment group to which we want to update daemon addresses")
+    p.add_argument("daemon_addresses", nargs="+", help="Daemon addresses",
+                   metavar="DAEMON ADDRESSES")
+    add_p_metadata_file_opt(p)
+
     p = subparsers.add_parser("metadata-add-endpoints",
-                              help="Add deamon endpoints to the groups")
+                              help="Add daemon endpoints to the groups")
     p.set_defaults(fn="metadata_add_endpoints")
     p.add_argument("group_name",
                    default=None,
@@ -1044,13 +1073,15 @@ def add_mpe_service_options(parser):
     p = subparsers.add_parser("metadata-set-free-calls", help="Set free calls for group for service")
     p.set_defaults(fn="metadata_set_free_calls")
     add_p_metadata_file_opt(p)
-    p.add_argument("group_name", help="Name of the payment group to which we want to set freecalls")
+    p.add_argument("group_name", help="Name of the payment group to which we want to set freecalls",
+                   metavar="GROUP_NAME")
     p.add_argument("free_calls", default=0, type=int, help="Number of free calls")
 
     p = subparsers.add_parser("metadata-set-freecall-signer-address", help="Set free calls for group for service")
     p.set_defaults(fn="metadata_set_freecall_signer_address")
     add_p_metadata_file_opt(p)
-    p.add_argument("group_name", help="Name of the payment group to which we want to set freecalls")
+    p.add_argument("group_name", help="Name of the payment group to which we want to set freecalls",
+                   metavar="GROUP_NAME")
     p.add_argument(
         "signer_address",
         help="This is used to define the public key address used for validating signatures "
@@ -1100,7 +1131,7 @@ def add_mpe_service_options(parser):
                    help="URL to provide more details of the service")
     p.add_argument("--description",
                    default=None,
-                   help="Some description of what the service does")
+                   help="Some description of what the service does", metavar="DESCRIPTION")
     p.add_argument("--short-description",
                    default=None,
                    help="Some short description for overview")

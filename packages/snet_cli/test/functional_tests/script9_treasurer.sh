@@ -12,7 +12,7 @@ snet account deposit 12345 -y -q
 # service provider has --wallet-index==9 (0x52653A9091b5d5021bed06c5118D24b23620c529)
 # make two endpoints (both are actually valid)
 
-snet organization metadata-init org1 testo
+snet organization metadata-init org1 testo individual
 snet organization add-group group0 0x52653A9091b5d5021bed06c5118D24b23620c529 5.5.6.7:8089
 snet organization create testo -y -q
 

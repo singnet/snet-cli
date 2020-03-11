@@ -1,6 +1,6 @@
 # simple case of one group
 snet service metadata-init ./service_spec1/ ExampleService --group-name group1 --fixed-price 0.0001 --endpoints 8.8.8.8:2020
-snet organization metadata-init org1 testo
+snet organization metadata-init org1 testo individual
 snet organization add-group group1 0x42A605c07EdE0E1f648aB054775D6D4E38496144 127.0.0.1:50051
 snet organization add-group group2 0x42A605c07EdE0E1f648aB054775D6D4E38496144 127.0.0.1:50051
 snet organization create testo -y -q

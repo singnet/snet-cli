@@ -462,7 +462,7 @@ class OrganizationCommand(BlockchainCommand):
         if found:
             raise Exception(
                 "\nOrganization with id={} already exists!\n".format(org_id))
-        org_metadata = OrganizationMetadata(self.args.org_name, org_id)
+        org_metadata = OrganizationMetadata(self.args.org_name, org_id, self.args.org_type)
         org_metadata.save_pretty(metadata_file_name)
 
     def print_metadata(self):
@@ -790,18 +790,19 @@ class OrganizationCommand(BlockchainCommand):
         org_metadata.save_pretty(self.args.metadata_file)
 
     def metadata_add_description(self):
-        args = self.args.__dict__
-        description = args["description"]
-        metadata_file = args["metadata_file"]
+        description = self.args.description
+        url = self.args.url
+        short_description = self.args.short_description
+        metadata_file = self.args.metadata_file
         org_metadata = OrganizationMetadata.from_file(metadata_file)
-        org_metadata.add_description(description)
-        org_metadata.save_pretty(metadata_file)
-
-    def metadata_remove_description(self):
-        args = self.args.__dict__
-        metadata_file = args["metadata_file"]
-        org_metadata = OrganizationMetadata.from_file(metadata_file)
-        org_metadata.remove_description()
+        if description:
+            org_metadata.add_description(description)
+        if short_description:
+            org_metadata.add_short_description(short_description)
+        if url:
+            org_metadata.add_url(url)
+        if description is None and url is None and short_description is None:
+            raise Exception("No attributes are given")
         org_metadata.save_pretty(metadata_file)
 
     def metadata_add_contact(self):

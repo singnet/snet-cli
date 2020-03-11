@@ -33,9 +33,9 @@ You should move or copy these generated files to the root of your project.
 Once you have installed the snet-sdk in your current environment and it's in your PYTHONPATH, you should import it and create an instance of the base sdk class:
 
 ```python
-from snet_sdk import SnetSDK
+from snet import sdk
 from config import config
-snet = SnetSDK(config)
+snet_sdk = sdk.SnetSDK(config)
 ```
 
 The `config` parameter must be a Python dictionary.  
@@ -51,7 +51,7 @@ import example_service_pb2_grpc
 org_id = "snet"
 service_id = "example-service"
 
-service_client = sdk.create_service_client(org_id, service_id, example_service_pb2_grpc.CalculatorStub)
+service_client = snet_sdk.create_service_client(org_id, service_id, example_service_pb2_grpc.CalculatorStub)
 ```
 
 The generated `service_client` instance can be used to call the methods exposed by the service.  

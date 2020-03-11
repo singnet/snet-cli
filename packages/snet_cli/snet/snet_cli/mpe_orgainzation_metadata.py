@@ -136,6 +136,7 @@ class OrganizationMetadata(object):
         {
             "org_name": "organization_name",
             "org_id": "org_id1",
+            org_type: "organization"/"individual",
             "contacts": [
                 {
                     "contact_type": "support",
@@ -189,10 +190,11 @@ class OrganizationMetadata(object):
         }
     """
 
-    def __init__(self, org_name="", org_id="", contacts=[], description="",
+    def __init__(self, org_name="", org_id="", org_type="",contacts=[], description={},
                  assets={}, groups=[]):
         self.org_name = org_name
         self.org_id = org_id
+        self.org_type = org_type
         self.description = description
         self.assets = assets
         self.contacts = contacts
@@ -213,9 +215,18 @@ class OrganizationMetadata(object):
         groups = []
         if 'groups' in json_data:
             groups = list(map(Group.from_json, json_data["groups"]))
+            if "contacts" not in json_data:
+                json_data["contacts"] = []
+            if "description" not in json_data:
+                json_data["description"] = {}
+            if "assets" not in json_data:
+                json_data["assets"] = {}
+            if "org_type" not in json_data:
+                json_data["org_type"] = ""
         return cls(
             org_name=json_data['org_name'],
             org_id=json_data['org_id'],
+            org_type=json_data['org_type'],
             contacts=json_data['contacts'],
             description=json_data['description'],
             groups=groups,
@@ -246,6 +257,8 @@ class OrganizationMetadata(object):
             raise Exception("Org_id cannot be null")
         if self.org_name is None:
             raise Exception("Org_name cannot be null")
+        if self.org_type is None:
+            raise Exception("Org_type cannot be null")
         if self.contacts is None:
             raise Exception("contact_details can not be null")
         if self.description is None:
@@ -303,10 +316,16 @@ class OrganizationMetadata(object):
             raise Exception("Invalid asset type %s" % asset_type)
 
     def add_description(self, description):
-        self.description = description
+        self.description["description"] = description
+
+    def add_short_description(self, short_description):
+        self.description["short_description"] = short_description
+
+    def add_url(self, url):
+        self.description["url"] = url
 
     def remove_description(self):
-        self.description = ""
+        self.description = {}
 
     def add_contact(self, contact_type, phone, email):
         if phone is None:
