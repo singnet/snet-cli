@@ -106,7 +106,7 @@ def test_sdk():
         "registry_contract_address": "0x4e74fefa82e83e0964f0d9f53c68e03f7298a8b2",
         "token_contract_address": "0x6e5f20669177f5bdf3703ec5ea9c4d4fe3aabd14",
         "ipfs_rpc_endpoint": "http://localhost:5002",
-        "free_call_auth_token-bin":b"\xf2T\x8d'\xff\xd3\x19\xb9\xc0Y\x18\xee\xac\x15\xeb\xab\x93N\\\xfc\xd6\x8e\x1e\xc3\xdb+\x92vS\x89)Y\x01+H\xda\x17\xa7\x97=W\xf7/\xac<\x1e\xcc\xd9xb\xa4\xfa\x95<7&\xdae\xde\xc4/Y\x89\xee\x1b",
+        "free_call_auth_token-bin":"f2548d27ffd319b9c05918eeac15ebab934e5cfcd68e1ec3db2b927653892959012b48da17a7973d57f72fac3c1eccd97862a4fa953c3726da65dec42f5989ee1b",
         "free-call-token-expiry-block":172800,
         "email":"test@test.com"
 
