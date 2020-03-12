@@ -1,3 +1,4 @@
+
 # snet-sdk-python
   
 SingularityNET SDK for Python
@@ -39,8 +40,17 @@ snet_sdk = sdk.SnetSDK(config)
 ```
 
 The `config` parameter must be a Python dictionary.  
-See [config.py.sample](https://github.com/singnet/snet-code-examples/blob/master/python/client/config.py.sample) for a sample configuration file.
-  
+See [test_sdk_client.py.sample](https://github.com/singnet/snet-cli/blob/master/packages/sdk/testcases/functional_tests/test_sdk_client.py) for a sample configuration file.
+ 
+ ##### Free call configuration
+ If you want to use free call you need to add below mwntioned attributes in config file.
+```         
+"free_call_auth_token-bin":"f2548d27ffd319b9c05918eeac15ebab934e5cfcd68e1ec3db2b92765",
+"free-call-token-expiry-block":172800,
+"email":"test@test.com"  
+```
+ You can download this config for a given service from [Dapp]([https://beta.singularitynet.io/)
+ 
 Now, the instance of the sdk can be used to create service client instances. To create a service client instance, it needs to be supplied with the client libraries that you compiled before.  
 Specifically, it needs the `Stub` object of the service you want to use from the compiled `_pb2_grpc.py` file of the client library.  
 Continuing from the previous code this is an example using `example-service` from the `snet` organization:
