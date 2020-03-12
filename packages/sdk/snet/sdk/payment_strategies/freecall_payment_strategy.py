@@ -13,37 +13,41 @@ class FreeCallPaymentStrategy(PaymentStrategy):
     def is_free_call_available(self, email, token_for_free_call, token_expiry_date_block, signature,
                                current_block_number, daemon_endpoint):
 
-        with add_to_path(str(RESOURCES_PATH.joinpath("proto"))):
-            state_service_pb2 = importlib.import_module("state_service_pb2")
+        try:
 
-        with add_to_path(str(RESOURCES_PATH.joinpath("proto"))):
-            state_service_pb2_grpc = importlib.import_module("state_service_pb2_grpc")
+            with add_to_path(str(RESOURCES_PATH.joinpath("proto"))):
+                state_service_pb2 = importlib.import_module("state_service_pb2")
 
-        request = state_service_pb2.FreeCallStateRequest()
-        request.user_id = email
-        request.token_for_free_call = token_for_free_call
-        request.token_expiry_date_block = token_expiry_date_block
-        request.signature = signature
-        request.current_block = current_block_number
+            with add_to_path(str(RESOURCES_PATH.joinpath("proto"))):
+                state_service_pb2_grpc = importlib.import_module("state_service_pb2_grpc")
 
-        endpoint_object = urlparse(daemon_endpoint)
-        if endpoint_object.port is not None:
-            channel_endpoint = endpoint_object.hostname + ":" + str(endpoint_object.port)
-        else:
-            channel_endpoint = endpoint_object.hostname
+            request = state_service_pb2.FreeCallStateRequest()
+            request.user_id = email
+            request.token_for_free_call = token_for_free_call
+            request.token_expiry_date_block = token_expiry_date_block
+            request.signature = signature
+            request.current_block = current_block_number
 
-        if endpoint_object.scheme == "http":
-            channel = grpc.insecure_channel(channel_endpoint)
-        elif endpoint_object.scheme == "https":
-            channel = grpc.secure_channel(channel_endpoint, grpc.ssl_channel_credentials())
-        else:
-            raise ValueError('Unsupported scheme in service metadata ("{}")'.format(endpoint_object.scheme))
+            endpoint_object = urlparse(daemon_endpoint)
+            if endpoint_object.port is not None:
+                channel_endpoint = endpoint_object.hostname + ":" + str(endpoint_object.port)
+            else:
+                channel_endpoint = endpoint_object.hostname
 
-        stub = state_service_pb2_grpc.FreeCallStateServiceStub(channel)
-        response = stub.GetFreeCallsAvailable(request)
-        if response.free_calls_available > 0:
-            return True
-        return False
+            if endpoint_object.scheme == "http":
+                channel = grpc.insecure_channel(channel_endpoint)
+            elif endpoint_object.scheme == "https":
+                channel = grpc.secure_channel(channel_endpoint, grpc.ssl_channel_credentials())
+            else:
+                raise ValueError('Unsupported scheme in service metadata ("{}")'.format(endpoint_object.scheme))
+
+            stub = state_service_pb2_grpc.FreeCallStateServiceStub(channel)
+            response = stub.GetFreeCallsAvailable(request)
+            if response.free_calls_available > 0:
+                return True
+            return False
+        except Exception as e:
+            return False
 
     def get_payment_metadata(self, service_client):
 
