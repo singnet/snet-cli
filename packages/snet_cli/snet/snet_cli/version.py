@@ -1,1 +1,1 @@
-__version__ = "cli-v1.1.5"
+__version__ = "sdk-v0.2.1"
