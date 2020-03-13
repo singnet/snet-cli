@@ -73,7 +73,7 @@ class SnetSDK:
         if options is None:
             options = dict()
 
-        options['free_call_auth_token-bin'] = self._config.get("free_call_auth_token-bin", bytes('',encoding='utf-8'))
+        options['free_call_auth_token-bin'] = bytes.fromhex(self._config.get("free_call_auth_token-bin", ""))
         options['free-call-token-expiry-block'] = self._config.get("free-call-token-expiry-block", 0)
         options['email'] = self._config.get("email", "")
 

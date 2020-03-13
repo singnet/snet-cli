@@ -1,8 +1,9 @@
 import json
 
-from snet.snet_cli.utils import normalize_private_key, get_address_from_private, get_contract_object
+from snet.snet_cli.utils import get_address_from_private, get_contract_object, normalize_private_key
 
-DEFAULT_GAS = 210000
+DEFAULT_GAS = 300000
+TRANSACTION_TIMEOUT = 500
 
 
 class TransactionError(Exception):
@@ -66,7 +67,7 @@ class Account:
 
     def send_transaction(self, contract_fn, *args):
         txn_hash = self._send_signed_transaction(contract_fn, *args)
-        return self.web3.eth.waitForTransactionReceipt(txn_hash, 300)
+        return self.web3.eth.waitForTransactionReceipt(txn_hash, TRANSACTION_TIMEOUT)
 
     def _parse_receipt(self, receipt, event, encoder=json.JSONEncoder):
         if receipt.status == 0:
