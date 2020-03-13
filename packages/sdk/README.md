@@ -92,7 +92,7 @@ For more information about gRPC and how to use it with Python, please see:
 
 #### Prerequisites  
   
-* [Python 3.6.5](https://www.python.org/downloads/release/python-365/)  
+* [Python 3.7](https://www.python.org/downloads/release/python-377/)  
 * [Node 8+ w/npm](https://nodejs.org/en/download/)
 
 ---
@@ -157,9 +157,9 @@ You should move or copy these generated files to the root of your project.
 Once you have installed the snet-sdk in your current environment and it's in your PYTHONPATH, you should import it and create an instance of the base sdk class:
 
 ```python
-from snet_sdk import SnetSDK
+from snet import sdk
 from config import config
-snet = SnetSDK(config)
+snet_sdk = sdk.SnetSDK(config)
 ```
 
 The `config` parameter must be a Python dictionary.  
