@@ -11,6 +11,6 @@ snet network local_bad
 #switch to mainnet
 snet network mainnet
 
-#switch to kovan
-snet network kovan
+#switch to ropsten
+snet network ropsten
 
