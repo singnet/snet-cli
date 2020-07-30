@@ -77,6 +77,7 @@ class SnetSDK:
         options['free_call_auth_token-bin'] = bytes.fromhex(self._config.get("free_call_auth_token-bin", ""))
         options['free-call-token-expiry-block'] = self._config.get("free-call-token-expiry-block", 0)
         options['email'] = self._config.get("email", "")
+        options['concurrency'] = self._config.get("concurrency", True)
 
         if self._metadata_provider is None:
             self._metadata_provider = IPFSMetadataProvider( self.ipfs_client ,self.registry_contract,)
