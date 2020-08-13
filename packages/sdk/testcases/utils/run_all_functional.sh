@@ -3,5 +3,4 @@
 cd packages/sdk/testcases/functional_tests
 python test_sdk_client.py
 
-cd packages/sdk/testcases/functional_tests
 python test_prepaid_payment.py
