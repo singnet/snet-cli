@@ -51,7 +51,7 @@ message TokenReply {
     uint64 channel_id = 1;
 
     //it could be absent if none message was signed with current_nonce
-    bytes token = 2;
+    string token = 2;
 
     //If the client / user chooses to sign upfront , the planned amount in cogs will be indicative of this.
     uint64 planned_amount = 3;

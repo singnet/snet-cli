@@ -18,7 +18,7 @@ class PrePaidPaymentStrategy(PaymentStrategy):
             ("snet-payment-type", "prepaid-call"),
             ("snet-payment-channel-id", str(channel.channel_id)),
             ("snet-payment-channel-nonce", str(channel.state["nonce"])),
-            ("snet-prepaid-auth-token-bin", token)
+            ("snet-prepaid-auth-token-bin", bytes(token, 'UTF-8'))
         ]
         return metadata
 

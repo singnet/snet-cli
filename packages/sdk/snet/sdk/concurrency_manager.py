@@ -8,7 +8,7 @@ from snet.snet_cli.utils import RESOURCES_PATH, add_to_path
 class ConcurrencyManager:
     def __init__(self, concurrent_calls):
         self.__concurrent_calls = concurrent_calls
-        self.__token = b''
+        self.__token = ''
         self.__planned_amount = 0
         self.__used_amount = 0
 
