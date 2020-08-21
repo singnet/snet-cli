@@ -3,18 +3,17 @@ from urllib.parse import urlparse
 
 import grpc
 import web3
-from snet.sdk.payment_strategies.default import PaymentChannelManagementStrategy
 from snet.sdk.payment_strategies.payment_staregy import PaymentStrategy
 from snet.snet_cli.utils import RESOURCES_PATH, add_to_path
 
 
 class FreeCallPaymentStrategy(PaymentStrategy):
 
-    def is_free_call_available(self, email, token_for_free_call, token_expiry_date_block, signature,
-                               current_block_number, daemon_endpoint):
-
+    def is_free_call_available(self, service_client):
         try:
-
+            org_id, service_id, group_id, daemon_endpoint = service_client.get_service_details()
+            email, token_for_free_call, token_expiry_date_block = service_client.get_free_call_config()
+            signature, current_block_number = self.generate_signature(service_client)
             with add_to_path(str(RESOURCES_PATH.joinpath("proto"))):
                 state_service_pb2 = importlib.import_module("state_service_pb2")
 
@@ -50,13 +49,28 @@ class FreeCallPaymentStrategy(PaymentStrategy):
             return False
 
     def get_payment_metadata(self, service_client):
+        email, token_for_free_call, token_expiry_date_block = service_client.get_free_call_config()
+        signature, current_block_number = self.generate_signature(service_client)
+        metadata = [("snet-free-call-auth-token-bin", token_for_free_call),
+                    ("snet-free-call-token-expiry-block", str(token_expiry_date_block)),
+                    ("snet-payment-type", "free-call"),
+                    ("snet-free-call-user-id", email),
+                    ("snet-current-block-number", str(current_block_number)),
+                    ("snet-payment-channel-signature-bin", signature)]
 
+        return metadata
+
+    def select_channel(self, service_client):
+        pass
+
+    def generate_signature(self, service_client):
         org_id, service_id, group_id, daemon_endpoint = service_client.get_service_details()
         email, token_for_free_call, token_expiry_date_block = service_client.get_free_call_config()
 
         if token_expiry_date_block == 0 or len(email) == 0 or len(token_for_free_call) == 0:
             raise Exception(
-                "You are using default 'FreeCallPaymentStrategy' to use this strategy you need to pass 'free_call_auth_token-bin','email','free-call-token-expiry-block' in config")
+                "You are using default 'FreeCallPaymentStrategy' to use this strategy you need to pass "
+                "'free_call_auth_token-bin','email','free-call-token-expiry-block' in config")
 
         current_block_number = service_client.get_current_block_number()
 
@@ -65,22 +79,4 @@ class FreeCallPaymentStrategy(PaymentStrategy):
             ["__prefix_free_trial", email, org_id, service_id, group_id, current_block_number,
              token_for_free_call]
         )
-        signature = service_client.generate_signature(message)
-
-        if self.is_free_call_available(email, token_for_free_call, token_expiry_date_block, signature,
-                                       current_block_number, daemon_endpoint):
-            metadata = [("snet-free-call-auth-token-bin", token_for_free_call),
-                        ("snet-free-call-token-expiry-block", str(token_expiry_date_block)),
-                        ("snet-payment-type", "free-call"),
-                        ("snet-free-call-user-id", email),
-                        ("snet-current-block-number", str(current_block_number)),
-                        ("snet-payment-channel-signature-bin", signature)
-                        ]
-        else:
-            payment_strategy = PaymentChannelManagementStrategy()
-            metadata = payment_strategy.get_payment_metadata(service_client)
-
-        return metadata
-
-    def select_channel(self, service_client):
-        pass
+        return service_client.generate_signature(message), current_block_number

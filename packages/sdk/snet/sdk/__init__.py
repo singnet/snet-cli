@@ -1,7 +1,7 @@
 import google.protobuf.internal.api_implementation
 from snet.sdk.metadata_provider.ipfs_metadata_provider import IPFSMetadataProvider
 from snet.sdk.mpe.payment_channel_provider import PaymentChannelProvider
-from snet.sdk.payment_strategies.freecall_payment_strategy import FreeCallPaymentStrategy
+from snet.sdk.payment_strategies.default_payment_strategy import DefaultPaymentStrategy
 
 google.protobuf.internal.api_implementation.Type = lambda: 'python'
 
@@ -22,7 +22,6 @@ import ipfsapi
 from snet.sdk.service_client import ServiceClient
 from snet.sdk.account import Account
 from snet.sdk.mpe.mpe_contract import MPEContract
-from snet.sdk.payment_strategies.default import PaymentChannelManagementStrategy
 
 from snet.snet_cli.utils import get_contract_object
 
@@ -69,13 +68,16 @@ class SnetSDK:
         self.account = Account(self.web3, config, self.mpe_contract)
 
     def create_service_client(self, org_id, service_id, service_stub, group_name=None,
-                              payment_channel_management_strategy=FreeCallPaymentStrategy(), options=None):
+                              payment_channel_management_strategy=None, options=None, concurrent_calls=1):
+        if payment_channel_management_strategy is None:
+            payment_channel_management_strategy = DefaultPaymentStrategy(concurrent_calls)
         if options is None:
             options = dict()
 
         options['free_call_auth_token-bin'] = bytes.fromhex(self._config.get("free_call_auth_token-bin", ""))
         options['free-call-token-expiry-block'] = self._config.get("free-call-token-expiry-block", 0)
         options['email'] = self._config.get("email", "")
+        options['concurrency'] = self._config.get("concurrency", True)
 
         if self._metadata_provider is None:
             self._metadata_provider = IPFSMetadataProvider( self.ipfs_client ,self.registry_contract,)
