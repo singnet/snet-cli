@@ -3,6 +3,11 @@ import examples_service_pb2_grpc
 import examples_service_pb2
 
 
+def use_freecalls(service_client):
+    service_call(service_client, a=1, b=2)
+    service_call(service_client, a=1, b=2)
+
+
 def service_call(service_client, a, b):
     request = examples_service_pb2.Numbers(a=a, b=b)
     result = service_client.service.mul(request)
@@ -12,9 +17,14 @@ def service_call(service_client, a, b):
 def make_cuncurrent_calls(service_client):
     service_call(service_client, a=1, b=2)
     service_call(service_client, a=1, b=2)
-    service_call(service_client, a=1, b=2)
-    service_call(service_client, a=1, b=2)
-    service_call(service_client, a=1, b=2)
+
+
+def check_channel_status(service_client, last_signed_amount):
+    service_client.load_open_channels()
+    channels = service_client.update_channel_states()
+    assert channels[0].channel_id == 0
+    assert channels[0].state['last_signed_amount'] == last_signed_amount
+
 
 def test_sdk():
     org_id = "test_org"
@@ -36,7 +46,9 @@ def test_sdk():
     snet_sdk = sdk.SnetSDK(config)
     service_client = snet_sdk.create_service_client(org_id, service_id, examples_service_pb2_grpc.CalculatorStub,
                                                     group_name=group_name, concurrent_calls=3)
+    check_channel_status(service_client, 3000)
     make_cuncurrent_calls(service_client)
+    check_channel_status(service_client, 6000)
 
 
 if __name__ == '__main__':
