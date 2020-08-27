@@ -108,10 +108,8 @@ def test_sdk():
         "ipfs_rpc_endpoint": "http://localhost:5002",
         "free_call_auth_token-bin":"f2548d27ffd319b9c05918eeac15ebab934e5cfcd68e1ec3db2b927653892959012b48da17a7973d57f72fac3c1eccd97862a4fa953c3726da65dec42f5989ee1b",
         "free-call-token-expiry-block":172800,
-        "email":"test@test.com"
-
-
-
+        "email":"test@test.com",
+        "concurrency": False
     }
 
     snet_sdk = sdk.SnetSDK(config)

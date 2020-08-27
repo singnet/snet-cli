@@ -1,18 +1,16 @@
 import web3
-from eth_account.messages import defunct_hash_message
 from snet.sdk.payment_strategies.payment_staregy import PaymentStrategy
 
 
-class PaymentChannelManagementStrategy(PaymentStrategy):
-    def __init__(self,block_offset=240, call_allowance=1):
+class PaidCallPaymentStrategy(PaymentStrategy):
+    def __init__(self, block_offset=240, call_allowance=1):
         self.block_offset = block_offset
         self.call_allowance = call_allowance
 
-
-    def get_price(self,service_client):
+    def get_price(self, service_client):
         return service_client.get_price()
 
-    def get_payment_metadata(self,service_client):
+    def get_payment_metadata(self, service_client):
         channel = self.select_channel(service_client)
         amount = channel.state["last_signed_amount"] + int(self.get_price(service_client))
         message = web3.Web3.soliditySha3(
@@ -22,7 +20,6 @@ class PaymentChannelManagementStrategy(PaymentStrategy):
              amount]
         )
         signature = service_client.generate_signature(message)
-
 
         metadata = [
             ("snet-payment-type", "escrow"),
@@ -34,7 +31,7 @@ class PaymentChannelManagementStrategy(PaymentStrategy):
 
         return metadata
 
-    def select_channel(self,service_client):
+    def select_channel(self, service_client):
         account = service_client.account
         service_client.load_open_channels()
         service_client.update_channel_states()
@@ -47,10 +44,10 @@ class PaymentChannelManagementStrategy(PaymentStrategy):
         if len(payment_channels) < 1:
             if service_call_price > mpe_balance:
                 payment_channel = service_client.deposit_and_open_channel(service_call_price,
-                                                                               default_expiration + self.block_offset)
+                                                                          default_expiration + self.block_offset)
             else:
                 payment_channel = service_client.open_channel(service_call_price,
-                                                                   default_expiration + self.block_offset)
+                                                              default_expiration + self.block_offset)
             service_client.payment_channels = service_client.payment_channels + [payment_channel]
             service_client.update_channel_states()
         else:
