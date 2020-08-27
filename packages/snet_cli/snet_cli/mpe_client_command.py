@@ -129,7 +129,8 @@ class MPEClientCommand(MPEChannelCommand):
                 ("snet-payment-channel-id",            str(channel_id)),
                 ("snet-payment-channel-nonce",         str(nonce)),
                 ("snet-payment-channel-amount",        str(amount)),
-                ("snet-payment-channel-signature-bin", bytes(signature))]
+                ("snet-payment-channel-signature-bin", bytes(signature)),
+                ("snet-payment-mpe-address",           str(mpe_address))]
 
     def _deal_with_call_response(self, response):
         if (self.args.save_response):
