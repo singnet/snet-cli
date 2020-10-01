@@ -4,9 +4,9 @@ import sys
 from pathlib import Path
 
 from eth_account.messages import defunct_hash_message
-from snet.snet_cli.mpe_channel_command import MPEChannelCommand
-from snet.snet_cli.utils import open_grpc_channel, rgetattr, RESOURCES_PATH
-from snet.snet_cli.utils_proto import import_protobuf_from_dir, switch_to_json_payload_encoding
+from snet.snet_cli.utils.proto_utils import import_protobuf_from_dir, switch_to_json_payload_encoding
+from snet.snet_cli.utils.utils import open_grpc_channel, rgetattr, RESOURCES_PATH
+from snet_cli.commands.mpe_channel import MPEChannelCommand
 from snet_cli.utils.agi2cogs import cogs2stragi
 
 

@@ -15,8 +15,8 @@ from snet_cli.commands.sdk_command import SDKCommand
 from snet_cli.utils.agi2cogs import stragi2cogs
 from snet_cli.config import Config, get_session_keys, get_session_network_keys_removable
 
-from snet.snet_cli.mpe_channel_command import MPEChannelCommand
-from snet.snet_cli.utils import type_converter, get_contract_def, RESOURCES_PATH
+from snet_cli.commands.mpe_channel_command import MPEChannelCommand
+from snet.snet_cli.utils.utils import type_converter, get_contract_def, RESOURCES_PATH
 
 
 class CustomParser(argparse.ArgumentParser):

@@ -1,8 +1,8 @@
 from pathlib import Path
 
 import web3
-from snet.snet_cli.utils import compile_proto, open_grpc_channel, int4bytes_big, RESOURCES_PATH
-from snet.snet_cli.utils_proto import import_protobuf_from_dir
+from snet.snet_cli.utils.proto_utils import import_protobuf_from_dir
+from snet.snet_cli.utils.utils import compile_proto, open_grpc_channel, int4bytes_big, RESOURCES_PATH
 from snet_cli.commands.mpe_client import MPEClientCommand
 from snet_cli.utils.agi2cogs import cogs2stragi
 

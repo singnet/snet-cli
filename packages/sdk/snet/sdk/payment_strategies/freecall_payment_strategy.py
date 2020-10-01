@@ -4,7 +4,7 @@ from urllib.parse import urlparse
 import grpc
 import web3
 from snet.sdk.payment_strategies.payment_staregy import PaymentStrategy
-from snet.snet_cli.utils import RESOURCES_PATH, add_to_path
+from snet.snet_cli.utils.utils import RESOURCES_PATH, add_to_path
 
 
 class FreeCallPaymentStrategy(PaymentStrategy):

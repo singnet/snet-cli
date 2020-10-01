@@ -9,13 +9,12 @@ from urllib.parse import urljoin
 import ipfsapi
 import yaml
 from rfc3986 import urlparse
-from snet.snet_cli import utils_ipfs
 from snet.snet_cli.contract import Contract
-from snet.snet_cli.mpe_orgainzation_metadata import OrganizationMetadata, PaymentStorageClient, Payment, Group
-from snet.snet_cli.utils import DefaultAttributeObject, get_web3, serializable, type_converter, get_contract_def, \
+from snet.snet_cli.metadata.organization import OrganizationMetadata, PaymentStorageClient, Payment, Group
+from snet.snet_cli.utils.ipfs_utils import bytesuri_to_hash, get_from_ipfs_and_checkhash, hash_to_bytesuri
+from snet.snet_cli.utils.ipfs_utils import publish_file_in_ipfs
+from snet.snet_cli.utils.utils import DefaultAttributeObject, get_web3, serializable, type_converter, get_contract_def, \
     get_cli_version, bytes32_to_str
-from snet.snet_cli.utils_ipfs import bytesuri_to_hash, get_from_ipfs_and_checkhash, hash_to_bytesuri
-from snet.snet_cli.utils_ipfs import publish_file_in_ipfs
 from snet_cli.identity import RpcIdentityProvider, MnemonicIdentityProvider, TrezorIdentityProvider, \
     LedgerIdentityProvider, KeyIdentityProvider, KeyStoreIdentityProvider
 from snet_cli.identity import get_kws_for_identity_type
@@ -768,7 +767,7 @@ class OrganizationCommand(BlockchainCommand):
     def metadata_add_asset_to_ipfs(self):
         metadata_file = self.args.metadata_file
         org_metadata = OrganizationMetadata.from_file(metadata_file)
-        asset_file_ipfs_hash_base58 = utils_ipfs.publish_file_in_ipfs(self._get_ipfs_client(),
+        asset_file_ipfs_hash_base58 = publish_file_in_ipfs(self._get_ipfs_client(),
                                                                       self.args.asset_file_path)
 
         org_metadata.add_asset(asset_file_ipfs_hash_base58, self.args.asset_type)

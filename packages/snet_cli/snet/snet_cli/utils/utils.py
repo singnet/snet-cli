@@ -12,7 +12,6 @@ import pkg_resources
 import grpc
 from grpc_tools.protoc import main as protoc
 
-
 RESOURCES_PATH = PurePath(os.path.realpath(__file__)).parent.joinpath("resources")
 
 
@@ -68,9 +67,10 @@ def serializable(o):
     else:
         return o.__dict__
 
+
 def safe_address_converter(a):
     if not web3.eth.is_checksum_address(a):
-        raise Exception("%s is not is not a valid Ethereum checksum address"%a)
+        raise Exception("%s is not is not a valid Ethereum checksum address" % a)
     return a
 
 
@@ -81,7 +81,8 @@ def type_converter(t):
         if "int" in t:
             return lambda x: web3.Web3.toInt(text=x)
         elif "bytes32" in t:
-            return lambda x: web3.Web3.toBytes(text=x).ljust(32, b"\0") if not x.startswith("0x") else web3.Web3.toBytes(hexstr=x).ljust(32, b"\0")
+            return lambda x: web3.Web3.toBytes(text=x).ljust(32, b"\0") if not x.startswith(
+                "0x") else web3.Web3.toBytes(hexstr=x).ljust(32, b"\0")
         elif "byte" in t:
             return lambda x: web3.Web3.toBytes(text=x) if not x.startswith("0x") else web3.Web3.toBytes(hexstr=x)
         elif "address" in t:
@@ -128,10 +129,13 @@ def walk_imports(entry_path):
 
 def get_contract_def(contract_name, contract_artifacts_root=RESOURCES_PATH.joinpath("contracts")):
     contract_def = {}
-    with open(Path(__file__).absolute().parent.joinpath(contract_artifacts_root, "abi", "{}.json".format(contract_name))) as f:
+    with open(Path(__file__).absolute().parent.joinpath(contract_artifacts_root, "abi",
+                                                        "{}.json".format(contract_name))) as f:
         contract_def["abi"] = json.load(f)
-    if os.path.isfile(Path(__file__).absolute().parent.joinpath(contract_artifacts_root, "networks", "{}.json".format(contract_name))):
-        with open(Path(__file__).absolute().parent.joinpath(contract_artifacts_root, "networks", "{}.json".format(contract_name))) as f:
+    if os.path.isfile(Path(__file__).absolute().parent.joinpath(contract_artifacts_root, "networks",
+                                                                "{}.json".format(contract_name))):
+        with open(Path(__file__).absolute().parent.joinpath(contract_artifacts_root, "networks",
+                                                            "{}.json".format(contract_name))) as f:
             contract_def["networks"] = json.load(f)
     return contract_def
 
@@ -163,8 +167,12 @@ def compile_proto(entry_path, codegen_dir, proto_file=None, target_language="pyt
             compiler_args.append("--grpc_python_out={}".format(codegen_dir))
             compiler = protoc
         elif target_language == "nodejs":
-            protoc_node_compiler_path = Path(RESOURCES_PATH.joinpath("node_modules").joinpath("grpc-tools").joinpath("bin").joinpath("protoc.js")).absolute()
-            grpc_node_plugin_path = Path(RESOURCES_PATH.joinpath("node_modules").joinpath("grpc-tools").joinpath("bin").joinpath("grpc_node_plugin")).resolve()
+            protoc_node_compiler_path = Path(
+                RESOURCES_PATH.joinpath("node_modules").joinpath("grpc-tools").joinpath("bin").joinpath(
+                    "protoc.js")).absolute()
+            grpc_node_plugin_path = Path(
+                RESOURCES_PATH.joinpath("node_modules").joinpath("grpc-tools").joinpath("bin").joinpath(
+                    "grpc_node_plugin")).resolve()
             if not os.path.isfile(protoc_node_compiler_path) or not os.path.isfile(grpc_node_plugin_path):
                 print("Missing required node.js protoc compiler. Retrieving from npm...")
                 subprocess.run(["npm", "install"], cwd=RESOURCES_PATH)
@@ -187,6 +195,7 @@ def compile_proto(entry_path, codegen_dir, proto_file=None, target_language="pyt
         print(e)
         return False
 
+
 def abi_get_element_by_name(abi, name):
     """ Return element of abi (return None if fails to find) """
     if (abi and "abi" in abi):
@@ -195,8 +204,9 @@ def abi_get_element_by_name(abi, name):
                 return a
     return None
 
+
 def abi_decode_struct_to_dict(abi, struct_list):
-    return {el_abi["name"] : el for el_abi, el in zip(abi["outputs"], struct_list)}
+    return {el_abi["name"]: el for el_abi, el in zip(abi["outputs"], struct_list)}
 
 
 def int4bytes_big(b):
@@ -223,8 +233,8 @@ def is_valid_endpoint(url):
         if result.port:
             _port = int(result.port)
         return (
-            all([result.scheme, result.netloc]) and
-            result.scheme in ['http', 'https']
+                all([result.scheme, result.netloc]) and
+                result.scheme in ['http', 'https']
         )
     except ValueError:
         return False
@@ -232,9 +242,10 @@ def is_valid_endpoint(url):
 
 def remove_http_https_prefix(endpoint):
     """remove http:// or https:// prefix if presented in endpoint"""
-    endpoint = endpoint.replace("https://","")
-    endpoint = endpoint.replace("http://","")
+    endpoint = endpoint.replace("https://", "")
+    endpoint = endpoint.replace("http://", "")
     return endpoint
+
 
 def open_grpc_channel(endpoint):
     """
@@ -246,6 +257,7 @@ def open_grpc_channel(endpoint):
     if (endpoint.startswith("https://")):
         return grpc.secure_channel(remove_http_https_prefix(endpoint), grpc.ssl_channel_credentials())
     return grpc.insecure_channel(remove_http_https_prefix(endpoint))
+
 
 def rgetattr(obj, attr):
     """
@@ -259,7 +271,7 @@ def rgetattr(obj, attr):
     return functools.reduce(getattr, [obj] + attr.split('.'))
 
 
-def get_contract_object(w3, contract_file,address=None):
+def get_contract_object(w3, contract_file, address=None):
     with open(RESOURCES_PATH.joinpath("contracts", "abi", contract_file)) as f:
         abi = json.load(f)
     if address:
@@ -298,8 +310,10 @@ def get_address_from_private(private_key):
 class add_to_path():
     def __init__(self, path):
         self.path = path
+
     def __enter__(self):
         sys.path.insert(0, self.path)
+
     def __exit__(self, exc_type, exc_value, traceback):
         try:
             sys.path.remove(self.path)
