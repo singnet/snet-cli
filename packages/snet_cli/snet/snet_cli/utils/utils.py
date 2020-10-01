@@ -12,7 +12,9 @@ import pkg_resources
 import grpc
 from grpc_tools.protoc import main as protoc
 
-RESOURCES_PATH = PurePath(os.path.realpath(__file__)).parent.joinpath("resources")
+from snet import snet_cli
+
+RESOURCES_PATH = PurePath(os.path.dirname(snet_cli.__file__)).joinpath("resources")
 
 
 class DefaultAttributeObject(object):
