@@ -4,7 +4,7 @@ import web3
 
 from snet_cli.config import Config
 
-from snet_cli.commands.mpe_channel_command import MPEChannelCommand
+from snet_cli.commands.mpe_channel import MPEChannelCommand
 from snet.snet_cli.utils.utils import compile_proto, DefaultAttributeObject
 
 
