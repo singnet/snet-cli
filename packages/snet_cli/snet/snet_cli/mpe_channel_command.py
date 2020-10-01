@@ -11,7 +11,7 @@ from web3.utils.events import get_event_data
 
 from snet_cli.commands import OrganizationCommand
 from snet.snet_cli.mpe_orgainzation_metadata import OrganizationMetadata
-from snet_cli.utils_agi2cogs import cogs2stragi
+from snet_cli.utils.agi2cogs import cogs2stragi
 
 from snet.snet_cli.utils_ipfs import safe_extract_proto_from_ipfs, get_from_ipfs_and_checkhash, bytesuri_to_hash
 from snet.snet_cli.mpe_service_metadata import mpe_service_metadata_from_json, load_mpe_service_metadata

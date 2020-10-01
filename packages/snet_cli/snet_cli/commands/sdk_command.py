@@ -2,10 +2,10 @@ import os
 from pathlib import Path, PurePath
 from tempfile import TemporaryDirectory
 
-from snet_cli.mpe_service_command import MPEServiceCommand
+from snet_cli.commands.mpe_service_command import MPEServiceCommand
 
-from snet.snet_cli.utils_ipfs import bytesuri_to_hash, get_from_ipfs_and_checkhash, safe_extract_proto_from_ipfs
-from snet.snet_cli.utils import type_converter, bytes32_to_str, compile_proto
+from snet.snet_cli.utils_ipfs import safe_extract_proto_from_ipfs
+from snet.snet_cli.utils import compile_proto
 
 class SDKCommand(MPEServiceCommand):
     def generate_client_library(self):

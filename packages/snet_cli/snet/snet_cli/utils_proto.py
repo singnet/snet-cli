@@ -14,7 +14,7 @@ def import_protobuf_from_dir(proto_dir, method_name, service_name = None):
     """
     proto_dir = Path(proto_dir)
     # <SERVICE>_pb2_grpc.py import <SERVICE>_pb2.py so we are forced to add proto_dir to path
-    sys.path.append(str(proto_dir))    
+    sys.path.append(str(proto_dir))
     grpc_pyfiles = [str(os.path.basename(p)) for p in proto_dir.glob("*_pb2_grpc.py")]
     
     good_rez = []
