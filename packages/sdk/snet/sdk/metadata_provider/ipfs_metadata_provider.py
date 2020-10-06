@@ -1,7 +1,6 @@
-from snet.snet_cli.mpe_service_metadata import mpe_service_metadata_from_json
-from snet.snet_cli.utils import get_contract_object
+from snet.snet_cli.metadata.service import mpe_service_metadata_from_json
 
-from snet.snet_cli.utils_ipfs import bytesuri_to_hash, get_from_ipfs_and_checkhash
+from snet.snet_cli.utils.ipfs_utils import bytesuri_to_hash, get_from_ipfs_and_checkhash
 
 import json
 

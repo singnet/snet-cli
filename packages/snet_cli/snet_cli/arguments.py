@@ -4,19 +4,19 @@ import re
 import sys
 from pathlib import Path
 
-from snet_cli.commands import IdentityCommand, SessionSetCommand, SessionShowCommand, NetworkCommand, ContractCommand, \
+from snet_cli.commands.commands import IdentityCommand, SessionSetCommand, SessionShowCommand, NetworkCommand, ContractCommand, \
     OrganizationCommand, VersionCommand
 from snet_cli.identity import get_identity_types
-from snet_cli.mpe_account_command import MPEAccountCommand
-from snet_cli.mpe_service_command import MPEServiceCommand
-from snet_cli.mpe_client_command import MPEClientCommand
-from snet_cli.mpe_treasurer_command import MPETreasurerCommand
-from snet_cli.sdk_command import SDKCommand
-from snet_cli.utils_agi2cogs import stragi2cogs
+from snet_cli.commands.mpe_account import MPEAccountCommand
+from snet_cli.commands.mpe_service import MPEServiceCommand
+from snet_cli.commands.mpe_client import MPEClientCommand
+from snet_cli.commands.mpe_treasurer import MPETreasurerCommand
+from snet_cli.commands.sdk_command import SDKCommand
+from snet_cli.utils.agi2cogs import stragi2cogs
 from snet_cli.config import Config, get_session_keys, get_session_network_keys_removable
 
-from snet.snet_cli.mpe_channel_command import MPEChannelCommand
-from snet.snet_cli.utils import type_converter, get_contract_def, RESOURCES_PATH
+from snet_cli.commands.mpe_channel import MPEChannelCommand
+from snet.snet_cli.utils.utils import type_converter, get_contract_def, RESOURCES_PATH
 
 
 class CustomParser(argparse.ArgumentParser):
@@ -362,7 +362,7 @@ def add_organization_options(parser):
     add_eth_call_arguments(p)
 
     p = subparsers.add_parser("list-org-names", help="List Organizations Names and Ids")
-    p.set_defaults(fn="list_orgnames")
+    p.set_defaults(fn="list_org_name")
     add_contract_identity_arguments(p, [("registry", "registry_at")])
     add_eth_call_arguments(p)
 

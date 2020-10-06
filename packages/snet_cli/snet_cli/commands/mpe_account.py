@@ -1,5 +1,5 @@
-from snet_cli.commands import BlockchainCommand
-from snet_cli.utils_agi2cogs import cogs2stragi
+from snet_cli.commands.commands import BlockchainCommand
+from snet_cli.utils.agi2cogs import cogs2stragi
 
 
 class MPEAccountCommand(BlockchainCommand):

@@ -1,4 +1,4 @@
-from snet.snet_cli.utils import get_contract_def
+from snet.snet_cli.utils.utils import get_contract_def
 
 
 def get_contract_address(cmd, contract_name, error_message=None):

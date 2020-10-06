@@ -17,7 +17,7 @@ from trezorlib.transport_hid import HidTransport
 from ledgerblue.comm import getDongle
 from ledgerblue.commException import CommException
 
-from snet.snet_cli.utils import get_address_from_private, normalize_private_key
+from snet.snet_cli.utils.utils import get_address_from_private, normalize_private_key
 
 
 BIP32_HARDEN = 0x80000000

@@ -1,6 +1,5 @@
 import google.protobuf.internal.api_implementation
 from snet.sdk.metadata_provider.ipfs_metadata_provider import IPFSMetadataProvider
-from snet.sdk.mpe.payment_channel_provider import PaymentChannelProvider
 from snet.sdk.payment_strategies.default_payment_strategy import DefaultPaymentStrategy
 
 google.protobuf.internal.api_implementation.Type = lambda: 'python'
@@ -23,10 +22,10 @@ from snet.sdk.service_client import ServiceClient
 from snet.sdk.account import Account
 from snet.sdk.mpe.mpe_contract import MPEContract
 
-from snet.snet_cli.utils import get_contract_object
+from snet.snet_cli.utils.utils import get_contract_object
 
-from snet.snet_cli.utils_ipfs import bytesuri_to_hash, get_from_ipfs_and_checkhash
-from snet.snet_cli.mpe_service_metadata import mpe_service_metadata_from_json
+from snet.snet_cli.utils.ipfs_utils import bytesuri_to_hash, get_from_ipfs_and_checkhash
+from snet.snet_cli.metadata.service import mpe_service_metadata_from_json
 
 class SnetSDK:
     """Base Snet SDK"""

@@ -21,7 +21,7 @@ common_dependencies = [
 
 def install_and_compile_proto():
     import snet.snet_cli
-    from snet.snet_cli.utils import compile_proto as compile_proto
+    from snet.snet_cli.utils.utils import compile_proto as compile_proto
     from pathlib import Path
     proto_dir = Path(__file__).absolute().parent.joinpath(
         "snet", "snet_cli", "resources", "proto")

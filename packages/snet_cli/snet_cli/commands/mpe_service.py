@@ -1,32 +1,28 @@
-import web3
 import json
-import grpc
 from collections import defaultdict
 
+import snet.snet_cli.utils.ipfs_utils as ipfs_utils
 from grpc_health.v1 import health_pb2 as heartb_pb2
 from grpc_health.v1 import health_pb2_grpc as heartb_pb2_grpc
-from snet.snet_cli.mpe_orgainzation_metadata import OrganizationMetadata
-
-from snet_cli.commands import BlockchainCommand
-
-import snet.snet_cli.utils_ipfs as utils_ipfs
-from snet.snet_cli.utils_ipfs import hash_to_bytesuri, bytesuri_to_hash, get_from_ipfs_and_checkhash, \
-    safe_extract_proto_from_ipfs
-from snet.snet_cli.mpe_service_metadata import MPEServiceMetadata, load_mpe_service_metadata, \
+from snet.snet_cli.metadata.service import MPEServiceMetadata, load_mpe_service_metadata, \
     mpe_service_metadata_from_json
-from snet.snet_cli.utils import type_converter, bytes32_to_str, open_grpc_channel
+from snet.snet_cli.metadata.organization import OrganizationMetadata
+from snet.snet_cli.utils.ipfs_utils import hash_to_bytesuri, bytesuri_to_hash, get_from_ipfs_and_checkhash, \
+    safe_extract_proto_from_ipfs
+from snet.snet_cli.utils.utils import type_converter, bytes32_to_str, open_grpc_channel
+from snet_cli.commands.commands import BlockchainCommand
 
 
 class MPEServiceCommand(BlockchainCommand):
 
     def publish_proto_in_ipfs(self):
         """ Publish proto files in ipfs and print hash """
-        ipfs_hash_base58 = utils_ipfs.publish_proto_in_ipfs(
+        ipfs_hash_base58 = ipfs_utils.publish_proto_in_ipfs(
             self._get_ipfs_client(), self.args.protodir)
         self._printout(ipfs_hash_base58)
 
     def publish_proto_metadata_init(self):
-        model_ipfs_hash_base58 = utils_ipfs.publish_proto_in_ipfs(
+        model_ipfs_hash_base58 = ipfs_utils.publish_proto_in_ipfs(
             self._get_ipfs_client(), self.args.protodir)
 
         metadata = MPEServiceMetadata()
@@ -58,7 +54,7 @@ class MPEServiceCommand(BlockchainCommand):
     def publish_proto_metadata_update(self):
         """ Publish protobuf model in ipfs and update existing metadata file """
         metadata = load_mpe_service_metadata(self.args.metadata_file)
-        ipfs_hash_base58 = utils_ipfs.publish_proto_in_ipfs(
+        ipfs_hash_base58 = ipfs_utils.publish_proto_in_ipfs(
             self._get_ipfs_client(), self.args.protodir)
         metadata.set_simple_field("model_ipfs_hash", ipfs_hash_base58)
         metadata.save_pretty(self.args.metadata_file)
@@ -145,7 +141,7 @@ class MPEServiceCommand(BlockchainCommand):
 
     def metadata_add_asset_to_ipfs(self):
         metadata = load_mpe_service_metadata(self.args.metadata_file)
-        asset_file_ipfs_hash_base58 = utils_ipfs.publish_file_in_ipfs(self._get_ipfs_client(),
+        asset_file_ipfs_hash_base58 = ipfs_utils.publish_file_in_ipfs(self._get_ipfs_client(),
                                                                       self.args.asset_file_path)
 
         metadata.add_asset(asset_file_ipfs_hash_base58, self.args.asset_type)
