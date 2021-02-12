@@ -8,6 +8,12 @@ jobs:
       TRIGGER_BUILD_BRANCH: master
     steps:
     - run:
+        name: Update Node
+        command: |
+            curl -sSL "https://nodejs.org/dist/v12.19.0/node-v12.19.0-linux-x64.tar.xz" |
+            sudo tar --strip-components=2 -xJ -C /usr/local/bin/ node-v12.19.0-linux-x64/bin/node
+            curl https://www.npmjs.com/install.sh | sudo bash
+    - run:
         name: Install tools and ipfs
         command: |
             cd ..
