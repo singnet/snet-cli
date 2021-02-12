@@ -11,8 +11,9 @@ class PrePaidPaymentStrategy(PaymentStrategy):
     def get_price(self, service_client):
         return service_client.get_price() * self.concurrency_manager.concurrent_calls
 
-    def get_payment_metadata(self, service_client):
-        channel = self.select_channel(service_client)
+    def get_payment_metadata(self, service_client, channel):
+        if channel is None:
+            channel = self.select_channel(service_client)
         token = self.concurrency_manager.get_token(service_client, channel, self.get_price(service_client))
         metadata = [
             ("snet-payment-type", "prepaid-call"),
@@ -21,6 +22,11 @@ class PrePaidPaymentStrategy(PaymentStrategy):
             ("snet-prepaid-auth-token-bin", bytes(token, 'UTF-8'))
         ]
         return metadata
+
+    def get_concurrency_token_and_channel(self, service_client):
+        channel = self.select_channel(service_client)
+        token = self.concurrency_manager.get_token(service_client, channel, self.get_price(service_client))
+        return token, channel
 
     def select_channel(self, service_client):
         account = service_client.account
