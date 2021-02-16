@@ -2,11 +2,17 @@ version: 2
 jobs:
   build:
     docker:
-    - image: circleci/python:3.7.0-node
+    - image: circleci/python:3.8.3-node
     working_directory: ~/singnet/snet-cli
     environment:
       TRIGGER_BUILD_BRANCH: master
     steps:
+    - run:
+        name: Update Node
+        command: |
+            curl -sSL "https://nodejs.org/dist/v10.23.0/node-v10.23.0-linux-x64.tar.xz" |
+            sudo tar --strip-components=2 -xJ -C /usr/local/bin/ node-v10.23.0-linux-x64/bin/node
+            curl https://www.npmjs.com/install.sh | sudo bash
     - run:
         name: Install tools and ipfs
         command: |

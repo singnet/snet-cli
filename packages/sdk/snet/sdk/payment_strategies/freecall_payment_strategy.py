@@ -13,6 +13,10 @@ class FreeCallPaymentStrategy(PaymentStrategy):
         try:
             org_id, service_id, group_id, daemon_endpoint = service_client.get_service_details()
             email, token_for_free_call, token_expiry_date_block = service_client.get_free_call_config()
+
+            if not token_for_free_call:
+                return False
+
             signature, current_block_number = self.generate_signature(service_client)
             with add_to_path(str(RESOURCES_PATH.joinpath("proto"))):
                 state_service_pb2 = importlib.import_module("state_service_pb2")

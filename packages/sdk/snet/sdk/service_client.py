@@ -164,3 +164,10 @@ class ServiceClient:
 
     def get_concurrency_flag(self):
         return self.options.get('concurrency', True)
+
+    def get_concurrency_token_and_channel(self):
+        return self.payment_strategy.get_concurrency_token_and_channel(self)
+
+    def set_concurrency_token_and_channel(self, token, channel):
+        self.payment_strategy.concurrency_token = token
+        self.payment_strategy.channel = channel
