@@ -1,1 +1,1 @@
-__version__ = "sdk-v0.2.3"
+__version__ = "v0.2.3"
