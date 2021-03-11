@@ -1108,6 +1108,24 @@ def add_mpe_service_options(parser):
     p.set_defaults(fn="metadata_remove_all_assets")
     add_p_metadata_file_opt(p)
 
+    # metadata-add-media subparser
+    p = subparsers.add_parser("metadata-add-media",
+                              help="Add media to metadata")
+    p.set_defaults(fn="metadata_add_media")
+    p.add_argument("media_url",
+                   metavar='MEDIA_URL',
+                   help="Media url endpoint")
+    p.add_argument("media_type",
+                   metavar='MEDIA_TYPE',
+                   choices=['image', 'video'],
+                   help="Type of the media [image, video]")
+    p.add_argument('--hero_image',
+                   metavar='bool',
+                   help='Indicate whether hero-image (default False)',
+                   type=bool,
+                   default=False)
+    add_p_metadata_file_opt(p)
+
     p = subparsers.add_parser("metadata-update-endpoints",
                               help="Remove all endpoints from the group and add new ones")
     p.set_defaults(fn="metadata_update_endpoints")

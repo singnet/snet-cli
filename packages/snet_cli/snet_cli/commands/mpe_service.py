@@ -157,6 +157,11 @@ class MPEServiceCommand(BlockchainCommand):
         metadata.remove_assets(self.args.asset_type)
         metadata.save_pretty(self.args.metadata_file)
 
+    def metadata_add_media(self):
+        metadata = load_mpe_service_metadata(self.args.metadata_file)
+        metadata.add_media(self.args.media_url, self.args.media_type, self.args.hero_image)
+        metadata.save_pretty((self.args.metadata_file))
+
     def metadata_add_contributor(self):
         metadata = load_mpe_service_metadata(self.args.metadata_file)
         metadata.add_contributor(self.args.name, self.args.email_id)

@@ -72,7 +72,8 @@ class MPEServiceMetadata:
                   "model_ipfs_hash": "",
                   "mpe_address": "",
                   "groups": [],
-                  "assets": {}
+                  "assets": {},
+                  "media": []
                   }
 
     def set_simple_field(self, f, v):
@@ -197,6 +198,31 @@ class MPEServiceMetadata:
                 self.m['assets'][asset_type] = []
             else:
                 raise Exception("Invalid asset type %s" % asset_type)
+
+    def add_media(self, url, media_type, hero_img=False):
+        if 'media' not in self.m:
+            self.m['media'] = []
+        if len(self.m['media']) == 0:
+            media_order = 1
+        else:
+            media_order = self.m['media'][-1]['order'] + 1
+        individual_media = {'file_type': media_type, 'url': url, 'order': media_order}
+        if media_type == 'image':
+            individual_media['alt_text'] = 'hover_on_the_image_text'
+        else:
+            individual_media['alt_text'] = 'hover_on_the_video_url'
+        if hero_img == True:
+            if media_type == 'video':
+                raise Exception("Video media type cannot be a hero-image")
+            individual_media['asset_type'] = 'hero'
+        self.m['media'].append(individual_media)
+
+
+    def remove_all_media(self):
+        pass
+
+    def remove_media(self):
+        pass
 
     def add_endpoint_to_group(self, group_name, endpoint):
         if re.match("^\w+://", endpoint) is None:
