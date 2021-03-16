@@ -200,29 +200,52 @@ class MPEServiceMetadata:
                 raise Exception("Invalid asset type %s" % asset_type)
 
     def add_media(self, url, media_type, hero_img=False):
+        """Add new individual media to service metadata"""
         if 'media' not in self.m:
             self.m['media'] = []
+        individual_media = {}
+        if hero_img:
+            assert (media_type == 'image'), f"{media_type.upper()} media-type cannot be a hero-image."
+            assert (not self.__is_asset_type_exists()), "Hero-image already exists (only 1 unique hero-image allowed.)"
+            individual_media['asset_type'] = AssetType.HERO_IMAGE.value     # Dependency with AssetType, fix if obsolete
         if len(self.m['media']) == 0:
-            media_order = 1
+            individual_media['order'] = 1
         else:
-            media_order = self.m['media'][-1]['order'] + 1
-        individual_media = {'file_type': media_type, 'url': url, 'order': media_order}
+            individual_media['order'] = self.m['media'][-1]['order'] + 1
+        individual_media['file_type'] = media_type
+        individual_media['url'] = url
         if media_type == 'image':
             individual_media['alt_text'] = 'hover_on_the_image_text'
         else:
             individual_media['alt_text'] = 'hover_on_the_video_url'
-        if hero_img == True:
-            if media_type == 'video':
-                raise Exception("Video media type cannot be a hero-image")
-            individual_media['asset_type'] = 'hero'
         self.m['media'].append(individual_media)
 
+    def remove_media(self, order):
+        """Remove individual media from service metadata using unique order key"""
+        assert (len(self.m['media']) > 0), "No media content to remove."
+        assert (order > 0), "Order of individual media starts from 1."
+        del_position = -1
+        for i in range(len(self.m['media'])):
+            if order == self.m['media'][i]['order']:
+                del self.m['media'][i]
+                del_position = i
+                break
+        if del_position == -1:
+            raise Exception(f"Media with order: {order} not found.")
+        for i in range(del_position, len(self.m['media'])):
+            self.m['media'][i]['order'] -= 1
 
     def remove_all_media(self):
-        pass
+        """Remove all individual media from metadata"""
+        self.m['media'].clear()
 
-    def remove_media(self):
-        pass
+    def __is_asset_type_exists(self):
+        """Return boolean on whether asset type already exists"""
+        media = self.m['media']
+        for individual_media in media:
+            if 'asset_type' in individual_media:
+                return True
+        return False
 
     def add_endpoint_to_group(self, group_name, endpoint):
         if re.match("^\w+://", endpoint) is None:

@@ -158,9 +158,22 @@ class MPEServiceCommand(BlockchainCommand):
         metadata.save_pretty(self.args.metadata_file)
 
     def metadata_add_media(self):
+        """Metadata: Add new individual media"""
         metadata = load_mpe_service_metadata(self.args.metadata_file)
         metadata.add_media(self.args.media_url, self.args.media_type, self.args.hero_image)
-        metadata.save_pretty((self.args.metadata_file))
+        metadata.save_pretty(self.args.metadata_file)
+
+    def metadata_remove_media(self):
+        """Metadata: Remove individual media using unique order key"""
+        metadata = load_mpe_service_metadata(self.args.metadata_file)
+        metadata.remove_media(self.args.order)
+        metadata.save_pretty(self.args.metadata_file)
+
+    def metadata_remove_all_media(self):
+        """Metadata: Remove all individual media"""
+        metadata = load_mpe_service_metadata(self.args.metadata_file)
+        metadata.remove_all_media()
+        metadata.save_pretty(self.args.metadata_file)
 
     def metadata_add_contributor(self):
         metadata = load_mpe_service_metadata(self.args.metadata_file)

@@ -1108,7 +1108,6 @@ def add_mpe_service_options(parser):
     p.set_defaults(fn="metadata_remove_all_assets")
     add_p_metadata_file_opt(p)
 
-    # metadata-add-media subparser
     p = subparsers.add_parser("metadata-add-media",
                               help="Add media to metadata")
     p.set_defaults(fn="metadata_add_media")
@@ -1120,10 +1119,22 @@ def add_mpe_service_options(parser):
                    choices=['image', 'video'],
                    help="Type of the media [image, video]")
     p.add_argument('--hero_image',
-                   metavar='bool',
                    help='Indicate whether hero-image (default False)',
-                   type=bool,
-                   default=False)
+                   action='store_true')
+    add_p_metadata_file_opt(p)
+
+    p = subparsers.add_parser("metadata-remove-media",
+                              help="Remove media of asset type")
+    p.set_defaults(fn="metadata_remove_media")
+    p.add_argument("order",
+                   metavar="ORDER",
+                   help="Delete by order of media",
+                   type=int)
+    add_p_metadata_file_opt(p)
+
+    p = subparsers.add_parser("metadata-remove-all-media",
+                              help="Remove all existing media")
+    p.set_defaults(fn="metadata_remove_all_media")
     add_p_metadata_file_opt(p)
 
     p = subparsers.add_parser("metadata-update-endpoints",
