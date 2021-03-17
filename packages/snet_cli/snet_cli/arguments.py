@@ -1118,7 +1118,7 @@ def add_mpe_service_options(parser):
                    metavar='MEDIA_TYPE',
                    choices=['image', 'video'],
                    help="Type of the media [image, video]")
-    p.add_argument('--hero_image',
+    p.add_argument('--hero-image',
                    help='Indicate whether hero-image (default False)',
                    action='store_true')
     add_p_metadata_file_opt(p)
