@@ -1114,11 +1114,7 @@ def add_mpe_service_options(parser):
     p.add_argument("media_url",
                    metavar='MEDIA_URL',
                    help="Media url endpoint")
-    p.add_argument("media_type",
-                   metavar='MEDIA_TYPE',
-                   choices=['image', 'video'],
-                   help="Type of the media [image, video]")
-    p.add_argument('--hero-image',
+    p.add_argument('--hero_image',
                    help='Indicate whether hero-image (default False)',
                    action='store_true')
     add_p_metadata_file_opt(p)
@@ -1135,6 +1131,24 @@ def add_mpe_service_options(parser):
     p = subparsers.add_parser("metadata-remove-all-media",
                               help="Remove all existing media")
     p.set_defaults(fn="metadata_remove_all_media")
+    add_p_metadata_file_opt(p)
+
+    p = subparsers.add_parser("metadata-swap-media-order",
+                              help="Swap media order")
+    p.set_defaults(fn="metadata_swap_media_order")
+    p.add_argument("move_from",
+                   metavar="FROM",
+                   help="Order number to swap from",
+                   type=int)
+    p.add_argument("move_to",
+                   metavar="TO",
+                   help="Order number to swap to",
+                   type=int)
+    add_p_metadata_file_opt(p)
+
+    p = subparsers.add_parser("metadata-change-media-order",
+                              help="Reassign all individual media order")
+    p.set_defaults(fn="metadata_change_media_order")
     add_p_metadata_file_opt(p)
 
     p = subparsers.add_parser("metadata-update-endpoints",

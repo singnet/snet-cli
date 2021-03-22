@@ -1,5 +1,6 @@
 import json
 from collections import defaultdict
+from re import search
 
 import snet.snet_cli.utils.ipfs_utils as ipfs_utils
 from grpc_health.v1 import health_pb2 as heartb_pb2
@@ -158,21 +159,64 @@ class MPEServiceCommand(BlockchainCommand):
         metadata.save_pretty(self.args.metadata_file)
 
     def metadata_add_media(self):
-        """Metadata: Add new individual media"""
+        """Metadata: Add new individual media
+
+        Detects media type for files to be added on IPFS, explict declaration for external resources.
+        """
         metadata = load_mpe_service_metadata(self.args.metadata_file)
-        metadata.add_media(self.args.media_url, self.args.media_type, self.args.hero_image)
+        url_validator = r'https?:\/\/(www\.)?([-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b[-a-zA-Z0-9()@:%_\+.~#?&//=]*)'  # Support endpoints only with SSL
+        # Automatic media type identification
+        if search(r'^.+\.(jpg|jpeg|png)$', self.args.media_url):
+            media_type = 'image'
+        elif search(r'^.+\.(mp4)$', self.args.media_url):
+            media_type = 'video'
+        elif search(url_validator, self.args.media_url):
+            while True:
+                try:
+                    media_type = input(f"Enter the media type (image, video) present at {self.args.media_url}: ")
+                except ValueError:
+                    print("Choose only between (image, video).")
+                else:
+                    if media_type not in ('image', 'video'):
+                        print("Choose only between (image, video).")
+                    else:
+                        break
+        else:
+            if search(r'(https:\/\/)?(www\.)+([-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b[-a-zA-Z0-9()@:%_\+.~#?&//=]*)', self.args.media_url):
+                raise ValueError("Media endpoint supported only for secure sites.")
+            else:
+                raise ValueError(f"Entered url '{self.args.media_url}' is invalid.")
+        file_extension_validator = r'^.+\.(jpg|JPG|gif|GIF|mp4)$'
+        # Detect whether to add asset on IPFS or if external resource
+        if search(file_extension_validator, self.args.media_url):
+            asset_file_ipfs_hash_base58 = ipfs_utils.publish_file_in_ipfs(self._get_ipfs_client(), self.args.media_url)
+            metadata.add_media(asset_file_ipfs_hash_base58, media_type, self.args.hero_image)
+        else:
+            metadata.add_media(self.args.media_url, media_type, self.args.hero_image)
         metadata.save_pretty(self.args.metadata_file)
 
     def metadata_remove_media(self):
-        """Metadata: Remove individual media using unique order key"""
+        """Metadata: Remove individual media using unique order key."""
         metadata = load_mpe_service_metadata(self.args.metadata_file)
         metadata.remove_media(self.args.order)
         metadata.save_pretty(self.args.metadata_file)
 
     def metadata_remove_all_media(self):
-        """Metadata: Remove all individual media"""
+        """Metadata: Remove all individual media."""
         metadata = load_mpe_service_metadata(self.args.metadata_file)
         metadata.remove_all_media()
+        metadata.save_pretty(self.args.metadata_file)
+
+    def metadata_swap_media_order(self):
+        """Metadata: Swap order of two individual media given 'from' and 'to'."""
+        metadata = load_mpe_service_metadata(self.args.metadata_file)
+        metadata.swap_media_order(self.args.move_from, self.args.move_to)
+        metadata.save_pretty(self.args.metadata_file)
+
+    def metadata_change_media_order(self):
+        """Metadata: REPL to change order of all individual media."""
+        metadata = load_mpe_service_metadata(self.args.metadata_file)
+        metadata.change_media_order()
         metadata.save_pretty(self.args.metadata_file)
 
     def metadata_add_contributor(self):

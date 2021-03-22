@@ -200,7 +200,7 @@ class MPEServiceMetadata:
                 raise Exception("Invalid asset type %s" % asset_type)
 
     def add_media(self, url, media_type, hero_img=False):
-        """Add new individual media to service metadata"""
+        """Add new individual media to service metadata."""
         if 'media' not in self.m:
             self.m['media'] = []
         individual_media = {}
@@ -212,8 +212,8 @@ class MPEServiceMetadata:
             individual_media['order'] = 1
         else:
             individual_media['order'] = self.m['media'][-1]['order'] + 1
-        individual_media['file_type'] = media_type
         individual_media['url'] = url
+        individual_media['file_type']
         if media_type == 'image':
             individual_media['alt_text'] = 'hover_on_the_image_text'
         else:
@@ -221,7 +221,7 @@ class MPEServiceMetadata:
         self.m['media'].append(individual_media)
 
     def remove_media(self, order):
-        """Remove individual media from service metadata using unique order key"""
+        """Remove individual media from service metadata using unique order key."""
         assert (len(self.m['media']) > 0), "No media content to remove."
         assert (order > 0), "Order of individual media starts from 1."
         del_position = -1
@@ -236,8 +236,37 @@ class MPEServiceMetadata:
             self.m['media'][i]['order'] -= 1
 
     def remove_all_media(self):
-        """Remove all individual media from metadata"""
+        """Remove all individual media from metadata."""
         self.m['media'].clear()
+
+    def swap_media_order(self, move_from, move_to):
+        """Swap orders of two different media given their individual orders (move_from, move_to)."""
+        assert (len(self.m['media']) + 1 > move_from > 0), f"Order {move_from} out of bounds."
+        assert (len(self.m['media']) + 1 > move_to > 0), f"Order {move_to} out of bounds."
+        self.m['media'][move_to-1], self.m['media'][move_from-1] = self.m['media'][move_from-1], self.m['media'][move_to-1]
+        self.m['media'][move_to-1]['order'], self.m['media'][move_from-1]['order'] = self.m['media'][move_from-1]['order'], self.m['media'][move_to-1]['order']
+
+    def change_media_order(self):
+        """Mini REPL to change order of all individual media"""
+        order_range = range(1, len(self.m['media']) + 1)
+        available_orders = list(order_range)
+        for individual_media in self.m['media']:
+            print(f"File Type: {individual_media['file_type']}, Current Order: {individual_media['order']}")
+            while True:
+                try:
+                    new_order = int(input(f"Enter new order for {individual_media['url']}: "))
+                except ValueError:
+                    print("Error: Order entered not a number. Try again.")
+                else:
+                    if new_order in available_orders:
+                        individual_media['order'] = new_order
+                        available_orders.remove(new_order)
+                        break
+                    elif new_order not in order_range:
+                        print(f"Media array contains only {len(self.m['media'])} items. Enter order between [{order_range.start}, {order_range.stop-1}]")
+                    else:
+                        print(f"Order already taken. Available orders: {available_orders}")
+        self.m['media'].sort(key=lambda x: x['order'])
 
     def __is_asset_type_exists(self):
         """Return boolean on whether asset type already exists"""
