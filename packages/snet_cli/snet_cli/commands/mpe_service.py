@@ -350,14 +350,18 @@ class MPEServiceCommand(BlockchainCommand):
     def metadata_validate(self):
         """Validates the service metadata file for structure and input consistency.
 
+        Validates whether service metadata (`service_metadata.json` if not provided as argument) is consistent
+        with the schema provided in `service_schema` present in `snet_cli/snet/snet_cli/resources.`
+
         Args:
             metadata_file: Option provided through the command line. (default: service_metadata.json)
             service_schema: Schema of a consistent service metadata file.
 
         Raises:
             ValidationError: Inconsistent service metadata structure or missing values.
+                docs -> Handling ValidationErrors (https://python-jsonschema.readthedocs.io/en/stable/errors/)
         """
-        # Set path to service schema stored in the `resources` directory from cwd of `mpe_service.py`
+        # Set path to `service_schema` stored in the `resources` directory from cwd of `mpe_service.py`
         current_path = Path(__file__).parent
         relative_path = '../../snet/snet_cli/resources/service_schema'
         path_to_schema = (current_path / relative_path).resolve()
@@ -368,16 +372,24 @@ class MPEServiceCommand(BlockchainCommand):
             validate(instance=metadata.m, schema=schema)
         except Exception as e:
             docs = "http://snet-cli-docs.singularitynet.io/service.html"
+            error_message = f"\nVisit {docs} for more information."
             if e.validator == 'required':
-                raise ValidationError(e.message + f"\nVisit {docs} for more information")
+                raise ValidationError(e.message + error_message)
             elif e.validator == 'minLength':
-                raise ValidationError(f"`{e.path[-1]}` -> cannot be empty" + f"\nVisit {docs} for more information")
+                raise ValidationError(f"`{e.path[-1]}` -> cannot be empty." + error_message)
             elif e.validator == 'minItems':
-                raise ValidationError(f"`{e.path[-1]}` -> minimum 1 item required" + f"\nVisit {docs} for more information")
+                raise ValidationError(f"`{e.path[-1]}` -> minimum 1 item required." + error_message)
             elif e.validator == 'type':
-                raise ValidationError(f"`{e.path[-1]}` -> {e.message}" + f"\nVisit {docs} for more information")
+                raise ValidationError(f"`{e.path[-1]}` -> {e.message}" + error_message)
             elif e.validator == 'enum':
-                raise ValidationError(f"`{e.path[-1]}` -> {e.message}" + f"\nVisit {docs} for more information")
+                raise ValidationError(f"`{e.path[-1]}` -> {e.message}" + error_message)
+            elif e.validator == 'additionalProperties':
+                if len(e.path) != 0:
+                    raise ValidationError(f"{e.message} in `{e.path[-2]}`." + error_message)
+                else:
+                    raise ValidationError(f"{e.message} in main object." + error_message)
+        else:
+            exit("OK. Ready to publish.")
 
     def _publish_metadata_in_ipfs(self, metadata_file):
         metadata = load_mpe_service_metadata(metadata_file)

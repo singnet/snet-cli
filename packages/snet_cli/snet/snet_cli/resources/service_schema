@@ -62,11 +62,12 @@
                                     "type": "number"
                                 },
                                 "default": {
+                                    "description": "Necessary for daemon functionality",
                                     "type": "boolean"
                                 }
                             },
                             "additionalProperties": false,
-                            "required": [ "price_model", "price_in_cogs" ]
+                            "required": [ "price_model", "price_in_cogs", "default" ]
                         },
                         "minItems": 1
                     },
@@ -104,7 +105,7 @@
             "minItems": 1
         },
         "service_description": {
-            "description": "[user-guide, long-desc, short-desc]",
+            "description": "Service description [user-guide, long-desc, short-desc]",
             "type": "object",
             "properties": {
                 "url": {
@@ -120,7 +121,38 @@
                     "type": "string"
                 }
             },
-            "additionalProperties": false
+            "additionalProperties": false,
+            "required": [ "url", "long_description", "short_description" ]
+        },
+        "media": {
+            "description": "Media assets with IPFS hash",
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "order": {
+                        "description": "Unique ID to identify individual media",
+                        "type": "integer"
+                    },
+                    "url": {
+                        "description": "IPFS hash for the individual media",
+                        "type": "string",
+                        "minLength": 1
+                    },
+                    "file_type": {
+                        "description": "File type [image, video]",
+                        "type": "string",
+                        "enum": [ "image", "video" ]
+                    },
+                    "alt_text": {
+                        "description": "Alternate to display if media doesn't load",
+                        "type": "string",
+                        "enum": [ "hover_on_the_image_text", "hover_on_the_video_url" ]
+                    }
+                },
+                "additionalProperties": false,
+                "required": [ "order", "url", "file_type", "alt_text" ]
+            }
         },
         "contributors": {
             "description": "Name and Email of contributor(s)",

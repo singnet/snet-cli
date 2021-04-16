@@ -1196,7 +1196,7 @@ def add_mpe_service_options(parser):
     add_p_metadata_file_opt(p)
     p.add_argument("email_id", help="Email of the contributor")
 
-    p = subparsers.add_parser("metadata-validate",
+    p = subparsers.add_parser("validate-metadata",
                               help="Validates if created metadata is consistent")
     p.set_defaults(fn="metadata_validate")
     add_p_metadata_file_opt(p)
