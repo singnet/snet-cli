@@ -72,6 +72,7 @@ class MPEServiceMetadata:
                   "model_ipfs_hash": "",
                   "mpe_address": "",
                   "groups": [],
+                  "media": []
                   }
 
     def set_simple_field(self, f, v):
@@ -180,7 +181,7 @@ class MPEServiceMetadata:
         while True:
             try:
                 fixed_price = int(input("Set fixed price: "))
-            except Exception:
+            except ValueError:
                 print("Enter a valid integer.")
             else:
                 self.set_fixed_price_in_cogs(group_name, fixed_price)
@@ -246,7 +247,7 @@ class MPEServiceMetadata:
         individual_media = {}
         if hero_img:
             assert (media_type == 'image'), f"{media_type.upper()} media-type cannot be a hero-image."
-            assert (not self.__is_asset_type_exists()), "Hero-image already exists (only 1 unique hero-image allowed.)"
+            assert (not self._is_asset_type_exists()), "Hero-image already exists (only 1 unique hero-image allowed.)"
             individual_media['asset_type'] = AssetType.HERO_IMAGE.value     # Dependency with AssetType, fix if obsolete
         if len(self.m['media']) == 0:
             individual_media['order'] = 1
@@ -308,7 +309,7 @@ class MPEServiceMetadata:
                         print(f"Order already taken. Available orders: {available_orders}")
         self.m['media'].sort(key=lambda x: x['order'])
 
-    def __is_asset_type_exists(self):
+    def _is_asset_type_exists(self):
         """Return boolean on whether asset type already exists"""
         media = self.m['media']
         for individual_media in media:
