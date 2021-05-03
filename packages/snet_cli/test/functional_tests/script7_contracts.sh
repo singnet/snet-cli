@@ -21,11 +21,11 @@ snet account deposit 1000000 -y
 #test $REZ = 2000000
 
 # We set expiration as current_block - 1
-EXPIRATION=$((`snet channel block-number` - 1))
-snet contract MultiPartyEscrow --at 0x5c7a4290f6f8ff64c69eeffdfafc8644a4ec3a4e openChannel  0x3b2b3C2e2E7C93db335E69D827F3CC4bC2A2A2cB 0x0067b427E299Eb2A4CBafc0B04C723F77c6d8a18 0 420000 $EXPIRATION --transact -y
+# EXPIRATION=$((`snet channel block-number` - 1))
+# snet contract MultiPartyEscrow --at 0x5c7a4290f6f8ff64c69eeffdfafc8644a4ec3a4e openChannel  0x3b2b3C2e2E7C93db335E69D827F3CC4bC2A2A2cB 0x0067b427E299Eb2A4CBafc0B04C723F77c6d8a18 0 420000 $EXPIRATION --transact -y
 
-REZ=`snet contract MultiPartyEscrow nextChannelId`
-test $REZ = 1
+# REZ=`snet contract MultiPartyEscrow nextChannelId`
+# test $REZ = 1
 
 #We can immediately claim timeout because expiration was set in the past
-snet contract MultiPartyEscrow --at 0x5c7a4290f6f8ff64c69eeffdfafc8644a4ec3a4e channelClaimTimeout 0 --transact -y
+# snet contract MultiPartyEscrow --at 0x5c7a4290f6f8ff64c69eeffdfafc8644a4ec3a4e channelClaimTimeout 0 --transact -y
