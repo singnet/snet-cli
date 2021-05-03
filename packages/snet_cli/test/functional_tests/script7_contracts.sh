@@ -10,11 +10,11 @@ snet organization add-members ExampleOrganization2 0x3b2b3C2e2E7C93db335E69D827F
 
 # deposit 1000000 cogs to MPE from the first address (0x592E3C0f3B038A0D673F19a18a773F993d4b2610)
 snet contract SingularityNetToken --at 0x6e5f20669177f5bdf3703ec5ea9c4d4fe3aabd14 approve 0x5C7a4290F6F8FF64c69eEffDFAFc8644A4Ec3a4E 1000000 --transact -y
-snet account deposit  1000000 --transact -y
+snet account deposit 1000000 -y
 
 # deposit 1000000 cogs to MPE from the first address (0x592E3C0f3B038A0D673F19a18a773F993d4b2610)
 snet contract SingularityNetToken approve 0x5C7a4290F6F8FF64c69eEffDFAFc8644A4Ec3a4E 1000000 --transact -y
-snet account deposit  1000000 --transact -y
+snet account deposit 1000000 -y
 
 # check balance of the First account in MPE (it should be 2000000 cogs)
 #REZ=`snet contract  MultiPartyEscrow --at 0x5c7a4290f6f8ff64c69eeffdfafc8644a4ec3a4e balances 0x592E3C0f3B038A0D673F19a18a773F993d4b2610`
