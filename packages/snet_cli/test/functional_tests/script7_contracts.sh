@@ -17,7 +17,7 @@ snet contract MultiPartyEscrow --at 0x5C7a4290F6F8FF64c69eEffDFAFc8644A4Ec3a4E d
 
 # check balance of the First account in MPE (it should be 2000000 cogs)
 REZ=`snet contract  MultiPartyEscrow --at 0x5c7a4290f6f8ff64c69eeffdfafc8644a4ec3a4e balances 0x592E3C0f3B038A0D673F19a18a773F993d4b2610`
-test $REZ > 2000000
+test $REZ = 2000000
 
 # We set expiration as current_block - 1
  EXPIRATION=$((`snet channel block-number` - 1))
