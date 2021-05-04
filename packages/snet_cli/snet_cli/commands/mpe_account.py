@@ -41,6 +41,5 @@ class MPEAccountCommand(BlockchainCommand):
         self.transact_contract_command("MultiPartyEscrow", "transfer", [self.args.receiver, self.args.amount])
 
     def mint_token(self):
-        # address = get_contract_address(self, "SingularityNetToken")
-        address = "0x592E3C0f3B038A0D673F19a18a773F993d4b2610"
+        address = self.args.address
         self.transact_contract_command("SingularityNetToken", "mint", [address, int(self.args.amount)])

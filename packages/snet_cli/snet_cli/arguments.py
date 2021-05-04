@@ -574,7 +574,8 @@ def add_mpe_account_options(parser):
 
     p = subparsers.add_parser("mint", help="Mint token")
     p.set_defaults(fn="mint_token")
-    p.add_argument("--amount", default=None, help="Amount")
+    p.add_argument("--amount", default=None, help="Amount to mint")
+    p.add_argument("--address", default=None, help="Address")
     p.add_argument("--yes", "-y",
                    action="store_true",
                    help="Skip interactive confirmation of call price",
