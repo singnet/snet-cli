@@ -1,5 +1,6 @@
 from snet_cli.commands.commands import BlockchainCommand
 from snet_cli.utils.agi2cogs import cogs2stragi
+from snet_cli.utils.config import get_contract_address
 
 
 class MPEAccountCommand(BlockchainCommand):
@@ -38,3 +39,7 @@ class MPEAccountCommand(BlockchainCommand):
 
     def transfer_in_mpe(self):
         self.transact_contract_command("MultiPartyEscrow", "transfer", [self.args.receiver, self.args.amount])
+
+    def mint_token(self):
+        address = get_contract_address(self, "SingularityNetToken")
+        self.transact_contract_command("SingularityNetToken", "mint", [address, int(self.args.amount)])
