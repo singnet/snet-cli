@@ -1,4 +1,0 @@
-include snet_cli/resources/proto/*
-include snet_cli/resources/contracts/abi/*
-include snet_cli/resources/contracts/networks/*
-include snet_cli/_vendor/*

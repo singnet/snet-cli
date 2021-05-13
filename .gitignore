@@ -1,11 +1,5 @@
 venv/
 .idea/
-snet_cli.egg-info/
-blockchain/node_modules/
-__pycache__/
-snet_cli/resources/contracts/abi
-snet_cli/resources/contracts/networks
-snet_cli/resources/proto/*.py
-build/
-dist/
-client_libraries/
+__pycache__
+blockchain/node_modules
+snet.egg-info/

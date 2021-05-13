@@ -2,11 +2,17 @@ version: 2
 jobs:
   build:
     docker:
-    - image: circleci/python:3.6.6-node
+    - image: circleci/python:3.8.3-node
     working_directory: ~/singnet/snet-cli
     environment:
       TRIGGER_BUILD_BRANCH: master
     steps:
+    - run:
+        name: Update Node
+        command: |
+            curl -sSL "https://nodejs.org/dist/v10.23.0/node-v10.23.0-linux-x64.tar.xz" |
+            sudo tar --strip-components=2 -xJ -C /usr/local/bin/ node-v10.23.0-linux-x64/bin/node
+            curl https://www.npmjs.com/install.sh | sudo bash
     - run:
         name: Install tools and ipfs
         command: |
@@ -19,29 +25,66 @@ jobs:
             sudo cp ./go-ipfs/ipfs /usr/local/bin
     - checkout
     - run:
-        name: Install snet-cli 
+        name: Install snet-cli
         command: |
-            ./scripts/blockchain install
-            sudo pip3 install -e .
+            ./packages/snet_cli/scripts/blockchain install
+            sudo pip3 install -e ./packages/snet_cli
+    - run:
+        name: Install snet-dk
+        command: |
+          ./packages/snet_cli/scripts/blockchain install
+          sudo pip3 install -e ./packages/sdk
     - run:
         name: Install platform-contracts from master
         command: |
             # Install platform-contracts (from master)
-            # we will deploy contracts from test/utils/reset_enviroment.sh
+            # we will deploy contracts from packages/snet_cli/test/utils/reset_enviroment.sh
             cd ..
             git clone https://github.com/singnet/platform-contracts
             cd platform-contracts
             npm install
-            npm install ganache-cli
+            npm install ganache-cli@6.3.0
             npm run-script compile
+
+    - run:
+        name: Build example service
+        command: |
+          cd ~/singnet
+          git clone https://github.com/singnet/example-service.git
+          cd example-service
+          pip3 install -r requirements.txt
+          sh buildproto.sh
+
+
+    - run:
+        name: Set up for snet daemon
+        command: |
+          cd ..
+          mkdir snet-daemon
+          cd snet-daemon
+
+          wget https://github.com/singnet/snet-daemon/releases/download/v5.0.0/snet-daemon-v5.0.0-linux-amd64.tar.gz
+          tar -xvf snet-daemon-v5.0.0-linux-amd64.tar.gz
+          cd snet-daemon-v5.0.0-linux-amd64
+          cp ~/singnet/snet-cli/packages/sdk/testcases/functional_tests/snetd.config.json ~/singnet/snet-daemon/snet-daemon-v5.0.0-linux-amd64
+
+
     - run:
         name: Unit tests
         command: |
-            bash -ex test/utils/run_all_unit.sh
+            sudo pip3 install nose
+            nosetests -v --with-doctest
     - run:
-        name: Functional tests
+        name: Functional tests fro snet-cli
         command: |
-            bash -ex test/utils/run_all_functional.sh
+            cd ..
+            cd snet-cli
+            bash -ex  packages/snet_cli/test/utils/run_all_functional.sh
+
+    - run:
+        name: Functional tests for sdk
+        command: |
+          bash -ex packages/sdk/testcases/utils/run_all_functional.sh
     - run:
         name: Trigger platform-pipeline build
         command: |
