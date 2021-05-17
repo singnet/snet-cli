@@ -1170,11 +1170,13 @@ def add_mpe_service_options(parser):
     p.set_defaults(fn="publish_service_with_metadata")
     add_p_publish_params(p)
     add_p_service_in_registry(p)
+    add_transaction_arguments(p)
  
     p = subparsers.add_parser("publish-in-ipfs",
                               help="Publish metadata only in IPFS, without publishing in Registry")
     p.set_defaults(fn="publish_metadata_in_ipfs")
     add_p_publish_params(p)
+    add_transaction_arguments(p)
 
     p = subparsers.add_parser("update-metadata",
                               help="Publish metadata in IPFS and update existed service")
