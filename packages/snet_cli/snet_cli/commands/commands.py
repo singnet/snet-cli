@@ -645,7 +645,7 @@ class OrganizationCommand(BlockchainCommand):
     def change_owner(self):
         org_id = self.args.org_id
         # Check if Organization exists
-        (found, _, _, owner, _, _, _) = self._get_organization_by_id(org_id)
+        (found, _, _, owner, _, _) = self._get_organization_by_id(org_id)
         self.error_organization_not_found(org_id, found)
 
         new_owner = self.args.owner
@@ -670,7 +670,7 @@ class OrganizationCommand(BlockchainCommand):
     def add_members(self):
         org_id = self.args.org_id
         # Check if Organization exists and member is not part of it
-        (found, _, _, _, members, _, _) = self._get_organization_by_id(org_id)
+        (found, _, _, _, members, _) = self._get_organization_by_id(org_id)
         self.error_organization_not_found(org_id, found)
 
         members = [member.lower() for member in members]
@@ -700,7 +700,7 @@ class OrganizationCommand(BlockchainCommand):
     def rem_members(self):
         org_id = self.args.org_id
         # Check if Organization exists and member is part of it
-        (found, _, _, _, members, _, _) = self._get_organization_by_id(org_id)
+        (found, _, _, _, members, _) = self._get_organization_by_id(org_id)
         self.error_organization_not_found(org_id, found)
 
         members = [member.lower() for member in members]
