@@ -826,4 +826,3 @@ class OrganizationCommand(BlockchainCommand):
         org_metadata = OrganizationMetadata.from_file(metadata_file)
         org_metadata.remove_all_contacts()
         org_metadata.save_pretty(metadata_file)
-
