@@ -176,7 +176,6 @@ class MPEServiceMetadata:
         return tags
 
     def add_tag(self, tag_name):
-        print("Adding \"%s\"" %str(tag_name))
         if (tag_name in self.m["tags"]):
             print("the tag \"%s\" is already present" %
                             str(tag_name))
@@ -184,7 +183,6 @@ class MPEServiceMetadata:
         self.m["tags"] += [tag_name]
 
     def remove_tag(self, tag_name):
-        print("Removing \"%s\"" %str(tag_name))
         if (tag_name not in self.m["tags"]):
             print("the tag \"%s\" is not found" %
                 str(tag_name))

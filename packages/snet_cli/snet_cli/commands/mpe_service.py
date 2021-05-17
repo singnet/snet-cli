@@ -282,7 +282,6 @@ class MPEServiceCommand(BlockchainCommand):
     #    return params
 
     def metadata_add_tags(self):
-        print("Loading metadata from " + str(self.args.metadata_file))
         metadata = load_mpe_service_metadata(self.args.metadata_file)
         [metadata.add_tag(tag) for tag in self.args.tags]
         metadata.save_pretty(self.args.metadata_file)

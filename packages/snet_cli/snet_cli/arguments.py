@@ -1199,7 +1199,7 @@ def add_mpe_service_options(parser):
     add_p_service_in_registry(p)
 
     p = subparsers.add_parser("metadata-add-tags",
-                              help="Add new tag to service")
+                              help="Add new tags to service")
     p.set_defaults(fn="metadata_add_tags")
     add_p_metadata_file_opt(p)
     p.add_argument("tags",
@@ -1209,7 +1209,7 @@ def add_mpe_service_options(parser):
                    metavar="TAGS")
 
     p = subparsers.add_parser("metadata-remove-tags",
-                              help="Remove tag from service")
+                              help="Remove tags from service")
     p.set_defaults(fn="metadata_remove_tags")
     add_p_metadata_file_opt(p)
     p.add_argument("tags",
@@ -1217,7 +1217,7 @@ def add_mpe_service_options(parser):
                    default=[],
                    help="Tags to removed",
                    metavar="TAGS")
-                   
+
     p = subparsers.add_parser("print-service-status",
                               help="Print service status")
     p.set_defaults(fn="print_service_status")
