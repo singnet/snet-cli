@@ -1188,11 +1188,24 @@ def add_mpe_service_options(parser):
     p = subparsers.add_parser("update-add-tags",
                               help="Add tags to existed service registration")
     p.set_defaults(fn="update_registration_add_tags")
-
+    add_p_service_in_registry(p)
+    p.add_argument("tags",
+                   nargs="+",
+                   default=[],
+                   help="Tags which will be add",
+                   metavar="TAGS")
+    add_transaction_arguments(p)
 
     p = subparsers.add_parser("update-remove-tags",
                               help="Remove tags from existed service registration")
     p.set_defaults(fn="update_registration_remove_tags")
+    add_p_service_in_registry(p)
+    p.add_argument("tags",
+                   nargs="+",
+                   default=[],
+                   help="Tags which will be removed",
+                   metavar="TAGS")
+    add_transaction_arguments(p)
 
 
     p = subparsers.add_parser("print-metadata",
