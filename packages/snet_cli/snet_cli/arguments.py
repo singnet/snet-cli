@@ -1170,16 +1170,13 @@ def add_mpe_service_options(parser):
     p.set_defaults(fn="publish_service_with_metadata")
     add_p_publish_params(p)
     add_p_service_in_registry(p)
-    p.add_argument("--tags",
-                   nargs="*",
-                   default=[],
-                   help="Tags for service")
     add_transaction_arguments(p)
-
+ 
     p = subparsers.add_parser("publish-in-ipfs",
                               help="Publish metadata only in IPFS, without publishing in Registry")
     p.set_defaults(fn="publish_metadata_in_ipfs")
     add_p_publish_params(p)
+    add_transaction_arguments(p)
 
     p = subparsers.add_parser("update-metadata",
                               help="Publish metadata in IPFS and update existed service")
@@ -1210,10 +1207,31 @@ def add_mpe_service_options(parser):
                    metavar="TAGS")
     add_transaction_arguments(p)
 
+
     p = subparsers.add_parser("print-metadata",
                               help="Print service metadata from registry")
     p.set_defaults(fn="print_service_metadata_from_registry")
     add_p_service_in_registry(p)
+
+    p = subparsers.add_parser("metadata-add-tags",
+                              help="Add new tags to service")
+    p.set_defaults(fn="metadata_add_tags")
+    add_p_metadata_file_opt(p)
+    p.add_argument("tags",
+                   nargs="+",
+                   default=[],
+                   help="Tags to add",
+                   metavar="TAGS")
+
+    p = subparsers.add_parser("metadata-remove-tags",
+                              help="Remove tags from service")
+    p.set_defaults(fn="metadata_remove_tags")
+    add_p_metadata_file_opt(p)
+    p.add_argument("tags",
+                   nargs="+",
+                   default=[],
+                   help="Tags to removed",
+                   metavar="TAGS")
 
     p = subparsers.add_parser("print-service-status",
                               help="Print service status")

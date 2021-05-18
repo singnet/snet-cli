@@ -72,7 +72,9 @@ class MPEServiceMetadata:
                   "model_ipfs_hash": "",
                   "mpe_address": "",
                   "groups": [],
-                  "assets": {}
+                  "assets": {},
+                  "media": [],
+                  "tags" : []
                   }
 
     def set_simple_field(self, f, v):
@@ -166,6 +168,24 @@ class MPEServiceMetadata:
         for group in self.m["groups"]:
             if group["group_name"] == group_name:
                 self.m["groups"].remove(group)
+
+    def get_tags(self):
+        tags = []
+        if "tags" in self.m:
+            tags = self.m["tags"]
+        return tags
+
+    def add_tag(self, tag_name):
+        if (tag_name in self.m["tags"]):
+            print(f"The tag {str(tag_name)} is already present")
+            return
+        self.m["tags"] += [tag_name]
+
+    def remove_tag(self, tag_name):
+        if (tag_name not in self.m["tags"]):
+            print(f"The tag {str(tag_name)} is not found")
+            return
+        self.m["tags"].remove(tag_name)
 
     def add_asset(self, asset_ipfs_hash, asset_type):
         # Check if we need to validation if ssame asset type is added twice if we need to add it or replace the existing one

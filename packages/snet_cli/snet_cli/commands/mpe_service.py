@@ -218,8 +218,8 @@ class MPEServiceCommand(BlockchainCommand):
         """ Publish metadata in ipfs and print hash """
         self._printout(self._publish_metadata_in_ipfs(self.args.metadata_file))
 
-    def _get_converted_tags(self):
-        return [type_converter("bytes32")(tag) for tag in self.args.tags]
+    #def _get_converted_tags(self):
+    #    return [type_converter("bytes32")(tag) for tag in self.args.tags]
 
     def _get_organization_metadata_from_registry(self, org_id):
         rez = self._get_organization_registration(org_id)
@@ -254,14 +254,13 @@ class MPEServiceCommand(BlockchainCommand):
                     "Group name %s does not exist in organization" % group["group_name"])
 
     def publish_service_with_metadata(self):
-
         self._validate_service_group_with_org_group_and_update_group_id(
             self.args.org_id, self.args.metadata_file)
         metadata_uri = hash_to_bytesuri(
             self._publish_metadata_in_ipfs(self.args.metadata_file))
-        tags = self._get_converted_tags()
+        #tags = self._get_converted_tags()
         params = [type_converter("bytes32")(self.args.org_id), type_converter(
-            "bytes32")(self.args.service_id), metadata_uri, tags]
+            "bytes32")(self.args.service_id), metadata_uri]
         self.transact_contract_command(
             "Registry", "createServiceRegistration", params)
 
@@ -276,21 +275,27 @@ class MPEServiceCommand(BlockchainCommand):
         self.transact_contract_command(
             "Registry", "updateServiceRegistration", params)
 
-    def _get_params_for_tags_update(self):
-        tags = self._get_converted_tags()
-        params = [type_converter("bytes32")(self.args.org_id), type_converter(
-            "bytes32")(self.args.service_id), tags]
-        return params
+    #def _get_params_for_tags_update(self):
+    #    tags = self._get_converted_tags()
+    #    params = [type_converter("bytes32")(self.args.org_id), type_converter(
+    #        "bytes32")(self.args.service_id), tags]
+    #    return params
+
+    def metadata_add_tags(self):
+        metadata = load_mpe_service_metadata(self.args.metadata_file)
+        [metadata.add_tag(tag) for tag in self.args.tags]
+        metadata.save_pretty(self.args.metadata_file)
+
+    def metadata_remove_tags(self):
+        metadata = load_mpe_service_metadata(self.args.metadata_file)
+        [metadata.remove_tag(tag) for tag in self.args.tags]
+        metadata.save_pretty(self.args.metadata_file)
 
     def update_registration_add_tags(self):
-        params = self._get_params_for_tags_update()
-        self.transact_contract_command(
-            "Registry", "addTagsToServiceRegistration", params)
+        self._printout("This command has been deprecated. Please use `snet service metadata-add-tags` instead")
 
     def update_registration_remove_tags(self):
-        params = self._get_params_for_tags_update()
-        self.transact_contract_command(
-            "Registry", "removeTagsFromServiceRegistration", params)
+        self._printout("This command has been deprecated. Please use `snet service metadata-remove-tags` instead")
 
     def _get_service_registration(self):
         params = [type_converter("bytes32")(self.args.org_id), type_converter(
@@ -300,7 +305,7 @@ class MPEServiceCommand(BlockchainCommand):
         if (rez[0] == False):
             raise Exception("Cannot find Service with id=%s in Organization with id=%s" % (
                 self.args.service_id, self.args.org_id))
-        return {"metadataURI": rez[2], "tags": rez[3]}
+        return {"metadataURI": rez[2]}
 
     def _get_service_metadata_from_registry(self):
         rez = self._get_service_registration()
@@ -349,10 +354,8 @@ class MPEServiceCommand(BlockchainCommand):
         self._pprint(srvc_status)
 
     def print_service_tags_from_registry(self):
-        rez = self._get_service_registration()
-        tags = rez["tags"]
-        tags = [bytes32_to_str(tag) for tag in tags]
-        self._printout(" ".join(tags))
+        metadata = self._get_service_metadata_from_registry()
+        self._printout(" ".join(metadata.get_tags()))
 
     def extract_service_api_from_metadata(self):
         metadata = load_mpe_service_metadata(self.args.metadata_file)
