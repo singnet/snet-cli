@@ -15,7 +15,8 @@ common_dependencies = [
     'pymultihash==0.8.2',
     'base58==1.0.2',
     'argcomplete==1.9.4',
-    'grpcio-health-checking==1.19.0'
+    'grpcio-health-checking==1.19.0',
+    'jsonschema==3.2.0'
 ]
 
 
