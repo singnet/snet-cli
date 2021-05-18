@@ -81,7 +81,7 @@ sh buildproto.sh
 nohup python3 run_example_service.py --no-daemon &
 
 
-cd ~/singnet/snet-daemon/snet-daemon-v5.0.0-linux-amd64
+cd ~/singnet/snet-daemon/snet-daemon-v5.0.1-linux-amd64
 nohup ./snetd &
 
 #wait for daemon to come up
