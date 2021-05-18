@@ -65,7 +65,8 @@ jobs:
 
           wget https://github.com/singnet/snet-daemon/releases/download/v5.0.1/snet-daemon-v5.0.1-linux-amd64.tar.gz
           tar -xvf snet-daemon-v5.0.1-linux-amd64.tar.gz
-          cp ~/singnet/snet-cli/packages/sdk/testcases/functional_tests/snetd.config.json ~/singnet/snet-daemon
+          cd snet-daemon-v5.0.1-linux-amd64
+          cp ~/singnet/snet-cli/packages/sdk/testcases/functional_tests/snetd.config.json ~/singnet/snet-daemon/snet-daemon-v5.0.1-linux-amd64
 
 
     - run:
