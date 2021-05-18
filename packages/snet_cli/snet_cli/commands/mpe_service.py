@@ -292,10 +292,10 @@ class MPEServiceCommand(BlockchainCommand):
         metadata.save_pretty(self.args.metadata_file)
 
     def update_registration_add_tags(self):
-        print("This command has been deprecated. Please use `snet service metadata-add-tags` instead")
+        self._printout("This command has been deprecated. Please use `snet service metadata-add-tags` instead")
 
     def update_registration_remove_tags(self):
-        print("This command has been deprecated. Please use `snet service metadata-remove-tags` instead")
+        self._printout("This command has been deprecated. Please use `snet service metadata-remove-tags` instead")
 
     def _get_service_registration(self):
         params = [type_converter("bytes32")(self.args.org_id), type_converter(
