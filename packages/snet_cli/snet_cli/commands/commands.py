@@ -532,8 +532,7 @@ class OrganizationCommand(BlockchainCommand):
 
     def info(self):
         org_id = self.args.org_id
-        (found, org_id, org_name, owner, members, serviceNames,
-         repositoryNames) = self._get_organization_by_id(org_id)
+        (found, org_id, org_name, owner, members, serviceNames) = self._get_organization_by_id(org_id)
         self.error_organization_not_found(self.args.org_id, found)
 
         self._printout("\nOrganization Name:\n - %s" % org_name)
@@ -547,10 +546,6 @@ class OrganizationCommand(BlockchainCommand):
             self._printout("\nServices:")
             for idx, service in enumerate(serviceNames):
                 self._printout(" - {}".format(bytes32_to_str(service)))
-        if repositoryNames:
-            self._printout("\nRepositories:")
-            for idx, repo in enumerate(repositoryNames):
-                self._printout(" - {}".format(bytes32_to_str(repo)))
 
     def create(self):
 
@@ -588,7 +583,7 @@ class OrganizationCommand(BlockchainCommand):
     def delete(self):
         org_id = self.args.org_id
         # Check if Organization exists
-        (found, _, org_name, _, _, _, _) = self._get_organization_by_id(org_id)
+        (found, _, org_name, _, _, _) = self._get_organization_by_id(org_id)
         self.error_organization_not_found(org_id, found)
 
         self._printout("Creating transaction to delete organization with name={} id={}".format(
@@ -650,7 +645,7 @@ class OrganizationCommand(BlockchainCommand):
     def change_owner(self):
         org_id = self.args.org_id
         # Check if Organization exists
-        (found, _, _, owner, _, _, _) = self._get_organization_by_id(org_id)
+        (found, _, _, owner, _, _) = self._get_organization_by_id(org_id)
         self.error_organization_not_found(org_id, found)
 
         new_owner = self.args.owner
@@ -675,7 +670,7 @@ class OrganizationCommand(BlockchainCommand):
     def add_members(self):
         org_id = self.args.org_id
         # Check if Organization exists and member is not part of it
-        (found, _, _, _, members, _, _) = self._get_organization_by_id(org_id)
+        (found, _, _, _, members, _) = self._get_organization_by_id(org_id)
         self.error_organization_not_found(org_id, found)
 
         members = [member.lower() for member in members]
@@ -705,7 +700,7 @@ class OrganizationCommand(BlockchainCommand):
     def rem_members(self):
         org_id = self.args.org_id
         # Check if Organization exists and member is part of it
-        (found, _, _, _, members, _, _) = self._get_organization_by_id(org_id)
+        (found, _, _, _, members, _) = self._get_organization_by_id(org_id)
         self.error_organization_not_found(org_id, found)
 
         members = [member.lower() for member in members]
@@ -741,7 +736,7 @@ class OrganizationCommand(BlockchainCommand):
         rez_owner = []
         rez_member = []
         for idx, org_id in enumerate(org_list):
-            (found, org_id, org_name, owner, members, serviceNames, repositoryNames) = self.call_contract_command(
+            (found, org_id, org_name, owner, members, serviceNames) = self.call_contract_command(
                 "Registry", "getOrganizationById", [org_id])
             if not found:
                 raise Exception(

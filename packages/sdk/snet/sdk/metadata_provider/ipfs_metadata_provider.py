@@ -12,11 +12,10 @@ class IPFSMetadataProvider(object):
         self._ipfs_client = ipfs_client
 
     def fetch_org_metadata(self, org_id):
-        (found, id, metadata_uri, owner, members, service_ids,
-         repository_ids) = self.registry_contract.functions.getOrganizationById(
+        (found, id, metadata_uri, owner, members, service_ids) = self.registry_contract.functions.getOrganizationById(
             bytes(org_id, "utf-8")).call()
         if found is not True:
-            raise Exception('No  organization is foubd "{}"'.format(org_id))
+            raise Exception('Organization with org ID "{}" not found '.format(org_id))
 
         metadata_hash = bytesuri_to_hash(metadata_uri)
         metadata_json = get_from_ipfs_and_checkhash(self._ipfs_client, metadata_hash)
@@ -24,7 +23,7 @@ class IPFSMetadataProvider(object):
         return org_metadata
 
     def fetch_service_metadata(self, org_id, service_id):
-        (found, registration_id, metadata_uri, tags) = self.registry_contract.functions.getServiceRegistrationById(
+        (found, registration_id, metadata_uri) = self.registry_contract.functions.getServiceRegistrationById(
             bytes(org_id, "utf-8"), bytes(service_id, "utf-8")).call()
 
         if found is not True:
