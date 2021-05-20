@@ -176,12 +176,18 @@ class MPEServiceMetadata:
         return tags
 
     def add_tag(self, tag_name):
+        if not "tags" in self.m:
+            self.m["tags"] = []
+
         if (tag_name in self.m["tags"]):
             print(f"The tag {str(tag_name)} is already present")
             return
         self.m["tags"] += [tag_name]
 
     def remove_tag(self, tag_name):
+        if not "tags" in self.m:
+            self.m["tags"] = []
+                    
         if (tag_name not in self.m["tags"]):
             print(f"The tag {str(tag_name)} is not found")
             return
@@ -286,6 +292,8 @@ class MPEServiceMetadata:
         # TODO: we probaly should check the  consistensy of loaded json here
         #       check that it contains required fields
         self.m = json.loads(j)
+        if not "tags" in self.m:
+            self.m["tags"] = []        
 
     def load(self, file_name):
         with open(file_name) as f:
