@@ -7,7 +7,7 @@ def mint_token():
     w3 = get_web3("http://localhost:8545")
     address = "0x592E3C0f3B038A0D673F19a18a773F993d4b2610"
     contract = get_contract_object(
-        w3, contract_file="SingularityNetToken", address=address
+        w3, contract_file="SingularityNetToken.json", address=address
     )
 
     contract.functions.mint(address, amount).call()
