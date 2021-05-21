@@ -277,6 +277,7 @@ def add_organization_options(parser):
 
     p = subparsers.add_parser("print-metadata", help="Print metadata for given organization")
     p.set_defaults(fn="print_metadata")
+    p.add_argument("org_name", help="Organization name")
     p.add_argument("org_id", help="Organization Id")
 
     p = subparsers.add_parser("add-group", help="Add group to organization")

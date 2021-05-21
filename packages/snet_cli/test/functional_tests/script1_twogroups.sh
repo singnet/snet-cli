@@ -63,7 +63,7 @@ grep 5.5.6.7 organization_metadata.json
 grep 0x42A605c07EdE0E1f648aB054775D6D4E38496144 organization_metadata.json
 grep 5.5.6.7:8089 organization_metadata.json
 snet --print-traceback organization create testo -y
-snet organization print-metadata testo >organization_metadata_print.json
+snet organization print-metadata org1 testo >organization_metadata_print.json
 
 snet service metadata-add-tags tag1 tag2 tag3
 grep "tag1" service_metadata.json
