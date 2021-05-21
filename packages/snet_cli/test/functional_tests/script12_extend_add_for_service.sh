@@ -8,7 +8,6 @@ snet service metadata-init ./service_spec1/ ExampleService --fixed-price 0.0001 
 snet organization create testo -y -q
 snet service publish testo tests -y -q
 
-snet account mint --amount 1000000000000000000 --address 0x592E3C0f3B038A0D673F19a18a773F993d4b2610 --yes
 snet account balance
 snet account deposit 100000000 -yq
 
