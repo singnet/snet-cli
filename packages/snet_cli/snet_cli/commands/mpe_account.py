@@ -31,7 +31,6 @@ class MPEAccountCommand(BlockchainCommand):
         already_approved = self.call_contract_command("SingularityNetToken", "allowance", [self.ident.address, mpe_address])
         if (already_approved < amount):
             self.transact_contract_command("SingularityNetToken", "approve", [mpe_address, amount])
-        self.transact_contract_command("SingularityNetToken", "mint", [self.ident.address, amount])
         self.transact_contract_command("MultiPartyEscrow", "deposit", [amount])
 
     def withdraw_from_mpe(self):
