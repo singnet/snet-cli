@@ -51,5 +51,6 @@ snet set current_multipartyescrow_at 0x5c7a4290f6f8ff64c69eeffdfafc8644a4ec3a4e
 # Create First identity (snet-user = first ganache).
 # (snet will automatically swith to this new identity)
 snet identity create snet-user rpc --network local
-snet account mint --amount 1000000000000000000 --address 0x592E3C0f3B038A0D673F19a18a773F993d4b2610 --yes
+# Mint token
+python ../mint/mint.py
 snet account balance
