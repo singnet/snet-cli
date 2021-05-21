@@ -24,6 +24,8 @@ nohup ipfs daemon >ipfs.log 2>&1 &
 # II. restart ganache and remigrate platform-contracts
 killall node || echo "supress an error"
 
+cwd=$(pwd)
+
 cd ../platform-contracts
 nohup ./node_modules/.bin/ganache-cli --mnemonic 'gauge enact biology destroy normal tunnel slight slide wide sauce ladder produce' --networkId 829257324 >/dev/null &
 ./node_modules/.bin/truffle migrate --network local
@@ -52,5 +54,5 @@ snet set current_multipartyescrow_at 0x5c7a4290f6f8ff64c69eeffdfafc8644a4ec3a4e
 # (snet will automatically swith to this new identity)
 snet identity create snet-user rpc --network local
 # Mint token
-python ../mint/mint.py
+python3 $cwd"/packages/snet_cli/test/functional_tests/mint/mint.py"
 snet account balance

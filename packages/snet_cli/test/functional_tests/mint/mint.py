@@ -1,15 +1,16 @@
-from snet_cli.utils.config import get_contract_address
-from packages.snet_cli.snet_cli.commands.commands import BlockchainCommand
-
-blockchain = BlockchainCommand()
+from snet.snet_cli.utils.utils import get_web3, get_contract_object
 
 
 def mint_token():
-    amount = 1000000000000000000
-    address = "0x592E3C0F3B038A0D673F19A18A773F993D4B2610"
-    blockchain.transact_contract_command(
-        "SingularityNetToken", "mint", [address, amount]
+    amount = 10000000
+
+    w3 = get_web3("http://localhost:8545")
+    address = "0x592E3C0f3B038A0D673F19a18a773F993d4b2610"
+    contract = get_contract_object(
+        w3, contract_file="SingularityNetToken", address=address
     )
+
+    contract.functions.mint(address, amount).call()
 
 
 if __name__ == "__main__":
