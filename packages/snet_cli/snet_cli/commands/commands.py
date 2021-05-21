@@ -532,11 +532,19 @@ class OrganizationCommand(BlockchainCommand):
 
     def info(self):
         org_id = self.args.org_id
-        (found, org_id, org_name, owner, members, serviceNames) = self._get_organization_by_id(org_id)
+        (found, _, _, owner, members, serviceNames,
+         repositoryNames) = self._get_organization_by_id(org_id)
         self.error_organization_not_found(self.args.org_id, found)
 
+        org_m = self._get_organization_metadata_from_registry(org_id)
+        org_name = org_m.org_name
+        org_type = org_m.org_type
+        description = org_m.description.get("description", "")
+
         self._printout("\nOrganization Name:\n - %s" % org_name)
-        self._printout("\nOrganization Id:\n - %s" % bytes32_to_str(org_id))
+        self._printout("\nId:\n - %s" % org_id)
+        self._printout("\nType:\n - %s" % org_type)
+        self._printout("\nDescription:\n - %s" % description)
         self._printout("\nOwner:\n - {}".format(owner))
         if members:
             self._printout("\nMembers:")
@@ -546,6 +554,10 @@ class OrganizationCommand(BlockchainCommand):
             self._printout("\nServices:")
             for idx, service in enumerate(serviceNames):
                 self._printout(" - {}".format(bytes32_to_str(service)))
+        if repositoryNames:
+            self._printout("\nRepositories:")
+            for idx, repo in enumerate(repositoryNames):
+                self._printout(" - {}".format(bytes32_to_str(repo)))
 
     def create(self):
 
