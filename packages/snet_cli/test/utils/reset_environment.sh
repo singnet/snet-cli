@@ -54,5 +54,6 @@ snet set current_multipartyescrow_at 0x5c7a4290f6f8ff64c69eeffdfafc8644a4ec3a4e
 # (snet will automatically swith to this new identity)
 snet identity create snet-user rpc --network local
 snet session
+export PYTHONPATH=$cwd
 python $cwd"/packages/snet_cli/test/functional_tests/mint/mint.py"
 snet account balance
