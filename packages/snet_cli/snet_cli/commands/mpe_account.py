@@ -41,9 +41,9 @@ class MPEAccountCommand(BlockchainCommand):
 
     def mint_token(self):
         rez = self.config.session_to_dict()
-        netwrok = rez['session']['network']
+        network = rez['session']['network']
 
-        if netwrok == 'local':
+        if network == 'local':
             self.transact_contract_command("SingularityNetToken", "mint", [self.args.address, int(self.args.amount)])
         else:
             raise Exception("Minting is only available at Local network")
