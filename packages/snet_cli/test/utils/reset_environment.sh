@@ -11,6 +11,8 @@ if [ ! $1 = "--i-no-what-i-am-doing" ]; then
 	exit 1
 fi
 
+cwd=$(pwd)
+
 # I. restart ipfs
 ipfs shutdown || echo "supress an error"
 
