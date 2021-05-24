@@ -572,16 +572,6 @@ def add_mpe_account_options(parser):
     p.set_defaults(fn="print_account")
     add_eth_call_arguments(p)
 
-    p = subparsers.add_parser("mint", help="Mint token")
-    p.set_defaults(fn="mint_token")
-    p.add_argument("--amount", default=None, help="Amount to mint")
-    p.add_argument("--address", default=None, help="Address")
-    p.add_argument("--yes", "-y",
-                   action="store_true",
-                   help="Skip interactive confirmation of call price",
-                   default=False)
-    add_eth_call_arguments(p)
-
     p = subparsers.add_parser("balance", help="Print balance of AGI tokens and balance of MPE wallet")
     p.set_defaults(fn="print_agi_and_mpe_balances")
     p.add_argument("--account", default=None, help="Account to print balance for (default is the current identity)")

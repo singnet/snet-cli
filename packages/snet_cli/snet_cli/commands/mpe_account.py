@@ -38,12 +38,3 @@ class MPEAccountCommand(BlockchainCommand):
 
     def transfer_in_mpe(self):
         self.transact_contract_command("MultiPartyEscrow", "transfer", [self.args.receiver, self.args.amount])
-
-    def mint_token(self):
-        rez = self.config.session_to_dict()
-        network = rez['session']['network']
-
-        if network == 'local':
-            self.transact_contract_command("SingularityNetToken", "mint", [self.args.address, int(self.args.amount)])
-        else:
-            raise Exception("Minting is only available at Local network")
