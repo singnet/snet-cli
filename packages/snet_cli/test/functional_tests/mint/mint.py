@@ -7,10 +7,13 @@ HTTP_PROVIDER = "http://localhost:8545"
 
 wallet_address = "0x592E3C0f3B038A0D673F19a18a773F993d4b2610"
 contract_address = "0x6e5f20669177f5bdf3703ec5ea9c4d4fe3aabd14"
-signer_private_key = "0xc71478a6d0fe44e763649de0a0deb5a080b788eefbbcf9c6f7aef0dd5dbd67e0"
+signer_private_key = (
+    "0xc71478a6d0fe44e763649de0a0deb5a080b788eefbbcf9c6f7aef0dd5dbd67e0"
+)
 
 initialNonce = 0
-mint_amount = 10000000000000
+mint_amount = 10000000000000000
+
 
 def _get_nonce(web3, address):
     nonce = web3.eth.getTransactionCount(address)
@@ -19,8 +22,9 @@ def _get_nonce(web3, address):
     nonce = nonce
     return nonce
 
+
 def send_transaction(web3, contract_fn, *args):
-    txn_hash = _send_signed_transaction(web3,contract_fn, *args)
+    txn_hash = _send_signed_transaction(web3, contract_fn, *args)
     return web3.eth.waitForTransactionReceipt(txn_hash, TRANSACTION_TIMEOUT)
 
 
@@ -45,9 +49,12 @@ def _send_signed_transaction(web3, contract_fn, *args):
 def mint_token():
     w3 = get_web3(HTTP_PROVIDER)
     address = w3.toChecksumAddress(wallet_address)
-    contract = get_contract_object(w3, contract_file="SingularityNetToken.json", address=contract_address)
+    contract = get_contract_object(
+        w3, contract_file="SingularityNetToken.json", address=contract_address
+    )
 
     send_transaction(w3, contract.functions.mint, address, int(mint_amount))
+
 
 if __name__ == "__main__":
     mint_token()
