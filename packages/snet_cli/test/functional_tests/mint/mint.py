@@ -6,7 +6,6 @@ DEFAULT_GAS = 300000
 HTTP_PROVIDER = "http://localhost:8545"
 
 wallet_address_1 = "0x592E3C0f3B038A0D673F19a18a773F993d4b2610"
-wallet_address_2 = "0x52653A9091b5d5021bed06c5118D24b23620c529"
 contract_address = "0x6e5f20669177f5bdf3703ec5ea9c4d4fe3aabd14"
 signer_private_key = (
     "0xc71478a6d0fe44e763649de0a0deb5a080b788eefbbcf9c6f7aef0dd5dbd67e0"
@@ -50,13 +49,13 @@ def _send_signed_transaction(web3, wallet_address, contract_fn, *args):
 def mint_token():
     w3 = get_web3(HTTP_PROVIDER)
     address_1 = w3.toChecksumAddress(wallet_address_1)
-    address_2 = w3.toChecksumAddress(wallet_address_2)
     contract = get_contract_object(
         w3, contract_file="SingularityNetToken.json", address=contract_address
     )
 
-    send_transaction(w3, wallet_address_1, contract.functions.mint, address_1, int(mint_amount))
-    send_transaction(w3, wallet_address_1, contract.functions.mint, address_2, int(mint_amount))
+    send_transaction(
+        w3, wallet_address_1, contract.functions.mint, address_1, int(mint_amount)
+    )
 
 
 if __name__ == "__main__":
