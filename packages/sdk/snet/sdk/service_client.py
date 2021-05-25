@@ -7,20 +7,20 @@ import snet.sdk.generic_client_interceptor as generic_client_interceptor
 from eth_account.messages import defunct_hash_message
 from rfc3986 import urlparse
 from snet.sdk.mpe.payment_channel_provider import PaymentChannelProvider
-from snet.snet_cli.utils import RESOURCES_PATH, add_to_path
+from snet.snet_cli.utils.utils import RESOURCES_PATH, add_to_path
 
 
 class _ClientCallDetails(
-        collections.namedtuple(
-            '_ClientCallDetails',
-            ('method', 'timeout', 'metadata', 'credentials')),
-        grpc.ClientCallDetails):
+    collections.namedtuple(
+        '_ClientCallDetails',
+        ('method', 'timeout', 'metadata', 'credentials')),
+    grpc.ClientCallDetails):
     pass
 
 
 class ServiceClient:
-    def __init__(self,org_id,service_id, service_metadata,group, service_stub, payment_strategy,
-                 options,mpe_contract,account,sdk_web3):
+    def __init__(self, org_id, service_id, service_metadata, group, service_stub, payment_strategy,
+                 options, mpe_contract, account, sdk_web3):
         self.org_id = org_id
         self.service_id = service_id
         self.options = options
@@ -29,30 +29,32 @@ class ServiceClient:
 
         self.payment_strategy = payment_strategy
         self.expiry_threshold = self.group["payment"]["payment_expiration_threshold"]
-        self._base_grpc_channel = self._get_grpc_channel()
-        self.grpc_channel = grpc.intercept_channel(self._base_grpc_channel,
+        self.__base_grpc_channel = self._get_grpc_channel()
+        self.grpc_channel = grpc.intercept_channel(self.__base_grpc_channel,
                                                    generic_client_interceptor.create(self._intercept_call))
-        self.payment_channel_provider=PaymentChannelProvider(sdk_web3,self._generate_payment_channel_state_service_client(),mpe_contract)
+        self.payment_channel_provider = PaymentChannelProvider(sdk_web3,
+                                                               self._generate_payment_channel_state_service_client(),
+                                                               mpe_contract)
         self.service = self._generate_grpc_stub(service_stub)
         self.payment_channels = []
         self.last_read_block = 0
-        self.account=account
-        self.sdk_web3=sdk_web3
-        self.mpe_address=mpe_contract.contract.address
-
+        self.account = account
+        self.sdk_web3 = sdk_web3
+        self.mpe_address = mpe_contract.contract.address
 
     def _get_payment_expiration_threshold_for_group(self):
         pass
 
-
     def _generate_grpc_stub(self, service_stub):
-        grpc_channel = self._base_grpc_channel
+        grpc_channel = self.__base_grpc_channel
         disable_blockchain_operations = self.options.get("disable_blockchain_operations", False)
         if disable_blockchain_operations is False:
             grpc_channel = self.grpc_channel
         stub_instance = service_stub(grpc_channel)
         return stub_instance
 
+    def get_grpc_base_channel(self):
+        return self.__base_grpc_channel
 
     def _get_grpc_channel(self):
         endpoint = self.options.get("endpoint", None)
@@ -71,15 +73,12 @@ class ServiceClient:
         else:
             raise ValueError('Unsupported scheme in service metadata ("{}")'.format(endpoint_object.scheme))
 
-
-
     def _get_service_call_metadata(self):
         metadata = self.payment_strategy.get_payment_metadata(self)
         return metadata
 
-
     def _intercept_call(self, client_call_details, request_iterator, request_streaming,
-                       response_streaming):
+                        response_streaming):
         metadata = []
         if client_call_details.metadata is not None:
             metadata = list(client_call_details.metadata)
@@ -103,15 +102,16 @@ class ServiceClient:
             if not existing_channel:
                 new_channels_to_be_added.append(new_payment_channel)
 
-
         return new_channels_to_be_added
 
     def load_open_channels(self):
         current_block_number = self.sdk_web3.eth.getBlock("latest").number
-        payment_addrss=self.group["payment"]["payment_address"]
-        group_id= base64.b64decode(str(self.group["group_id"]))
-        new_payment_channels = self.payment_channel_provider.get_past_open_channels(self.account, payment_addrss,group_id, self.last_read_block)
-        self.payment_channels = self.payment_channels + self._filter_existing_channels_from_new_payment_channels(new_payment_channels)
+        payment_addrss = self.group["payment"]["payment_address"]
+        group_id = base64.b64decode(str(self.group["group_id"]))
+        new_payment_channels = self.payment_channel_provider.get_past_open_channels(self.account, payment_addrss,
+                                                                                    group_id, self.last_read_block)
+        self.payment_channels = self.payment_channels + self._filter_existing_channels_from_new_payment_channels(
+            new_payment_channels)
         self.last_read_block = current_block_number
         return self.payment_channels
 
@@ -123,14 +123,12 @@ class ServiceClient:
             channel.sync_state()
         return self.payment_channels
 
-
     def default_channel_expiration(self):
         current_block_number = self.sdk_web3.eth.getBlock("latest").number
         return current_block_number + self.expiry_threshold
 
-
     def _generate_payment_channel_state_service_client(self):
-        grpc_channel = self._base_grpc_channel
+        grpc_channel = self.__base_grpc_channel
         with add_to_path(str(RESOURCES_PATH.joinpath("proto"))):
             state_service_pb2_grpc = importlib.import_module("state_service_pb2_grpc")
         return state_service_pb2_grpc.PaymentChannelStateServiceStub(grpc_channel)
@@ -161,4 +159,15 @@ class ServiceClient:
             'free-call-token-expiry-block']
 
     def get_service_details(self):
-        return self.org_id, self.service_id, self.group["group_id"], self.service_metadata.get_all_endpoints_for_group(self.group["group_name"])[0]
+        return self.org_id, self.service_id, self.group["group_id"], \
+               self.service_metadata.get_all_endpoints_for_group(self.group["group_name"])[0]
+
+    def get_concurrency_flag(self):
+        return self.options.get('concurrency', True)
+
+    def get_concurrency_token_and_channel(self):
+        return self.payment_strategy.get_concurrency_token_and_channel(self)
+
+    def set_concurrency_token_and_channel(self, token, channel):
+        self.payment_strategy.concurrency_token = token
+        self.payment_strategy.channel = channel

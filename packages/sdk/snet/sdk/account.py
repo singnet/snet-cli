@@ -1,6 +1,6 @@
 import json
 
-from snet.snet_cli.utils import get_address_from_private, get_contract_object, normalize_private_key
+from snet.snet_cli.utils.utils import get_address_from_private, get_contract_object, normalize_private_key
 
 DEFAULT_GAS = 300000
 TRANSACTION_TIMEOUT = 500

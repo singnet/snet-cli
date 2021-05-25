@@ -18,5 +18,8 @@
     "output": {
       "type": "stdout"
     }
-  }
+  },
+  "metering_enabled": false,
+  "token_secret_key": "ABCDE",
+  "token_expiry_in_seconds": 3600
 }

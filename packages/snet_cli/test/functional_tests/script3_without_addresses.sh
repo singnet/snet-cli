@@ -26,6 +26,18 @@ snet service metadata-add-endpoints group1 8.8.8.8:2020 9.8.9.8:8080
 snet service metadata-add-endpoints group2 8.8.8.8:22 1.2.3.4:8080
 snet service metadata-set-fixed-price group1 0.0001
 snet service metadata-set-fixed-price group2 0.0001
+
+snet service metadata-add-tags tag1 tag2 tag3
+grep "tag1" service_metadata.json
+grep "tag2" service_metadata.json
+grep "tag3" service_metadata.json
+grep "tag4" service_metadata.json && exit 1 || echo "fail as expected"
+
+snet service metadata-remove-tags tag2 tag1
+grep "tag2" service_metadata.json && exit 1 || echo "fail as expected"
+grep "tag1" service_metadata.json && exit 1 || echo "fail as expected"
+grep "tag3" service_metadata.json
+
 IPFS_HASH=$(snet service publish-in-ipfs --mpe 0x5c7a4290f6f8ff64c69eeffdfafc8644a4ec3a4e)
 ipfs cat $IPFS_HASH >service_metadata2.json
 

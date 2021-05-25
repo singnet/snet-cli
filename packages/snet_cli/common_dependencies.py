@@ -15,13 +15,14 @@ common_dependencies = [
     'pymultihash==0.8.2',
     'base58==1.0.2',
     'argcomplete==1.9.4',
-    'grpcio-health-checking==1.19.0'
+    'grpcio-health-checking==1.19.0',
+    'jsonschema==3.2.0'
 ]
 
 
 def install_and_compile_proto():
     import snet.snet_cli
-    from snet.snet_cli.utils import compile_proto as compile_proto
+    from snet.snet_cli.utils.utils import compile_proto as compile_proto
     from pathlib import Path
     proto_dir = Path(__file__).absolute().parent.joinpath(
         "snet", "snet_cli", "resources", "proto")

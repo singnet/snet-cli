@@ -1,6 +1,10 @@
 import pkg_resources
 from setuptools import setup, find_namespace_packages
+from os import path
 
+this_directory = path.abspath(path.dirname(__file__))
+with open(path.join(this_directory, 'README.md'), encoding='utf-8') as f:
+    long_description = f.read()
 
 PACKAGE_NAME = 'snet.sdk'
 
@@ -42,5 +46,7 @@ setup(
     author_email='info@singularitynet.io',
     description='SingularityNET Python SDK',
     python_requires='>=3.7',
-    install_requires=dependencies
+    install_requires=dependencies,
+    long_description=long_description,
+    long_description_content_type='text/markdown'
 )

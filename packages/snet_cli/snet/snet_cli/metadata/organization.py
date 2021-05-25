@@ -16,7 +16,9 @@ class AssetType(Enum):
 
 class PaymentStorageClient(object):
 
-    def __init__(self, connection_timeout=None, request_timeout="", endpoints=[]):
+    def __init__(self, connection_timeout=None, request_timeout="", endpoints=None):
+        if endpoints is None:
+            endpoints = []
         self.connection_timeout = connection_timeout
         self.request_timeout = request_timeout
         self.endpoints = endpoints

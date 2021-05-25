@@ -4,8 +4,8 @@ import web3
 
 from snet_cli.config import Config
 
-from snet.snet_cli.mpe_channel_command import MPEChannelCommand
-from snet.snet_cli.utils import compile_proto, DefaultAttributeObject
+from snet_cli.commands.mpe_channel import MPEChannelCommand
+from snet.snet_cli.utils.utils import compile_proto, DefaultAttributeObject
 
 
 compile_proto("../service_spec1", ".", proto_file = "ExampleService.proto")

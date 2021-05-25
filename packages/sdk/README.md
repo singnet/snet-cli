@@ -201,30 +201,40 @@ For more information about gRPC and how to use it with Python, please see:
 
 ## Development
 
-### Installing
-
-#### Prerequisites  
+### Prerequisites  
   
 * [Python 3.6.5](https://www.python.org/downloads/release/python-365/)  
 * [Node 8+ w/npm](https://nodejs.org/en/download/)
 
+`Note!` don't use Python 3.8.2
+
 ---
+
+### Installing
 
 * Clone the git repository  
 ```bash  
 $ git clone git@github.com:singnet/snet-cli.git
-$ cd snet-cli/snet_sdk
 ```  
+
+* Install the required dependencies
+```bash
+$ cd snet-cli/packages/sdk
+$ pip install -r requirements.txt
+$ cd ../snet_cli
+$ pip install -r requirements.txt
+$ cd ../
+$ pip install -r requirements.txt 
+
+```
   
 * Install development/test blockchain dependencies  
 ```bash  
 $ ./scripts/blockchain install
 ```
   
-* Install the package in development/editable mode  
-```bash  
-$ pip install -e .
-```
+* Blockchain configuration  
+If required, you can view/edit the snet-cli configuration of ipfs, eth_rpc in `~/.snet/config ` for various networks.
 
 ### Versioning  
   
