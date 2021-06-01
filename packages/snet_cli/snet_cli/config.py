@@ -192,8 +192,7 @@ class Config(ConfigParser):
             "default_eth_rpc_endpoint": "https://rinkeby.infura.io/v3/09027f4a13e841d48dbfefc67e7685d5",
             "default_gas_price": "medium"}
         self["ipfs"] = {"default_ipfs_endpoint": "http://ipfs.singularitynet.io:80"}
-        self["session"] = {
-            "network": "kovan"}
+        self["session"] = {"network": "ropsten"}
         self._persist()
         print("We've created configuration file with default values in: %s\n" % str(self._config_file))
 
