@@ -1,5 +1,10 @@
 import json
 from collections import defaultdict
+from pathlib import Path
+from re import search
+from sys import exit
+
+from jsonschema import validate, ValidationError
 
 import snet.snet_cli.utils.ipfs_utils as ipfs_utils
 from grpc_health.v1 import health_pb2 as heartb_pb2
@@ -20,6 +25,87 @@ class MPEServiceCommand(BlockchainCommand):
         ipfs_hash_base58 = ipfs_utils.publish_proto_in_ipfs(
             self._get_ipfs_client(), self.args.protodir)
         self._printout(ipfs_hash_base58)
+
+    def service_metadata_init(self):
+        """Utility for creating a service metadata file.
+
+        CLI questionnaire for service metadata creation. Creates a `service_metadata.json`
+        (if file name is not set) with values entered by the user in the questionnaire utility.
+
+        Mandatory args:
+            display_name: Display name of the service.
+            org_id: Organization ID the service would be assosciated with.
+            protodir_path: Directory containing protobuf files.
+            groups: Payment groups supported by the organization (default: `default_group`). If multiple
+                payment groups, ask user for entry.
+            endpoints: Storage end points for the clients to connect.
+            daemon_addresses: Ethereum public addresses of daemon in given payment group of service.
+
+        Optional args:
+            url: Service user guide resource.
+            long_description: Long description of service.
+            short_description: Service overview.
+            contributors: Contributor name and email-id.
+            file_name: Service metdadata filename.
+        """
+        print("This utility will walk you through creating the service metadata file.",
+             "It only covers the most common items and tries to guess sensible defaults.",
+             "",
+             "See `snet service metadata-init-utility -h` on how to use this utility.",
+             "",
+             "Press ^C at any time to quit.", sep='\n')
+        try:
+            metadata = MPEServiceMetadata()
+            while True:
+                display_name = input("display name: ").strip()
+                if display_name == "":
+                    print("display name is required.")
+                else:
+                    break
+            # Find number of payment groups available for organization
+            # If only 1, set `default_group` as payment group
+            while True:
+                org_id = input(f"organization id `{display_name}` service would be linked to: ").strip()
+                while org_id == "":
+                    org_id = input(f"organization id required: ").strip()
+                try:
+                    org_metadata = self._get_organization_metadata_from_registry(org_id)
+                    no_of_groups = len(org_metadata.groups)
+                    break
+                except Exception:
+                    print(f"`{org_id}` is invalid.")
+            while True:
+                try:
+                    protodir_path = input("protodir path: ")
+                    model_ipfs_hash_base58 = ipfs_utils.publish_proto_in_ipfs(self._get_ipfs_client(), protodir_path)
+                    break
+                except Exception:
+                    print(f'Invalid path: "{protodir_path}"')
+            if no_of_groups == 1:
+                metadata.group_init('default_group')
+            else:
+                while input("Add group? [y/n] ") == 'y':
+                    metadata.group_init(input('group name: '))
+            metadata.add_description()
+            metadata.add_contributor(input('Enter contributor name: '), input('Enter contributor email: '))
+            while input('Add another contributor? [y/n] ').lower() == 'y':
+                metadata.add_contributor(input('Enter contributor name '), input('Enter contributor email: '))
+            mpe_address = self.get_mpe_address()
+
+            metadata.set_simple_field('model_ipfs_hash', model_ipfs_hash_base58)
+            metadata.set_simple_field('mpe_address', mpe_address)
+            metadata.set_simple_field('display_name', display_name)
+            print('', '', json.dumps(metadata.m, indent=2), sep='\n')
+            print("Are you sure you want to create? [y/n] ", end='')
+            if input() == 'y':
+                file_name = input(f"Choose file name: (service_metadata) ") or 'service_metadata'
+                file_name += '.json'
+                metadata.save_pretty(file_name)
+                print(f"{file_name} created.")
+            else:
+                exit("ABORTED.")
+        except KeyboardInterrupt:
+            exit("\n`snet service metadata-init-utility` CANCELLED.")
 
     def publish_proto_metadata_init(self):
         model_ipfs_hash_base58 = ipfs_utils.publish_proto_in_ipfs(
@@ -157,6 +243,68 @@ class MPEServiceCommand(BlockchainCommand):
         metadata.remove_assets(self.args.asset_type)
         metadata.save_pretty(self.args.metadata_file)
 
+    def metadata_add_media(self):
+        """Metadata: Add new individual media
+
+        Detects media type for files to be added on IPFS, explict declaration for external resources.
+        """
+        metadata = load_mpe_service_metadata(self.args.metadata_file)
+        # Support endpoints only with SSL Certificate
+        url_validator = r'https?:\/\/(www\.)?([-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b[-a-zA-Z0-9()@:%_\+.~#?&//=]*)'
+        # Automatic media type identification
+        if search(r'^.+\.(jpg|jpeg|png|gif)$', self.args.media_url):
+            media_type = 'image'
+        elif search(r'^.+\.(mp4)$', self.args.media_url):
+            media_type = 'video'
+        elif search(url_validator, self.args.media_url):
+            while True:
+                try:
+                    media_type = input(f"Enter the media type (image, video) present at {self.args.media_url}: ")
+                except ValueError:
+                    print("Choose only between (image, video).")
+                else:
+                    if media_type not in ('image', 'video'):
+                        print("Choose only between (image, video).")
+                    else:
+                        break
+        else:
+            if search(r'(https:\/\/)?(www\.)+([-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b[-a-zA-Z0-9()@:%_\+.~#?&//=]*)', self.args.media_url):
+                raise ValueError("Media endpoint supported only for secure sites.")
+            else:
+                raise ValueError(f"Entered url '{self.args.media_url}' is invalid.")
+        file_extension_validator = r'^.+\.(jpg|jpeg|JPG|png|gif|GIF|mp4)$'
+        # Detect whether to add asset on IPFS or if external resource
+        if search(file_extension_validator, self.args.media_url):
+            asset_file_ipfs_hash_base58 = ipfs_utils.publish_file_in_ipfs(self._get_ipfs_client(), self.args.media_url)
+            metadata.add_media(asset_file_ipfs_hash_base58, media_type, self.args.hero_image)
+        else:
+            metadata.add_media(self.args.media_url, media_type, self.args.hero_image)
+        metadata.save_pretty(self.args.metadata_file)
+
+    def metadata_remove_media(self):
+        """Metadata: Remove individual media using unique order key."""
+        metadata = load_mpe_service_metadata(self.args.metadata_file)
+        metadata.remove_media(self.args.order)
+        metadata.save_pretty(self.args.metadata_file)
+
+    def metadata_remove_all_media(self):
+        """Metadata: Remove all individual media."""
+        metadata = load_mpe_service_metadata(self.args.metadata_file)
+        metadata.remove_all_media()
+        metadata.save_pretty(self.args.metadata_file)
+
+    def metadata_swap_media_order(self):
+        """Metadata: Swap order of two individual media given 'from' and 'to'."""
+        metadata = load_mpe_service_metadata(self.args.metadata_file)
+        metadata.swap_media_order(self.args.move_from, self.args.move_to)
+        metadata.save_pretty(self.args.metadata_file)
+
+    def metadata_change_media_order(self):
+        """Metadata: REPL to change order of all individual media."""
+        metadata = load_mpe_service_metadata(self.args.metadata_file)
+        metadata.change_media_order()
+        metadata.save_pretty(self.args.metadata_file)
+
     def metadata_add_contributor(self):
         metadata = load_mpe_service_metadata(self.args.metadata_file)
         metadata.add_contributor(self.args.name, self.args.email_id)
@@ -199,6 +347,50 @@ class MPEServiceCommand(BlockchainCommand):
         metadata.set_simple_field("service_description", service_description)
         metadata.save_pretty(self.args.metadata_file)
 
+    def metadata_validate(self):
+        """Validates the service metadata file for structure and input consistency.
+
+        Validates whether service metadata (`service_metadata.json` if not provided as argument) is consistent
+        with the schema provided in `service_schema` present in `snet_cli/snet/snet_cli/resources.`
+
+        Args:
+            metadata_file: Option provided through the command line. (default: service_metadata.json)
+            service_schema: Schema of a consistent service metadata file.
+
+        Raises:
+            ValidationError: Inconsistent service metadata structure or missing values.
+                docs -> Handling ValidationErrors (https://python-jsonschema.readthedocs.io/en/stable/errors/)
+        """
+        # Set path to `service_schema` stored in the `resources` directory from cwd of `mpe_service.py`
+        current_path = Path(__file__).parent
+        relative_path = '../../snet/snet_cli/resources/service_schema'
+        path_to_schema = (current_path / relative_path).resolve()
+        with open(path_to_schema, 'r') as f:
+            schema = json.load(f)
+        metadata = load_mpe_service_metadata(self.args.metadata_file)
+        try:
+            validate(instance=metadata.m, schema=schema)
+        except Exception as e:
+            docs = "http://snet-cli-docs.singularitynet.io/service.html"
+            error_message = f"\nVisit {docs} for more information."
+            if e.validator == 'required':
+                raise ValidationError(e.message + error_message)
+            elif e.validator == 'minLength':
+                raise ValidationError(f"`{e.path[-1]}` -> cannot be empty." + error_message)
+            elif e.validator == 'minItems':
+                raise ValidationError(f"`{e.path[-1]}` -> minimum 1 item required." + error_message)
+            elif e.validator == 'type':
+                raise ValidationError(f"`{e.path[-1]}` -> {e.message}" + error_message)
+            elif e.validator == 'enum':
+                raise ValidationError(f"`{e.path[-1]}` -> {e.message}" + error_message)
+            elif e.validator == 'additionalProperties':
+                if len(e.path) != 0:
+                    raise ValidationError(f"{e.message} in `{e.path[-2]}`." + error_message)
+                else:
+                    raise ValidationError(f"{e.message} in main object." + error_message)
+        else:
+            exit("OK. Ready to publish.")
+
     def _publish_metadata_in_ipfs(self, metadata_file):
         metadata = load_mpe_service_metadata(metadata_file)
         mpe_address = self.get_mpe_address()
@@ -218,8 +410,8 @@ class MPEServiceCommand(BlockchainCommand):
         """ Publish metadata in ipfs and print hash """
         self._printout(self._publish_metadata_in_ipfs(self.args.metadata_file))
 
-    def _get_converted_tags(self):
-        return [type_converter("bytes32")(tag) for tag in self.args.tags]
+    #def _get_converted_tags(self):
+    #    return [type_converter("bytes32")(tag) for tag in self.args.tags]
 
     def _get_organization_metadata_from_registry(self, org_id):
         rez = self._get_organization_registration(org_id)
@@ -254,14 +446,13 @@ class MPEServiceCommand(BlockchainCommand):
                     "Group name %s does not exist in organization" % group["group_name"])
 
     def publish_service_with_metadata(self):
-
         self._validate_service_group_with_org_group_and_update_group_id(
             self.args.org_id, self.args.metadata_file)
         metadata_uri = hash_to_bytesuri(
             self._publish_metadata_in_ipfs(self.args.metadata_file))
-        tags = self._get_converted_tags()
+        #tags = self._get_converted_tags()
         params = [type_converter("bytes32")(self.args.org_id), type_converter(
-            "bytes32")(self.args.service_id), metadata_uri, tags]
+            "bytes32")(self.args.service_id), metadata_uri]
         self.transact_contract_command(
             "Registry", "createServiceRegistration", params)
 
@@ -276,21 +467,27 @@ class MPEServiceCommand(BlockchainCommand):
         self.transact_contract_command(
             "Registry", "updateServiceRegistration", params)
 
-    def _get_params_for_tags_update(self):
-        tags = self._get_converted_tags()
-        params = [type_converter("bytes32")(self.args.org_id), type_converter(
-            "bytes32")(self.args.service_id), tags]
-        return params
+    #def _get_params_for_tags_update(self):
+    #    tags = self._get_converted_tags()
+    #    params = [type_converter("bytes32")(self.args.org_id), type_converter(
+    #        "bytes32")(self.args.service_id), tags]
+    #    return params
+
+    def metadata_add_tags(self):
+        metadata = load_mpe_service_metadata(self.args.metadata_file)
+        [metadata.add_tag(tag) for tag in self.args.tags]
+        metadata.save_pretty(self.args.metadata_file)
+
+    def metadata_remove_tags(self):
+        metadata = load_mpe_service_metadata(self.args.metadata_file)
+        [metadata.remove_tag(tag) for tag in self.args.tags]
+        metadata.save_pretty(self.args.metadata_file)
 
     def update_registration_add_tags(self):
-        params = self._get_params_for_tags_update()
-        self.transact_contract_command(
-            "Registry", "addTagsToServiceRegistration", params)
+        self._printout("This command has been deprecated. Please use `snet service metadata-add-tags` instead")
 
     def update_registration_remove_tags(self):
-        params = self._get_params_for_tags_update()
-        self.transact_contract_command(
-            "Registry", "removeTagsFromServiceRegistration", params)
+        self._printout("This command has been deprecated. Please use `snet service metadata-remove-tags` instead")
 
     def _get_service_registration(self):
         params = [type_converter("bytes32")(self.args.org_id), type_converter(
@@ -300,7 +497,7 @@ class MPEServiceCommand(BlockchainCommand):
         if (rez[0] == False):
             raise Exception("Cannot find Service with id=%s in Organization with id=%s" % (
                 self.args.service_id, self.args.org_id))
-        return {"metadataURI": rez[2], "tags": rez[3]}
+        return {"metadataURI": rez[2]}
 
     def _get_service_metadata_from_registry(self):
         rez = self._get_service_registration()
@@ -349,10 +546,8 @@ class MPEServiceCommand(BlockchainCommand):
         self._pprint(srvc_status)
 
     def print_service_tags_from_registry(self):
-        rez = self._get_service_registration()
-        tags = rez["tags"]
-        tags = [bytes32_to_str(tag) for tag in tags]
-        self._printout(" ".join(tags))
+        metadata = self._get_service_metadata_from_registry()
+        self._printout(" ".join(metadata.get_tags()))
 
     def extract_service_api_from_metadata(self):
         metadata = load_mpe_service_metadata(self.args.metadata_file)

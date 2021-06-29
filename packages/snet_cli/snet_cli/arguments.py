@@ -937,6 +937,11 @@ def add_mpe_service_options(parser):
     subparsers = parser.add_subparsers(title="Commands", metavar="COMMAND")
     subparsers.required = True
 
+    p = subparsers.add_parser("metadata-init-utility",
+                              help="Utility to create service metadata file")
+    p.set_defaults(fn="service_metadata_init")
+    add_p_metadata_file_opt(p)
+
     p = subparsers.add_parser("metadata-init",
                               help="Init metadata file with providing protobuf directory (which we publish in IPFS) and display_name (optionally encoding, service_type and payment_expiration_threshold)")
     p.set_defaults(fn="publish_proto_metadata_init")
@@ -1108,6 +1113,49 @@ def add_mpe_service_options(parser):
     p.set_defaults(fn="metadata_remove_all_assets")
     add_p_metadata_file_opt(p)
 
+    p = subparsers.add_parser("metadata-add-media",
+                              help="Add media to metadata")
+    p.set_defaults(fn="metadata_add_media")
+    p.add_argument("media_url",
+                   metavar='MEDIA_URL',
+                   help="Media url endpoint")
+    p.add_argument('--hero_image',
+                   help='Indicate whether hero-image (default False)',
+                   action='store_true')
+    add_p_metadata_file_opt(p)
+
+    p = subparsers.add_parser("metadata-remove-media",
+                              help="Remove media of asset type")
+    p.set_defaults(fn="metadata_remove_media")
+    p.add_argument("order",
+                   metavar="ORDER",
+                   help="Delete by order of media",
+                   type=int)
+    add_p_metadata_file_opt(p)
+
+    p = subparsers.add_parser("metadata-remove-all-media",
+                              help="Remove all existing media")
+    p.set_defaults(fn="metadata_remove_all_media")
+    add_p_metadata_file_opt(p)
+
+    p = subparsers.add_parser("metadata-swap-media-order",
+                              help="Swap media order")
+    p.set_defaults(fn="metadata_swap_media_order")
+    p.add_argument("move_from",
+                   metavar="FROM",
+                   help="Order number to swap from",
+                   type=int)
+    p.add_argument("move_to",
+                   metavar="TO",
+                   help="Order number to swap to",
+                   type=int)
+    add_p_metadata_file_opt(p)
+
+    p = subparsers.add_parser("metadata-change-media-order",
+                              help="Reassign all individual media order")
+    p.set_defaults(fn="metadata_change_media_order")
+    add_p_metadata_file_opt(p)
+
     p = subparsers.add_parser("metadata-update-endpoints",
                               help="Remove all endpoints from the group and add new ones")
     p.set_defaults(fn="metadata_update_endpoints")
@@ -1148,6 +1196,11 @@ def add_mpe_service_options(parser):
     add_p_metadata_file_opt(p)
     p.add_argument("email_id", help="Email of the contributor")
 
+    p = subparsers.add_parser("validate-metadata",
+                              help="Validates if created metadata is consistent")
+    p.set_defaults(fn="metadata_validate")
+    add_p_metadata_file_opt(p)
+
     def add_p_publish_params(_p):
         add_p_metadata_file_opt(_p)
         _p.add_argument("--update-mpe-address",
@@ -1160,16 +1213,13 @@ def add_mpe_service_options(parser):
     p.set_defaults(fn="publish_service_with_metadata")
     add_p_publish_params(p)
     add_p_service_in_registry(p)
-    p.add_argument("--tags",
-                   nargs="*",
-                   default=[],
-                   help="Tags for service")
     add_transaction_arguments(p)
-
+ 
     p = subparsers.add_parser("publish-in-ipfs",
                               help="Publish metadata only in IPFS, without publishing in Registry")
     p.set_defaults(fn="publish_metadata_in_ipfs")
     add_p_publish_params(p)
+    add_transaction_arguments(p)
 
     p = subparsers.add_parser("update-metadata",
                               help="Publish metadata in IPFS and update existed service")
@@ -1200,10 +1250,31 @@ def add_mpe_service_options(parser):
                    metavar="TAGS")
     add_transaction_arguments(p)
 
+
     p = subparsers.add_parser("print-metadata",
                               help="Print service metadata from registry")
     p.set_defaults(fn="print_service_metadata_from_registry")
     add_p_service_in_registry(p)
+
+    p = subparsers.add_parser("metadata-add-tags",
+                              help="Add new tags to service")
+    p.set_defaults(fn="metadata_add_tags")
+    add_p_metadata_file_opt(p)
+    p.add_argument("tags",
+                   nargs="+",
+                   default=[],
+                   help="Tags to add",
+                   metavar="TAGS")
+
+    p = subparsers.add_parser("metadata-remove-tags",
+                              help="Remove tags from service")
+    p.set_defaults(fn="metadata_remove_tags")
+    add_p_metadata_file_opt(p)
+    p.add_argument("tags",
+                   nargs="+",
+                   default=[],
+                   help="Tags to removed",
+                   metavar="TAGS")
 
     p = subparsers.add_parser("print-service-status",
                               help="Print service status")

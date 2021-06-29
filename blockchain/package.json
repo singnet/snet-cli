@@ -1,6 +1,6 @@
 {
   "dependencies": {
-    "singularitynet-platform-contracts": "0.3.4",
-    "singularitynet-token-contracts": "2.0.1"
+    "singularitynet-platform-contracts": "1.0.1",
+    "singularitynet-token-contracts": "3.0.0"
   }
 }

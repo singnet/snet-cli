@@ -63,10 +63,10 @@ jobs:
           mkdir snet-daemon
           cd snet-daemon
 
-          wget https://github.com/singnet/snet-daemon/releases/download/v4.0.0/snet-daemon-v4.0.0-linux-amd64.tar.gz
-          tar -xvf snet-daemon-v4.0.0-linux-amd64.tar.gz
-          cd snet-daemon-v4.0.0-linux-amd64
-          cp ~/singnet/snet-cli/packages/sdk/testcases/functional_tests/snetd.config.json ~/singnet/snet-daemon/snet-daemon-v4.0.0-linux-amd64
+          wget https://github.com/singnet/snet-daemon/releases/download/v5.0.1/snet-daemon-v5.0.1-linux-amd64.tar.gz
+          tar -xvf snet-daemon-v5.0.1-linux-amd64.tar.gz
+          cd snet-daemon-v5.0.1-linux-amd64
+          cp ~/singnet/snet-cli/packages/sdk/testcases/functional_tests/snetd.config.json ~/singnet/snet-daemon/snet-daemon-v5.0.1-linux-amd64
 
 
     - run:

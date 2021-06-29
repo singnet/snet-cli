@@ -1,0 +1,185 @@
+{
+    "$schema": "http://json-schema.org/draft/2019-09/schema#",
+    "$id": "https://dev.singularitynet.io/docs/ai-developers/service/#metadata-overview",
+    "title": "Service Metadata",
+    "description": "Schema of a correct service metadata file",
+    "type": "object",
+    "properties": {
+        "version": {
+            "description": "Version of service",
+            "type": "integer",
+            "minimum": 1
+        },
+        "display_name": {
+            "description": "Service display name",
+            "type": "string",
+            "minLength": 1
+        },
+        "encoding": {
+            "description": "Service encoding [proto, json]",
+            "type": "string",
+            "enum": [ "proto", "json" ]
+        },
+        "service_type": {
+            "description": "Service type [grpc, jsonrpc, process]",
+            "type": "string",
+            "enum": [ "grpc", "jsonrpc", "process" ]
+        },
+        "model_ipfs_hash": {
+            "description": "Hash of directory which contains protobuf files",
+            "type": "string",
+            "minLength": 1
+        },
+        "mpe_address": {
+            "description": "Address of MultiPartyEscrow contract",
+            "type": "string",
+            "minLength": 1
+        },
+        "groups": {
+            "description": "Multiple groups can be associated with a service, one payment type is associated with every group",
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "group_name": {
+                        "description": "Name of the payment group",
+                        "type": "string",
+                        "minLength": 1
+                    },
+                    "pricing": {
+                        "description": "Pricing information",
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "price_model": {
+                                    "description": "[fixed-price, method-price]",
+                                    "type": "string",
+                                    "enum": [ "fixed_price", "method_price" ]
+                                },
+                                "price_in_cogs": {
+                                    "description": "Price in AGI tokens for all methods",
+                                    "type": "number"
+                                },
+                                "default": {
+                                    "description": "Necessary for daemon functionality",
+                                    "type": "boolean"
+                                }
+                            },
+                            "additionalProperties": false,
+                            "required": [ "price_model", "price_in_cogs", "default" ]
+                        },
+                        "minItems": 1
+                    },
+                    "endpoints": {
+                        "description": "Storage end points for the clients to connect",
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "minLength": 1
+                        },
+                        "minItems": 1
+                    },
+                    "daemon_addresses": {
+                        "description": "Ethereum public addresses of daemon in given payment group of service",
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "minLength": 1
+                        },
+                        "minItems": 1
+                    },
+                    "free_calls": {
+                        "description": "Number of free calls",
+                        "type": "integer"
+                    },
+                    "free_call_signer_address": {
+                        "description": "Public key address used for validating signatures requested specially for free call",
+                        "type": "string",
+                        "minLength": 1
+                    }
+                },
+                "additionalProperties": false,
+                "required": [ "group_name", "pricing", "endpoints", "daemon_addresses" ]
+            },
+            "minItems": 1
+        },
+        "service_description": {
+            "description": "Service description [user-guide, long-desc, short-desc]",
+            "type": "object",
+            "properties": {
+                "url": {
+                    "description": "Service user guide",
+                    "type": "string"
+                },
+                "long_description": {
+                    "description": "Service long description",
+                    "type": "string"
+                },
+                "short_description": {
+                    "description": "Service short description",
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false,
+            "required": [ "url", "long_description", "short_description" ]
+        },
+        "media": {
+            "description": "Media assets with IPFS hash",
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "order": {
+                        "description": "Unique ID to identify individual media",
+                        "type": "integer"
+                    },
+                    "url": {
+                        "description": "IPFS hash for the individual media",
+                        "type": "string",
+                        "minLength": 1
+                    },
+                    "file_type": {
+                        "description": "File type [image, video]",
+                        "type": "string",
+                        "enum": [ "image", "video" ]
+                    },
+                    "alt_text": {
+                        "description": "Alternate to display if media doesn't load",
+                        "type": "string",
+                        "enum": [ "hover_on_the_image_text", "hover_on_the_video_url" ]
+                    }
+                },
+                "additionalProperties": false,
+                "required": [ "order", "url", "file_type", "alt_text" ]
+            }
+        },
+        "contributors": {
+            "description": "Name and Email of contributor(s)",
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "description": "Name of contributor",
+                        "type": "string",
+                        "minLength": 1
+                    },
+                    "email_id": {
+                        "description": "Email of contributor",
+                        "type": "string",
+                        "minLength": 1
+                    }
+                },
+                "additionalProperties": false,
+                "required": [ "name", "email_id" ]
+            },
+            "minItems": 1
+        }
+    },
+    "additionalProperties": false,
+    "required": [
+        "version", "display_name", "encoding", "service_type",
+        "model_ipfs_hash", "mpe_address", "groups", "contributors"
+    ]
+}

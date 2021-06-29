@@ -11,6 +11,8 @@ if [ ! $1 = "--i-no-what-i-am-doing" ]; then
 	exit 1
 fi
 
+cwd=$(pwd)
+
 # I. restart ipfs
 ipfs shutdown || echo "supress an error"
 
@@ -43,7 +45,7 @@ snet network create local http://localhost:8545
 # swith to local network
 snet network local
 
-# Configure contract addresses for local network (it will not be necessary for kovan or mainnet! )
+# Configure contract addresses for local network (it will not be necessary for ropsten or mainnet! )
 snet set current_singularitynettoken_at 0x6e5f20669177f5bdf3703ec5ea9c4d4fe3aabd14
 snet set current_registry_at 0x4e74fefa82e83e0964f0d9f53c68e03f7298a8b2
 snet set current_multipartyescrow_at 0x5c7a4290f6f8ff64c69eeffdfafc8644a4ec3a4e
@@ -51,3 +53,7 @@ snet set current_multipartyescrow_at 0x5c7a4290f6f8ff64c69eeffdfafc8644a4ec3a4e
 # Create First identity (snet-user = first ganache).
 # (snet will automatically swith to this new identity)
 snet identity create snet-user rpc --network local
+snet session
+export PYTHONPATH=$cwd
+python $cwd"/packages/snet_cli/test/functional_tests/mint/mint.py"
+snet account balance
