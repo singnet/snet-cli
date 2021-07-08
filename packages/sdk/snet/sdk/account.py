@@ -85,7 +85,7 @@ class Account:
         return self.mpe_contract.deposit(self, amount_in_cogs)
 
     def approve_transfer(self, amount_in_cogs):
-        return self.send_transaction(self.token_contract.functions.approve(self.mpe_contract.contract.address, amount_in_cogs))
+        return self.send_transaction(self.token_contract.functions.approve,self.mpe_contract.contract.address, amount_in_cogs)
 
     def allowance(self):
         return self.token_contract.functions.allowance(self.address, self.mpe_contract.contract.address).call()
