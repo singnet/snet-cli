@@ -40,7 +40,7 @@ class PaymentChannelProvider(object):
 
         channels_opened = list(filter(
             lambda
-                channel: channel.sender == account.address and channel.signer == account.signer_address and channel.recipient ==
+                channel: (channel.sender == account.address or channel.signer == account.signer_address) and channel.recipient ==
                          payment_address and channel.groupId == group_id,
             [web3.utils.events.get_event_data(
                 event_abi, l)["args"] for l in logs]
