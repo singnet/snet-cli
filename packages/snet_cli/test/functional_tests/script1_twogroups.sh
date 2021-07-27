@@ -65,6 +65,17 @@ grep 5.5.6.7:8089 organization_metadata.json
 snet --print-traceback organization create testo -y
 snet organization print-metadata org1 testo >organization_metadata_print.json
 
+snet service metadata-add-tags tag1 tag2 tag3
+grep "tag1" service_metadata.json
+grep "tag2" service_metadata.json
+grep "tag3" service_metadata.json
+grep "tag4" service_metadata.json && exit 1 || echo "fail as expected"
+
+snet service metadata-remove-tags tag2 tag1
+grep "tag2" service_metadata.json && exit 1 || echo "fail as expected"
+grep "tag1" service_metadata.json && exit 1 || echo "fail as expected"
+grep "tag3" service_metadata.json
+
 snet service publish testo tests -y -q --gas-price medium
 snet service update-add-tags testo tests tag1 tag2 tag3 -y -q --gas-price slow
 snet service update-remove-tags testo tests tag2 tag1 -y -q --gas-price 1000000000

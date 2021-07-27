@@ -256,6 +256,9 @@ def open_grpc_channel(endpoint):
            - for https:// we open secure_channel (with default credentials)
            - without prefix we open insecure_channel
     """
+    _GB = 1024 ** 3
+    options = [('grpc.max_send_message_length', _GB),
+               ('grpc.max_receive_message_length', _GB)]
     if (endpoint.startswith("https://")):
         return grpc.secure_channel(remove_http_https_prefix(endpoint), grpc.ssl_channel_credentials())
     return grpc.insecure_channel(remove_http_https_prefix(endpoint))

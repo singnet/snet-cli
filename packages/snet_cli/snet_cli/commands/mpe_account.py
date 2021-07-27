@@ -1,5 +1,6 @@
 from snet_cli.commands.commands import BlockchainCommand
 from snet_cli.utils.agi2cogs import cogs2stragi
+from snet_cli.utils.config import get_contract_address
 
 
 class MPEAccountCommand(BlockchainCommand):

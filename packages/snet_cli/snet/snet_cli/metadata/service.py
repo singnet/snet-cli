@@ -72,7 +72,9 @@ class MPEServiceMetadata:
                   "model_ipfs_hash": "",
                   "mpe_address": "",
                   "groups": [],
-                  "assets": {}
+                  "assets": {},
+                  "media": [],
+                  "tags" : []
                   }
 
     def set_simple_field(self, f, v):
@@ -166,6 +168,30 @@ class MPEServiceMetadata:
         for group in self.m["groups"]:
             if group["group_name"] == group_name:
                 self.m["groups"].remove(group)
+
+    def get_tags(self):
+        tags = []
+        if "tags" in self.m:
+            tags = self.m["tags"]
+        return tags
+
+    def add_tag(self, tag_name):
+        if not "tags" in self.m:
+            self.m["tags"] = []
+
+        if (tag_name in self.m["tags"]):
+            print(f"The tag {str(tag_name)} is already present")
+            return
+        self.m["tags"] += [tag_name]
+
+    def remove_tag(self, tag_name):
+        if not "tags" in self.m:
+            self.m["tags"] = []
+                    
+        if (tag_name not in self.m["tags"]):
+            print(f"The tag {str(tag_name)} is not found")
+            return
+        self.m["tags"].remove(tag_name)
 
     def add_asset(self, asset_ipfs_hash, asset_type):
         # Check if we need to validation if ssame asset type is added twice if we need to add it or replace the existing one
@@ -266,6 +292,8 @@ class MPEServiceMetadata:
         # TODO: we probaly should check the  consistensy of loaded json here
         #       check that it contains required fields
         self.m = json.loads(j)
+        if not "tags" in self.m:
+            self.m["tags"] = []        
 
     def load(self, file_name):
         with open(file_name) as f:
@@ -369,6 +397,138 @@ class MPEServiceMetadata:
     def remove_contributor_by_email(self, email_id):
         self.m["contributors"] = [
             contributor for contributor in self.m["contributors"] if contributor["email_id"] != email_id]
+
+    def group_init(self, group_name):
+        """Required values for creating a new payment group.
+
+        Args:
+            group_name: If org contains only 1 payment group -> default_group, ask user for other groups otherwise.
+
+        Raises:
+            ValueError: User enters non-integer value for `fixed_price.`
+            Exception: User enters same endpoints.
+        """
+        self.add_group(group_name)
+        while True:
+            try:
+                fixed_price = int(input("Set fixed price: "))
+            except ValueError:
+                print("Enter a valid integer.")
+            else:
+                self.set_fixed_price_in_cogs(group_name, fixed_price)
+                break
+        while True:
+            try:
+                endpoints = input("Add endpoints as comma separated values: ").split(',')
+                if endpoints[0] == "":
+                    print("Endpoints required.")
+                else:
+                    for endpoint in endpoints:
+                        self.add_endpoint_to_group(group_name, endpoint.strip())
+                    break
+            except Exception as e:
+                print(e)
+        while True:
+            daemon_addresses = input("Add daemon addresses as comma separated values: ").split(',')
+            if daemon_addresses[0] == "":
+                print("Daemon address required.")
+            else:
+                for daemon_address in daemon_addresses:
+                    self.add_daemon_address_to_group(group_name, daemon_address.strip())
+                break
+        if input('Free calls included? [y/n] ').lower() == 'y':
+            self.set_free_calls_for_group(group_name, int(input('free calls: (15) ') or 15))
+            self.set_freecall_signer_address(group_name, input('free call signer address: '))
+
+    def add_media(self, url, media_type, hero_img=False):
+        """Add new individual media to service metadata."""
+        if 'media' not in self.m:
+            self.m['media'] = []
+        individual_media = {}
+        if hero_img:
+            assert (media_type == 'image'), f"{media_type.upper()} media-type cannot be a hero-image."
+            assert (not self._is_asset_type_exists()), "Hero-image already exists (only 1 unique hero-image allowed.)"
+            individual_media['asset_type'] = AssetType.HERO_IMAGE.value  # Dependency with AssetType, fix if obsolete
+        if len(self.m['media']) == 0:
+            individual_media['order'] = 1
+        else:
+            individual_media['order'] = self.m['media'][-1]['order'] + 1
+        individual_media['url'] = url
+        individual_media['file_type'] = media_type
+        if media_type == 'image':
+            individual_media['alt_text'] = 'hover_on_the_image_text'
+        else:
+            individual_media['alt_text'] = 'hover_on_the_video_url'
+        self.m['media'].append(individual_media)
+
+    def remove_media(self, order):
+        """Remove individual media from service metadata using unique order key."""
+        assert (len(self.m['media']) > 0), "No media content to remove."
+        assert (order > 0), "Order of individual media starts from 1."
+        del_position = -1
+        for i in range(len(self.m['media'])):
+            if order == self.m['media'][i]['order']:
+                del self.m['media'][i]
+                del_position = i
+                break
+        if del_position == -1:
+            raise Exception(f"Media with order: {order} not found.")
+        for i in range(del_position, len(self.m['media'])):
+            self.m['media'][i]['order'] -= 1
+
+    def remove_all_media(self):
+        """Remove all individual media from metadata."""
+        self.m['media'].clear()
+
+    def swap_media_order(self, move_from, move_to):
+        """Swap orders of two different media given their individual orders (move_from, move_to)."""
+        assert (len(self.m['media']) + 1 > move_from > 0), f"Order {move_from} out of bounds."
+        assert (len(self.m['media']) + 1 > move_to > 0), f"Order {move_to} out of bounds."
+        self.m['media'][move_to - 1], self.m['media'][move_from - 1] = self.m['media'][move_from - 1], self.m['media'][
+            move_to - 1]
+        self.m['media'][move_to - 1]['order'], self.m['media'][move_from - 1]['order'] = self.m['media'][move_from - 1][
+                                                                                             'order'], \
+                                                                                         self.m['media'][move_to - 1][
+                                                                                             'order']
+
+    def change_media_order(self):
+        """Mini REPL to change order of all individual media"""
+        order_range = range(1, len(self.m['media']) + 1)
+        available_orders = list(order_range)
+        for individual_media in self.m['media']:
+            print(f"File Type: {individual_media['file_type']}, Current Order: {individual_media['order']}")
+            while True:
+                try:
+                    new_order = int(input(f"Enter new order for {individual_media['url']}: "))
+                except ValueError:
+                    print("Error: Order entered not a number. Try again.")
+                else:
+                    if new_order in available_orders:
+                        individual_media['order'] = new_order
+                        available_orders.remove(new_order)
+                        break
+                    elif new_order not in order_range:
+                        print(
+                            f"Media array contains only {len(self.m['media'])} items. Enter order between [{order_range.start}, {order_range.stop - 1}]")
+                    else:
+                        print(f"Order already taken. Available orders: {available_orders}")
+        self.m['media'].sort(key=lambda x: x['order'])
+
+    def _is_asset_type_exists(self):
+        """Return boolean on whether asset type already exists"""
+        media = self.m['media']
+        for individual_media in media:
+            if 'asset_type' in individual_media:
+                return True
+        return False
+
+    def add_description(self):
+        if 'service_description' not in self.m:
+            self.m['service_description'] = {
+                "url": input("user guide url: "),
+                "long_description": input("service long description: "),
+                "short_description": input("service short description: ")
+            }
 
 
 def load_mpe_service_metadata(f):

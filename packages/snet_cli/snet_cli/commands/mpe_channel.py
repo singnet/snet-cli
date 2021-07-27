@@ -572,7 +572,7 @@ class MPEChannelCommand(OrganizationCommand):
         if (rez[0] == False):
             raise Exception("Cannot find Service with id=%s in Organization with id=%s" % (
                 self.args.service_id, self.args.org_id))
-        return {"metadataURI": rez[2], "tags": rez[3]}
+        return {"metadataURI": rez[2]}
 
     def _get_service_metadata_from_registry(self):
         rez = self._get_service_registration()
