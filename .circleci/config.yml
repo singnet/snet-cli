@@ -17,7 +17,7 @@ jobs:
         name: Install tools and ipfs
         command: |
             cd ..
-            sudo apt-get update
+            sudo apt-get --allow-releaseinfo-change update
             sudo apt-get -y install libudev-dev libusb-1.0-0-dev curl jq
             # install IPFS
             wget https://dist.ipfs.io/go-ipfs/v0.4.17/go-ipfs_v0.4.17_linux-amd64.tar.gz
