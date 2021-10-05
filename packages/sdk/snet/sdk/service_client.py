@@ -69,7 +69,9 @@ class ServiceClient:
         if endpoint_object.scheme == "http":
             return grpc.insecure_channel(channel_endpoint)
         elif endpoint_object.scheme == "https":
-            return grpc.secure_channel(channel_endpoint, grpc.ssl_channel_credentials())
+            with open('root.pem', 'rb') as f:
+                trusted_certs = f.read()
+            return grpc.secure_channel(channel_endpoint, grpc.ssl_channel_credentials(root_certificates=trusted_certs))
         else:
             raise ValueError('Unsupported scheme in service metadata ("{}")'.format(endpoint_object.scheme))
 
@@ -171,3 +173,4 @@ class ServiceClient:
     def set_concurrency_token_and_channel(self, token, channel):
         self.payment_strategy.concurrency_token = token
         self.payment_strategy.channel = channel
+
