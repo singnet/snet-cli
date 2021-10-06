@@ -8,7 +8,7 @@ from eth_account.messages import defunct_hash_message
 from rfc3986 import urlparse
 from snet.sdk.mpe.payment_channel_provider import PaymentChannelProvider
 from snet.snet_cli.utils.utils import RESOURCES_PATH, add_to_path
-
+from snet.sdk.root_certificate import root_certificate
 
 class _ClientCallDetails(
     collections.namedtuple(
@@ -69,9 +69,7 @@ class ServiceClient:
         if endpoint_object.scheme == "http":
             return grpc.insecure_channel(channel_endpoint)
         elif endpoint_object.scheme == "https":
-            with open('root.pem', 'rb') as f:
-                trusted_certs = f.read()
-            return grpc.secure_channel(channel_endpoint, grpc.ssl_channel_credentials(root_certificates=trusted_certs))
+            return grpc.secure_channel(channel_endpoint, grpc.ssl_channel_credentials(root_certificates=root_certificate))
         else:
             raise ValueError('Unsupported scheme in service metadata ("{}")'.format(endpoint_object.scheme))
 
