@@ -20,7 +20,7 @@ jobs:
             sudo apt-get --allow-releaseinfo-change update
             sudo apt-get -y install libudev-dev libusb-1.0-0-dev curl jq
             # install IPFS
-            wget https://dist.ipfs.io/go-ipfs/v0.10.0/go-ipfs_v0.10.0_linux-amd64.tar.gz
+            wget https://dist.ipfs.io/go-ipfs/v0.4.17/go-ipfs_v0.4.17_linux-amd64.tar.gz --no-check-certificate
             tar xvfz go-ipfs_*.tar.gz
             sudo cp ./go-ipfs/ipfs /usr/local/bin
     - checkout
