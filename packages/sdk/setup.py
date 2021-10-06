@@ -40,6 +40,7 @@ setup(
     version=version_dict['__version__'],
     packages=find_namespace_packages(include=['snet.*']),
     namespace_packages=['snet'],
+    include_package_data=True,
     url='https://github.com/singnet/snet-cli/tree/master/snet_sdk',
     license='MIT',
     author='SingularityNET Foundation',
