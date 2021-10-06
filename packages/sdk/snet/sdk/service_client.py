@@ -173,4 +173,3 @@ class ServiceClient:
     def set_concurrency_token_and_channel(self, token, channel):
         self.payment_strategy.concurrency_token = token
         self.payment_strategy.channel = channel
-
