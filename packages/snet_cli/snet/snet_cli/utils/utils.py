@@ -13,6 +13,7 @@ import grpc
 from grpc_tools.protoc import main as protoc
 
 from snet import snet_cli
+from snet.snet_cli.resources.root_certificate import certificate
 
 RESOURCES_PATH = PurePath(os.path.dirname(snet_cli.__file__)).joinpath("resources")
 
@@ -260,7 +261,7 @@ def open_grpc_channel(endpoint):
     options = [('grpc.max_send_message_length', _GB),
                ('grpc.max_receive_message_length', _GB)]
     if (endpoint.startswith("https://")):
-        return grpc.secure_channel(remove_http_https_prefix(endpoint), grpc.ssl_channel_credentials())
+        return grpc.secure_channel(remove_http_https_prefix(endpoint), grpc.ssl_channel_credentials(root_certificates=certificate))
     return grpc.insecure_channel(remove_http_https_prefix(endpoint))
 
 
