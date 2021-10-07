@@ -5,7 +5,7 @@ import grpc
 import web3
 from snet.sdk.payment_strategies.payment_staregy import PaymentStrategy
 from snet.snet_cli.utils.utils import RESOURCES_PATH, add_to_path
-
+from snet.sdk.root_certificate import root_certificate
 
 class FreeCallPaymentStrategy(PaymentStrategy):
 
@@ -40,7 +40,7 @@ class FreeCallPaymentStrategy(PaymentStrategy):
             if endpoint_object.scheme == "http":
                 channel = grpc.insecure_channel(channel_endpoint)
             elif endpoint_object.scheme == "https":
-                channel = grpc.secure_channel(channel_endpoint, grpc.ssl_channel_credentials())
+                channel = grpc.secure_channel(channel_endpoint, grpc.ssl_channel_credentials(root_certificates=root_certificate))
             else:
                 raise ValueError('Unsupported scheme in service metadata ("{}")'.format(endpoint_object.scheme))
 
