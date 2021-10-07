@@ -13,7 +13,7 @@ import grpc
 from grpc_tools.protoc import main as protoc
 
 from snet import snet_cli
-from snet.sdk.root_certificate import root_certificate
+from root_certificate import root_certificate
 
 RESOURCES_PATH = PurePath(os.path.dirname(snet_cli.__file__)).joinpath("resources")
 
