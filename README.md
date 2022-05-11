@@ -33,7 +33,7 @@ For further details, please check our full [Documentation](http://snet-cli-docs.
 
 #### Install prerequisites
 
-You should have python with version >= 3.6.5 and pip installed.
+You should have python with version 3.7 and pip installed.
 
 Additionally you should install the following packages:
 
@@ -49,7 +49,7 @@ sudo apt-get install libudev-dev libusb-1.0-0-dev
 #### Install snet-cli using pip
 
 ```bash
-$ pip3 install snet-cli
+$ pip3 install snet.snet-cli
 ```
 
 
@@ -91,7 +91,7 @@ Complete documentation is available [here](http://snet-cli-docs.singularitynet.i
 
 #### Prerequisites  
   
-* [Python 3.6.5](https://www.python.org/downloads/release/python-365/)  
+* [Python 3.7](https://www.python.org/downloads/release/python-370/)  
 * [Node 8+ w/npm](https://nodejs.org/en/download/)
 
 ---
@@ -236,7 +236,7 @@ For more information about gRPC and how to use it with Python, please see:
 
 #### Prerequisites  
   
-* [Python 3.6.5](https://www.python.org/downloads/release/python-365/)  
+* [Python 3.7](https://www.python.org/downloads/release/python-370/)  
 * [Node 8+ w/npm](https://nodejs.org/en/download/)
 
 ---
