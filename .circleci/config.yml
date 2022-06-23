@@ -10,7 +10,11 @@ jobs:
     - run:
         name: Update Node
         command: |
-            curl https://raw.githubusercontent.com/creationix/nvm/master/install.sh | sudo bash && source /usr/local/nvm/nvm.sh  && nvm install 14.19.3 && nvm alias default 14.19.3 && nvm use default
+          curl https://raw.githubusercontent.com/creationix/nvm/master/install.sh | sudo bash
+          && source /usr/local/nvm/nvm.sh
+          && nvm install 14.19.3
+          && nvm alias default 14.19.3
+          && nvm use default
     - run:
         name: Install tools and ipfs
         command: |
