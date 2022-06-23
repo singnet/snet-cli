@@ -11,6 +11,7 @@ jobs:
         name: Update Node
         command: |
             curl https://raw.githubusercontent.com/creationix/nvm/master/install.sh | sudo bash
+            source ~/.profile
             nvm install 14.19.3
     - run:
         name: Install tools and ipfs
