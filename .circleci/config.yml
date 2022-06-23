@@ -10,10 +10,8 @@ jobs:
     - run:
         name: Update Node
         command: |
-#           curl -sSL "https://nodejs.org/dist/v14.19.3/node-v14.19.3-linux-x64.tar.xz" |
-#           sudo tar --strip-components=2 -xJ -C /usr/local/bin/ node-v14.19.3-linux-x64/bin/node
-#           curl https://www.npmjs.com/install.sh | sudo bash
-            curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.34.0/install.sh | sudo bash
+            curl https://raw.githubusercontent.com/creationix/nvm/master/install.sh | sudo bash
+            nvm install 14.19.3
     - run:
         name: Install tools and ipfs
         command: |
