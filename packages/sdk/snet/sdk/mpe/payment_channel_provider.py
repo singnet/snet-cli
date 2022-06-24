@@ -4,7 +4,7 @@ from snet.sdk.mpe.mpe_contract import MPEContract
 from snet.sdk.mpe.payment_channel import PaymentChannel
 from snet.snet_cli.utils.utils import get_contract_deployment_block
 
-BLOCKS_PER_BATCH = 20000
+BLOCKS_PER_BATCH = 5000
 
 
 class PaymentChannelProvider(object):
