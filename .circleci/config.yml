@@ -2,7 +2,7 @@ version: 2
 jobs:
   build:
     docker:
-    - image: circleci/python:3.8.3-node
+    - image: cimg/python:3.8.5-node
     working_directory: ~/singnet/snet-cli
     environment:
       TRIGGER_BUILD_BRANCH: master
@@ -10,9 +10,11 @@ jobs:
     - run:
         name: Update Node
         command: |
-            curl -sSL "https://nodejs.org/dist/v10.23.0/node-v10.23.0-linux-x64.tar.xz" |
-            sudo tar --strip-components=2 -xJ -C /usr/local/bin/ node-v10.23.0-linux-x64/bin/node
-            curl https://www.npmjs.com/install.sh | sudo bash
+            #sudo apt update
+            #curl -sL https://deb.nodesource.com/setup_14.x | sudo -E bash -
+            #sudo apt update
+            #sudo apt install nodejs -y
+            node -v
     - run:
         name: Install tools and ipfs
         command: |
@@ -28,12 +30,12 @@ jobs:
         name: Install snet-cli
         command: |
             ./packages/snet_cli/scripts/blockchain install
-            sudo pip3 install -e ./packages/snet_cli
+            pip3 install -e ./packages/snet_cli
     - run:
-        name: Install snet-dk
+        name: Install snet-sdk
         command: |
-          ./packages/snet_cli/scripts/blockchain install
-          sudo pip3 install -e ./packages/sdk
+            ./packages/snet_cli/scripts/blockchain install
+            pip3 install -e ./packages/sdk
     - run:
         name: Install platform-contracts from master
         command: |
@@ -42,6 +44,7 @@ jobs:
             cd ..
             git clone https://github.com/singnet/platform-contracts
             cd platform-contracts
+            npm install sha3
             npm install
             npm install ganache-cli@6.3.0
             npm run-script compile
@@ -49,36 +52,37 @@ jobs:
     - run:
         name: Build example service
         command: |
-          cd ~/singnet
-          git clone https://github.com/singnet/example-service.git
-          cd example-service
-          pip3 install -r requirements.txt
-          sh buildproto.sh
+            cd ~/singnet
+            git clone https://github.com/singnet/example-service.git
+            cd example-service
+            pip3 install -r requirements.txt
+            sh buildproto.sh
 
 
     - run:
         name: Set up for snet daemon
         command: |
-          cd ..
-          mkdir snet-daemon
-          cd snet-daemon
+            cd ..
+            mkdir snet-daemon
+            cd snet-daemon
 
-          wget https://github.com/singnet/snet-daemon/releases/download/v5.0.1/snet-daemon-v5.0.1-linux-amd64.tar.gz
-          tar -xvf snet-daemon-v5.0.1-linux-amd64.tar.gz
-          cd snet-daemon-v5.0.1-linux-amd64
-          cp ~/singnet/snet-cli/packages/sdk/testcases/functional_tests/snetd.config.json ~/singnet/snet-daemon/snet-daemon-v5.0.1-linux-amd64
+            wget https://github.com/singnet/snet-daemon/releases/download/v5.0.1/snet-daemon-v5.0.1-linux-amd64.tar.gz
+            tar -xvf snet-daemon-v5.0.1-linux-amd64.tar.gz
+            cd snet-daemon-v5.0.1-linux-amd64
+            cp ~/singnet/snet-cli/packages/sdk/testcases/functional_tests/snetd.config.json ~/singnet/snet-daemon/snet-daemon-v5.0.1-linux-amd64
 
 
     - run:
         name: Unit tests
         command: |
-            sudo pip3 install nose
+            pip3 install nose
             nosetests -v --with-doctest
     - run:
         name: Functional tests fro snet-cli
         command: |
             cd ..
             cd snet-cli
+            pip3 install eth-hash==0.4.0
             bash -ex  packages/snet_cli/test/utils/run_all_functional.sh
 
     - run:
