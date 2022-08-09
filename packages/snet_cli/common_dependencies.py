@@ -16,7 +16,10 @@ common_dependencies = [
     'base58==1.0.2',
     'argcomplete==1.9.4',
     'grpcio-health-checking==1.19.0',
-    'jsonschema==3.2.0'
+    'jsonschema==3.2.0',
+    'eth-hash==0.3.3',
+    'eth-utils==2.0.0',
+    'eth-rlp==0.3.0'
 ]
 
 
