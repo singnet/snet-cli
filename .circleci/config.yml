@@ -10,9 +10,14 @@ jobs:
     - run:
         name: Update Node
         command: |
-            curl -sSL "https://nodejs.org/dist/v10.23.0/node-v10.23.0-linux-x64.tar.xz" |
-            sudo tar --strip-components=2 -xJ -C /usr/local/bin/ node-v10.23.0-linux-x64/bin/node
-            curl https://www.npmjs.com/install.sh | sudo bash
+            curl https://raw.githubusercontent.com/creationix/nvm/master/install.sh | bash
+            export NVM_DIR="$HOME/.nvm"
+            [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
+            [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
+            source "$NVM_DIR/nvm.sh"
+            nvm install 14.19.3
+            nvm alias default 14.19.3
+            nvm use default
     - run:
         name: Install tools and ipfs
         command: |
