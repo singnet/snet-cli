@@ -3,6 +3,9 @@ from setuptools.command.install import install as _install
 
 
 common_dependencies = [
+    'eth-hash==0.3.3',
+    'eth-utils==2.0.0',
+    'eth-rlp==0.3.0',
     'grpcio-tools==1.19.0',
     'jsonrpcclient==2.5.2',
     'web3==4.8.3',
