@@ -3,6 +3,7 @@ from setuptools.command.install import install as _install
 
 
 common_dependencies = [
+    'protobuf==3.20.1',
     'grpcio-tools==1.19.0',
     'wheel==0.30.0',
     'jsonrpcclient==2.5.2',
