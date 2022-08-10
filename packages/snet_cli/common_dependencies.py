@@ -20,7 +20,7 @@ common_dependencies = [
     'base58==1.0.2',
     'argcomplete==1.9.4',
     'grpcio-health-checking==1.19.0',
-    'jsonschema==3.2.0',
+    'jsonschema==3.2.0'
 ]
 
 
