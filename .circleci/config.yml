@@ -47,6 +47,7 @@ jobs:
             cd ..
             git clone https://github.com/singnet/platform-contracts
             cd platform-contracts
+            npm install sha3
             npm install
             npm install ganache-cli@6.3.0
             npm run-script compile
