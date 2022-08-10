@@ -6,6 +6,7 @@ common_dependencies = [
     'grpcio-tools==1.19.0',
     'wheel==0.30.0',
     'jsonrpcclient==2.5.2',
+    'eth-hash==0.3.3',
     'rlp==1.0.1',
     'eth-rlp==0.2.0',
     'web3==4.8.3',
