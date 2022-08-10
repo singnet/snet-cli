@@ -7,7 +7,7 @@ common_dependencies = [
     'wheel==0.30.0',
     'jsonrpcclient==2.5.2',
     'rlp==1.0.1',
-    'eth-rlp==0.2.0'
+    'eth-rlp==0.2.0',
     'web3==4.8.3',
     'mnemonic==0.18',
     'pycoin==0.80',
