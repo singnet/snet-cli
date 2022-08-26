@@ -88,7 +88,6 @@ jobs:
         command: |
             cd ..
             cd snet-cli
-            sudo npm install -g node-gyp
             bash -ex  packages/snet_cli/test/utils/run_all_functional.sh
 
     - run:
