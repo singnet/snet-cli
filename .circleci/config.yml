@@ -49,7 +49,7 @@ jobs:
             cd ..
             git clone https://github.com/singnet/platform-contracts
             cd platform-contracts
-            sudo npm install -g node-gyp
+            sudo npm install -g node-gyp@9.0.0
             npm install sha3
             npm install
             npm install ganache-cli@6.3.0
@@ -88,6 +88,7 @@ jobs:
         command: |
             cd ..
             cd snet-cli
+            sudo npm install -g node-gyp@9.0.0
             bash -ex  packages/snet_cli/test/utils/run_all_functional.sh
 
     - run:
