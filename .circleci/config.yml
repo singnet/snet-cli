@@ -3,7 +3,6 @@ jobs:
   build:
     docker:
     - image: circleci/python:3.8.3-node
-    - image: circleci/
     working_directory: ~/singnet/snet-cli
     environment:
       TRIGGER_BUILD_BRANCH: master
