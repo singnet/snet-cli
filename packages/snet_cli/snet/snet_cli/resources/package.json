@@ -1,5 +1,5 @@
 {
   "dependencies": {
-    "grpc-tools": "1.7.3"
+    "grpc-tools": "1.9.0"
   }
 }

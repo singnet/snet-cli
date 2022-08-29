@@ -10,6 +10,8 @@ jobs:
     - run:
         name: Update Node
         command: |
+            node --version
+            python --version
             curl https://raw.githubusercontent.com/creationix/nvm/master/install.sh | bash
             export NVM_DIR="$HOME/.nvm"
             [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
@@ -47,6 +49,8 @@ jobs:
             cd ..
             git clone https://github.com/singnet/platform-contracts
             cd platform-contracts
+            sudo npm install -g node-gyp@8.4.1
+            npm install sha3
             npm install
             npm install ganache-cli@6.3.0
             npm run-script compile
@@ -84,6 +88,7 @@ jobs:
         command: |
             cd ..
             cd snet-cli
+            sudo npm install -g node-gyp@8.4.1
             bash -ex  packages/snet_cli/test/utils/run_all_functional.sh
 
     - run:
