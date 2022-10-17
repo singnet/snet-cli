@@ -19,7 +19,7 @@ def test_sdk():
 
     config = {
         "private_key": "0x484573a7949da33d9aceeba372fc697532fdb69278318c03d04418a1af8a6208",
-        "eth_rpc_endpoint": "https://ropsten.infura.io/v3/09027f4a13e841d48dbfefc67e7685d5",
+        "eth_rpc_endpoint": "https://goreli.infura.io/v3/09027f4a13e841d48dbfefc67e7685d5",
         "mpe_contract_address": "0x8fb1dc8df86b388c7e00689d1ecb533a160b4d0c",
         "registry_contract_address": "0x663422c6999ff94933dbcb388623952cf2407f6f",
         "token_contract_address": "0xb97E9bBB6fd49865709d3F1576e8506ad640a13B",
