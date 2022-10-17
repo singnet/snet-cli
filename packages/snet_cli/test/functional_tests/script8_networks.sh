@@ -11,6 +11,6 @@ snet network local_bad
 #switch to mainnet
 snet network mainnet
 
-#switch to ropsten
-snet network ropsten
+#switch to goerli
+snet network goerli
 
