@@ -10,7 +10,7 @@ common_dependencies = [
     'eth-hash==0.3.3',
     'rlp==1.0.1',
     'eth-rlp==0.1.2',
-    'web3==5.24.0',
+    'web3==4.8.3',
     'mnemonic==0.18',
     'pycoin==0.80',
     'pyyaml==4.2b1',
@@ -20,7 +20,8 @@ common_dependencies = [
     'base58==1.0.2',
     'argcomplete==1.9.4',
     'grpcio-health-checking==1.19.0',
-    'jsonschema==3.2.0'
+    'jsonschema==3.2.0',
+    'eth-account==0.3.0'
 ]
 
 
