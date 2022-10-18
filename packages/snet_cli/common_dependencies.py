@@ -3,13 +3,13 @@ from setuptools.command.install import install as _install
 
 
 common_dependencies = [
-    'protobuf==3.20.1',
+    'protobuf==3.10.0',
     'grpcio-tools==1.19.0',
     'wheel==0.30.0',
     'jsonrpcclient==2.5.2',
     'eth-hash==0.3.3',
     'rlp==1.0.1',
-    'eth-rlp==0.2.0',
+    'eth-rlp==0.1.2',
     'web3==4.8.3',
     'mnemonic==0.18',
     'pycoin==0.80',
@@ -20,7 +20,8 @@ common_dependencies = [
     'base58==1.0.2',
     'argcomplete==1.9.4',
     'grpcio-health-checking==1.19.0',
-    'jsonschema==3.2.0'
+    'jsonschema==3.2.0',
+    'eth-account==0.3.0'
 ]
 
 
