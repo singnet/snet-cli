@@ -165,7 +165,7 @@ To deposit these tokens or do any other transaction on the Ethereum blockchain, 
 
 
 To interact with SingularityNET services, you must compile the appropriate client libraries for that service.   
-To generate the client libraries to use in your application, you need the SingularityNET Command Line Interface, or CLI, which you can download from PyPi, see [https://github.com/singnet/snet-cli#installing-with-pip](https://github.com/singnet/snet-cli/snet_cli#installing-with-pip)
+To generate the client libraries to use in your application, you need the SingularityNET Command Line Interface, or CLI, which you can download from PyPi, see [https://github.com/singnet/snet-cli#installing-with-pip](https://github.com/singnet/snet_cli#installing-with-pip)
   
 Once you have the CLI installed, run the following command:
 ```bash
