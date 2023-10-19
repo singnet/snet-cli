@@ -118,9 +118,6 @@ class BlockchainCommand(Command):
         super(BlockchainCommand, self).__init__(config, args, out_f, err_f)
         self.w3 = w3 or get_web3(self.get_eth_endpoint())
         self.ident = ident or self.get_identity()
-        if type(self.w3.eth.gasPriceStrategy) != CachedGasPriceStrategy:
-            self.w3.eth.setGasPriceStrategy(
-                CachedGasPriceStrategy(self.get_gas_price_param()))
 
     def get_eth_endpoint(self):
         # the only one source of eth_rpc_endpoint is the configuration file
@@ -134,10 +131,16 @@ class BlockchainCommand(Command):
 
     def get_gas_price_verbose(self):
         # gas price is not given explicitly in Wei
-        if self.w3.eth.gasPriceStrategy.is_going_to_calculate():
-            self._printerr(
-                "# Calculating gas price. It might take ~60 seconds.")
-        g = self.w3.eth.generateGasPrice()
+        self.__printerr("# Calculating gas price... one moment..")
+        gasPrice = self.w3.eth.gasPrice
+        if gasPrice < 15000000000:
+            g = gasPrice + gasPrice*1/3
+        if gasPrice > 15000000000 and gasPrice < 50000000000:
+            g = gasPrice + gasPrice*1/5
+        if gasPrice > 50000000000 and gasPrice < 150000000000:
+            g = gasPrice + 7000000000
+        if gasPrice > 150000000000:
+            g = gasPrice + gasPrice*1/10
         self._printerr("# gas_price = %f GWei" % (g * 1E-9))
         return g
 
