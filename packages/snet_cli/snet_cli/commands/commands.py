@@ -131,7 +131,7 @@ class BlockchainCommand(Command):
 
     def get_gas_price_verbose(self):
         # gas price is not given explicitly in Wei
-        self.__printerr("# Calculating gas price... one moment..")
+        self._printerr("# Calculating gas price... one moment..")
         gasPrice = self.w3.eth.gasPrice
         if gasPrice < 15000000000:
             g = gasPrice + gasPrice*1/3
