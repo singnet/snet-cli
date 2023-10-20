@@ -142,7 +142,7 @@ class BlockchainCommand(Command):
         if gasPrice > 150000000000:
             g = gasPrice + gasPrice*1/10
         self._printerr("# gas_price = %f GWei" % (g * 1E-9))
-        return g
+        return int(g)
 
     def get_mpe_address(self):
         return get_contract_address(self, "MultiPartyEscrow")
