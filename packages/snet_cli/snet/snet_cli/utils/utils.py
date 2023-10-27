@@ -8,7 +8,10 @@ from urllib.parse import urlparse
 from pathlib import Path, PurePath
 
 import web3
-import pkg_resources
+
+import importlib.resources
+from importlib.metadata import distribution
+
 import grpc
 from grpc_tools.protoc import main as protoc
 
@@ -72,7 +75,7 @@ def serializable(o):
 
 
 def safe_address_converter(a):
-    if not web3.eth.is_checksum_address(a):
+    if not web3.is_checksum_address(a):
         raise Exception("%s is not is not a valid Ethereum checksum address" % a)
     return a
 
@@ -82,12 +85,12 @@ def type_converter(t):
         return lambda x: list(map(type_converter(t.replace("[]", "")), json.loads(x)))
     else:
         if "int" in t:
-            return lambda x: web3.Web3.toInt(text=x)
+            return lambda x: web3.Web3.to_int(text=x)
         elif "bytes32" in t:
-            return lambda x: web3.Web3.toBytes(text=x).ljust(32, b"\0") if not x.startswith(
-                "0x") else web3.Web3.toBytes(hexstr=x).ljust(32, b"\0")
+            return lambda x: web3.Web3.to_bytes(text=x).ljust(32, b"\0") if not x.startswith(
+                "0x") else web3.Web3.to_bytes(hexstr=x).ljust(32, b"\0")
         elif "byte" in t:
-            return lambda x: web3.Web3.toBytes(text=x) if not x.startswith("0x") else web3.Web3.toBytes(hexstr=x)
+            return lambda x: web3.Web3.to_bytes(text=x) if not x.startswith("0x") else web3.Web3.toBytes(hexstr=x)
         elif "address" in t:
             return safe_address_converter
         else:
@@ -150,14 +153,14 @@ def read_temp_tar(f):
 
 
 def get_cli_version():
-    return pkg_resources.get_distribution("snet-cli").version
+    return distribution("snet-cli").version
 
 
 def compile_proto(entry_path, codegen_dir, proto_file=None, target_language="python"):
     try:
         if not os.path.exists(codegen_dir):
             os.makedirs(codegen_dir)
-        proto_include = pkg_resources.resource_filename('grpc_tools', '_proto')
+        proto_include = importlib.resources.files('grpc_tools') / '_proto'
 
         compiler_args = [
             "-I{}".format(entry_path),
@@ -310,7 +313,7 @@ def normalize_private_key(private_key):
 
 
 def get_address_from_private(private_key):
-    return web3.eth.Account.privateKeyToAccount(private_key).address
+    return web3.eth.Account.from_key(private_key).address
 
 
 class add_to_path():
