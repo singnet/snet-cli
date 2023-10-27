@@ -4,7 +4,6 @@ import struct
 import time
 import getpass
 
-import web3
 from pycoin.key.BIP32Node import BIP32Node
 import rlp
 
@@ -16,8 +15,10 @@ from eth_account._utils.legacy_transactions import (
 
 from eth_account.messages import defunct_hash_message
 from mnemonic import Mnemonic
-from trezorlib.client import TrezorClient, proto
-from trezorlib.transport_hid import HidTransport
+
+from trezorlib.client import TrezorClient
+from trezorlib import messages as proto
+from trezorlib.transport.hid import HidTransport
 
 from ledgerblue.comm import getDongle
 from ledgerblue.commException import CommException
