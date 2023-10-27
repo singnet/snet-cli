@@ -14,9 +14,8 @@ from snet.snet_cli.utils.utils import compile_proto, get_contract_def, abi_get_e
     type_converter
 from snet_cli.commands.commands import OrganizationCommand
 from snet_cli.utils.agi2cogs import cogs2stragi
-from web3.utils.encoding import pad_hex
-from web3.utils.events import get_event_data
-
+from web3._utils.encoding import pad_hex
+from web3._utils.events import get_event_data
 
 # we inherit MPEServiceCommand because we need _get_service_metadata_from_registry
 class MPEChannelCommand(OrganizationCommand):

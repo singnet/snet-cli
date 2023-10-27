@@ -19,7 +19,7 @@ from snet_cli.identity import RpcIdentityProvider, MnemonicIdentityProvider, Tre
     LedgerIdentityProvider, KeyIdentityProvider, KeyStoreIdentityProvider
 from snet_cli.identity import get_kws_for_identity_type
 from snet_cli.utils.config import get_contract_address, get_field_from_args_or_session, read_default_contract_address
-from web3.eth import is_checksum_address
+import web3
 
 
 class Command(object):
@@ -500,7 +500,7 @@ class OrganizationCommand(BlockchainCommand):
         members = [m.replace("[", "").replace("]", "")
                    for m in self.args.members.split(',')]
         for m in members:
-            if not is_checksum_address(m):
+            if not web3.Web3.is_checksum_address(m):
                 raise Exception(
                     "Member account %s is not a valid Ethereum checksum address" % m)
         return members
@@ -651,7 +651,7 @@ class OrganizationCommand(BlockchainCommand):
         self.error_organization_not_found(org_id, found)
 
         new_owner = self.args.owner
-        if not is_checksum_address(new_owner):
+        if not web3.Web3.is_checksum_address(new_owner):
             raise Exception(
                 "New owner account %s is not a valid Ethereum checksum address" % new_owner)
 
