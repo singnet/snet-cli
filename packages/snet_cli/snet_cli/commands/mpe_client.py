@@ -18,7 +18,7 @@ class MPEClientCommand(MPEChannelCommand):
     def _compose_message_to_sign(self, mpe_address, channel_id, nonce, amount):
         return self.w3.soliditySha3(
             ["string", "address",   "uint256", "uint256", "uint256"],
-            [self.prefixInSignature, mpe_address, channel_id, nonce,     amount])
+            [self.prefixInSignature, mpe_address, channel_id, nonce, amount])
 
     def _sign_message(self, mpe_address, channel_id, nonce, amount):
         message = self._compose_message_to_sign(
@@ -28,10 +28,12 @@ class MPEClientCommand(MPEChannelCommand):
 
     def _verify_my_signature(self, signature, mpe_address, channel_id, nonce, amount):
         message = self._compose_message_to_sign(
-            mpe_address, channel_id, nonce, amount)
+            mpe_address, channel_id, nonce, amount
+        )
         message_hash = defunct_hash_message(message)
-        sign_address = self.ident.w3.eth.account.recoverHash(
-            message_hash, signature=signature)
+        sign_address = self.ident.w3.eth.account.recover_message(
+            message_hash, signature=signature
+        )
         return sign_address == self.ident.address
 
     def _assert_validity_of_my_signature_or_zero_amount(self, signature, channel_id, nonce, signed_amount, error_message):

@@ -17,10 +17,10 @@ setup(
     author='SingularityNET Foundation',
     author_email='info@singularitynet.io',
     description='SingularityNET CLI',
-    python_requires='>=3.6',
+    python_requires='>=3.11',
     install_requires=common_dependencies + [
-        'trezor==0.9.1',
-        'ledgerblue==0.1.27',
+        'trezor==0.13.8',
+        'ledgerblue==0.1.48',
     ],
     cmdclass={
         'develop': develop,
