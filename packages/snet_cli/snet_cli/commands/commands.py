@@ -20,7 +20,6 @@ from snet_cli.identity import RpcIdentityProvider, MnemonicIdentityProvider, Tre
 from snet_cli.identity import get_kws_for_identity_type
 from snet_cli.utils.config import get_contract_address, get_field_from_args_or_session, read_default_contract_address
 from web3.eth import is_checksum_address
-from web3.gas_strategies.time_based import fast_gas_price_strategy, medium_gas_price_strategy, slow_gas_price_strategy
 
 
 class Command(object):
