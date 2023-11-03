@@ -6,7 +6,7 @@ import sys
 from textwrap import indent
 from urllib.parse import urljoin
 
-import ipfsapi
+import ipfshttpclient
 import yaml
 from rfc3986 import urlparse
 from snet.snet_cli.contract import Contract
@@ -77,7 +77,7 @@ class Command(object):
         ipfs_endpoint = urlparse(self.config.get_ipfs_endpoint())
         ipfs_scheme = ipfs_endpoint.scheme if ipfs_endpoint.scheme else "http"
         ipfs_port = ipfs_endpoint.port if ipfs_endpoint.port else 5001
-        return ipfsapi.connect(urljoin(ipfs_scheme, ipfs_endpoint.hostname), ipfs_port)
+        return ipfshttpclient.connect(urljoin(ipfs_scheme, ipfs_endpoint.hostname), ipfs_port)
 
 
 class VersionCommand(Command):
