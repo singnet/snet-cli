@@ -224,7 +224,7 @@ class MPEChannelCommand(OrganizationCommand):
 
         If expiration > current_block + 1036800 (~6 month) we generate an exception if "--force" flag haven't been set
         """
-        current_block = self.ident.w3.eth.blockNumber
+        current_block = self.ident.w3.eth.block_number
 
         rez = self._expiration_str_to_blocks(
             self.args.expiration, current_block)
@@ -327,7 +327,7 @@ class MPEChannelCommand(OrganizationCommand):
         channels_ids = self._get_all_channels_filter_sender(self.ident.address)
         for channel_id in channels_ids:
             rez = self._get_channel_state_from_blockchain(channel_id)
-            if (rez["value"] > 0 and rez["expiration"] < self.ident.w3.eth.blockNumber):
+            if (rez["value"] > 0 and rez["expiration"] < self.ident.w3.eth.block_number):
                 self.transact_contract_command(
                     "MultiPartyEscrow", "channelClaimTimeout", [channel_id])
 
@@ -499,10 +499,10 @@ class MPEChannelCommand(OrganizationCommand):
     def _get_all_filtered_channels(self, topics_without_signature):
         """ get all filtered chanels from blockchain logs """
         mpe_address = self.get_mpe_address()
-        event_signature = self.ident.w3.sha3(
+        event_signature = self.ident.w3.keccak(
             text="ChannelOpen(uint256,uint256,address,address,address,bytes32,uint256,uint256)").hex()
         topics = [event_signature] + topics_without_signature
-        logs = self.ident.w3.eth.getLogs(
+        logs = self.ident.w3.eth.get_logs(
             {"fromBlock": self.args.from_block, "address": mpe_address, "topics": topics})
         abi = get_contract_def("MultiPartyEscrow")
         event_abi = abi_get_element_by_name(abi, "ChannelOpen")
@@ -561,7 +561,7 @@ class MPEChannelCommand(OrganizationCommand):
 
     # Auxilary functions
     def print_block_number(self):
-        self._printout(self.ident.w3.eth.blockNumber)
+        self._printout(self.ident.w3.eth.block_number)
 
     def _get_service_registration(self):
         params = [type_converter("bytes32")(self.args.org_id), type_converter(

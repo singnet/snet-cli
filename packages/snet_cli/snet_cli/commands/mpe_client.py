@@ -16,7 +16,7 @@ class MPEClientCommand(MPEChannelCommand):
 
     # I. Signature related functions
     def _compose_message_to_sign(self, mpe_address, channel_id, nonce, amount):
-        return self.w3.soliditySha3(
+        return self.w3.solidity_keccak(
             ["string", "address",   "uint256", "uint256", "uint256"],
             [self.prefixInSignature, mpe_address, channel_id, nonce, amount])
 
@@ -184,11 +184,11 @@ class MPEClientCommand(MPEChannelCommand):
             proto_dir, "GetChannelState")
         current_block = self.ident.w3.eth.blockNumber
         mpe_address = self.get_mpe_address()
-        message = self.w3.soliditySha3(["string",             "address",    "uint256",   "uint256"],
+        message = self.w3.solidity_keccak(["string",             "address",    "uint256",   "uint256"],
                                        ["__get_channel_state", mpe_address, channel_id, current_block])
         signature = self.ident.sign_message_after_soliditySha3(message)
 
-        request = request_class(channel_id=self.w3.toBytes(
+        request = request_class(channel_id=self.w3.to_bytes(
             channel_id), signature=bytes(signature), current_block=current_block)
 
         stub = stub_class(grpc_channel)
