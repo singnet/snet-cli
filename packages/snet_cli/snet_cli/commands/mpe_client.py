@@ -280,7 +280,7 @@ class MPEClientCommand(MPEChannelCommand):
             grpc_channel, channel_id)
 
         proceed = self.args.yes or input(
-            "Price for this call will be %s AGIX (use -y to remove this warning). Proceed? (y/n): " % (cogs2stragi(price))) == "y"
+            "Price for this call will be %s AGIX (use -y to remove this warning). Proceed? (y/n): " % (cogs2stragix(price))) == "y"
         if (not proceed):
             self._error("Cancelled")
 
