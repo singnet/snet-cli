@@ -48,7 +48,7 @@ def _send_signed_transaction(web3, wallet_address, contract_fn, *args):
 
 def mint_token():
     w3 = get_web3(HTTP_PROVIDER)
-    address_1 = w3.toChecksumAddress(wallet_address_1)
+    address_1 = w3.to_checksum_address(wallet_address_1)
     contract = get_contract_object(
         w3, contract_file="SingularityNetToken.json", address=contract_address
     )

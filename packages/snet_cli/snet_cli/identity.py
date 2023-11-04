@@ -67,7 +67,7 @@ class KeyStoreIdentityProvider(IdentityProvider):
         try:
             with open(path_to_keystore) as keyfile:
                 encrypted_key = keyfile.read()
-                self.address = self.w3.toChecksumAddress(
+                self.address = self.w3.to_checksum_address(
                     json.loads(encrypted_key)["address"])
                 self.path_to_keystore = path_to_keystore
                 self.private_key = None
@@ -144,7 +144,7 @@ class TrezorIdentityProvider(IdentityProvider):
         self.w3 = w3
         self.client = TrezorClient(HidTransport.enumerate()[0])
         self.index = index
-        self.address = self.w3.toChecksumAddress(
+        self.address = self.w3.to_checksum_address(
             "0x" + bytes(self.client.ethereum_get_address([44 + BIP32_HARDEN,
                                                            60 + BIP32_HARDEN,
                                                            BIP32_HARDEN, 0,
@@ -207,7 +207,7 @@ class LedgerIdentityProvider(IdentityProvider):
                                "Ethereum app is running?")
 
         offset = 1 + result[0]
-        self.address = self.w3.toChecksumAddress(bytes(result[offset + 1: offset + 1 + result[offset]])
+        self.address = self.w3.to_checksum_address(bytes(result[offset + 1: offset + 1 + result[offset]])
                                                  .decode("utf-8"))
 
     def get_address(self):
