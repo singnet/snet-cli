@@ -41,7 +41,6 @@ class SnetSDK:
         eth_rpc_endpoint = self._config.get("eth_rpc_endpoint", "https://mainnet.infura.io/v3/e7732e1f679e461b9bb4da5653ac3fc2")
         provider = web3.HTTPProvider(eth_rpc_endpoint)
         self.web3 = web3.Web3(provider)
-        self.web3.eth.setGasPriceStrategy(medium_gas_price_strategy)
 
         # Get MPE contract address from config if specified; mostly for local testing
         _mpe_contract_address = self._config.get("mpe_contract_address", None)

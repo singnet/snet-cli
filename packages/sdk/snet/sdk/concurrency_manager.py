@@ -56,13 +56,13 @@ class ConcurrencyManager:
         stub = self.__get_stub_for_get_token(service_client)
         with add_to_path(str(RESOURCES_PATH.joinpath("proto"))):
             token_service_pb2 = importlib.import_module("token_service_pb2")
-        current_block_number = service_client.sdk_web3.eth.getBlock("latest").number
-        message = web3.Web3.soliditySha3(
+        current_block_number = service_client.sdk_web3.eth.get_block("latest").number
+        message = web3.Web3.solidity_keccak(
             ["string", "address", "uint256", "uint256", "uint256"],
             ["__MPE_claim_message", service_client.mpe_address, channel.channel_id, nonce, amount]
         )
         mpe_signature = service_client.generate_signature(message)
-        message = web3.Web3.soliditySha3(
+        message = web3.Web3.solidity_keccak(
             ["bytes", "uint256"],
             [mpe_signature, current_block_number]
         )

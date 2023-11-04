@@ -45,18 +45,27 @@ class Account:
         self.nonce = 0
 
     def _get_nonce(self):
-        nonce = self.web3.eth.getTransactionCount(self.address)
+        nonce = self.web3.eth.get_transaction_count(self.address)
         if self.nonce >= nonce:
             nonce = self.nonce + 1
         self.nonce = nonce
         return nonce
 
     def _get_gas_price(self):
-        return int(self.web3.eth.generateGasPrice())
+        gasPrice = self.web3.eth.gasPrice
+        if gasPrice < 15000000000:
+            g = gasPrice + gasPrice*1/3
+        if gasPrice > 15000000000 and gasPrice < 50000000000:
+            g = gasPrice + gasPrice*1/5
+        if gasPrice > 50000000000 and gasPrice < 150000000000:
+            g = gasPrice + 7000000000
+        if gasPrice > 150000000000:
+            g = gasPrice + gasPrice*1/10
+        return int(g)
 
     def _send_signed_transaction(self, contract_fn, *args):
         transaction = contract_fn(*args).buildTransaction({
-            "chainId": int(self.web3.version.network),
+            "chainId": int(self.web3.net.version),
             "gas": DEFAULT_GAS,
             "gasPrice": self._get_gas_price(),
             "nonce": self._get_nonce()
