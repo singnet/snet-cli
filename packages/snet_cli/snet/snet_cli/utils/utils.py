@@ -75,7 +75,7 @@ def serializable(o):
 
 
 def safe_address_converter(a):
-    if not web3.is_checksum_address(a):
+    if not web3.Web3.is_checksum_address(a):
         raise Exception("%s is not is not a valid Ethereum checksum address" % a)
     return a
 
