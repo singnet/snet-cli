@@ -1,5 +1,5 @@
 from snet_cli.commands.commands import BlockchainCommand
-from snet_cli.utils.agi2cogs import cogs2stragi
+from snet_cli.utils.agix2cogs import cogs2stragix
 from snet_cli.utils.config import get_contract_address
 
 
@@ -9,20 +9,20 @@ class MPEAccountCommand(BlockchainCommand):
         self._printout(self.ident.address)
 
     def print_agi_and_mpe_balances(self):
-        """ Print balance of ETH, AGI, and MPE wallet """
+        """ Print balance of ETH, AGIX, and MPE wallet """
         if (self.args.account):
             account = self.args.account
         else:
             account = self.ident.address
         eth_wei  = self.w3.eth.getBalance(account)
-        agi_cogs = self.call_contract_command("SingularityNetToken", "balanceOf", [account])
+        agix_cogs = self.call_contract_command("SingularityNetToken", "balanceOf", [account])
         mpe_cogs = self.call_contract_command("MultiPartyEscrow",    "balances",  [account])
 
         # we cannot use _pprint here because it doesn't conserve order yet
         self._printout("    account: %s"%account)
         self._printout("    ETH: %s"%self.w3.fromWei(eth_wei, 'ether'))
-        self._printout("    AGI: %s"%cogs2stragi(agi_cogs))
-        self._printout("    MPE: %s"%cogs2stragi(mpe_cogs))
+        self._printout("    AGIX: %s"%cogs2stragix(agix_cogs))
+        self._printout("    MPE: %s"%cogs2stragix(mpe_cogs))
 
     def deposit_to_mpe(self):
         amount      = self.args.amount

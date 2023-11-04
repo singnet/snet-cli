@@ -16,7 +16,7 @@ The SingularityNET SDK abstracts and manages state channels with service provide
 
 ### Usage
   
-To call a SingularityNET service, the user must be able to deposit funds (AGI tokens) to the [Multi-Party Escrow](https://dev.singularitynet.io/docs/concepts/multi-party-escrow/) Smart Contract.  
+To call a SingularityNET service, the user must be able to deposit funds (AGIX tokens) to the [Multi-Party Escrow](https://dev.singularitynet.io/docs/concepts/multi-party-escrow/) Smart Contract.  
 To deposit these tokens or do any other transaction on the Ethereum blockchain, the user must possess an Ethereum identity with available Ether.
 
 
@@ -139,7 +139,7 @@ The SingularityNET SDK abstracts and manages state channels with service provide
 
 ### Usage
   
-To call a SingularityNET service, the user must be able to deposit funds (AGI tokens) to the [Multi-Party Escrow](https://dev.singularitynet.io/docs/concepts/multi-party-escrow/) Smart Contract.  
+To call a SingularityNET service, the user must be able to deposit funds (AGIX tokens) to the [Multi-Party Escrow](https://dev.singularitynet.io/docs/concepts/multi-party-escrow/) Smart Contract.  
 To deposit these tokens or do any other transaction on the Ethereum blockchain, the user must possess an Ethereum identity with available Ether.
 
 

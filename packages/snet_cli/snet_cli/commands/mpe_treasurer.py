@@ -4,7 +4,7 @@ import web3
 from snet.snet_cli.utils.proto_utils import import_protobuf_from_dir
 from snet.snet_cli.utils.utils import compile_proto, open_grpc_channel, int4bytes_big, RESOURCES_PATH
 from snet_cli.commands.mpe_client import MPEClientCommand
-from snet_cli.utils.agi2cogs import cogs2stragi
+from snet_cli.utils.agix2cogs import cogs2stragix
 
 
 class MPETreasurerCommand(MPEClientCommand):
@@ -93,13 +93,13 @@ class MPETreasurerCommand(MPEClientCommand):
     def print_unclaimed(self):
         grpc_channel = open_grpc_channel(self.args.endpoint)
         payments = self._call_GetListUnclaimed(grpc_channel)
-        self._printout("# channel_id  channel_nonce  signed_amount (AGI)")
+        self._printout("# channel_id  channel_nonce  signed_amount (AGIX)")
         total = 0
         for p in payments:
             self._printout("%i   %i   %s" % (
-                p["channel_id"], p["nonce"], cogs2stragi(p["amount"])))
+                p["channel_id"], p["nonce"], cogs2stragix(p["amount"])))
             total += p["amount"]
-        self._printout("# total_unclaimed_in_AGI = %s" % cogs2stragi(total))
+        self._printout("# total_unclaimed_in_AGIX = %s" % cogs2stragix(total))
 
     def _blockchain_claim(self, payments):
         for payment in payments:

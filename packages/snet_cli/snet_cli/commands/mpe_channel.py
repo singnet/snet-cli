@@ -13,7 +13,7 @@ from snet.snet_cli.utils.utils import compile_proto, get_contract_def, abi_get_e
     abi_decode_struct_to_dict, \
     type_converter
 from snet_cli.commands.commands import OrganizationCommand
-from snet_cli.utils.agi2cogs import cogs2stragi
+from snet_cli.utils.agix2cogs import cogs2stragix
 from web3._utils.encoding import pad_hex
 from web3._utils.events import get_event_data
 
@@ -239,7 +239,7 @@ class MPEChannelCommand(OrganizationCommand):
             "MultiPartyEscrow",    "balances",  [self.ident.address])
         if (mpe_cogs < self.args.amount):
             raise Exception(
-                "insufficient funds. You MPE balance is %s AGI " % cogs2stragi(mpe_cogs))
+                "insufficient funds. You MPE balance is %s AGIX " % cogs2stragix(mpe_cogs))
 
         group_id = base64.b64decode(
             metadata.get_group_id_by_group_name(self.args.group_name))
@@ -435,10 +435,10 @@ class MPEChannelCommand(OrganizationCommand):
             [self._printout(str(i)) for i in channels_ids]
             return
         self._printout(
-            "#channelId nonce recipient groupId(base64) value(AGI) expiration(blocks)")
+            "#channelId nonce recipient groupId(base64) value(AGIX) expiration(blocks)")
         for i in channels_ids:
             channel = self._get_channel_state_from_blockchain(i)
-            value_agi = cogs2stragi(channel["value"])
+            value_agi = cogs2stragix(channel["value"])
             group_id_base64 = base64.b64encode(
                 channel["groupId"]).decode("ascii")
             self._printout("%i %i %s %s %s %i" % (i, channel["nonce"], channel["recipient"], group_id_base64,
@@ -450,7 +450,7 @@ class MPEChannelCommand(OrganizationCommand):
             self._printout("#organization_id service_id channelId")
         else:
             self._printout(
-                "#organization_id service_id group_name channel_id nonce value(AGI) expiration(blocks)")
+                "#organization_id service_id group_name channel_id nonce value(AGIX) expiration(blocks)")
         for org_id in channels_dict:
             channels = self._filter_channels_sender_or_signer(
                 channels_dict[org_id])
@@ -470,7 +470,7 @@ class MPEChannelCommand(OrganizationCommand):
                 else:
                     channel_blockchain = self._get_channel_state_from_blockchain(
                         channel_id)
-                    value_agi = cogs2stragi(channel_blockchain["value"])
+                    value_agi = cogs2stragix(channel_blockchain["value"])
                     self._printout("%s %s %i %i %s %i" % (org_id, group_name, channel_id,
                                                           channel_blockchain["nonce"], value_agi, channel_blockchain["expiration"]))
 

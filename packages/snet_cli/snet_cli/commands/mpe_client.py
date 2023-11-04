@@ -7,7 +7,7 @@ from eth_account.messages import defunct_hash_message
 from snet.snet_cli.utils.proto_utils import import_protobuf_from_dir, switch_to_json_payload_encoding
 from snet.snet_cli.utils.utils import open_grpc_channel, rgetattr, RESOURCES_PATH
 from snet_cli.commands.mpe_channel import MPEChannelCommand
-from snet_cli.utils.agi2cogs import cogs2stragi
+from snet_cli.utils.agix2cogs import cogs2stragix
 
 
 # we inherit MPEChannelCommand because client needs channels
@@ -280,7 +280,7 @@ class MPEClientCommand(MPEChannelCommand):
             grpc_channel, channel_id)
 
         proceed = self.args.yes or input(
-            "Price for this call will be %s AGI (use -y to remove this warning). Proceed? (y/n): " % (cogs2stragi(price))) == "y"
+            "Price for this call will be %s AGIX (use -y to remove this warning). Proceed? (y/n): " % (cogs2stragi(price))) == "y"
         if (not proceed):
             self._error("Cancelled")
 
