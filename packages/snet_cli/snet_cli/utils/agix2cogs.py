@@ -18,7 +18,7 @@ def stragix2cogs(stragix):
 
 
 def cogs2stragix(cogs_int):
-    # presicison should be higer then INITIAL_SUPPLY + 1, we set it to 1000 be consistent with stragi2cogs
+    # presicison should be higer then INITIAL_SUPPLY + 1, we set it to 1000 be consistent with stragix2cogs
     decimal.getcontext().prec = 1000
     agix_decimal = decimal.Decimal(cogs_int) / 10 ** AGIX_TOKEN_DECIMALS
     return format(agix_decimal, 'f')
