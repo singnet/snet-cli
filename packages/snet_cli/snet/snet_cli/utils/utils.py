@@ -296,7 +296,7 @@ def get_contract_deployment_block(w3, contract_file):
         with open(RESOURCES_PATH.joinpath("contracts", "networks", contract_file)) as f:
             networks = json.load(f)
             txn_hash = networks[w3.net.version]["transactionHash"]
-        return w3.eth.getTransactionReceipt(txn_hash).blockNumber
+        return w3.eth.get_transaction_receipt(txn_hash).blockNumber
     except Exception:
         # TODO Hack as currenlty dependecy is on snet-cli so for test purpose return 0,need to remove dependecies from snet-cli ,currently very tightly coupled with it
         if w3.net.version in [1, 5, 11155111]:
@@ -313,7 +313,7 @@ def normalize_private_key(private_key):
 
 
 def get_address_from_private(private_key):
-    return web3.eth.Account.from_key(private_key).address
+    return web3.eth.account.from_key(private_key).address
 
 
 class add_to_path():

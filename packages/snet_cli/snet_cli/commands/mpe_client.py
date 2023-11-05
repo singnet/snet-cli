@@ -182,7 +182,7 @@ class MPEClientCommand(MPEChannelCommand):
         proto_dir = RESOURCES_PATH.joinpath("proto")
         stub_class, request_class, _ = import_protobuf_from_dir(
             proto_dir, "GetChannelState")
-        current_block = self.ident.w3.eth.blockNumber
+        current_block = self.ident.w3.eth.block_number
         mpe_address = self.get_mpe_address()
         message = self.w3.solidity_keccak(["string",             "address",    "uint256",   "uint256"],
                                        ["__get_channel_state", mpe_address, channel_id, current_block])

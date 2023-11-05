@@ -11,22 +11,22 @@ class MPETreasurerCommand(MPEClientCommand):
     """ We inherit MPEChannelCommand because we need _get_channel_state_from_blockchain """
 
     def _sign_message_list_unclaimed(self, mpe_address, current_block):
-        message = self.w3.soliditySha3(
+        message = self.w3.solidity_keccak(
             ["string",           "address",   "uint256"],
             ["__list_unclaimed", mpe_address, current_block])
-        return self.ident.sign_message_after_soliditySha3(message)
+        return self.ident.sign_message_after_solidity_keccak(message)
 
     def _sign_message_list_in_progress(self, mpe_address, current_block):
-        message = self.w3.soliditySha3(
+        message = self.w3.solidity_keccak(
             ["string",             "address",   "uint256"],
             ["__list_in_progress", mpe_address, current_block])
-        return self.ident.sign_message_after_soliditySha3(message)
+        return self.ident.sign_message_after_solidity_keccak(message)
 
     def _sign_message_start_claim(self, mpe_address, channel_id, channel_nonce):
-        message = self.w3.soliditySha3(
+        message = self.w3.solidity_keccak(
             ["string",           "address",   "uint256",  "uint256"],
             ["__start_claim", mpe_address,   channel_id,   channel_nonce])
-        return self.ident.sign_message_after_soliditySha3(message)
+        return self.ident.sign_message_after_solidity_keccak(message)
 
     def _get_stub_and_request_classes(self, service_name):
         """ import protobuf and return stub and request class """
@@ -50,7 +50,7 @@ class MPETreasurerCommand(MPEClientCommand):
         stub = stub_class(grpc_channel)
 
         mpe_address = self.get_mpe_address()
-        current_block = self.ident.w3.eth.blockNumber
+        current_block = self.ident.w3.eth.block_number
         signature = self._sign_message_list_unclaimed(
             mpe_address, current_block)
         request = request_class(
@@ -70,7 +70,7 @@ class MPETreasurerCommand(MPEClientCommand):
         stub = stub_class(grpc_channel)
 
         mpe_address = self.get_mpe_address()
-        current_block = self.ident.w3.eth.blockNumber
+        current_block = self.ident.w3.eth.block_number
         signature = self._sign_message_list_in_progress(
             mpe_address, current_block)
         request = request_class(
@@ -85,7 +85,7 @@ class MPETreasurerCommand(MPEClientCommand):
         mpe_address = self.get_mpe_address()
         signature = self._sign_message_start_claim(
             mpe_address, channel_id, channel_nonce)
-        request = request_class(mpe_address=mpe_address, channel_id=web3.Web3.toBytes(
+        request = request_class(mpe_address=mpe_address, channel_id=web3.Web3.to_bytes(
             channel_id), signature=bytes(signature))
         response = getattr(stub, "StartClaim")(request)
         return self._decode_PaymentReply(response)
@@ -172,7 +172,7 @@ class MPETreasurerCommand(MPEClientCommand):
                 continue
             channel_id = p["channel_id"]
             blockchain = self._get_channel_state_from_blockchain(channel_id)
-            if (blockchain["expiration"] < self.ident.w3.eth.blockNumber + self.args.expiration_threshold):
+            if (blockchain["expiration"] < self.ident.w3.eth.block_number + self.args.expiration_threshold):
                 self._printout("We are going to claim channel %i" % channel_id)
                 channels.append(channel_id)
         self._claim_in_progress_and_claim_channels(grpc_channel, channels)

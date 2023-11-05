@@ -70,13 +70,13 @@ class Account:
             "gasPrice": self._get_gas_price(),
             "nonce": self._get_nonce()
         })
-        signed_txn = self.web3.eth.account.signTransaction(
+        signed_txn = self.web3.eth.account.sign_transaction(
             transaction, private_key=self.private_key)
-        return self.web3.toHex(self.web3.eth.sendRawTransaction(signed_txn.rawTransaction))
+        return self.web3.toHex(self.web3.eth.send_raw_transaction(signed_txn.rawTransaction))
 
     def send_transaction(self, contract_fn, *args):
         txn_hash = self._send_signed_transaction(contract_fn, *args)
-        return self.web3.eth.waitForTransactionReceipt(txn_hash, TRANSACTION_TIMEOUT)
+        return self.web3.eth.wait_for_transaction_receipt(txn_hash, TRANSACTION_TIMEOUT)
 
     def _parse_receipt(self, receipt, event, encoder=json.JSONEncoder):
         if receipt.status == 0:
