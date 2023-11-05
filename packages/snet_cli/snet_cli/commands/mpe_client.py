@@ -23,7 +23,7 @@ class MPEClientCommand(MPEChannelCommand):
     def _sign_message(self, mpe_address, channel_id, nonce, amount):
         message = self._compose_message_to_sign(
             mpe_address, channel_id, nonce, amount)
-        sign = self.ident.sign_message_after_soliditySha3(message)
+        sign = self.ident.sign_message_after_solidity_keccak(message)
         return sign
 
     def _verify_my_signature(self, signature, mpe_address, channel_id, nonce, amount):
@@ -186,7 +186,7 @@ class MPEClientCommand(MPEChannelCommand):
         mpe_address = self.get_mpe_address()
         message = self.w3.solidity_keccak(["string",             "address",    "uint256",   "uint256"],
                                        ["__get_channel_state", mpe_address, channel_id, current_block])
-        signature = self.ident.sign_message_after_soliditySha3(message)
+        signature = self.ident.sign_message_after_solidity_keccak(message)
 
         request = request_class(channel_id=self.w3.to_bytes(
             channel_id), signature=bytes(signature), current_block=current_block)

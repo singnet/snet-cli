@@ -39,7 +39,7 @@ class IdentityProvider(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def sign_message_after_soliditySha3(self, message):
+    def sign_message_after_solidity_keccak(self, message):
         raise NotImplementedError()
 
 
@@ -57,7 +57,7 @@ class KeyIdentityProvider(IdentityProvider):
             self.w3, self.private_key, transaction)
         return send_and_wait_for_transaction(raw_transaction, self.w3, out_f)
 
-    def sign_message_after_soliditySha3(self, message):
+    def sign_message_after_solidity_keccak(self, message):
         return sign_message_with_private_key(self.w3, self.private_key, message)
 
 
@@ -88,7 +88,7 @@ class KeyStoreIdentityProvider(IdentityProvider):
             self.w3, self.private_key, transaction)
         return send_and_wait_for_transaction(raw_transaction, self.w3, out_f)
 
-    def sign_message_after_soliditySha3(self, message):
+    def sign_message_after_solidity_keccak(self, message):
 
         if self.private_key is None:
             self.private_key = unlock_keystore_with_password(
@@ -110,7 +110,7 @@ class RpcIdentityProvider(IdentityProvider):
         txn_hash = self.w3.eth.sendTransaction(transaction)
         return send_and_wait_for_transaction_receipt(txn_hash, self.w3)
 
-    def sign_message_after_soliditySha3(self, message):
+    def sign_message_after_solidity_keccak(self, message):
         return self.w3.eth.sign(self.get_address(), message)
 
 
@@ -135,7 +135,7 @@ class MnemonicIdentityProvider(IdentityProvider):
             self.w3, self.private_key, transaction)
         return send_and_wait_for_transaction(raw_transaction, self.w3, out_f)
 
-    def sign_message_after_soliditySha3(self, message):
+    def sign_message_after_solidity_keccak(self, message):
         return sign_message_with_private_key(self.w3, self.private_key, message)
 
 
@@ -174,7 +174,7 @@ class TrezorIdentityProvider(IdentityProvider):
                                                   int(signature[2].hex(), 16)))
         return send_and_wait_for_transaction(raw_transaction, self.w3, out_f)
 
-    def sign_message_after_soliditySha3(self, message):
+    def sign_message_after_solidity_keccak(self, message):
         n = self.client._convert_prime([44 + BIP32_HARDEN,
                                         60 + BIP32_HARDEN,
                                         BIP32_HARDEN,
@@ -264,7 +264,7 @@ class LedgerIdentityProvider(IdentityProvider):
                                                   int.from_bytes(result[33:65], byteorder="big")))
         return send_and_wait_for_transaction(raw_transaction, self.w3, out_f)
 
-    def sign_message_after_soliditySha3(self, message):
+    def sign_message_after_solidity_keccak(self, message):
         apdu = LedgerIdentityProvider.SIGN_MESSAGE_OP
         apdu += bytearray([len(self.dongle_path) + 1 +
                            len(message) + 4, int(len(self.dongle_path) / 4)])
@@ -335,12 +335,12 @@ def get_identity_types():
 
 
 def sign_transaction_with_private_key(w3, private_key, transaction):
-    return w3.eth.account.signTransaction(transaction, private_key).rawTransaction
+    return w3.eth.account.sign_transaction(transaction, private_key).rawTransaction
 
 
 def sign_message_with_private_key(w3, private_key, message):
     h = defunct_hash_message(message)
-    return w3.eth.account.signHash(h, private_key).signature
+    return w3.eth.account.sign_message(h, private_key).signature
 
 
 def unlock_keystore_with_password(w3, path_to_keystore):
