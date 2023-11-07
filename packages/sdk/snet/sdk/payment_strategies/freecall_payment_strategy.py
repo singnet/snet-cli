@@ -78,7 +78,7 @@ class FreeCallPaymentStrategy(PaymentStrategy):
 
         current_block_number = service_client.get_current_block_number()
 
-        message = web3.Web3.soliditySha3(
+        message = web3.Web3.solidity_keccak(
             ["string", "string", "string", "string", "string", "uint256", "bytes32"],
             ["__prefix_free_trial", email, org_id, service_id, group_id, current_block_number,
              token_for_free_call]
