@@ -42,7 +42,7 @@ def _send_signed_transaction(web3, wallet_address, contract_fn, *args):
     signed_txn = web3.eth.account.sign_transaction(
         transaction, private_key=signer_private_key
     )
-    return web3.toHex(web3.eth.send_raw_transaction(signed_txn.rawTransaction))
+    return web3.to_hex(web3.eth.send_raw_transaction(signed_txn.rawTransaction))
 
 
 def mint_token():
