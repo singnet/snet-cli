@@ -29,12 +29,11 @@ def send_transaction(web3, contract_fn, *args):
 
 
 def _send_signed_transaction(web3, wallet_address, contract_fn, *args):
-    g = web3.eth.gasPrice
     transaction = contract_fn(*args).buildTransaction(
         {
             "chainId": int(web3.version.network),
             "gas": DEFAULT_GAS,
-            "gasPrice": g + 1/3*g,
+            "gasPrice": web3.eth.gasPrice * 4 / 3,
             "nonce": _get_nonce(web3, wallet_address),
         }
     )
