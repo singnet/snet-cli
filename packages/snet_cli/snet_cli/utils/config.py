@@ -14,17 +14,17 @@ def get_contract_address(cmd, contract_name, error_message=None):
     # try to get from command line argument at or contractname_at
     a = "at"
     if (hasattr(cmd.args, a) and getattr(cmd.args, a)):
-        return cmd.w3.toChecksumAddress(getattr(cmd.args, a))
+        return cmd.w3.to_checksum_address(getattr(cmd.args, a))
 
     # try to get from command line argument contractname_at
     a = "%s_at" % contract_name.lower()
     if (hasattr(cmd.args, a) and getattr(cmd.args, a)):
-        return cmd.w3.toChecksumAddress(getattr(cmd.args, a))
+        return cmd.w3.to_checksum_address(getattr(cmd.args, a))
 
     # try to get from current session configuration
     rez = cmd.config.get_session_field("current_%s_at" % (contract_name.lower()), exception_if_not_found=False)
     if rez:
-        return cmd.w3.toChecksumAddress(rez)
+        return cmd.w3.to_checksum_address(rez)
 
     error_message = error_message or "Fail to read %s address from \"networks\", you should " \
                                      "specify address by yourself via --%s_at parameter" % (
@@ -40,7 +40,7 @@ def read_default_contract_address(w3, contract_name):
     contract_address = networks.get(chain_id, {}).get("address", None)
     if not contract_address:
         raise Exception()
-    contract_address = w3.toChecksumAddress(contract_address)
+    contract_address = w3.to_checksum_address(contract_address)
     return contract_address
 
 

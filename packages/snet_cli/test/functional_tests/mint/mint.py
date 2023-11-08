@@ -16,7 +16,7 @@ mint_amount = 10000000000000000
 
 
 def _get_nonce(web3, address):
-    nonce = web3.eth.getTransactionCount(address)
+    nonce = web3.eth.get_transaction_count(address)
     if initialNonce >= nonce:
         nonce = initialNonce + 1
     nonce = nonce
@@ -25,30 +25,29 @@ def _get_nonce(web3, address):
 
 def send_transaction(web3, contract_fn, *args):
     txn_hash = _send_signed_transaction(web3, contract_fn, *args)
-    return web3.eth.waitForTransactionReceipt(txn_hash, TRANSACTION_TIMEOUT)
+    return web3.eth.wait_for_transaction_receipt(txn_hash, TRANSACTION_TIMEOUT)
 
 
 def _send_signed_transaction(web3, wallet_address, contract_fn, *args):
-    web3.eth.setGasPriceStrategy(medium_gas_price_strategy)
-
+    g = web3.eth.gasPrice
     transaction = contract_fn(*args).buildTransaction(
         {
             "chainId": int(web3.version.network),
             "gas": DEFAULT_GAS,
-            "gasPrice": web3.eth.generateGasPrice(),
+            "gasPrice": g + 1/3*g,
             "nonce": _get_nonce(web3, wallet_address),
         }
     )
 
-    signed_txn = web3.eth.account.signTransaction(
+    signed_txn = web3.eth.account.sign_transaction(
         transaction, private_key=signer_private_key
     )
-    return web3.toHex(web3.eth.sendRawTransaction(signed_txn.rawTransaction))
+    return web3.to_hex(web3.eth.send_raw_transaction(signed_txn.rawTransaction))
 
 
 def mint_token():
     w3 = get_web3(HTTP_PROVIDER)
-    address_1 = w3.toChecksumAddress(wallet_address_1)
+    address_1 = w3.to_checksum_address(wallet_address_1)
     contract = get_contract_object(
         w3, contract_file="SingularityNetToken.json", address=contract_address
     )

@@ -7,7 +7,7 @@ from eth_account.messages import defunct_hash_message
 from snet.snet_cli.utils.proto_utils import import_protobuf_from_dir, switch_to_json_payload_encoding
 from snet.snet_cli.utils.utils import open_grpc_channel, rgetattr, RESOURCES_PATH
 from snet_cli.commands.mpe_channel import MPEChannelCommand
-from snet_cli.utils.agi2cogs import cogs2stragi
+from snet_cli.utils.agix2cogs import cogs2stragix
 
 
 # we inherit MPEChannelCommand because client needs channels
@@ -16,14 +16,14 @@ class MPEClientCommand(MPEChannelCommand):
 
     # I. Signature related functions
     def _compose_message_to_sign(self, mpe_address, channel_id, nonce, amount):
-        return self.w3.soliditySha3(
+        return self.w3.solidity_keccak(
             ["string", "address",   "uint256", "uint256", "uint256"],
             [self.prefixInSignature, mpe_address, channel_id, nonce, amount])
 
     def _sign_message(self, mpe_address, channel_id, nonce, amount):
         message = self._compose_message_to_sign(
             mpe_address, channel_id, nonce, amount)
-        sign = self.ident.sign_message_after_soliditySha3(message)
+        sign = self.ident.sign_message_after_solidity_keccak(message)
         return sign
 
     def _verify_my_signature(self, signature, mpe_address, channel_id, nonce, amount):
@@ -182,13 +182,13 @@ class MPEClientCommand(MPEChannelCommand):
         proto_dir = RESOURCES_PATH.joinpath("proto")
         stub_class, request_class, _ = import_protobuf_from_dir(
             proto_dir, "GetChannelState")
-        current_block = self.ident.w3.eth.blockNumber
+        current_block = self.ident.w3.eth.block_number
         mpe_address = self.get_mpe_address()
-        message = self.w3.soliditySha3(["string",             "address",    "uint256",   "uint256"],
+        message = self.w3.solidity_keccak(["string",             "address",    "uint256",   "uint256"],
                                        ["__get_channel_state", mpe_address, channel_id, current_block])
-        signature = self.ident.sign_message_after_soliditySha3(message)
+        signature = self.ident.sign_message_after_solidity_keccak(message)
 
-        request = request_class(channel_id=self.w3.toBytes(
+        request = request_class(channel_id=self.w3.to_bytes(
             channel_id), signature=bytes(signature), current_block=current_block)
 
         stub = stub_class(grpc_channel)
@@ -280,7 +280,7 @@ class MPEClientCommand(MPEChannelCommand):
             grpc_channel, channel_id)
 
         proceed = self.args.yes or input(
-            "Price for this call will be %s AGI (use -y to remove this warning). Proceed? (y/n): " % (cogs2stragi(price))) == "y"
+            "Price for this call will be %s AGIX (use -y to remove this warning). Proceed? (y/n): " % (cogs2stragix(price))) == "y"
         if (not proceed):
             self._error("Cancelled")
 

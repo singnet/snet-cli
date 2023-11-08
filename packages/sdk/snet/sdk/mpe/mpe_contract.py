@@ -9,7 +9,7 @@ class MPEContract:
             self.contract = get_contract_object(self.web3, "MultiPartyEscrow.json")
         else:
             self.contract = get_contract_object(self.web3, "MultiPartyEscrow.json", address)
-        self.event_topics = [self.web3.sha3(
+        self.event_topics = [self.web3.keccak(
             text="ChannelOpen(uint256,uint256,address,address,address,bytes32,uint256,uint256)").hex()]
         self.deployment_block = get_contract_deployment_block(
             self.web3, "MultiPartyEscrow.json")

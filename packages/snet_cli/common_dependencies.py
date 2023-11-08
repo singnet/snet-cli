@@ -14,7 +14,7 @@ common_dependencies = [
     'mnemonic==0.20',
     'pycoin==0.92.20230326',
     'pyyaml==6.0.1',
-    'ipfsapi==0.4.4',
+    'ipfshttpclient==0.7.0',
     'rfc3986==2.0.0',
     'pymultihash==0.8.2',
     'base58==2.1.1',

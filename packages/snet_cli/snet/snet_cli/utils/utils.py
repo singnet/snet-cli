@@ -75,7 +75,7 @@ def serializable(o):
 
 
 def safe_address_converter(a):
-    if not web3.is_checksum_address(a):
+    if not web3.Web3.is_checksum_address(a):
         raise Exception("%s is not is not a valid Ethereum checksum address" % a)
     return a
 
@@ -284,10 +284,10 @@ def get_contract_object(w3, contract_file, address=None):
     with open(RESOURCES_PATH.joinpath("contracts", "abi", contract_file)) as f:
         abi = json.load(f)
     if address:
-        return w3.eth.contract(abi=abi, address=w3.toChecksumAddress(address))
+        return w3.eth.contract(abi=abi, address=w3.to_checksum_address(address))
     with open(RESOURCES_PATH.joinpath("contracts", "networks", contract_file)) as f:
         networks = json.load(f)
-        address = w3.toChecksumAddress(networks[w3.version.network]["address"])
+        address = w3.to_checksum_address(networks[w3.net.version]["address"])
     return w3.eth.contract(abi=abi, address=address)
 
 
@@ -295,11 +295,11 @@ def get_contract_deployment_block(w3, contract_file):
     try:
         with open(RESOURCES_PATH.joinpath("contracts", "networks", contract_file)) as f:
             networks = json.load(f)
-            txn_hash = networks[w3.version.network]["transactionHash"]
-        return w3.eth.getTransactionReceipt(txn_hash).blockNumber
+            txn_hash = networks[w3.net.version]["transactionHash"]
+        return w3.eth.get_transaction_receipt(txn_hash).blockNumber
     except Exception:
         # TODO Hack as currenlty dependecy is on snet-cli so for test purpose return 0,need to remove dependecies from snet-cli ,currently very tightly coupled with it
-        if w3.version.network in [1, 3, 42]:
+        if w3.net.version in [1, 5, 11155111]:
             raise Exception("Transaction hash not found for deployed mpe contract")
         return 0
 
@@ -313,7 +313,7 @@ def normalize_private_key(private_key):
 
 
 def get_address_from_private(private_key):
-    return web3.eth.Account.from_key(private_key).address
+    return web3.eth.account.from_key(private_key).address
 
 
 class add_to_path():
