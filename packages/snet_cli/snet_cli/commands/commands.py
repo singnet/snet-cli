@@ -132,16 +132,16 @@ class BlockchainCommand(Command):
         # gas price is not given explicitly in Wei
         self._printerr("# Calculating gas price... one moment..")
         gasPrice = self.w3.eth.gasPrice
-        if gasPrice < 15000000000:
-            g = gasPrice + gasPrice*1/3
-        if gasPrice > 15000000000 and gasPrice < 50000000000:
-            g = gasPrice + gasPrice*1/5
-        if gasPrice > 50000000000 and gasPrice < 150000000000:
-            g = gasPrice + 7000000000
-        if gasPrice > 150000000000:
-            g = gasPrice + gasPrice*1/10
-        self._printerr("# gas_price = %f GWei" % (g * 1E-9))
-        return int(g)
+        if gasPrice <= 15000000000:
+            gasPrice += gasPrice * 1 / 3
+        elif gasPrice > 15000000000 and gasPrice <= 50000000000:
+            gasPrice += gasPrice * 1 / 5
+        elif gasPrice > 50000000000 and gasPrice <= 150000000000:
+            gasPrice += 7000000000
+        elif gasPrice > 150000000000:
+            gasPrice += gasPrice * 1 / 10
+        self._printerr("# gas_price = %f GWei" % (gasPrice * 1E-9))
+        return int(gasPrice)
 
     def get_mpe_address(self):
         return get_contract_address(self, "MultiPartyEscrow")

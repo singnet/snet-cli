@@ -340,7 +340,7 @@ def sign_transaction_with_private_key(w3, private_key, transaction):
 
 def sign_message_with_private_key(w3, private_key, message):
     h = defunct_hash_message(message)
-    return w3.eth.account.sign_message(h, private_key).signature
+    return w3.eth.account.signHash(h, private_key).signature
 
 
 def unlock_keystore_with_password(w3, path_to_keystore):

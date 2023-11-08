@@ -8,7 +8,7 @@ class MPEAccountCommand(BlockchainCommand):
     def print_account(self):
         self._printout(self.ident.address)
 
-    def print_agi_and_mpe_balances(self):
+    def print_agix_and_mpe_balances(self):
         """ Print balance of ETH, AGIX, and MPE wallet """
         if (self.args.account):
             account = self.args.account
@@ -20,7 +20,7 @@ class MPEAccountCommand(BlockchainCommand):
 
         # we cannot use _pprint here because it doesn't conserve order yet
         self._printout("    account: %s"%account)
-        self._printout("    ETH: %s"%self.w3.fromWei(eth_wei, 'ether'))
+        self._printout("    ETH: %s"%self.w3.from_wei(eth_wei, 'ether'))
         self._printout("    AGIX: %s"%cogs2stragix(agix_cogs))
         self._printout("    MPE: %s"%cogs2stragix(mpe_cogs))
 

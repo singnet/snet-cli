@@ -53,15 +53,15 @@ class Account:
 
     def _get_gas_price(self):
         gasPrice = self.web3.eth.gasPrice
-        if gasPrice < 15000000000:
-            g = gasPrice + gasPrice*1/3
-        if gasPrice > 15000000000 and gasPrice < 50000000000:
-            g = gasPrice + gasPrice*1/5
-        if gasPrice > 50000000000 and gasPrice < 150000000000:
-            g = gasPrice + 7000000000
-        if gasPrice > 150000000000:
-            g = gasPrice + gasPrice*1/10
-        return int(g)
+        if gasPrice <= 15000000000:
+            gasPrice += gasPrice * 1 / 3
+        elif gasPrice > 15000000000 and gasPrice <= 50000000000:
+            gasPrice += gasPrice * 1 / 5
+        elif gasPrice > 50000000000 and gasPrice <= 150000000000:
+            gasPrice += 7000000000
+        elif gasPrice > 150000000000:
+            gasPrice += gasPrice * 1 / 10
+        return int(gasPrice)
 
     def _send_signed_transaction(self, contract_fn, *args):
         transaction = contract_fn(*args).buildTransaction({
