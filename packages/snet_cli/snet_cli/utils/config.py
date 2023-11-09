@@ -34,7 +34,7 @@ def get_contract_address(cmd, contract_name, error_message=None):
 
 
 def read_default_contract_address(w3, contract_name):
-    chain_id = w3.version.network  # this will raise exception if endpoint is invalid
+    chain_id = w3.net.version  # this will raise exception if endpoint is invalid
     contract_def = get_contract_def(contract_name)
     networks = contract_def["networks"]
     contract_address = networks.get(chain_id, {}).get("address", None)

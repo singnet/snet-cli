@@ -313,7 +313,7 @@ def normalize_private_key(private_key):
 
 
 def get_address_from_private(private_key):
-    return web3.eth.account.from_key(private_key).address
+    return web3.Account.from_key(private_key).address
 
 
 class add_to_path():

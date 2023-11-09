@@ -270,7 +270,7 @@ class NetworkCommand(Command):
         if not self.args.skip_check:
             # check endpoint by getting its network_id
             w3 = get_web3(self.args.eth_rpc_endpoint)
-            network_id = w3.version.network
+            network_id = w3.net.version
 
         self._printout("add network with name='%s' with networkId='%s'" % (
             self.args.network_name, str(network_id)))
