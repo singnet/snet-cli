@@ -33,7 +33,7 @@ For further details, please check our full [Documentation](http://snet-cli-docs.
 
 #### Install prerequisites
 
-You should have python with version 3.7 and pip installed.
+You should have python with version 3.11 and pip installed.
 
 Additionally you should install the following packages:
 
@@ -91,8 +91,8 @@ Complete documentation is available [here](http://snet-cli-docs.singularitynet.i
 
 #### Prerequisites  
   
-* [Python 3.7](https://www.python.org/downloads/release/python-370/)  
-* [Node 8+ w/npm](https://nodejs.org/en/download/)
+* [Python 3.11](https://www.python.org/downloads/release/python-3116/)  
+* [Node 18+ w/npm](https://nodejs.org/en/download/)
 
 ---
 
