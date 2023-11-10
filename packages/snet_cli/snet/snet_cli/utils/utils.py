@@ -204,9 +204,9 @@ def compile_proto(entry_path, codegen_dir, proto_file=None, target_language="pyt
 
 def abi_get_element_by_name(abi, name):
     """ Return element of abi (return None if fails to find) """
-    if (abi and "abi" in abi):
+    if abi and "abi" in abi:
         for a in abi["abi"]:
-            if ("name" in a and a["name"] == name):
+            if "name" in a and a["name"] == name:
                 return a
     return None
 
@@ -263,7 +263,7 @@ def open_grpc_channel(endpoint):
     _GB = 1024 ** 3
     options = [('grpc.max_send_message_length', _GB),
                ('grpc.max_receive_message_length', _GB)]
-    if (endpoint.startswith("https://")):
+    if endpoint.startswith("https://"):
         return grpc.secure_channel(remove_http_https_prefix(endpoint), grpc.ssl_channel_credentials(root_certificates=certificate))
     return grpc.insecure_channel(remove_http_https_prefix(endpoint))
 
@@ -313,7 +313,7 @@ def normalize_private_key(private_key):
 
 
 def get_address_from_private(private_key):
-    return web3.eth.account.from_key(private_key).address
+    return web3.Account.from_key(private_key).address
 
 
 class add_to_path():

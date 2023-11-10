@@ -22,7 +22,7 @@ def main():
 
         getattr(args.cmd(conf, args), args.fn)()
     except Exception as e:
-        if (sys.argv[1] == "--print-traceback"):
+        if sys.argv[1] == "--print-traceback":
             raise
         else:
             print("Error:", e)

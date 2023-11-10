@@ -75,15 +75,16 @@ class Command(object):
 
     def _get_ipfs_client(self):
         ipfs_endpoint = urlparse(self.config.get_ipfs_endpoint())
-        ipfs_scheme = ipfs_endpoint.scheme if ipfs_endpoint.scheme else "http"
-        ipfs_port = ipfs_endpoint.port if ipfs_endpoint.port else 5001
-        return ipfshttpclient.connect(urljoin(ipfs_scheme, ipfs_endpoint.hostname), ipfs_port)
+        return ipfshttpclient.connect(ipfs_endpoint)
 
 
 class VersionCommand(Command):
     def show(self):
         self._pprint({"version": get_cli_version()})
 
+
+"""
+# Temporally deprecated
 
 class CachedGasPriceStrategy:
     def __init__(self, gas_price_param):
@@ -110,6 +111,7 @@ class CachedGasPriceStrategy:
 
     def is_going_to_calculate(self):
         return self.cached_gas_price is None and not self.gas_price_param.isdigit()
+"""
 
 
 class BlockchainCommand(Command):
@@ -131,17 +133,17 @@ class BlockchainCommand(Command):
     def get_gas_price_verbose(self):
         # gas price is not given explicitly in Wei
         self._printerr("# Calculating gas price... one moment..")
-        gasPrice = self.w3.eth.gasPrice
-        if gasPrice <= 15000000000:
-            gasPrice += gasPrice * 1 / 3
-        elif gasPrice > 15000000000 and gasPrice <= 50000000000:
-            gasPrice += gasPrice * 1 / 5
-        elif gasPrice > 50000000000 and gasPrice <= 150000000000:
-            gasPrice += 7000000000
-        elif gasPrice > 150000000000:
-            gasPrice += gasPrice * 1 / 10
-        self._printerr("# gas_price = %f GWei" % (gasPrice * 1E-9))
-        return int(gasPrice)
+        gas_price = self.w3.eth.gas_price
+        if gas_price <= 15000000000:
+            gas_price += gas_price * 1 / 3
+        elif gas_price > 15000000000 and gas_price <= 50000000000:
+            gas_price += gas_price * 1 / 5
+        elif gas_price > 50000000000 and gas_price <= 150000000000:
+            gas_price += 7000000000
+        elif gas_price > 150000000000:
+            gas_price += gas_price * 1 / 10
+        self._printerr("# gas_price = %f GWei" % (gas_price * 1E-9))
+        return int(gas_price)
 
     def get_mpe_address(self):
         return get_contract_address(self, "MultiPartyEscrow")
@@ -267,15 +269,17 @@ class NetworkCommand(Command):
 
     def create(self):
         network_id = None
+        w3 = get_web3(self.args.eth_rpc_endpoint)
         if not self.args.skip_check:
             # check endpoint by getting its network_id
-            w3 = get_web3(self.args.eth_rpc_endpoint)
-            network_id = w3.version.network
+            network_id = w3.net.version
 
         self._printout("add network with name='%s' with networkId='%s'" % (
             self.args.network_name, str(network_id)))
+
+        default_gas_price = w3.eth.gas_price
         self.config.add_network(
-            self.args.network_name, self.args.eth_rpc_endpoint, self.args.default_gas_price)
+            self.args.network_name, self.args.eth_rpc_endpoint, default_gas_price)
 
     def set(self):
         self.config.set_session_network(self.args.network_name, self.out_f)
@@ -765,7 +769,7 @@ class OrganizationCommand(BlockchainCommand):
         metadata_file = self.args.metadata_file
         org_metadata = OrganizationMetadata.from_file(metadata_file)
         asset_file_ipfs_hash_base58 = publish_file_in_ipfs(self._get_ipfs_client(),
-                                                                      self.args.asset_file_path)
+                                                           self.args.asset_file_path)
 
         org_metadata.add_asset(asset_file_ipfs_hash_base58, self.args.asset_type)
         org_metadata.save_pretty(self.args.metadata_file)
