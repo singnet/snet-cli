@@ -325,8 +325,8 @@ class MPEChannelCommand(OrganizationCommand):
     def channel_claim_timeout_all(self):
         channels_ids = self._get_all_channels_filter_sender(self.ident.address)
         for channel_id in channels_ids:
-            rez = self._get_channel_state_from_blockchain(channel_id)
-            if rez["value"] > 0 and rez["expiration"] < self.ident.w3.eth.block_number:
+            response = self._get_channel_state_from_blockchain(channel_id)
+            if response["value"] > 0 and response["expiration"] < self.ident.w3.eth.block_number:
                 self.transact_contract_command(
                     "MultiPartyEscrow", "channelClaimTimeout", [channel_id])
 
@@ -336,8 +336,7 @@ class MPEChannelCommand(OrganizationCommand):
 
         # only add funds to the channel (if --expiration hasn't been specified)
         if self.args.expiration is None:
-            self.transact_contract_command("MultiPartyEscrow", "channelAddFunds", [
-                                           channel_id, self.args.amount])
+            self.transact_contract_command("MultiPartyEscrow", "channelAddFunds", [channel_id, self.args.amount])
             return
 
         expiration = self._get_expiration_from_args()
@@ -565,16 +564,16 @@ class MPEChannelCommand(OrganizationCommand):
     def _get_service_registration(self):
         params = [type_converter("bytes32")(self.args.org_id), type_converter(
             "bytes32")(self.args.service_id)]
-        rez = self.call_contract_command(
+        response = self.call_contract_command(
             "Registry", "getServiceRegistrationById", params)
-        if rez[0] == False:
+        if response[0] == False:
             raise Exception("Cannot find Service with id=%s in Organization with id=%s" % (
                 self.args.service_id, self.args.org_id))
-        return {"metadataURI": rez[2]}
+        return {"metadataURI": response[2]}
 
     def _get_service_metadata_from_registry(self):
-        rez = self._get_service_registration()
-        metadata_hash = bytesuri_to_hash(rez["metadataURI"])
+        response = self._get_service_registration()
+        metadata_hash = bytesuri_to_hash(response["metadataURI"])
         metadata = get_from_ipfs_and_checkhash(
             self._get_ipfs_client(), metadata_hash)
         metadata = metadata.decode("utf-8")

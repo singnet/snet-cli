@@ -12,19 +12,19 @@ class MPETreasurerCommand(MPEClientCommand):
 
     def _sign_message_list_unclaimed(self, mpe_address, current_block):
         message = self.w3.solidity_keccak(
-            ["string",           "address",   "uint256"],
+            ["string", "address", "uint256"],
             ["__list_unclaimed", mpe_address, current_block])
         return self.ident.sign_message_after_solidity_keccak(message)
 
     def _sign_message_list_in_progress(self, mpe_address, current_block):
         message = self.w3.solidity_keccak(
-            ["string",             "address",   "uint256"],
+            ["string", "address", "uint256"],
             ["__list_in_progress", mpe_address, current_block])
         return self.ident.sign_message_after_solidity_keccak(message)
 
     def _sign_message_start_claim(self, mpe_address, channel_id, channel_nonce):
         message = self.w3.solidity_keccak(
-            ["string",           "address",   "uint256",  "uint256"],
+            ["string", "address", "uint256", "uint256"],
             ["__start_claim", mpe_address,   channel_id,   channel_nonce])
         return self.ident.sign_message_after_solidity_keccak(message)
 

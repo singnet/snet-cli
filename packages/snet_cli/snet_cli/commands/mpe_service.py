@@ -113,15 +113,11 @@ class MPEServiceCommand(BlockchainCommand):
 
         metadata = MPEServiceMetadata()
         mpe_address = self.get_mpe_address()
-        metadata.set_simple_field("model_ipfs_hash",
-                                  model_ipfs_hash_base58)
+        metadata.set_simple_field("model_ipfs_hash", model_ipfs_hash_base58)
         metadata.set_simple_field("mpe_address", mpe_address)
-        metadata.set_simple_field("display_name",
-                                  self.args.display_name)
-        metadata.set_simple_field("encoding",
-                                  self.args.encoding)
-        metadata.set_simple_field("service_type",
-                                  self.args.service_type)
+        metadata.set_simple_field("display_name", self.args.display_name)
+        metadata.set_simple_field("encoding", self.args.encoding)
+        metadata.set_simple_field("service_type", self.args.service_type)
 
         if self.args.group_name:
             metadata.add_group(self.args.group_name)
@@ -229,7 +225,6 @@ class MPEServiceCommand(BlockchainCommand):
         metadata = load_mpe_service_metadata(self.args.metadata_file)
         asset_file_ipfs_hash_base58 = ipfs_utils.publish_file_in_ipfs(self._get_ipfs_client(),
                                                                       self.args.asset_file_path)
-
         metadata.add_asset(asset_file_ipfs_hash_base58, self.args.asset_type)
         metadata.save_pretty(self.args.metadata_file)
 
@@ -423,12 +418,12 @@ class MPEServiceCommand(BlockchainCommand):
 
     def _get_organization_registration(self, org_id):
         params = [type_converter("bytes32")(org_id)]
-        rez = self.call_contract_command(
+        result = self.call_contract_command(
             "Registry", "getOrganizationById", params)
-        if rez[0] == False:
+        if result[0] == False:
             raise Exception("Cannot find  Organization with id=%s" % (
                 self.args.org_id))
-        return {"orgMetadataURI": rez[2]}
+        return {"orgMetadataURI": result[2]}
 
     def _validate_service_group_with_org_group_and_update_group_id(self, org_id, metadata_file):
         org_metadata = self._get_organization_metadata_from_registry(org_id)
@@ -526,24 +521,23 @@ class MPEServiceCommand(BlockchainCommand):
 
     def print_service_status(self):
         metadata = self._get_service_metadata_from_registry()
-        groups = []
         if self.args.group_name != None:
             groups = {self.args.group_name: metadata.get_all_endpoints_for_group(
                 self.args.group_name)}
         else:
             groups = metadata.get_all_group_endpoints()
-        srvc_status = defaultdict(list)
+        service_status = defaultdict(list)
         for name, group_endpoints in groups.items():
             for endpoint in group_endpoints:
                 status = "Available" if self._service_status(
                     url=endpoint) else "Not Available"
-                srvc_status[name].append(
+                service_status[name].append(
                     {"endpoint": endpoint, "status": status})
-        if srvc_status == {}:
+        if service_status == {}:
             self._printout(
                 "Error: No endpoints found to check service status.")
             return
-        self._pprint(srvc_status)
+        self._pprint(service_status)
 
     def print_service_tags_from_registry(self):
         metadata = self._get_service_metadata_from_registry()

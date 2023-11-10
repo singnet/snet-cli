@@ -43,7 +43,7 @@ class Config(ConfigParser):
             if identity_network and identity_network != network:
                 print("Your new session network '%s' is incompatible with your current session identity '%s' "
                       "(which is bind to network '%s'), please switch your identity" % (
-                      network, session_identity, identity_network), file=out_f);
+                      network, session_identity, identity_network), file=out_f)
 
     def _set_session_network(self, network, out_f):
         if network not in self.get_all_networks_names():
@@ -89,7 +89,7 @@ class Config(ConfigParser):
             self.set_ipfs_endpoint(value)
             print("set default_ipfs_endpoint=%s" % value, file=out_f)
         elif key in get_session_network_keys():
-            session_network = self.get_session_network_name();
+            session_network = self.get_session_network_name()
             self.set_network_field(session_network, key, value)
             print("set {}={} for network={}".format(key, value, session_network), file=out_f)
         elif key in get_session_identity_keys():
@@ -110,8 +110,8 @@ class Config(ConfigParser):
         session_identity, session_network = self.safe_get_session_identity_network_names()
 
         show = {"session", "network.%s" % session_network, "identity.%s" % session_identity, "ipfs"}
-        rez = {f: dict(self[f]) for f in show}
-        return rez
+        response = {f: dict(self[f]) for f in show}
+        return response
 
     def add_network(self, network, rpc_endpoint, default_gas_price):
         network_section = "network.%s" % network
@@ -189,8 +189,7 @@ class Config(ConfigParser):
         self["network.sepolia"] = {
             "default_eth_rpc_endpoint": "https://sepolia.infura.io/v3/09027f4a13e841d48dbfefc67e7685d5",
         }
-        # TODO: redesign ipfs endpoint for new ipfs library
-        self["ipfs"] = {"default_ipfs_endpoint": "http://ipfs.singularitynet.io:80"}
+        self["ipfs"] = {"default_ipfs_endpoint": "/dns/ipfs.singularitynet.io/tcp/80/"}
         self["session"] = {"network": "sepolia"}
         self._persist()
         print("We've created configuration file with default values in: %s\n" % str(self._config_file))

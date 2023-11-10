@@ -75,9 +75,7 @@ class Command(object):
 
     def _get_ipfs_client(self):
         ipfs_endpoint = urlparse(self.config.get_ipfs_endpoint())
-        ipfs_scheme = ipfs_endpoint.scheme if ipfs_endpoint.scheme else "http"
-        ipfs_port = ipfs_endpoint.port if ipfs_endpoint.port else 5001
-        return ipfshttpclient.connect(urljoin(ipfs_scheme, ipfs_endpoint.hostname), ipfs_port)
+        return ipfshttpclient.connect(ipfs_endpoint)
 
 
 class VersionCommand(Command):
@@ -271,15 +269,17 @@ class NetworkCommand(Command):
 
     def create(self):
         network_id = None
+        w3 = get_web3(self.args.eth_rpc_endpoint)
         if not self.args.skip_check:
             # check endpoint by getting its network_id
-            w3 = get_web3(self.args.eth_rpc_endpoint)
             network_id = w3.net.version
 
         self._printout("add network with name='%s' with networkId='%s'" % (
             self.args.network_name, str(network_id)))
+
+        default_gas_price = w3.eth.gas_price
         self.config.add_network(
-            self.args.network_name, self.args.eth_rpc_endpoint, self.args.default_gas_price)
+            self.args.network_name, self.args.eth_rpc_endpoint, default_gas_price)
 
     def set(self):
         self.config.set_session_network(self.args.network_name, self.out_f)
