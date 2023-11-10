@@ -13,12 +13,12 @@ def get_contract_address(cmd, contract_name, error_message=None):
 
     # try to get from command line argument at or contractname_at
     a = "at"
-    if (hasattr(cmd.args, a) and getattr(cmd.args, a)):
+    if hasattr(cmd.args, a) and getattr(cmd.args, a):
         return cmd.w3.to_checksum_address(getattr(cmd.args, a))
 
     # try to get from command line argument contractname_at
     a = "%s_at" % contract_name.lower()
-    if (hasattr(cmd.args, a) and getattr(cmd.args, a)):
+    if hasattr(cmd.args, a) and getattr(cmd.args, a):
         return cmd.w3.to_checksum_address(getattr(cmd.args, a))
 
     # try to get from current session configuration

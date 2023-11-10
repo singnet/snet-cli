@@ -291,7 +291,7 @@ def send_and_wait_for_transaction_receipt(txn_hash, w3):
 
 def send_and_wait_for_transaction(raw_transaction, w3, out_f):
     print("Submitting transaction...\n", file=out_f)
-    txn_hash = w3.eth.send_raw_transacion(raw_transaction)
+    txn_hash = w3.eth.send_raw_transaction(raw_transaction)
     return send_and_wait_for_transaction_receipt(txn_hash, w3)
 
 

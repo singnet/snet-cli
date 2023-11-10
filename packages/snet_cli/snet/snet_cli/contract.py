@@ -10,7 +10,7 @@ class Contract:
     def build_transaction(self, function_name, from_address, gas_price, *positional_inputs, **named_inputs):
         nonce = self.w3.eth.get_transaction_count(from_address)
         chain_id = self.w3.net.version
-        return getattr(self.contract.functions, function_name)(*positional_inputs, **named_inputs).buildTransaction({
+        return getattr(self.contract.functions, function_name)(*positional_inputs, **named_inputs).build_transaction({
             "from": from_address,
             "nonce": nonce,
             "gasPrice": gas_price,

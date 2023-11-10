@@ -33,7 +33,7 @@ class MPETreasurerCommand(MPEClientCommand):
         # Compile protobuf if needed
         codegen_dir = Path.home().joinpath(".snet", "mpe_client", "control_service")
         proto_dir = RESOURCES_PATH.joinpath("proto")
-        if (not codegen_dir.joinpath("control_service_pb2.py").is_file()):
+        if not codegen_dir.joinpath("control_service_pb2.py").is_file():
             compile_proto(proto_dir, codegen_dir,
                           proto_file="control_service.proto")
 
@@ -58,7 +58,7 @@ class MPETreasurerCommand(MPEClientCommand):
         response = getattr(stub, "GetListUnclaimed")(request)
 
         for p in response.payments:
-            if (len(p.signature) > 0):
+            if len(p.signature) > 0:
                 raise Exception(
                     "Signature was set in GetListUnclaimed. Response is invalid")
 
@@ -106,7 +106,7 @@ class MPETreasurerCommand(MPEClientCommand):
             channel_id = payment["channel_id"]
             amount = payment["amount"]
             sig = payment["signature"]
-            if (len(sig) != 65):
+            if len(sig) != 65:
                 raise Exception(
                     "Length of signature is incorrect: %i instead of 65" % (len(sig)))
             v, r, s = int(sig[-1]), sig[:32], sig[32:64]
@@ -123,12 +123,12 @@ class MPETreasurerCommand(MPEClientCommand):
 
         to_claim = []
         for channel_id in channels_ids:
-            if (channel_id not in unclaimed_payments_dict or unclaimed_payments_dict[channel_id]["amount"] == 0):
+            if channel_id not in unclaimed_payments_dict or unclaimed_payments_dict[channel_id]["amount"] == 0:
                 self._printout(
                     "There is nothing to claim for channel %i, we skip it" % channel_id)
                 continue
             blockchain = self._get_channel_state_from_blockchain(channel_id)
-            if (unclaimed_payments_dict[channel_id]["nonce"] != blockchain["nonce"]):
+            if unclaimed_payments_dict[channel_id]["nonce"] != blockchain["nonce"]:
                 self._printout(
                     "Old payment for channel %i is still in progress. Please run claim for this channel later." % channel_id)
                 continue
@@ -142,7 +142,7 @@ class MPETreasurerCommand(MPEClientCommand):
         """ Claim all 'pending' payments in progress and after we claim given channels """
         # first we get the list of all 'payments in progress' in case we 'lost' some payments.
         payments = self._call_GetListInProgress(grpc_channel)
-        if (len(payments) > 0):
+        if len(payments) > 0:
             self._printout(
                 "There are %i payments in 'progress' (they haven't been claimed in blockchain). We will claim them." % len(payments))
             self._blockchain_claim(payments)
@@ -168,11 +168,11 @@ class MPETreasurerCommand(MPEClientCommand):
 
         channels = []
         for p in unclaimed_payments:
-            if (p["amount"] == 0):
+            if p["amount"] == 0:
                 continue
             channel_id = p["channel_id"]
             blockchain = self._get_channel_state_from_blockchain(channel_id)
-            if (blockchain["expiration"] < self.ident.w3.eth.block_number + self.args.expiration_threshold):
+            if blockchain["expiration"] < self.ident.w3.eth.block_number + self.args.expiration_threshold:
                 self._printout("We are going to claim channel %i" % channel_id)
                 channels.append(channel_id)
         self._claim_in_progress_and_claim_channels(grpc_channel, channels)

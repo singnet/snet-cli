@@ -318,14 +318,14 @@ class MPEServiceCommand(BlockchainCommand):
     def metadata_add_description(self):
         """ Metadata: add description """
         service_description = {}
-        if (self.args.json):
+        if self.args.json:
             service_description = json.loads(self.args.json)
-        if (self.args.url):
+        if self.args.url:
             if "url" in service_description:
                 raise Exception(
                     "json service description already contains url field")
             service_description["url"] = self.args.url
-        if (self.args.description):
+        if self.args.description:
             if "description" in service_description:
                 raise Exception(
                     "json service description already contains description field")
@@ -341,7 +341,7 @@ class MPEServiceCommand(BlockchainCommand):
             service_description["short_description"] = self.args.short_description
         metadata = load_mpe_service_metadata(self.args.metadata_file)
         # merge with old service_description if necessary
-        if ("service_description" in metadata):
+        if "service_description" in metadata:
             service_description = {
                 **metadata["service_description"], **service_description}
         metadata.set_simple_field("service_description", service_description)
@@ -394,11 +394,11 @@ class MPEServiceCommand(BlockchainCommand):
     def _publish_metadata_in_ipfs(self, metadata_file):
         metadata = load_mpe_service_metadata(metadata_file)
         mpe_address = self.get_mpe_address()
-        if (self.args.update_mpe_address):
+        if self.args.update_mpe_address:
             metadata.set_simple_field("mpe_address", mpe_address)
             metadata.save_pretty(self.args.metadata_file)
 
-        if (mpe_address.lower() != metadata["mpe_address"].lower()):
+        if mpe_address.lower() != metadata["mpe_address"].lower():
             raise Exception(
                 "\n\nmpe_address in metadata does not correspond to the current MultiPartyEscrow contract address\n" +
                 "You have two possibilities:\n" +
@@ -425,7 +425,7 @@ class MPEServiceCommand(BlockchainCommand):
         params = [type_converter("bytes32")(org_id)]
         rez = self.call_contract_command(
             "Registry", "getOrganizationById", params)
-        if (rez[0] == False):
+        if rez[0] == False:
             raise Exception("Cannot find  Organization with id=%s" % (
                 self.args.org_id))
         return {"orgMetadataURI": rez[2]}
@@ -494,7 +494,7 @@ class MPEServiceCommand(BlockchainCommand):
             "bytes32")(self.args.service_id)]
         rez = self.call_contract_command(
             "Registry", "getServiceRegistrationById", params)
-        if (rez[0] == False):
+        if rez[0] == False:
             raise Exception("Cannot find Service with id=%s in Organization with id=%s" % (
                 self.args.service_id, self.args.org_id))
         return {"metadataURI": rez[2]}
