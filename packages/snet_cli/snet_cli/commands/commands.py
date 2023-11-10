@@ -85,6 +85,9 @@ class VersionCommand(Command):
         self._pprint({"version": get_cli_version()})
 
 
+"""
+# Temporally deprecated
+
 class CachedGasPriceStrategy:
     def __init__(self, gas_price_param):
         self.gas_price_param = gas_price_param
@@ -110,6 +113,7 @@ class CachedGasPriceStrategy:
 
     def is_going_to_calculate(self):
         return self.cached_gas_price is None and not self.gas_price_param.isdigit()
+"""
 
 
 class BlockchainCommand(Command):
@@ -765,7 +769,7 @@ class OrganizationCommand(BlockchainCommand):
         metadata_file = self.args.metadata_file
         org_metadata = OrganizationMetadata.from_file(metadata_file)
         asset_file_ipfs_hash_base58 = publish_file_in_ipfs(self._get_ipfs_client(),
-                                                                      self.args.asset_file_path)
+                                                           self.args.asset_file_path)
 
         org_metadata.add_asset(asset_file_ipfs_hash_base58, self.args.asset_type)
         org_metadata.save_pretty(self.args.metadata_file)
