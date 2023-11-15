@@ -74,7 +74,7 @@ class Command(object):
                           "event_summaries": [{"args": e["args"], "event": e["event"]} for e in events]})
 
     def _get_ipfs_client(self):
-        ipfs_endpoint = urlparse(self.config.get_ipfs_endpoint())
+        ipfs_endpoint = self.config.get_ipfs_endpoint()
         return ipfshttpclient.connect(ipfs_endpoint)
 
 
