@@ -22,6 +22,6 @@ class Contract:
 
         contract_events = map(lambda e: e["name"], filter(lambda e: e["type"] == "event", self.abi))
         for contract_event in contract_events:
-            events.extend(getattr(self.contract.events, contract_event)().processReceipt(receipt))
+            events.extend(getattr(self.contract.events, contract_event)().process_receipt(receipt))
 
         return events
