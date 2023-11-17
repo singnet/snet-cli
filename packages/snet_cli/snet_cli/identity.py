@@ -25,7 +25,6 @@ from ledgerblue.commException import CommException
 
 from snet.snet_cli.utils.utils import get_address_from_private, normalize_private_key
 
-
 BIP32_HARDEN = 0x80000000
 
 
@@ -208,7 +207,7 @@ class LedgerIdentityProvider(IdentityProvider):
 
         offset = 1 + result[0]
         self.address = self.w3.to_checksum_address(bytes(result[offset + 1: offset + 1 + result[offset]])
-                                                 .decode("utf-8"))
+                                                   .decode("utf-8"))
 
     def get_address(self):
         return self.address
@@ -229,7 +228,7 @@ class LedgerIdentityProvider(IdentityProvider):
 
         if overflow > 0:
             encoded_tx, remaining_tx = encoded_tx[:-
-                                                  overflow], encoded_tx[-overflow:]
+            overflow], encoded_tx[-overflow:]
 
         apdu = LedgerIdentityProvider.SIGN_TX_OP
         apdu += bytearray([len(self.dongle_path) + 1 +
@@ -244,7 +243,7 @@ class LedgerIdentityProvider(IdentityProvider):
 
                 if overflow > 0:
                     encoded_tx, remaining_tx = encoded_tx[:-
-                                                          overflow], encoded_tx[-overflow:]
+                    overflow], encoded_tx[-overflow:]
 
                 apdu = LedgerIdentityProvider.SIGN_TX_OP_CONT
                 apdu += bytearray([len(encoded_tx)])
@@ -283,8 +282,11 @@ def send_and_wait_for_transaction_receipt(txn_hash, w3):
     receipt = dict()
     while not receipt:
         time.sleep(1)
-        receipt = w3.eth.get_transaction_receipt(txn_hash)
-        if receipt and "blockHash" in receipt and receipt["blockHash"] is None:
+        try:
+            receipt = w3.eth.get_transaction_receipt(txn_hash)
+            if receipt and "blockHash" in receipt and receipt["blockHash"] is None:
+                receipt = dict()
+        except:
             receipt = dict()
     return receipt
 
