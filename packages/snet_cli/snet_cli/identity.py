@@ -4,7 +4,7 @@ import struct
 import time
 import getpass
 
-from pycoin.key.BIP32Node import BIP32Node
+from eth_account import Account
 import rlp
 
 from eth_account._utils.legacy_transactions import (
@@ -14,7 +14,6 @@ from eth_account._utils.legacy_transactions import (
 )
 
 from eth_account.messages import defunct_hash_message
-from mnemonic import Mnemonic
 
 from trezorlib.client import TrezorClient
 from trezorlib import messages as proto
@@ -116,15 +115,10 @@ class RpcIdentityProvider(IdentityProvider):
 class MnemonicIdentityProvider(IdentityProvider):
     def __init__(self, w3, mnemonic, index):
         self.w3 = w3
-        master_key = BIP32Node.from_master_secret(
-            Mnemonic("english").to_seed(mnemonic))
-        purpose_subtree = master_key.subkey(i=44, is_hardened=True)
-        coin_type_subtree = purpose_subtree.subkey(i=60, is_hardened=True)
-        account_subtree = coin_type_subtree.subkey(i=0, is_hardened=True)
-        change_subtree = account_subtree.subkey(i=0)
-        account = change_subtree.subkey(i=index)
-        self.private_key = account.secret_exponent().to_bytes(32, 'big')
-        self.address = get_address_from_private(self.private_key)
+        Account.enable_unaudited_hdwallet_features()
+        account = Account.from_mnemonic(mnemonic, account_path=f"m/44'/60'/0'/0/{index}")
+        self.private_key = account.key.hex()
+        self.address = account.address
 
     def get_address(self):
         return self.address
