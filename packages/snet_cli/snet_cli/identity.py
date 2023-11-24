@@ -243,9 +243,8 @@ class LedgerIdentityProvider(IdentityProvider):
                 apdu += bytearray([len(encoded_tx)])
                 apdu += encoded_tx
                 result = self.dongle.exchange(apdu)
-        except CommException:
-            raise RuntimeError("Received commException from ledger. Are you sure your device is unlocked and the "
-                               "Ethereum app is running?")
+        except CommException as e:
+            raise RuntimeError(e.message, e.sw)
 
         transaction.pop("from")
         unsigned_transaction = serializable_unsigned_transaction_from_dict(
