@@ -188,7 +188,7 @@ class LedgerIdentityProvider(IdentityProvider):
             self.dongle = getDongle(False)
         except CommException:
             raise RuntimeError(
-                "Received commException from ledger. Are you sure your device is plugged in?")
+                "Received commException from Ledger. Are you sure your device is plugged in?")
         self.dongle_path = parse_bip32_path("44'/60'/0'/0/{}".format(index))
         apdu = LedgerIdentityProvider.GET_ADDRESS_OP
         apdu += bytearray([len(self.dongle_path) + 1,
@@ -196,7 +196,7 @@ class LedgerIdentityProvider(IdentityProvider):
         try:
             result = self.dongle.exchange(apdu)
         except CommException:
-            raise RuntimeError("Received commException from ledger. Are you sure your device is unlocked and the "
+            raise RuntimeError("Received commException from Ledger. Are you sure your device is unlocked and the "
                                "Ethereum app is running?")
 
         offset = 1 + result[0]
@@ -229,7 +229,7 @@ class LedgerIdentityProvider(IdentityProvider):
                            len(encoded_tx), int(len(self.dongle_path) / 4)])
         apdu += self.dongle_path + encoded_tx
         try:
-            print("Sending transaction to ledger for signature...\n", file=out_f)
+            print("Sending transaction to Ledger for signature...\n", file=out_f)
             result = self.dongle.exchange(apdu)
             while overflow > 0:
                 encoded_tx = remaining_tx
@@ -244,6 +244,8 @@ class LedgerIdentityProvider(IdentityProvider):
                 apdu += encoded_tx
                 result = self.dongle.exchange(apdu)
         except CommException as e:
+            if e.sw == 27013:
+                raise RuntimeError("Transaction denied from Ledger by user")
             raise RuntimeError(e.message, e.sw)
 
         transaction.pop("from")
@@ -264,7 +266,7 @@ class LedgerIdentityProvider(IdentityProvider):
         try:
             result = self.dongle.exchange(apdu)
         except CommException:
-            raise RuntimeError("Received commException from ledger. Are you sure your device is unlocked and the "
+            raise RuntimeError("Received commException from Ledger. Are you sure your device is unlocked and the "
                                "Ethereum app is running?")
 
         return result[1:] + result[0:1]
