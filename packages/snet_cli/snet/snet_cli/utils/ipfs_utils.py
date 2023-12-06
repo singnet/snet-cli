@@ -60,7 +60,7 @@ def get_from_ipfs_and_checkhash(ipfs_client, ipfs_hash_base58, validate=True):
         from snet.snet_cli.resources.proto.merckledag_pb2 import MerkleNode
 
         # No nice Python library to parse ipfs blocks, so do it ourselves.
-        block_data = ipfs_client.block_get(ipfs_hash_base58)
+        block_data = ipfs_client.block.get(ipfs_hash_base58)
         mn = MerkleNode()
         mn.ParseFromString(block_data)
         unixfs_data = Data()
