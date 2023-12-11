@@ -100,11 +100,6 @@ Complete documentation is available [here](http://snet-cli-docs.singularitynet.i
 ```bash  
 $ git clone https://github.com/singnet/snet-cli.git
 $ cd snet-cli/packages/snet_cli
-```  
-  
-* Install development/test blockchain dependencies  
-```bash  
-$ ./scripts/blockchain install
 ```
   
 * Install the package in development/editable mode  
