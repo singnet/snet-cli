@@ -541,9 +541,16 @@ class OrganizationCommand(BlockchainCommand):
         (found, org_id, org_name, owner, members, serviceNames) = self._get_organization_by_id(org_id)
         self.error_organization_not_found(self.args.org_id, found)
 
+        org_m = self._get_organization_metadata_from_registry(web3.Web3.to_text(org_id))
+        org_name = org_m.org_name
+        org_type = org_m.org_type
+        description = org_m.description.get("description", "")
+
         self._printout("\nOrganization Name:\n - %s" % org_name)
-        self._printout("\nOrganization Id:\n - %s" % bytes32_to_str(org_id))
-        self._printout("\nOwner:\n - {}".format(owner))
+        self._printout("\nId:\n - %s" % bytes32_to_str(org_id))
+        self._printout("\nType:\n - %s" % org_type)
+        self._printout("\nDescription:\n - %s" % description)
+
         if members:
             self._printout("\nMembers:")
             for idx, member in enumerate(members):

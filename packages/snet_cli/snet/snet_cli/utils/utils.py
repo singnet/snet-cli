@@ -90,7 +90,7 @@ def type_converter(t):
             return lambda x: web3.Web3.to_bytes(text=x).ljust(32, b"\0") if not x.startswith(
                 "0x") else web3.Web3.to_bytes(hexstr=x).ljust(32, b"\0")
         elif "byte" in t:
-            return lambda x: web3.Web3.to_bytes(text=x) if not x.startswith("0x") else web3.Web3.toBytes(hexstr=x)
+            return lambda x: web3.Web3.to_bytes(text=x) if not x.startswith("0x") else web3.Web3.to_bytes(hexstr=x)
         elif "address" in t:
             return safe_address_converter
         else:
