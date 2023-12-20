@@ -3,7 +3,7 @@ import json
 import sys
 from pathlib import Path
 
-from eth_account.messages import defunct_hash_message
+from eth_account.messages import encode_defunct
 from snet.snet_cli.utils.proto_utils import import_protobuf_from_dir, switch_to_json_payload_encoding
 from snet.snet_cli.utils.utils import open_grpc_channel, rgetattr, RESOURCES_PATH
 from snet_cli.commands.mpe_channel import MPEChannelCommand
@@ -17,7 +17,7 @@ class MPEClientCommand(MPEChannelCommand):
     # I. Signature related functions
     def _compose_message_to_sign(self, mpe_address, channel_id, nonce, amount):
         return self.w3.solidity_keccak(
-            ["string", "address",   "uint256", "uint256", "uint256"],
+            ["string", "address", "uint256", "uint256", "uint256"],
             [self.prefixInSignature, mpe_address, channel_id, nonce, amount])
 
     def _sign_message(self, mpe_address, channel_id, nonce, amount):
@@ -30,7 +30,7 @@ class MPEClientCommand(MPEChannelCommand):
         message = self._compose_message_to_sign(
             mpe_address, channel_id, nonce, amount
         )
-        message_hash = defunct_hash_message(message)
+        message_hash = encode_defunct(message)
         sign_address = self.ident.w3.eth.account.recover_message(
             message_hash, signature=signature
         )
