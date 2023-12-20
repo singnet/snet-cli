@@ -105,10 +105,10 @@ class ServiceClient:
         return new_channels_to_be_added
 
     def load_open_channels(self):
-        current_block_number = self.sdk_web3.eth.getBlock("latest").number
-        payment_addrss = self.group["payment"]["payment_address"]
+        current_block_number = self.sdk_web3.eth.block_number
+        payment_address = self.group["payment"]["payment_address"]
         group_id = base64.b64decode(str(self.group["group_id"]))
-        new_payment_channels = self.payment_channel_provider.get_past_open_channels(self.account, payment_addrss,
+        new_payment_channels = self.payment_channel_provider.get_past_open_channels(self.account, payment_address,
                                                                                     group_id, self.last_read_block)
         self.payment_channels = self.payment_channels + self._filter_existing_channels_from_new_payment_channels(
             new_payment_channels)
@@ -116,7 +116,7 @@ class ServiceClient:
         return self.payment_channels
 
     def get_current_block_number(self):
-        return self.sdk_web3.eth.getBlock("latest").number
+        return self.sdk_web3.eth.block_number
 
     def update_channel_states(self):
         for channel in self.payment_channels:
