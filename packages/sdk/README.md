@@ -92,8 +92,9 @@ For more information about gRPC and how to use it with Python, please see:
 
 #### Prerequisites  
   
-* [Python 3.7](https://www.python.org/downloads/release/python-377/)  
-* [Node 8+ w/npm](https://nodejs.org/en/download/)
+* [Python 3.11.6](https://www.python.org/downloads/release/python-3116/)
+
+Backward compatibility for other Python versions is not guaranteed.
 
 ---
 
@@ -203,10 +204,9 @@ For more information about gRPC and how to use it with Python, please see:
 
 ### Prerequisites  
   
-* [Python 3.6.5](https://www.python.org/downloads/release/python-365/)  
-* [Node 8+ w/npm](https://nodejs.org/en/download/)
+* [Python 3.11.6](https://www.python.org/downloads/release/python-365/)
 
-`Note!` don't use Python 3.8.2
+Backward compatibility for other Python versions is not guaranteed.
 
 ---
 
