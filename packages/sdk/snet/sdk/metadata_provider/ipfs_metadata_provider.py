@@ -1,7 +1,7 @@
 from snet.snet_cli.metadata.service import mpe_service_metadata_from_json
 
 from snet.snet_cli.utils.ipfs_utils import bytesuri_to_hash, get_from_ipfs_and_checkhash
-
+import web3
 import json
 
 
@@ -12,8 +12,10 @@ class IPFSMetadataProvider(object):
         self._ipfs_client = ipfs_client
 
     def fetch_org_metadata(self, org_id):
-        (found, id, metadata_uri, owner, members, service_ids) = self.registry_contract.functions.getOrganizationById(
-            bytes(org_id, "utf-8")).call()
+        org = web3.Web3.to_bytes(text=org_id).ljust(32, b"\0")
+        found, id, metadata_uri, owner, members, service_ids = self.registry_contract.functions.getOrganizationById(
+            org
+        ).call()
         if found is not True:
             raise Exception('Organization with org ID "{}" not found '.format(org_id))
 
@@ -23,8 +25,11 @@ class IPFSMetadataProvider(object):
         return org_metadata
 
     def fetch_service_metadata(self, org_id, service_id):
-        (found, registration_id, metadata_uri) = self.registry_contract.functions.getServiceRegistrationById(
-            bytes(org_id, "utf-8"), bytes(service_id, "utf-8")).call()
+        org = web3.Web3.to_bytes(text=org_id).ljust(32, b"\0")
+        service = web3.Web3.to_bytes(text=service_id).ljust(32, b"\0")
+
+        found, registration_id, metadata_uri = self.registry_contract.functions.getServiceRegistrationById(
+            org, service).call()
 
         if found is not True:
             raise Exception('No service "{}" found in organization "{}"'.format(service_id, org_id))

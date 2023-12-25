@@ -64,7 +64,7 @@ class Account:
         return int(gas_price)
 
     def _send_signed_transaction(self, contract_fn, *args):
-        transaction = contract_fn(*args).buildTransaction({
+        transaction = contract_fn(*args).build_transaction({
             "chainId": int(self.web3.net.version),
             "gas": DEFAULT_GAS,
             "gasPrice": self._get_gas_price(),

@@ -14,9 +14,8 @@ from urllib.parse import urljoin
 
 
 import web3
-from web3.gas_strategies.time_based import medium_gas_price_strategy
 from rfc3986 import urlparse
-import ipfsapi
+import ipfshttpclient
 
 from snet.sdk.service_client import ServiceClient
 from snet.sdk.account import Account
@@ -50,11 +49,8 @@ class SnetSDK:
             self.mpe_contract = MPEContract(self.web3, _mpe_contract_address)
 
         # Instantiate IPFS client
-        ipfs_rpc_endpoint = self._config.get("ipfs_rpc_endpoint", "https://ipfs.singularitynet.io:80")
-        ipfs_rpc_endpoint = urlparse(ipfs_rpc_endpoint)
-        ipfs_scheme = ipfs_rpc_endpoint.scheme if ipfs_rpc_endpoint.scheme else "http"
-        ipfs_port = ipfs_rpc_endpoint.port if ipfs_rpc_endpoint.port else 5001
-        self.ipfs_client = ipfsapi.connect(urljoin(ipfs_scheme, ipfs_rpc_endpoint.hostname), ipfs_port)
+        ipfs_endpoint = self._config.get("default_ipfs_endpoint", "/dns/ipfs.singularitynet.io/tcp/80/")
+        self.ipfs_client = ipfshttpclient.connect(ipfs_endpoint)
 
         # Get Registry contract address from config if specified; mostly for local testing
         _registry_contract_address = self._config.get("registry_contract_address", None)
@@ -78,7 +74,7 @@ class SnetSDK:
         options['concurrency'] = self._config.get("concurrency", True)
 
         if self._metadata_provider is None:
-            self._metadata_provider = IPFSMetadataProvider( self.ipfs_client ,self.registry_contract,)
+            self._metadata_provider = IPFSMetadataProvider(self.ipfs_client, self.registry_contract)
 
         service_metadata = self._metadata_provider.enhance_service_metadata(org_id, service_id)
         group = self._get_service_group_details(service_metadata, group_name)
