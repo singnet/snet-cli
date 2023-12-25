@@ -14,7 +14,6 @@ from urllib.parse import urljoin
 
 
 import web3
-from web3.gas_strategies.time_based import medium_gas_price_strategy
 from rfc3986 import urlparse
 import ipfshttpclient
 
@@ -50,7 +49,8 @@ class SnetSDK:
             self.mpe_contract = MPEContract(self.web3, _mpe_contract_address)
 
         # Instantiate IPFS client
-        self.ipfs_client = ipfshttpclient.connect("/dns/ipfs.singularitynet.io/tcp/80/")
+        ipfs_endpoint = self._config.get("default_ipfs_endpoint", "/dns/ipfs.singularitynet.io/tcp/80/")
+        self.ipfs_client = ipfshttpclient.connect(ipfs_endpoint)
 
         # Get Registry contract address from config if specified; mostly for local testing
         _registry_contract_address = self._config.get("registry_contract_address", None)

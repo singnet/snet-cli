@@ -124,7 +124,7 @@ class ServiceClient:
         return self.payment_channels
 
     def default_channel_expiration(self):
-        current_block_number = self.sdk_web3.eth.getBlock("latest").number
+        current_block_number = self.sdk_web3.eth.get_block("latest").number
         return current_block_number + self.expiry_threshold
 
     def _generate_payment_channel_state_service_client(self):

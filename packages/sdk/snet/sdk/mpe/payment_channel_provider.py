@@ -1,5 +1,6 @@
 import web3
 from web3._utils.events import get_event_data
+from eth_abi.codec import ABICodec
 
 from snet.sdk.mpe.mpe_contract import MPEContract
 
@@ -29,6 +30,8 @@ class PaymentChannelProvider(object):
         if starting_block_number == 0:
             starting_block_number = self.deployment_block
 
+        codec: ABICodec = self.web3.codec
+
         logs = []
         from_block = starting_block_number
         while from_block <= to_block_number:
@@ -40,15 +43,12 @@ class PaymentChannelProvider(object):
 
         event_abi = self.mpe_contract.contract._find_matching_event_abi(
             event_name="ChannelOpen")
-
         channels_opened = list(filter(
             lambda
                 channel: (channel.sender == account.address or channel.signer == account.signer_address) and channel.recipient ==
                          payment_address and channel.groupId == group_id,
-            #### Need fix here
-            #### TODO: Refactor
-            [web3._utils.events.get_event_data(
-                event_abi, l)["args"] for l in logs]
+
+            [get_event_data(codec, event_abi, l)["args"] for l in logs]
         ))
         return list(map(lambda channel: PaymentChannel(channel["channelId"], self.web3, account,
                                                        self.payment_channel_state_service_client, self.mpe_contract),
