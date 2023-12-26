@@ -1,7 +1,6 @@
 from snet.snet_cli.utils.utils import get_contract_deployment_block, get_contract_object
 
 
-
 class MPEContract:
     def __init__(self, w3, address=None):
         self.web3 = w3
@@ -13,7 +12,6 @@ class MPEContract:
             text="ChannelOpen(uint256,uint256,address,address,address,bytes32,uint256,uint256)").hex()]
         self.deployment_block = get_contract_deployment_block(
             self.web3, "MultiPartyEscrow.json")
-
 
     def balance(self, address):
         return self.contract.functions.balances(address).call()
