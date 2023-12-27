@@ -21,9 +21,9 @@
             "enum": [ "proto", "json" ]
         },
         "service_type": {
-            "description": "Service type [grpc, jsonrpc, process]",
+            "description": "Service type [grpc, jsonrpc, process, http]",
             "type": "string",
-            "enum": [ "grpc", "jsonrpc", "process" ]
+            "enum": [ "grpc", "jsonrpc", "process", "http" ]
         },
         "model_ipfs_hash": {
             "description": "Hash of directory which contains protobuf files",
