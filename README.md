@@ -91,8 +91,9 @@ Complete documentation is available [here](http://snet-cli-docs.singularitynet.i
 
 #### Prerequisites  
   
-* [Python 3.11](https://www.python.org/downloads/release/python-3116/)  
-* [Node 18+ w/npm](https://nodejs.org/en/download/)
+* [Python 3.11.6](https://www.python.org/downloads/release/python-3116/)  
+
+Backward compatibility for other Python versions is not guaranteed.
 
 ---
 
