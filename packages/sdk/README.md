@@ -101,12 +101,7 @@ Backward compatibility for other Python versions is not guaranteed.
 * Clone the git repository  
 ```bash  
 $ git clone git@github.com:singnet/snet-cli.git
-$ cd snet-cli/snet_sdk
-```  
-  
-* Install development/test blockchain dependencies  
-```bash  
-$ ./scripts/blockchain install
+$ cd snet-cli/packages/sdk
 ```
   
 * Install the package in development/editable mode  
@@ -226,11 +221,6 @@ $ pip install -r requirements.txt
 $ cd ../
 $ pip install -r requirements.txt 
 
-```
-  
-* Install development/test blockchain dependencies  
-```bash  
-$ ./scripts/blockchain install
 ```
   
 * Blockchain configuration  
