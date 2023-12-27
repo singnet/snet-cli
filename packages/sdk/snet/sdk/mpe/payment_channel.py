@@ -4,7 +4,9 @@ from eth_account.messages import defunct_hash_message
 
 from snet.snet_cli.utils.utils import RESOURCES_PATH, add_to_path
 
+
 class PaymentChannel:
+
     def __init__(self, channel_id, w3, account, payment_channel_state_service_client, mpe_contract):
         self.channel_id = channel_id
         self.web3 = w3
@@ -16,18 +18,14 @@ class PaymentChannel:
             "last_signed_amount": 0
         }
 
-
     def add_funds(self, amount):
         return self.mpe_contract.channel_add_funds(self.account, self.channel_id, amount)
-
 
     def extend_expiration(self, expiration):
         return self.mpe_contract.channel_extend(self.account, self.channel_id, expiration)
 
-
     def extend_and_add_funds(self, expiration, amount):
         return self.mpe_contract.channel_extend_and_add_funds(self.account, self.channel_id, expiration, amount)
-
 
     def sync_state(self):
         channel_blockchain_data = self.mpe_contract.contract.functions.channels(self.channel_id).call()
@@ -44,7 +42,6 @@ class PaymentChannel:
             "expiration": expiration,
             "available_amount": available_amount
         }
-
 
     def _get_current_channel_state(self):
         stub = self.payment_channel_state_service_client
