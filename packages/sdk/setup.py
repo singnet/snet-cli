@@ -1,4 +1,4 @@
-import pkg_resources
+import importlib.util
 from setuptools import setup, find_namespace_packages
 from os import path
 
@@ -10,10 +10,15 @@ PACKAGE_NAME = 'snet.sdk'
 
 
 def is_package_installed(package_name):
-    installed_modules = [p.project_name for p in pkg_resources.working_set]
-    print("Installed modules:")
-    print(installed_modules)
-    return package_name in installed_modules
+    spec = importlib.util.find_spec(package_name)
+    if spec is not None:
+        print(f"{package_name} is installed.")
+        return True
+    else:
+        print(f"{package_name} is not installed.")
+        return False
+
+
 
 
 dependencies = []
