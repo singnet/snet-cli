@@ -29,12 +29,12 @@ def publish_proto_in_ipfs(ipfs_client, protodir):
     return base58 encoded ipfs hash
     """
 
-    if (not os.path.isdir(protodir)):
+    if not os.path.isdir(protodir):
         raise Exception("Directory %s doesn't exists" % protodir)
 
     files = glob.glob(os.path.join(protodir, "*.proto"))
 
-    if (len(files) == 0):
+    if len(files) == 0:
         raise Exception("Cannot find any %s files" %
                         (os.path.join(protodir, "*.proto")))
 
@@ -60,7 +60,7 @@ def get_from_ipfs_and_checkhash(ipfs_client, ipfs_hash_base58, validate=True):
         from snet.snet_cli.resources.proto.merckledag_pb2 import MerkleNode
 
         # No nice Python library to parse ipfs blocks, so do it ourselves.
-        block_data = ipfs_client.block_get(ipfs_hash_base58)
+        block_data = ipfs_client.block.get(ipfs_hash_base58)
         mn = MerkleNode()
         mn.ParseFromString(block_data)
         unixfs_data = Data()
@@ -94,7 +94,7 @@ def hash_to_bytesuri(s):
 
 def bytesuri_to_hash(s):
     s = s.rstrip(b"\0").decode('ascii')
-    if (not s.startswith("ipfs://")):
+    if not s.startswith("ipfs://"):
         raise Exception("We support only ipfs uri in Registry")
     return s[7:]
 
@@ -108,14 +108,14 @@ def safe_extract_proto_from_ipfs(ipfs_client, ipfs_hash, protodir):
     spec_tar = get_from_ipfs_and_checkhash(ipfs_client, ipfs_hash)
     with tarfile.open(fileobj=io.BytesIO(spec_tar)) as f:
         for m in f.getmembers():
-            if (os.path.dirname(m.name) != ""):
+            if os.path.dirname(m.name) != "":
                 raise Exception(
                     "tarball has directories. We do not support it.")
-            if (not m.isfile()):
+            if not m.isfile():
                 raise Exception(
                     "tarball contains %s which is not a files" % m.name)
             fullname = os.path.join(protodir, m.name)
-            if (os.path.exists(fullname)):
+            if os.path.exists(fullname):
                 raise Exception("%s already exists." % fullname)
         # now it is safe to call extractall
         f.extractall(protodir)

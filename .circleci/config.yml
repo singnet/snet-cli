@@ -2,7 +2,7 @@ version: 2
 jobs:
   build:
     docker:
-    - image: circleci/python:3.8.3-node
+    - image: cimg/python:3.11.6-node
     working_directory: ~/singnet/snet-cli
     environment:
       TRIGGER_BUILD_BRANCH: master
@@ -17,8 +17,8 @@ jobs:
             [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
             [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
             source "$NVM_DIR/nvm.sh"
-            nvm install 14.19.3
-            nvm alias default 14.19.3
+            nvm install 18.18.2
+            nvm alias default 18.18.2
             nvm use default
     - run:
         name: Install tools and ipfs
@@ -37,10 +37,10 @@ jobs:
             ./packages/snet_cli/scripts/blockchain install
             sudo pip3 install -e ./packages/snet_cli
     - run:
-        name: Install snet-dk
+        name: Install snet-sdk
         command: |
-          ./packages/snet_cli/scripts/blockchain install
-          sudo pip3 install -e ./packages/sdk
+            ./packages/snet_cli/scripts/blockchain install
+            sudo pip3 install -e ./packages/sdk
     - run:
         name: Install platform-contracts from master
         command: |
@@ -58,24 +58,24 @@ jobs:
     - run:
         name: Build example service
         command: |
-          cd ~/singnet
-          git clone https://github.com/singnet/example-service.git
-          cd example-service
-          pip3 install -r requirements.txt
-          sh buildproto.sh
+            cd ~/singnet
+            git clone https://github.com/singnet/example-service.git
+            cd example-service
+            pip3 install -r requirements.txt
+            sh buildproto.sh
 
 
     - run:
         name: Set up for snet daemon
         command: |
-          cd ..
-          mkdir snet-daemon
-          cd snet-daemon
-
-          wget https://github.com/singnet/snet-daemon/releases/download/v5.0.1/snet-daemon-v5.0.1-linux-amd64.tar.gz
-          tar -xvf snet-daemon-v5.0.1-linux-amd64.tar.gz
-          cd snet-daemon-v5.0.1-linux-amd64
-          cp ~/singnet/snet-cli/packages/sdk/testcases/functional_tests/snetd.config.json ~/singnet/snet-daemon/snet-daemon-v5.0.1-linux-amd64
+            cd ..
+            mkdir snet-daemon
+            cd snet-daemon
+  
+            wget https://github.com/singnet/snet-daemon/releases/download/v5.0.1/snet-daemon-v5.0.1-linux-amd64.tar.gz
+            tar -xvf snet-daemon-v5.0.1-linux-amd64.tar.gz
+            cd snet-daemon-v5.0.1-linux-amd64
+            cp ~/singnet/snet-cli/packages/sdk/testcases/functional_tests/snetd.config.json ~/singnet/snet-daemon/snet-daemon-v5.0.1-linux-amd64
 
 
     - run:
@@ -84,26 +84,26 @@ jobs:
             sudo pip3 install nose
             nosetests -v --with-doctest
     - run:
-        name: Functional tests fro snet-cli
+        name: Functional tests for snet-cli
         command: |
             cd ..
             cd snet-cli
             sudo npm install -g node-gyp@8.4.1
-            bash -ex  packages/snet_cli/test/utils/run_all_functional.sh
+            bash -ex packages/snet_cli/test/utils/run_all_functional.sh
 
     - run:
         name: Functional tests for sdk
         command: |
-          bash -ex packages/sdk/testcases/utils/run_all_functional.sh
+            bash -ex packages/sdk/testcases/utils/run_all_functional.sh
     - run:
         name: Trigger platform-pipeline build
         command: |
-          if [ "$CIRCLE_BRANCH" == "$TRIGGER_BUILD_BRANCH" ]
-          then
-            curl -u ${CIRCLECI_PLATFORM_PIPELINE_TOKEN}: \
-              -d build_parameters[CIRCLE_JOB]=build \
-              -d build_parameters[PARENT_PROJECT_REPONAME]="$CIRCLE_PROJECT_REPONAME" \
-              -d build_parameters[PARENT_BRANCH]="$CIRCLE_BRANCH" \
-              -d build_parameters[PARENT_BUILD_URL]="$CIRCLE_BUILD_URL" \
-              https://circleci.com/api/v1.1/project/github/singnet/platform-pipeline/tree/${TRIGGER_BUILD_BRANCH}
-          fi
+            if [ "$CIRCLE_BRANCH" == "$TRIGGER_BUILD_BRANCH" ]
+            then
+              curl -u ${CIRCLECI_PLATFORM_PIPELINE_TOKEN}: \
+                -d build_parameters[CIRCLE_JOB]=build \
+                -d build_parameters[PARENT_PROJECT_REPONAME]="$CIRCLE_PROJECT_REPONAME" \
+                -d build_parameters[PARENT_BRANCH]="$CIRCLE_BRANCH" \
+                -d build_parameters[PARENT_BUILD_URL]="$CIRCLE_BUILD_URL" \
+                https://circleci.com/api/v1.1/project/github/singnet/platform-pipeline/tree/${TRIGGER_BUILD_BRANCH}
+            fi

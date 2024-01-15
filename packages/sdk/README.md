@@ -16,7 +16,7 @@ The SingularityNET SDK abstracts and manages state channels with service provide
 
 ### Usage
   
-To call a SingularityNET service, the user must be able to deposit funds (AGI tokens) to the [Multi-Party Escrow](https://dev.singularitynet.io/docs/concepts/multi-party-escrow/) Smart Contract.  
+To call a SingularityNET service, the user must be able to deposit funds (AGIX tokens) to the [Multi-Party Escrow](https://dev.singularitynet.io/docs/concepts/multi-party-escrow/) Smart Contract.  
 To deposit these tokens or do any other transaction on the Ethereum blockchain, the user must possess an Ethereum identity with available Ether.
 
 
@@ -92,20 +92,16 @@ For more information about gRPC and how to use it with Python, please see:
 
 #### Prerequisites  
   
-* [Python 3.7](https://www.python.org/downloads/release/python-377/)  
-* [Node 8+ w/npm](https://nodejs.org/en/download/)
+* [Python 3.11.6](https://www.python.org/downloads/release/python-3116/)
+
+Backward compatibility for other Python versions is not guaranteed.
 
 ---
 
 * Clone the git repository  
 ```bash  
 $ git clone git@github.com:singnet/snet-cli.git
-$ cd snet-cli/snet_sdk
-```  
-  
-* Install development/test blockchain dependencies  
-```bash  
-$ ./scripts/blockchain install
+$ cd snet-cli/packages/sdk
 ```
   
 * Install the package in development/editable mode  
@@ -139,7 +135,7 @@ The SingularityNET SDK abstracts and manages state channels with service provide
 
 ### Usage
   
-To call a SingularityNET service, the user must be able to deposit funds (AGI tokens) to the [Multi-Party Escrow](https://dev.singularitynet.io/docs/concepts/multi-party-escrow/) Smart Contract.  
+To call a SingularityNET service, the user must be able to deposit funds (AGIX tokens) to the [Multi-Party Escrow](https://dev.singularitynet.io/docs/concepts/multi-party-escrow/) Smart Contract.  
 To deposit these tokens or do any other transaction on the Ethereum blockchain, the user must possess an Ethereum identity with available Ether.
 
 
@@ -203,10 +199,9 @@ For more information about gRPC and how to use it with Python, please see:
 
 ### Prerequisites  
   
-* [Python 3.6.5](https://www.python.org/downloads/release/python-365/)  
-* [Node 8+ w/npm](https://nodejs.org/en/download/)
+* [Python 3.11.6](https://www.python.org/downloads/release/python-365/)
 
-`Note!` don't use Python 3.8.2
+Backward compatibility for other Python versions is not guaranteed.
 
 ---
 
@@ -226,11 +221,6 @@ $ pip install -r requirements.txt
 $ cd ../
 $ pip install -r requirements.txt 
 
-```
-  
-* Install development/test blockchain dependencies  
-```bash  
-$ ./scripts/blockchain install
 ```
   
 * Blockchain configuration  

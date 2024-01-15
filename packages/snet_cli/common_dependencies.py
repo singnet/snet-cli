@@ -3,25 +3,25 @@ from setuptools.command.install import install as _install
 
 
 common_dependencies = [
-    'protobuf==3.10.0',
-    'grpcio-tools==1.19.0',
-    'wheel==0.30.0',
-    'jsonrpcclient==2.5.2',
-    'eth-hash==0.3.3',
-    'rlp==1.0.1',
-    'eth-rlp==0.1.2',
-    'web3==4.8.3',
-    'mnemonic==0.18',
-    'pycoin==0.80',
-    'pyyaml==4.2b1',
-    'ipfsapi==0.4.2.post1',
-    'rfc3986==1.1.0',
+    'protobuf==4.21.6',
+    'grpcio-tools==1.59.0',
+    'wheel==0.41.2',
+    'jsonrpcclient==4.0.3',
+    'eth-hash==0.5.2',
+    'rlp==3.0.0',
+    'eth-rlp==0.3.0',
+    'web3==6.11.1',
+    'mnemonic==0.20',
+    'pycoin==0.92.20230326',
+    'pyyaml==6.0.1',
+    'ipfshttpclient==0.4.13.2',
+    'rfc3986==2.0.0',
     'pymultihash==0.8.2',
-    'base58==1.0.2',
-    'argcomplete==1.9.4',
-    'grpcio-health-checking==1.19.0',
-    'jsonschema==3.2.0',
-    'eth-account==0.3.0'
+    'base58==2.1.1',
+    'argcomplete==3.1.2',
+    'grpcio-health-checking==1.59.0',
+    'jsonschema==4.0.0',
+    'eth-account==0.9.0'
 ]
 
 

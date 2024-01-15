@@ -33,7 +33,7 @@ For further details, please check our full [Documentation](http://snet-cli-docs.
 
 #### Install prerequisites
 
-You should have python with version 3.7 and pip installed.
+You should have python with version 3.11 and pip installed.
 
 Additionally you should install the following packages:
 
@@ -91,8 +91,9 @@ Complete documentation is available [here](http://snet-cli-docs.singularitynet.i
 
 #### Prerequisites  
   
-* [Python 3.7](https://www.python.org/downloads/release/python-370/)  
-* [Node 8+ w/npm](https://nodejs.org/en/download/)
+* [Python 3.11.6](https://www.python.org/downloads/release/python-3116/)  
+
+Backward compatibility for other Python versions is not guaranteed.
 
 ---
 
@@ -100,11 +101,6 @@ Complete documentation is available [here](http://snet-cli-docs.singularitynet.i
 ```bash  
 $ git clone https://github.com/singnet/snet-cli.git
 $ cd snet-cli/packages/snet_cli
-```  
-  
-* Install development/test blockchain dependencies  
-```bash  
-$ ./scripts/blockchain install
 ```
   
 * Install the package in development/editable mode  
@@ -160,7 +156,7 @@ The SingularityNET SDK abstracts and manages state channels with service provide
 
 ### Usage
   
-To call a SingularityNET service, the user must be able to deposit funds (AGI tokens) to the [Multi-Party Escrow](https://dev.singularitynet.io/docs/concepts/multi-party-escrow/) Smart Contract.  
+To call a SingularityNET service, the user must be able to deposit funds (AGIX tokens) to the [Multi-Party Escrow](https://dev.singularitynet.io/docs/concepts/multi-party-escrow/) Smart Contract.  
 To deposit these tokens or do any other transaction on the Ethereum blockchain, the user must possess an Ethereum identity with available Ether.
 
 
@@ -236,8 +232,9 @@ For more information about gRPC and how to use it with Python, please see:
 
 #### Prerequisites  
   
-* [Python 3.7](https://www.python.org/downloads/release/python-370/)  
-* [Node 8+ w/npm](https://nodejs.org/en/download/)
+* [Python 3.11.6](https://www.python.org/downloads/release/python-3116/)  
+
+Backward compatibility for other Python versions is not guaranteed.
 
 ---
 
@@ -245,11 +242,6 @@ For more information about gRPC and how to use it with Python, please see:
 ```bash  
 $ git clone git@github.com:singnet/snet-cli.git
 $ cd snet-cli/snet_sdk
-```  
-  
-* Install development/test blockchain dependencies  
-```bash  
-$ ./scripts/blockchain install
 ```
   
 * Install the package in development/editable mode  
@@ -283,7 +275,7 @@ The SingularityNET SDK abstracts and manages state channels with service provide
 
 ### Usage
   
-To call a SingularityNET service, the user must be able to deposit funds (AGI tokens) to the [Multi-Party Escrow](https://dev.singularitynet.io/docs/concepts/multi-party-escrow/) Smart Contract.  
+To call a SingularityNET service, the user must be able to deposit funds (AGIX tokens) to the [Multi-Party Escrow](https://dev.singularitynet.io/docs/concepts/multi-party-escrow/) Smart Contract.  
 To deposit these tokens or do any other transaction on the Ethereum blockchain, the user must possess an Ethereum identity with available Ether.
 
 
@@ -349,8 +341,9 @@ For more information about gRPC and how to use it with Python, please see:
 
 #### Prerequisites  
   
-* [Python 3.7](https://www.python.org/downloads/release/python-377/)  
-* [Node 8+ w/npm](https://nodejs.org/en/download/)
+* [Python 3.11.6](https://www.python.org/downloads/release/python-3116/)  
+
+Backward compatibility for other Python versions is not guaranteed.
 
 ---
 
@@ -358,11 +351,6 @@ For more information about gRPC and how to use it with Python, please see:
 ```bash  
 $ git clone git@github.com:singnet/snet-cli.git
 $ cd snet-cli/snet_sdk
-```  
-  
-* Install development/test blockchain dependencies  
-```bash  
-$ ./scripts/blockchain install
 ```
   
 * Install the package in development/editable mode  

@@ -8,7 +8,10 @@ from urllib.parse import urlparse
 from pathlib import Path, PurePath
 
 import web3
-import pkg_resources
+
+import importlib.resources
+from importlib.metadata import distribution
+
 import grpc
 from grpc_tools.protoc import main as protoc
 
@@ -72,7 +75,7 @@ def serializable(o):
 
 
 def safe_address_converter(a):
-    if not web3.eth.is_checksum_address(a):
+    if not web3.Web3.is_checksum_address(a):
         raise Exception("%s is not is not a valid Ethereum checksum address" % a)
     return a
 
@@ -82,12 +85,12 @@ def type_converter(t):
         return lambda x: list(map(type_converter(t.replace("[]", "")), json.loads(x)))
     else:
         if "int" in t:
-            return lambda x: web3.Web3.toInt(text=x)
+            return lambda x: web3.Web3.to_int(text=x)
         elif "bytes32" in t:
-            return lambda x: web3.Web3.toBytes(text=x).ljust(32, b"\0") if not x.startswith(
-                "0x") else web3.Web3.toBytes(hexstr=x).ljust(32, b"\0")
+            return lambda x: web3.Web3.to_bytes(text=x).ljust(32, b"\0") if not x.startswith(
+                "0x") else web3.Web3.to_bytes(hexstr=x).ljust(32, b"\0")
         elif "byte" in t:
-            return lambda x: web3.Web3.toBytes(text=x) if not x.startswith("0x") else web3.Web3.toBytes(hexstr=x)
+            return lambda x: web3.Web3.to_bytes(text=x) if not x.startswith("0x") else web3.Web3.to_bytes(hexstr=x)
         elif "address" in t:
             return safe_address_converter
         else:
@@ -150,14 +153,14 @@ def read_temp_tar(f):
 
 
 def get_cli_version():
-    return pkg_resources.get_distribution("snet-cli").version
+    return distribution("snet-cli").version
 
 
 def compile_proto(entry_path, codegen_dir, proto_file=None, target_language="python"):
     try:
         if not os.path.exists(codegen_dir):
             os.makedirs(codegen_dir)
-        proto_include = pkg_resources.resource_filename('grpc_tools', '_proto')
+        proto_include = importlib.resources.files('grpc_tools') / '_proto'
 
         compiler_args = [
             "-I{}".format(entry_path),
@@ -201,9 +204,9 @@ def compile_proto(entry_path, codegen_dir, proto_file=None, target_language="pyt
 
 def abi_get_element_by_name(abi, name):
     """ Return element of abi (return None if fails to find) """
-    if (abi and "abi" in abi):
+    if abi and "abi" in abi:
         for a in abi["abi"]:
-            if ("name" in a and a["name"] == name):
+            if "name" in a and a["name"] == name:
                 return a
     return None
 
@@ -260,7 +263,7 @@ def open_grpc_channel(endpoint):
     _GB = 1024 ** 3
     options = [('grpc.max_send_message_length', _GB),
                ('grpc.max_receive_message_length', _GB)]
-    if (endpoint.startswith("https://")):
+    if endpoint.startswith("https://"):
         return grpc.secure_channel(remove_http_https_prefix(endpoint), grpc.ssl_channel_credentials(root_certificates=certificate))
     return grpc.insecure_channel(remove_http_https_prefix(endpoint))
 
@@ -281,10 +284,10 @@ def get_contract_object(w3, contract_file, address=None):
     with open(RESOURCES_PATH.joinpath("contracts", "abi", contract_file)) as f:
         abi = json.load(f)
     if address:
-        return w3.eth.contract(abi=abi, address=w3.toChecksumAddress(address))
+        return w3.eth.contract(abi=abi, address=w3.to_checksum_address(address))
     with open(RESOURCES_PATH.joinpath("contracts", "networks", contract_file)) as f:
         networks = json.load(f)
-        address = w3.toChecksumAddress(networks[w3.version.network]["address"])
+        address = w3.to_checksum_address(networks[w3.net.version]["address"])
     return w3.eth.contract(abi=abi, address=address)
 
 
@@ -292,11 +295,11 @@ def get_contract_deployment_block(w3, contract_file):
     try:
         with open(RESOURCES_PATH.joinpath("contracts", "networks", contract_file)) as f:
             networks = json.load(f)
-            txn_hash = networks[w3.version.network]["transactionHash"]
-        return w3.eth.getTransactionReceipt(txn_hash).blockNumber
+            txn_hash = networks[w3.net.version]["transactionHash"]
+        return w3.eth.get_transaction_receipt(txn_hash).blockNumber
     except Exception:
         # TODO Hack as currenlty dependecy is on snet-cli so for test purpose return 0,need to remove dependecies from snet-cli ,currently very tightly coupled with it
-        if w3.version.network in [1, 3, 42]:
+        if w3.net.version in [1, 5, 11155111]:
             raise Exception("Transaction hash not found for deployed mpe contract")
         return 0
 
@@ -310,7 +313,7 @@ def normalize_private_key(private_key):
 
 
 def get_address_from_private(private_key):
-    return web3.eth.Account.privateKeyToAccount(private_key).address
+    return web3.Account.from_key(private_key).address
 
 
 class add_to_path():

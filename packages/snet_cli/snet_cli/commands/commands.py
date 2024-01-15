@@ -6,7 +6,7 @@ import sys
 from textwrap import indent
 from urllib.parse import urljoin
 
-import ipfsapi
+import ipfshttpclient
 import yaml
 from rfc3986 import urlparse
 from snet.snet_cli.contract import Contract
@@ -19,8 +19,7 @@ from snet_cli.identity import RpcIdentityProvider, MnemonicIdentityProvider, Tre
     LedgerIdentityProvider, KeyIdentityProvider, KeyStoreIdentityProvider
 from snet_cli.identity import get_kws_for_identity_type
 from snet_cli.utils.config import get_contract_address, get_field_from_args_or_session, read_default_contract_address
-from web3.eth import is_checksum_address
-from web3.gas_strategies.time_based import fast_gas_price_strategy, medium_gas_price_strategy, slow_gas_price_strategy
+import web3
 
 
 class Command(object):
@@ -75,16 +74,17 @@ class Command(object):
                           "event_summaries": [{"args": e["args"], "event": e["event"]} for e in events]})
 
     def _get_ipfs_client(self):
-        ipfs_endpoint = urlparse(self.config.get_ipfs_endpoint())
-        ipfs_scheme = ipfs_endpoint.scheme if ipfs_endpoint.scheme else "http"
-        ipfs_port = ipfs_endpoint.port if ipfs_endpoint.port else 5001
-        return ipfsapi.connect(urljoin(ipfs_scheme, ipfs_endpoint.hostname), ipfs_port)
+        ipfs_endpoint = self.config.get_ipfs_endpoint()
+        return ipfshttpclient.connect(ipfs_endpoint)
 
 
 class VersionCommand(Command):
     def show(self):
         self._pprint({"version": get_cli_version()})
 
+
+"""
+# Temporally deprecated
 
 class CachedGasPriceStrategy:
     def __init__(self, gas_price_param):
@@ -111,6 +111,7 @@ class CachedGasPriceStrategy:
 
     def is_going_to_calculate(self):
         return self.cached_gas_price is None and not self.gas_price_param.isdigit()
+"""
 
 
 class BlockchainCommand(Command):
@@ -118,9 +119,6 @@ class BlockchainCommand(Command):
         super(BlockchainCommand, self).__init__(config, args, out_f, err_f)
         self.w3 = w3 or get_web3(self.get_eth_endpoint())
         self.ident = ident or self.get_identity()
-        if type(self.w3.eth.gasPriceStrategy) != CachedGasPriceStrategy:
-            self.w3.eth.setGasPriceStrategy(
-                CachedGasPriceStrategy(self.get_gas_price_param()))
 
     def get_eth_endpoint(self):
         # the only one source of eth_rpc_endpoint is the configuration file
@@ -134,12 +132,18 @@ class BlockchainCommand(Command):
 
     def get_gas_price_verbose(self):
         # gas price is not given explicitly in Wei
-        if self.w3.eth.gasPriceStrategy.is_going_to_calculate():
-            self._printerr(
-                "# Calculating gas price. It might take ~60 seconds.")
-        g = self.w3.eth.generateGasPrice()
-        self._printerr("# gas_price = %f GWei" % (g * 1E-9))
-        return g
+        self._printerr("# Calculating gas price... one moment..")
+        gas_price = self.w3.eth.gas_price
+        if gas_price <= 15000000000:
+            gas_price += gas_price * 1 / 3
+        elif gas_price > 15000000000 and gas_price <= 50000000000:
+            gas_price += gas_price * 1 / 5
+        elif gas_price > 50000000000 and gas_price <= 150000000000:
+            gas_price += 7000000000
+        elif gas_price > 150000000000:
+            gas_price += gas_price * 1 / 10
+        self._printerr("# gas_price = %f GWei" % (gas_price * 1E-9))
+        return int(gas_price)
 
     def get_mpe_address(self):
         return get_contract_address(self, "MultiPartyEscrow")
@@ -265,15 +269,17 @@ class NetworkCommand(Command):
 
     def create(self):
         network_id = None
+        w3 = get_web3(self.args.eth_rpc_endpoint)
         if not self.args.skip_check:
             # check endpoint by getting its network_id
-            w3 = get_web3(self.args.eth_rpc_endpoint)
-            network_id = w3.version.network
+            network_id = w3.net.version
 
         self._printout("add network with name='%s' with networkId='%s'" % (
             self.args.network_name, str(network_id)))
+
+        default_gas_price = w3.eth.gas_price
         self.config.add_network(
-            self.args.network_name, self.args.eth_rpc_endpoint, self.args.default_gas_price)
+            self.args.network_name, self.args.eth_rpc_endpoint, default_gas_price)
 
     def set(self):
         self.config.set_session_network(self.args.network_name, self.out_f)
@@ -498,7 +504,7 @@ class OrganizationCommand(BlockchainCommand):
         members = [m.replace("[", "").replace("]", "")
                    for m in self.args.members.split(',')]
         for m in members:
-            if not is_checksum_address(m):
+            if not web3.Web3.is_checksum_address(m):
                 raise Exception(
                     "Member account %s is not a valid Ethereum checksum address" % m)
         return members
@@ -535,9 +541,16 @@ class OrganizationCommand(BlockchainCommand):
         (found, org_id, org_name, owner, members, serviceNames) = self._get_organization_by_id(org_id)
         self.error_organization_not_found(self.args.org_id, found)
 
+        org_m = self._get_organization_metadata_from_registry(web3.Web3.to_text(org_id))
+        org_name = org_m.org_name
+        org_type = org_m.org_type
+        description = org_m.description.get("description", "")
+
         self._printout("\nOrganization Name:\n - %s" % org_name)
-        self._printout("\nOrganization Id:\n - %s" % bytes32_to_str(org_id))
-        self._printout("\nOwner:\n - {}".format(owner))
+        self._printout("\nId:\n - %s" % bytes32_to_str(org_id))
+        self._printout("\nType:\n - %s" % org_type)
+        self._printout("\nDescription:\n - %s" % description)
+
         if members:
             self._printout("\nMembers:")
             for idx, member in enumerate(members):
@@ -649,7 +662,7 @@ class OrganizationCommand(BlockchainCommand):
         self.error_organization_not_found(org_id, found)
 
         new_owner = self.args.owner
-        if not is_checksum_address(new_owner):
+        if not web3.Web3.is_checksum_address(new_owner):
             raise Exception(
                 "New owner account %s is not a valid Ethereum checksum address" % new_owner)
 
@@ -763,7 +776,7 @@ class OrganizationCommand(BlockchainCommand):
         metadata_file = self.args.metadata_file
         org_metadata = OrganizationMetadata.from_file(metadata_file)
         asset_file_ipfs_hash_base58 = publish_file_in_ipfs(self._get_ipfs_client(),
-                                                                      self.args.asset_file_path)
+                                                           self.args.asset_file_path)
 
         org_metadata.add_asset(asset_file_ipfs_hash_base58, self.args.asset_type)
         org_metadata.save_pretty(self.args.metadata_file)

@@ -45,29 +45,38 @@ class Account:
         self.nonce = 0
 
     def _get_nonce(self):
-        nonce = self.web3.eth.getTransactionCount(self.address)
+        nonce = self.web3.eth.get_transaction_count(self.address)
         if self.nonce >= nonce:
             nonce = self.nonce + 1
         self.nonce = nonce
         return nonce
 
     def _get_gas_price(self):
-        return int(self.web3.eth.generateGasPrice())
+        gas_price = self.web3.eth.gas_price
+        if gas_price <= 15000000000:
+            gas_price += gas_price * 1 / 3
+        elif gas_price > 15000000000 and gas_price <= 50000000000:
+            gas_price += gas_price * 1 / 5
+        elif gas_price > 50000000000 and gas_price <= 150000000000:
+            gas_price += 7000000000
+        elif gas_price > 150000000000:
+            gas_price += gas_price * 1 / 10
+        return int(gas_price)
 
     def _send_signed_transaction(self, contract_fn, *args):
-        transaction = contract_fn(*args).buildTransaction({
-            "chainId": int(self.web3.version.network),
+        transaction = contract_fn(*args).build_transaction({
+            "chainId": int(self.web3.net.version),
             "gas": DEFAULT_GAS,
             "gasPrice": self._get_gas_price(),
             "nonce": self._get_nonce()
         })
-        signed_txn = self.web3.eth.account.signTransaction(
+        signed_txn = self.web3.eth.account.sign_transaction(
             transaction, private_key=self.private_key)
-        return self.web3.toHex(self.web3.eth.sendRawTransaction(signed_txn.rawTransaction))
+        return self.web3.to_hex(self.web3.eth.send_raw_transaction(signed_txn.rawTransaction))
 
     def send_transaction(self, contract_fn, *args):
         txn_hash = self._send_signed_transaction(contract_fn, *args)
-        return self.web3.eth.waitForTransactionReceipt(txn_hash, TRANSACTION_TIMEOUT)
+        return self.web3.eth.wait_for_transaction_receipt(txn_hash, TRANSACTION_TIMEOUT)
 
     def _parse_receipt(self, receipt, event, encoder=json.JSONEncoder):
         if receipt.status == 0:
@@ -85,7 +94,8 @@ class Account:
         return self.mpe_contract.deposit(self, amount_in_cogs)
 
     def approve_transfer(self, amount_in_cogs):
-        return self.send_transaction(self.token_contract.functions.approve,self.mpe_contract.contract.address, amount_in_cogs)
+        return self.send_transaction(self.token_contract.functions.approve, self.mpe_contract.contract.address,
+                                     amount_in_cogs)
 
     def allowance(self):
         return self.token_contract.functions.allowance(self.address, self.mpe_contract.contract.address).call()

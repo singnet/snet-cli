@@ -45,7 +45,7 @@ setup(
     author='SingularityNET Foundation',
     author_email='info@singularitynet.io',
     description='SingularityNET Python SDK',
-    python_requires='>=3.7',
+    python_requires='>=3.11',
     install_requires=dependencies,
     long_description=long_description,
     long_description_content_type='text/markdown'
