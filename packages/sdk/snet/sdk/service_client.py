@@ -3,12 +3,15 @@ import collections
 import importlib
 
 import grpc
-import snet.sdk.generic_client_interceptor as generic_client_interceptor
+import web3
 from eth_account.messages import defunct_hash_message
 from rfc3986 import urlparse
+
+import snet.sdk.generic_client_interceptor as generic_client_interceptor
 from snet.sdk.mpe.payment_channel_provider import PaymentChannelProvider
-from snet.snet_cli.utils.utils import RESOURCES_PATH, add_to_path
 from snet.sdk.root_certificate import root_certificate
+from snet.snet_cli.utils.utils import RESOURCES_PATH, add_to_path
+
 
 class _ClientCallDetails(
     collections.namedtuple(
@@ -69,7 +72,8 @@ class ServiceClient:
         if endpoint_object.scheme == "http":
             return grpc.insecure_channel(channel_endpoint)
         elif endpoint_object.scheme == "https":
-            return grpc.secure_channel(channel_endpoint, grpc.ssl_channel_credentials(root_certificates=root_certificate))
+            return grpc.secure_channel(channel_endpoint,
+                                       grpc.ssl_channel_credentials(root_certificates=root_certificate))
         else:
             raise ValueError('Unsupported scheme in service metadata ("{}")'.format(endpoint_object.scheme))
 
@@ -154,13 +158,21 @@ class ServiceClient:
 
         return signature
 
+    def generate_training_signature(self, text: str, address, block_number):
+        message = web3.Web3.solidity_keccak(
+            ["string", "address", "uint256"],
+            [text, address, block_number]
+        )
+        return self.sdk_web3.eth.account.signHash(defunct_hash_message(message),
+                                                  self.account.signer_private_key).signature
+
     def get_free_call_config(self):
         return self.options['email'], self.options['free_call_auth_token-bin'], self.options[
             'free-call-token-expiry-block']
 
     def get_service_details(self):
         return self.org_id, self.service_id, self.group["group_id"], \
-               self.service_metadata.get_all_endpoints_for_group(self.group["group_name"])[0]
+            self.service_metadata.get_all_endpoints_for_group(self.group["group_name"])[0]
 
     def get_concurrency_flag(self):
         return self.options.get('concurrency', True)
