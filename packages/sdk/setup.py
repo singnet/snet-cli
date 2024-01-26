@@ -1,4 +1,4 @@
-import importlib.util
+import importlib.metadata
 from setuptools import setup, find_namespace_packages
 from os import path
 
@@ -10,12 +10,13 @@ PACKAGE_NAME = 'snet.sdk'
 
 
 def is_package_installed(package_name):
-    spec = importlib.util.find_spec(package_name)
-    if spec is not None:
-        print(f"{package_name} is installed.")
+    try:
+        package = importlib.metadata.metadata(package_name)
+        name, version = package.json["name"], package.json["version"]
+        print(f"Installed {name} {version}")
         return True
-    else:
-        print(f"{package_name} is not installed.")
+    except importlib.metadata.PackageNotFoundError:
+        print(f"Package {package_name} is not installed")
         return False
 
 
