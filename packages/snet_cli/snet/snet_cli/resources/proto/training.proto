@@ -1,0 +1,112 @@
+syntax = "proto3";
+import "google/protobuf/descriptor.proto";
+package training;
+option go_package = "../training";
+//Please note that the AI developers need to provide a server implementation of the gprc server of this proto.
+message ModelDetails {
+  //This Id will be generated when you invoke the create_model method and hence doesnt need to be filled when you
+  //invoke the create model
+  string model_id = 1;
+  //define the training method name
+  string grpc_method_name = 2;
+  //define the grpc service name , under which the method is defined
+  string grpc_service_name = 3;
+  string description = 4;
+
+  string status = 6;
+  string updated_date = 7;
+  //List of all the addresses that will have access to this model
+  repeated string address_list = 8;
+  // this is optional
+  string training_data_link = 9;
+  string model_name = 10;
+
+
+  string organization_id = 11;
+  string service_id = 12 ;
+  string group_id = 13;
+
+  //set this to true if you want your model to be used by other AI consumers
+  bool is_publicly_accessible = 14;
+
+}
+
+message AuthorizationDetails {
+  uint64 current_block = 1;
+  //Signer can fill in any message here
+  string message = 2;
+  //signature of the following message:
+  //("user specified message", user_address, current_block_number)
+  bytes signature = 3;
+  string signer_address = 4;
+
+}
+
+enum Status {
+  CREATED = 0;
+  IN_PROGRESS = 1;
+  ERRORED = 2;
+  COMPLETED = 3;
+  DELETED = 4;
+}
+
+message CreateModelRequest {
+  AuthorizationDetails authorization = 1;
+  ModelDetails model_details = 2;
+}
+
+//the signer address will get to know all the models associated with this address.
+message AccessibleModelsRequest {
+  string grpc_method_name = 1;
+  string grpc_service_name = 2;
+  AuthorizationDetails authorization = 3;
+}
+
+message AccessibleModelsResponse {
+  repeated ModelDetails list_of_models = 1;
+}
+
+message ModelDetailsRequest {
+  ModelDetails model_details = 1 ;
+  AuthorizationDetails authorization = 2;
+}
+
+//helps determine which service end point to call for model training
+//format is of type "packageName/serviceName/MethodName", Example :"/example_service.Calculator/estimate_add"
+//Daemon will invoke the model training end point , when the below method option is specified
+message TrainingMethodOption {
+  string trainingMethodIndicator = 1;
+}
+
+extend google.protobuf.MethodOptions {
+  TrainingMethodOption my_method_option = 9999197;
+}
+
+message UpdateModelRequest {
+  ModelDetails update_model_details = 1 ;
+  AuthorizationDetails authorization = 2;
+}
+
+
+message ModelDetailsResponse {
+  Status status = 1;
+  ModelDetails model_details = 2;
+
+}
+
+service Model {
+
+  // The AI developer needs to Implement this service and Daemon will call these
+  // There will be no cost borne by the consumer in calling these methods,
+  // Pricing will apply when you actually call the training methods defined.
+  // AI consumer will call all these methods
+  rpc create_model(CreateModelRequest) returns (ModelDetailsResponse) {}
+  rpc delete_model(UpdateModelRequest) returns (ModelDetailsResponse) {}
+  rpc get_model_status(ModelDetailsRequest) returns (ModelDetailsResponse) {}
+
+  // Daemon will implement , however the AI developer should skip implementing these and just provide dummy code.
+  rpc update_model_access(UpdateModelRequest) returns (ModelDetailsResponse) {}
+  rpc get_all_models(AccessibleModelsRequest) returns (AccessibleModelsResponse) {}
+
+
+}
