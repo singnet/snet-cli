@@ -496,12 +496,6 @@ def add_eth_call_arguments(parser):
 def add_transaction_arguments(parser):
     transaction_g = parser.add_argument_group(title="transaction arguments")
     transaction_g.add_argument(
-        "--gas-price",
-        help="Ethereum gas price in Wei or time based gas price strategy "
-             "('fast' ~1min, 'medium' ~5min or 'slow' ~60min)  (defaults to session.default_gas_price)"
-    )
-
-    transaction_g.add_argument(
         "--wallet-index", type=int,
         help="Wallet index of account to use for signing (defaults to session.identity.default_wallet_index)")
     transaction_g.add_argument(
