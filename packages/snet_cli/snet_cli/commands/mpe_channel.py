@@ -16,6 +16,7 @@ from snet_cli.commands.commands import OrganizationCommand
 from snet_cli.utils.agix2cogs import cogs2stragix
 from web3._utils.encoding import pad_hex
 from web3._utils.events import get_event_data
+from eth_abi.codec import ABICodec
 
 # we inherit MPEServiceCommand because we need _get_service_metadata_from_registry
 class MPEChannelCommand(OrganizationCommand):
@@ -499,12 +500,13 @@ class MPEChannelCommand(OrganizationCommand):
         mpe_address = self.get_mpe_address()
         event_signature = self.ident.w3.keccak(
             text="ChannelOpen(uint256,uint256,address,address,address,bytes32,uint256,uint256)").hex()
+        codec: ABICodec = self.ident.w3.codec
         topics = [event_signature] + topics_without_signature
         logs = self.ident.w3.eth.get_logs(
             {"fromBlock": self.args.from_block, "address": mpe_address, "topics": topics})
         abi = get_contract_def("MultiPartyEscrow")
         event_abi = abi_get_element_by_name(abi, "ChannelOpen")
-        channels_ids = [get_event_data(event_abi, l)[
+        channels_ids = [get_event_data(codec, event_abi, l)[
             "args"]["channelId"] for l in logs]
         return channels_ids
 
