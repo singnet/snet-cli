@@ -963,7 +963,7 @@ def add_mpe_service_options(parser):
 
     p.add_argument("--service-type",
                    default="grpc",
-                   choices=['grpc', 'jsonrpc', 'process'],
+                   choices=['grpc', 'http', 'jsonrpc', 'process'],
                    help="Service type")
 
     p = subparsers.add_parser("metadata-set-model",
