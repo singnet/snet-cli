@@ -1,11 +1,11 @@
 import web3
 from web3._utils.events import get_event_data
 from eth_abi.codec import ABICodec
-from snet.contracts import get_contract_deployment_block
 
 from snet.sdk.mpe.mpe_contract import MPEContract
 
 from snet.sdk.mpe.payment_channel import PaymentChannel
+from snet.snet_cli.utils.utils import get_contract_deployment_block
 
 
 BLOCKS_PER_BATCH = 5000

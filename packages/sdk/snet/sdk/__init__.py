@@ -16,11 +16,12 @@ from urllib.parse import urljoin
 import web3
 from rfc3986 import urlparse
 import ipfshttpclient
-from snet.contracts import get_contract_object
 
 from snet.sdk.service_client import ServiceClient
 from snet.sdk.account import Account
 from snet.sdk.mpe.mpe_contract import MPEContract
+
+from snet.snet_cli.utils.utils import get_contract_object
 
 from snet.snet_cli.utils.ipfs_utils import bytesuri_to_hash, get_from_ipfs_and_checkhash
 from snet.snet_cli.metadata.service import mpe_service_metadata_from_json

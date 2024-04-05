@@ -1,4 +1,4 @@
-from snet.contracts import get_contract_deployment_block, get_contract_object
+from snet.snet_cli.utils.utils import get_contract_deployment_block, get_contract_object
 
 
 class MPEContract:

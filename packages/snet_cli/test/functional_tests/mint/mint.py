@@ -1,6 +1,4 @@
-from snet.contracts import get_contract_object
-
-from packages.snet_cli.snet.snet_cli.utils.utils import get_web3
+from packages.snet_cli.snet.snet_cli.utils.utils import get_web3, get_contract_object
 from web3.gas_strategies.time_based import medium_gas_price_strategy
 
 TRANSACTION_TIMEOUT = 500
