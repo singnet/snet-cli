@@ -1,3 +1,6 @@
+.env
+.venv
+env/
 venv/
 snet_cli.egg-info/
 snet.snet_cli.egg-info/

@@ -116,6 +116,7 @@ def safe_extract_proto_from_ipfs(ipfs_client, ipfs_hash, protodir):
                     "tarball contains %s which is not a files" % m.name)
             fullname = os.path.join(protodir, m.name)
             if os.path.exists(fullname):
-                raise Exception("%s already exists." % fullname)
+                os.remove(fullname)
+                print("%s removed." % fullname)
         # now it is safe to call extractall
         f.extractall(protodir)
