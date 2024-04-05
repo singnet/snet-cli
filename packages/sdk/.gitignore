@@ -1,4 +1,7 @@
+env/
 venv/
+.env
+.venv
 snet.sdk.egg-info/
 build/
 dist/
