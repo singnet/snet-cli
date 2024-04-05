@@ -20,7 +20,7 @@ class PaymentChannelProvider(object):
         self.event_topics = [self.web3.keccak(
             text="ChannelOpen(uint256,uint256,address,address,address,bytes32,uint256,uint256)").hex()]
         self.deployment_block = get_contract_deployment_block(
-            self.web3, "MultiPartyEscrow.json")
+            self.web3, "MultiPartyEscrow")
         self.payment_channel_state_service_client = payment_channel_state_service_client
 
     def get_past_open_channels(self, account, payment_address, group_id, starting_block_number=0, to_block_number=None):
