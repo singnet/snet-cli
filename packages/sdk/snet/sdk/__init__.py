@@ -16,12 +16,11 @@ from urllib.parse import urljoin
 import web3
 from rfc3986 import urlparse
 import ipfshttpclient
+from snet.contracts import get_contract_object
 
 from snet.sdk.service_client import ServiceClient
 from snet.sdk.account import Account
 from snet.sdk.mpe.mpe_contract import MPEContract
-
-from snet.snet_cli.utils.utils import get_contract_object
 
 from snet.snet_cli.utils.ipfs_utils import bytesuri_to_hash, get_from_ipfs_and_checkhash
 from snet.snet_cli.metadata.service import mpe_service_metadata_from_json
@@ -58,9 +57,9 @@ class SnetSDK:
         # Get Registry contract address from config if specified; mostly for local testing
         _registry_contract_address = self._config.get("registry_contract_address", None)
         if _registry_contract_address is None:
-            self.registry_contract = get_contract_object(self.web3, "Registry.json")
+            self.registry_contract = get_contract_object(self.web3, "Registry")
         else:
-            self.registry_contract = get_contract_object(self.web3, "Registry.json", _registry_contract_address)
+            self.registry_contract = get_contract_object(self.web3, "Registry", _registry_contract_address)
 
         self.account = Account(self.web3, config, self.mpe_contract)
 
