@@ -177,6 +177,10 @@ def add_network_options(parser, config):
                               help="List of networks")
     p.set_defaults(fn="list")
 
+    p = subparsers.add_parser("show_current",
+                              help="Show the network you`re currently connected to")
+    p.set_defaults(fn="show_current")
+
     p = subparsers.add_parser("create",
                               help="Create a new network")
     p.set_defaults(fn="create")

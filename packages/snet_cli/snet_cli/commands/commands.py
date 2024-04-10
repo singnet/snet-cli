@@ -267,6 +267,11 @@ class NetworkCommand(Command):
             self._pprint({network_section[len("network."):]: {
                 k: v for k, v in network.items()}})
 
+    def show_current(self):
+        current_network = self.config.get_session_network_name()
+        self._printout(f"You are currently connected to the {current_network} network")
+
+
     def create(self):
         network_id = None
         w3 = get_web3(self.args.eth_rpc_endpoint)
