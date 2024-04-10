@@ -10,7 +10,7 @@ This repository is a monorepo that includes several packages that we publish to 
 |Package                                       |Description                                                          |
 |----------------------------------------------|---------------------------------------------------------------------|
 |[snet-cli](https://pypi.org/project/snet-cli/)|Command line interface to interact with the SingularityNET platform  |
-|[snet-sdk](https://pypi.org/project/snet-sdk/)|Integrate SingularityNET services seamlessly into Python applications|
+|[snet-sdk](https://pypi.org/project/snet.sdk/)|Integrate SingularityNET services seamlessly into Python applications|
 
 ## License  
   
@@ -31,7 +31,7 @@ Please check our full [Documentation](http://snet-cli-docs.singularitynet.io/).
 
 ### Prerequisites
 
-You should have Python 3.11 with pip installed.
+You should have Python>=3.10 with pip installed.
 
 Additionally, you should make sure that you have the following packages in your system:
 
@@ -91,7 +91,7 @@ Complete documentation is available [here](http://snet-cli-docs.singularitynet.i
 
 #### Prerequisites  
   
-* [Python 3.11.6](https://www.python.org/downloads/release/python-3116/)  
+* [Python 3.10.14](https://www.python.org/downloads/release/python-31014/)  
 
 Backward compatibility for other Python versions is not guaranteed.
 
@@ -232,7 +232,7 @@ For more information about gRPC and how to use it with Python, please see:
 
 #### Prerequisites  
   
-* [Python 3.11.6](https://www.python.org/downloads/release/python-3116/)  
+* [Python 3.10.14](https://www.python.org/downloads/release/python-31014/)  
 
 Backward compatibility for other Python versions is not guaranteed.
 
@@ -241,7 +241,7 @@ Backward compatibility for other Python versions is not guaranteed.
 * Clone the git repository  
 ```bash  
 $ git clone git@github.com:singnet/snet-cli.git
-$ cd snet-cli/snet_sdk
+$ cd snet-cli/packages/sdk
 ```
   
 * Install the package in development/editable mode  

@@ -91,7 +91,7 @@ For more information about gRPC and how to use it with Python, please see:
 
 #### Prerequisites  
   
-* [Python 3.11.6](https://www.python.org/downloads/release/python-3116/)  
+* [Python 3.10.14](https://www.python.org/downloads/release/python-31014/)  
 
 Backward compatibility for other Python versions is not guaranteed.
 
@@ -100,7 +100,7 @@ Backward compatibility for other Python versions is not guaranteed.
 * Clone the git repository  
 ```bash  
 $ git clone git@github.com:singnet/snet-cli.git
-$ cd snet-cli/snet_sdk
+$ cd snet-cli/packages/sdk
 ```
   
 * Install the package in development/editable mode  
