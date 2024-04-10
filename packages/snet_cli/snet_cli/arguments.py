@@ -265,7 +265,7 @@ def add_organization_options(parser):
         title="Organization commands", metavar="COMMAND")
     subparsers.required = True
 
-    p = subparsers.add_parser("metadata-init", help="Initalize matadata for organization ")
+    p = subparsers.add_parser("metadata-init", help="Initialize metadata for organization")
     p.set_defaults(fn="initialize_metadata")
     p.add_argument("org_name", help="Organization name", metavar="ORG_NAME")
     p.add_argument("org_id", default=None, help="Unique organization Id", metavar="ORG_ID")
