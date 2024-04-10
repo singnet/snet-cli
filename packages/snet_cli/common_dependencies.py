@@ -21,7 +21,8 @@ common_dependencies = [
     'argcomplete==3.1.2',
     'grpcio-health-checking==1.59.0',
     'jsonschema==4.0.0',
-    'eth-account==0.9.0'
+    'eth-account==0.9.0',
+    'snet.contracts==0.0.10'
 ]
 
 
