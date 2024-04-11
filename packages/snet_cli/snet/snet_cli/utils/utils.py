@@ -280,30 +280,6 @@ def rgetattr(obj, attr):
     return functools.reduce(getattr, [obj] + attr.split('.'))
 
 
-def get_contract_object(w3, contract_file, address=None):
-    with open(RESOURCES_PATH.joinpath("contracts", "abi", contract_file)) as f:
-        abi = json.load(f)
-    if address:
-        return w3.eth.contract(abi=abi, address=w3.to_checksum_address(address))
-    with open(RESOURCES_PATH.joinpath("contracts", "networks", contract_file)) as f:
-        networks = json.load(f)
-        address = w3.to_checksum_address(networks[w3.net.version]["address"])
-    return w3.eth.contract(abi=abi, address=address)
-
-
-def get_contract_deployment_block(w3, contract_file):
-    try:
-        with open(RESOURCES_PATH.joinpath("contracts", "networks", contract_file)) as f:
-            networks = json.load(f)
-            txn_hash = networks[w3.net.version]["transactionHash"]
-        return w3.eth.get_transaction_receipt(txn_hash).blockNumber
-    except Exception:
-        # TODO Hack as currenlty dependecy is on snet-cli so for test purpose return 0,need to remove dependecies from snet-cli ,currently very tightly coupled with it
-        if w3.net.version in [1, 5, 11155111]:
-            raise Exception("Transaction hash not found for deployed mpe contract")
-        return 0
-
-
 def normalize_private_key(private_key):
     if private_key.startswith("0x"):
         private_key = bytes(bytearray.fromhex(private_key[2:]))

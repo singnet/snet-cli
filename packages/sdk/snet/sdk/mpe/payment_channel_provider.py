@@ -1,11 +1,11 @@
 import web3
 from web3._utils.events import get_event_data
 from eth_abi.codec import ABICodec
+from snet.contracts import get_contract_deployment_block
 
 from snet.sdk.mpe.mpe_contract import MPEContract
 
 from snet.sdk.mpe.payment_channel import PaymentChannel
-from snet.snet_cli.utils.utils import get_contract_deployment_block
 
 
 BLOCKS_PER_BATCH = 5000
@@ -20,7 +20,7 @@ class PaymentChannelProvider(object):
         self.event_topics = [self.web3.keccak(
             text="ChannelOpen(uint256,uint256,address,address,address,bytes32,uint256,uint256)").hex()]
         self.deployment_block = get_contract_deployment_block(
-            self.web3, "MultiPartyEscrow.json")
+            self.web3, "MultiPartyEscrow")
         self.payment_channel_state_service_client = payment_channel_state_service_client
 
     def get_past_open_channels(self, account, payment_address, group_id, starting_block_number=0, to_block_number=None):
