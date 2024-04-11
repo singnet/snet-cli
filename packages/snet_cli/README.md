@@ -6,38 +6,36 @@ SingularityNET CLI
 
 ## Getting Started  
   
-These instructions are for the development and use of the SingularityNET CLI.
-For further details, please check our full [Documentation](http://snet-cli-docs.singularitynet.io/).
+The instruction down below describes the installation of the SingularityNET CLI.
+Please check our full [Documentation](http://snet-cli-docs.singularitynet.io/).
 
-### Installing with pip
+### Prerequisites
 
-#### Install prerequisites
+You should have Python>=3.10 with pip installed.
 
-You should have python with version >= [3.11.6](https://www.python.org/downloads/release/python-3116/) and pip installed.
-
-Additionally you should install the following packages:
+Additionally, you should make sure that you have the following packages in your system:
 
 * libudev
 * libusb 1.0
 
-If you use Ubuntu (or any Linux distribution with APT package support) you should do the following:
+If you use Ubuntu (or any Linux distribution with APT support) you could run the following:
 
 ```bash
 sudo apt-get install libudev-dev libusb-1.0-0-dev
 ```
 
-#### Install snet-cli using pip
+### Install snet-cli using pip
 
 ```bash
-$ pip3 install snet-cli
+$ pip3 install snet.snet-cli
 ```
 
 
-#### Enabling commands autocomplete
-If you want to enable auto completion of commands, you should install the following package
+### Enabling commands autocompletion
+If you want to enable the autocompletion of commands, you should install the
 * python-argcomplete
 
-On ubuntu (or any Linux distribution with APT package support), you should do the following
+On ubuntu (or any Linux distribution with APT support), you could run the following
 
 ```bash
 sudo apt install python-argcomplete
@@ -51,7 +49,9 @@ sudo activate-global-python-argcomplete
 ```
 Note: Changes will not take effect until shell is restarted.
 
-##### only for snet commands, then you should do the following
+##### OR
+
+##### only for snet commands, then you should run the following
 ```bash
 echo 'eval "$(register-python-argcomplete snet)"' >> ~/.bashrc
 ```
@@ -60,18 +60,18 @@ then
 source ~/.bashrc
 ```
 
-## Commands
+## Usage
 
 Complete documentation is available [here](http://snet-cli-docs.singularitynet.io/)
 
 
 ## Development
 
-### Installing
+### Installation
 
 #### Prerequisites  
   
-* [Python 3.11.6](https://www.python.org/downloads/release/python-365/)  
+* [Python 3.10.14](https://www.python.org/downloads/release/python-31014/)  
 
 Backward compatibility for other Python versions is not guaranteed.
 
@@ -79,13 +79,8 @@ Backward compatibility for other Python versions is not guaranteed.
 
 * Clone the git repository  
 ```bash  
-$ git clone git@github.com:singnet/snet-cli.git
-$ cd snet-cli/snet_cli
-```  
-  
-* Install development/test blockchain dependencies  
-```bash  
-$ ./scripts/blockchain install
+$ git clone https://github.com/singnet/snet-cli.git
+$ cd snet-cli/packages/snet_cli
 ```
   
 * Install the package in development/editable mode  
@@ -93,7 +88,7 @@ $ ./scripts/blockchain install
 $ pip3 install -e .
 ```
 
-#### Building Docs
+#### Building the Documentation
 
 * Install sphinx, sphinx-argparse and the rtd theme
 ```bash
