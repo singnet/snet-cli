@@ -64,6 +64,36 @@ source ~/.bashrc
 
 Complete documentation is available [here](http://snet-cli-docs.singularitynet.io/)
 
+### Example service call via the CLI
+We will use the Sepolia testnet for this example:
+```bash
+snet network sepolia
+```
+Create the identity:
+```bash
+snet identity create example_identity key
+```
+and enter your private key.  
+You can check your balance using the 
+```bash
+snet account balance
+```
+Deposit 70 tokens:
+```bash
+ snet account deposit 70
+```
+Press y to confirm.  
+You can check your balance again to ensure that the transaction was successfull.  
+Before making a call we need to open the payment channel. In this example we will use the organization with id= 26072b8b6a0e448180f8c0e702ab6d2f and group_name= default_group. We will transfer there 70 tokens for 4 weeks:
+```bash
+ snet channel open-init 26072b8b6a0e448180f8c0e702ab6d2f default_group 70 +4weeks
+```
+And now we can call the "Exampleservice" service:
+```bash
+ snet client call 26072b8b6a0e448180f8c0e702ab6d2f Exampleservice default_group add '{"a":10,"b":32}'
+```
+Press 'Y' to confirm and get service`s response:
+>value: 42
 
 ## Development
 
