@@ -93,7 +93,13 @@ Create the identity:
 ```bash
 snet identity create example_identity key
 ```
-and enter your private key.  
+and enter your private key when asked.  
+OR  
+you can pass the private key directly:
+```bash
+snet identity create --private-key "a7638fd785fdb5cf13df0a1d7b5584cc20d4e8526403f0df105eedf23728f538" test key
+```
+You can also use other identity options. See [documentation](http://snet-cli-docs.singularitynet.io/identity.html).   
 You can check your balance using the 
 ```bash
 snet account balance
