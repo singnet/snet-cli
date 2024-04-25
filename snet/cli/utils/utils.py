@@ -288,3 +288,10 @@ class add_to_path():
             sys.path.remove(self.path)
         except ValueError:
             pass
+
+
+def find_file_by_keyword(directory, keyword):
+        for root, dirs, files in os.walk(directory):
+            for file in files:
+                if keyword in file:
+                    return file
