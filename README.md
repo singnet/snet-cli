@@ -43,14 +43,14 @@ If you want to enable the autocompletion of commands, you should install the
 On ubuntu (or any Linux distribution with APT support), you could run the following
 
 ```bash
-sudo apt install python-argcomplete
+sudo apt install python3-argcomplete
 ```
 After the package is installed, activate autocomplete 
 
 ##### for all python commands (which includes snet commands as well) 
 
 ```bash
-sudo activate-global-python-argcomplete
+sudo activate-global-python-argcomplete3
 ```
 Note: Changes will not take effect until shell is restarted.
 
@@ -58,7 +58,7 @@ Note: Changes will not take effect until shell is restarted.
 
 ##### only for snet commands, then you should run the following
 ```bash
-echo 'eval "$(register-python-argcomplete snet)"' >> ~/.bashrc
+echo 'eval "$(register-python-argcomplete3 snet)"' >> ~/.bashrc
 ```
 then
 ```bash
@@ -112,7 +112,7 @@ Press 'Y' to confirm and get service`s response:
 
 #### Prerequisites  
   
-* [Python 3.10.14](https://www.python.org/downloads/release/python-31014/)  
+* [Python 3.10](https://www.python.org/downloads/release/python-31012/)  
 
 Backward compatibility for other Python versions is not guaranteed.
 
