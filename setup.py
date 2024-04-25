@@ -1,53 +1,39 @@
 import sys
 import os
 import subprocess
-from setuptools import setup
+from setuptools import find_namespace_packages, setup
 from setuptools.command.develop import develop
 from setuptools.command.install import install
 
-PACKAGE_NAME = 'snet'
-SOURCES = {
-  'snet_cli': 'packages/snet_cli',
-  'sdk': 'packages/sdk',
-}
+from common_dependencies import common_dependencies
+from version import __version__
 
-def install_packages(sources, develop=False):
-    print("installing all packages in {} mode".format(
-              "development" if develop else "normal"))
-    wd = os.getcwd()
-    for k, v in sources.items():
-        try:
-            os.chdir(os.path.join(wd, v))
-            if develop:
-                subprocess.check_call([sys.executable, '-m', 'pip', 'install', '-e', '.'])
-            else:
-                subprocess.check_call([sys.executable, '-m', 'pip', 'install', '.'])
-        except Exception as e:
-            print("Oops, something went wrong installing", k)
-            print(e)
-        finally:
-            os.chdir(wd)
+PACKAGE_NAME = 'snet.cli'
 
-class DevelopCmd(develop):
-    """ Add custom steps for the develop command """
-    def run(self):
-        install_packages(SOURCES, develop=True)
-        develop.run(self)
 
-class InstallCmd(install):
-    """ Add custom steps for the install command """
-    def run(self):
-        install_packages(SOURCES, develop=False)
-        install.run(self)
+this_directory = os.path.abspath(os.path.dirname(__file__))
+with open(os.path.join(this_directory, 'README.md'), encoding='utf-8') as f:
+    long_description = f.read()
+
+
 setup(
     name=PACKAGE_NAME,
-    version="0.0.1",
+    version=__version__,
+    packages=find_namespace_packages(include=['snet.*']),
+    namespace_packages=['snet'],
+    url='https://github.com/singnet/snet-cli',
     author="SingularityNET Foundation",
     author_email="info@singularitynet.io",
-    description="SingularityNET Monorepo",
+    description="SingularityNET CLI",
+    long_description=long_description,
+    long_description_content_type='text/markdown',
     license="MIT",
-    cmdclass={
-        'install': InstallCmd,
-        'develop': DevelopCmd,
+    python_requires='>=3.10',
+    install_requires=common_dependencies,
+    include_package_data=True,
+    entry_points={
+        'console_scripts': [
+            'snet = snet.cli:main',
+        ],
     }
 )

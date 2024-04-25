@@ -1,4 +1,2 @@
 --index-url https://pypi.python.org/simple
-packages/snet_cli/
-packages/sdk/
 -e .
