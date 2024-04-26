@@ -4,6 +4,14 @@
   
 SingularityNET CLI
 
+## Package
+
+The package was published in PyPI at the following link:
+
+|Package                                       |Description                                                          |
+|----------------------------------------------|---------------------------------------------------------------------|
+|[snet-cli](https://pypi.org/project/snet.cli/)|Command line interface to interact with the SingularityNET platform  |
+
 ## License  
   
 This project is licensed under the MIT License - see the
