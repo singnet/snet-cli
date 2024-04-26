@@ -6,7 +6,7 @@ SingularityNET CLI
 
 ## Package
 
-The package was published in PyPI at the following link:
+The package is published in PyPI at the following link:
 
 |Package                                       |Description                                                          |
 |----------------------------------------------|---------------------------------------------------------------------|
