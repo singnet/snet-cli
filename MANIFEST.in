@@ -1,0 +1,7 @@
+include snet/cli/resources/proto/*
+include snet/cli/resources/package.json
+
+recursive-exclude * .git
+recursive-exclude * node_modules
+recursive-exclude * __pycache__
+recursive-exclude * *.py[co]
