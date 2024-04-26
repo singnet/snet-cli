@@ -1,97 +1,126 @@
-# snet-python-monorepo
+﻿# snet-cli
 
 [![CircleCI](https://circleci.com/gh/singnet/snet-cli.svg?style=svg)](https://circleci.com/gh/singnet/snet-cli)
   
-SingularityNET Python Monorepo
+SingularityNET CLI
 
-## Packages  
-This repository is a monorepo that includes several packages that we publish to PyPI from a shared codebase, specifically:
-  
+## Package
+
+The package is published in PyPI at the following link:
+
 |Package                                       |Description                                                          |
 |----------------------------------------------|---------------------------------------------------------------------|
-|[snet-cli](https://pypi.org/project/snet-cli/)|Command line interface to interact with the SingularityNET platform  |
-|[snet-sdk](https://pypi.org/project/snet-sdk/)|Integrate SingularityNET services seamlessly into Python applications|
+|[snet-cli](https://pypi.org/project/snet.cli/)|Command line interface to interact with the SingularityNET platform  |
 
 ## License  
   
 This project is licensed under the MIT License - see the
 [LICENSE](https://github.com/singnet/snet-cli/blob/master/LICENSE) file for details.
 
-
-# snet-cli
-
-[![CircleCI](https://circleci.com/gh/singnet/snet-cli.svg?style=svg)](https://circleci.com/gh/singnet/snet-cli)
-  
-SingularityNET CLI
-
 ## Getting Started  
   
-These instructions are for the development and use of the SingularityNET CLI.
-For further details, please check our full [Documentation](http://snet-cli-docs.singularitynet.io/).
+The instruction down below describes the installation of the SingularityNET CLI.
+Please check our full [Documentation](http://snet-cli-docs.singularitynet.io/).
 
-### Installing with pip
+### Prerequisites
 
-#### Install prerequisites
+You should have Python>=3.10 with pip installed.
 
-You should have python with version 3.11 and pip installed.
-
-Additionally you should install the following packages:
+Additionally, you should make sure that you have the following packages in your system:
 
 * libudev
 * libusb 1.0
 
-If you use Ubuntu (or any Linux distribution with APT package support) you should do the following:
+If you use Ubuntu (or any Linux distribution with APT support) you could run the following:
 
 ```bash
 sudo apt-get install libudev-dev libusb-1.0-0-dev
 ```
 
-#### Install snet-cli using pip
+### Install snet-cli using pip
 
 ```bash
-$ pip3 install snet.snet-cli
+$ pip3 install snet.cli
 ```
 
 
-#### Enabling commands autocomplete
-If you want to enable auto completion of commands, you should install the following package
+### Enabling commands autocompletion
+If you want to enable the autocompletion of commands, you should install the
 * python-argcomplete
 
-On ubuntu (or any Linux distribution with APT package support), you should do the following
+On ubuntu (or any Linux distribution with APT support), you could run the following
 
 ```bash
-sudo apt install python-argcomplete
+sudo apt install python3-argcomplete
 ```
 After the package is installed, activate autocomplete 
 
 ##### for all python commands (which includes snet commands as well) 
 
 ```bash
-sudo activate-global-python-argcomplete
+sudo activate-global-python-argcomplete3
 ```
 Note: Changes will not take effect until shell is restarted.
 
-##### only for snet commands, then you should do the following
+##### OR
+
+##### only for snet commands, then you should run the following
 ```bash
-echo 'eval "$(register-python-argcomplete snet)"' >> ~/.bashrc
+echo 'eval "$(register-python-argcomplete3 snet)"' >> ~/.bashrc
 ```
 then
 ```bash
 source ~/.bashrc
 ```
 
-## Commands
+## Usage
 
 Complete documentation is available [here](http://snet-cli-docs.singularitynet.io/)
 
+### Example service call via the CLI
+We will use the Sepolia testnet for this example:
+```bash
+snet network sepolia
+```
+Create the identity:
+```bash
+snet identity create example_identity key
+```
+and enter your private key when asked.  
+OR  
+you can pass the private key directly:
+```bash
+snet identity create --private-key "a7638fd785fdb5cf13df0a1d7b5584cc20d4e8526403f0df105eedf23728f538" test key
+```
+You can also use other identity options. See [documentation](http://snet-cli-docs.singularitynet.io/identity.html).  
+You can check your balance using the 
+```bash
+snet account balance
+```
+Deposit 70 tokens:
+```bash
+ snet account deposit 70
+```
+Press y to confirm.  
+You can check your balance again to ensure that the transaction was successfull.  
+Before making a call we need to open the payment channel. In this example we will use the organization with id= 26072b8b6a0e448180f8c0e702ab6d2f and group_name= default_group. We will transfer there 70 tokens for 4 weeks:
+```bash
+ snet channel open-init 26072b8b6a0e448180f8c0e702ab6d2f default_group 70 +4weeks
+```
+And now we can call the "Exampleservice" service:
+```bash
+ snet client call 26072b8b6a0e448180f8c0e702ab6d2f Exampleservice default_group add '{"a":10,"b":32}'
+```
+Press 'Y' to confirm and get service`s response:
+>value: 42
 
 ## Development
 
-### Installing
+### Installation
 
 #### Prerequisites  
   
-* [Python 3.11.6](https://www.python.org/downloads/release/python-3116/)  
+* [Python 3.10](https://www.python.org/downloads/release/python-31012/)  
 
 Backward compatibility for other Python versions is not guaranteed.
 
@@ -108,7 +137,7 @@ $ cd snet-cli/packages/snet_cli
 $ pip3 install -e .
 ```
 
-#### Building Docs
+#### Building the Documentation
 
 * Install sphinx, sphinx-argparse and the rtd theme
 ```bash
@@ -138,232 +167,3 @@ We use [SemVer](http://semver.org/) for versioning. For the versions available, 
   
 This project is licensed under the MIT License - see the
 [LICENSE](https://github.com/singnet/snet-cli/blob/master/snet_cli/LICENSE) file for details.
-
-# snet-sdk-python
-  
-SingularityNET SDK for Python
-  
-## Getting Started  
-  
-These instructions are for the development and use of the SingularityNET SDK for Python.
-
-### Core concepts
-  
-The SingularityNET SDK allows you to make calls to SingularityNET services programmatically from your application.  
-To communicate between clients and services, SingularityNET uses [gRPC](https://grpc.io/).  
-To handle payment of services, SingularityNET uses [Ethereum state channels](https://dev.singularitynet.io/docs/concepts/multi-party-escrow/).  
-The SingularityNET SDK abstracts and manages state channels with service providers on behalf of the user and handles authentication with the SingularityNET services.
-
-### Usage
-  
-To call a SingularityNET service, the user must be able to deposit funds (AGIX tokens) to the [Multi-Party Escrow](https://dev.singularitynet.io/docs/concepts/multi-party-escrow/) Smart Contract.  
-To deposit these tokens or do any other transaction on the Ethereum blockchain, the user must possess an Ethereum identity with available Ether.
-
-
-To interact with SingularityNET services, you must compile the appropriate client libraries for that service.   
-To generate the client libraries to use in your application, you need the SingularityNET Command Line Interface, or CLI, which you can download from PyPi, see [https://github.com/singnet/snet-cli#installing-with-pip](https://github.com/singnet/snet-cli/snet_cli#installing-with-pip)
-  
-Once you have the CLI installed, run the following command:
-```bash
-snet sdk generate-client-library python <org_id> <service_id>
-```
-  
-Optionally, you can specify an output path; otherwise it's going to be `./client_libraries/python/<registry_address>/<org_id>/<service_id>`.  
-You should move or copy these generated files to the root of your project.
-  
-Once you have installed the snet-sdk in your current environment and it's in your PYTHONPATH, you should import it and create an instance of the base sdk class:
-
-```python
-from snet import sdk
-from config import config
-snet_sdk = sdk.SnetSDK(config)
-```
-
-The `config` parameter must be a Python dictionary.  
-See [test_sdk_client.py.sample](https://github.com/singnet/snet-cli/blob/master/packages/sdk/testcases/functional_tests/test_sdk_client.py) for a sample configuration file.
- 
- ##### Free call configuration
- If you want to use free call you need to add below mwntioned attributes in config file.
-```         
-"free_call_auth_token-bin":"f2548d27ffd319b9c05918eeac15ebab934e5cfcd68e1ec3db2b92765",
-"free-call-token-expiry-block":172800,
-"email":"test@test.com"  
-```
- You can download this config for a given service from [Dapp]([https://beta.singularitynet.io/)
- 
-Now, the instance of the sdk can be used to create service client instances. To create a service client instance, it needs to be supplied with the client libraries that you compiled before.  
-Specifically, it needs the `Stub` object of the service you want to use from the compiled `_pb2_grpc.py` file of the client library.  
-Continuing from the previous code this is an example using `example-service` from the `snet` organization:
-
-```python
-import example_service_pb2_grpc
-
-org_id = "snet"
-service_id = "example-service"
-group_name="default_group"
-
-service_client = snet_sdk.create_service_client(org_id, service_id,example_service_pb2_grpc.CalculatorStub,group_name)
-```
-
-The generated `service_client` instance can be used to call the methods exposed by the service.  
-To call these methods, a request object must be provided. Specifically, you should pick the appropriate request message type that is referenced in the stub object.  
-Continuing from the previous code this is an example using `example-service` from the `snet` organization:
-
-```python
-import example_service_pb2
-
-request = example_service_pb2.Numbers(a=20, b=3)
-
-result = service_client.service.mul(request)
-print("Performing 20 * 3: {}".format(result))   # Performing 20 * 3: value: 60.0
-```
-  
-You can get this code example at [https://github.com/singnet/snet-code-examples/tree/python_client/python/client](https://github.com/singnet/snet-code-examples/tree/python_client/python/client)
-  
-For more information about gRPC and how to use it with Python, please see:
-- [gRPC Basics - Python](https://grpc.io/docs/tutorials/basic/python.html)
-- [gRPC Python’s documentation](https://grpc.io/grpc/python/)
-
----
-
-## Development
-
-### Installing
-
-#### Prerequisites  
-  
-* [Python 3.11.6](https://www.python.org/downloads/release/python-3116/)  
-
-Backward compatibility for other Python versions is not guaranteed.
-
----
-
-* Clone the git repository  
-```bash  
-$ git clone git@github.com:singnet/snet-cli.git
-$ cd snet-cli/snet_sdk
-```
-  
-* Install the package in development/editable mode  
-```bash  
-$ pip install -e .
-```
-
-### Versioning  
-  
-We use [SemVer](http://semver.org/) for versioning. For the versions available, see the
-[tags on this repository](https://github.com/singnet/snet-cli/tags).   
-  
-## License  
-  
-This project is licensed under the MIT License - see the
-[LICENSE](https://github.com/singnet/snet-cli/blob/master/snet_sdk/LICENSE) file for details.
-# snet-sdk-python
-  
-SingularityNET SDK for Python
-  
-## Getting Started  
-  
-These instructions are for the development and use of the SingularityNET SDK for Python.
-
-### Core concepts
-  
-The SingularityNET SDK allows you to make calls to SingularityNET services programmatically from your application.  
-To communicate between clients and services, SingularityNET uses [gRPC](https://grpc.io/).  
-To handle payment of services, SingularityNET uses [Ethereum state channels](https://dev.singularitynet.io/docs/concepts/multi-party-escrow/).  
-The SingularityNET SDK abstracts and manages state channels with service providers on behalf of the user and handles authentication with the SingularityNET services.
-
-### Usage
-  
-To call a SingularityNET service, the user must be able to deposit funds (AGIX tokens) to the [Multi-Party Escrow](https://dev.singularitynet.io/docs/concepts/multi-party-escrow/) Smart Contract.  
-To deposit these tokens or do any other transaction on the Ethereum blockchain, the user must possess an Ethereum identity with available Ether.
-
-
-To interact with SingularityNET services, you must compile the appropriate client libraries for that service.   
-To generate the client libraries to use in your application, you need the SingularityNET Command Line Interface, or CLI, which you can download from PyPi, see [https://github.com/singnet/snet-cli#installing-with-pip](https://github.com/singnet/snet-cli/snet_cli#installing-with-pip)
-  
-Once you have the CLI installed, run the following command:
-```bash
-snet sdk generate-client-library python <org_id> <service_id>
-```
-  
-Optionally, you can specify an output path; otherwise it's going to be `./client_libraries/python/<registry_address>/<org_id>/<service_id>`.  
-You should move or copy these generated files to the root of your project.
-  
-Once you have installed the snet-sdk in your current environment and it's in your PYTHONPATH, you should import it and create an instance of the base sdk class:
-
-```python
-from snet import sdk
-from config import config
-snet_sdk = sdk.SnetSDK(config)
-```
-
-The `config` parameter must be a Python dictionary.  
-See [config.py.sample](https://github.com/singnet/snet-code-examples/blob/master/python/client/config.py.sample) for a sample configuration file.
-  
-Now, the instance of the sdk can be used to create service client instances. To create a service client instance, it needs to be supplied with the client libraries that you compiled before.  
-Specifically, it needs the `Stub` object of the service you want to use from the compiled `_pb2_grpc.py` file of the client library.  
-Continuing from the previous code this is an example using `example-service` from the `snet` organization:
-
-```python
-import example_service_pb2_grpc
-
-org_id = "snet"
-service_id = "example-service"
-
-service_client = sdk.create_service_client(org_id, service_id, example_service_pb2_grpc.CalculatorStub)
-```
-
-The generated `service_client` instance can be used to call the methods exposed by the service.  
-To call these methods, a request object must be provided. Specifically, you should pick the appropriate request message type that is referenced in the stub object.  
-Continuing from the previous code this is an example using `example-service` from the `snet` organization:
-
-```python
-import example_service_pb2
-
-request = example_service_pb2.Numbers(a=20, b=3)
-
-result = service_client.service.mul(request)
-print("Performing 20 * 3: {}".format(result))   # Performing 20 * 3: value: 60.0
-```
-  
-You can get this code example at [https://github.com/singnet/snet-code-examples/tree/python_client/python/client](https://github.com/singnet/snet-code-examples/tree/python_client/python/client)
-  
-For more information about gRPC and how to use it with Python, please see:
-- [gRPC Basics - Python](https://grpc.io/docs/tutorials/basic/python.html)
-- [gRPC Python’s documentation](https://grpc.io/grpc/python/)
-
----
-
-## Development
-
-### Installing
-
-#### Prerequisites  
-  
-* [Python 3.11.6](https://www.python.org/downloads/release/python-3116/)  
-
-Backward compatibility for other Python versions is not guaranteed.
-
----
-
-* Clone the git repository  
-```bash  
-$ git clone git@github.com:singnet/snet-cli.git
-$ cd snet-cli/snet_sdk
-```
-  
-* Install the package in development/editable mode  
-```bash  
-$ pip install -e .
-```
-
-### Versioning  
-  
-We use [SemVer](http://semver.org/) for versioning. For the versions available, see the
-[tags on this repository](https://github.com/singnet/snet-cli/tags).   
-  
-## License  
-  
-This project is licensed under the MIT License - see the
-[LICENSE](https://github.com/singnet/snet-cli/blob/master/snet_sdk/LICENSE) file for details.

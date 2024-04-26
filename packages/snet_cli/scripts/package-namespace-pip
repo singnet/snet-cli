@@ -1,3 +1,0 @@
-#!/usr/bin/env bash
-
-python3.11 setup-namespace.py sdist bdist_wheel

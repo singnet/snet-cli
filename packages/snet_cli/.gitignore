@@ -1,7 +1,0 @@
-venv/
-snet_cli.egg-info/
-snet.snet_cli.egg-info/
-snet/snet_cli/resources/node_modules
-snet/snet_cli/resources/proto/*.py
-build/
-dist/
