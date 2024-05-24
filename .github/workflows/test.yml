@@ -26,14 +26,15 @@ jobs:
           ipfs --version
           node --version
           pwd
+          ls
           
       - name: clone repo
         uses: actions/checkout@v3
 
       - name: Install snet-cli
         run: |
-          ./snet_cli/blockchain install
-          pip3 install -e ./snet-cli
+          ./scripts/blockchain install
+          pip3 install -e .
           
 
 
