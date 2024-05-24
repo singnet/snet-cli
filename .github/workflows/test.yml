@@ -61,7 +61,7 @@ jobs:
       - name: functional tests for cli
         run: |
           ls
-          sh -ex /snet-cli/snet/cli/test/utils/run_all_functional.sh
+          sh -ex ./snet/cli/test/utils/run_all_functional.sh
 
 
 
