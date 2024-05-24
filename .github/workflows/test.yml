@@ -16,6 +16,7 @@ jobs:
         run: |
           apt update
           apt-get -y install libudev-dev libusb-1.0-0-dev curl jq
+          apt install python3-pip
 
       - name: install ipfs
         run: |
@@ -24,9 +25,16 @@ jobs:
           bash go-ipfs/install.sh
           ipfs --version
           node --version
+          pwd
           
       - name: clone repo
         uses: actions/checkout@v3
+
+      - name: Install snet-cli
+        run: |
+          ./snet_cli/blockchain install
+          pip3 install -e ./snet-cli
+          
 
 
 
