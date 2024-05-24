@@ -1,0 +1,61 @@
+name: tests
+on:
+  # push:
+  #   branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+  workflow_dispatch:
+
+jobs:
+    run_tests:
+      runs-on: ubuntu-latest
+      container: node:18-bookworm
+      steps:
+        
+      - name: install packs
+        run: sudo apt-get -y install libudev-dev libusb-1.0-0-dev curl jq
+
+      - name: install ipfs
+        run: |
+          wget https://dist.ipfs.io/go-ipfs/v0.9.0/go-ipfs_v0.9.0_linux-amd64.tar.gz
+          tar -xvzf go-ipfs_v0.9.0_linux-amd64.tar.gz
+          sudo bash go-ipfs/install.sh
+          ipfs --version
+          
+      - name: clone repo
+        uses: actions/checkout@v3
+
+
+
+
+
+
+
+
+      # - name: download and install
+      #   uses: actions/setup-go@v5
+      #   with:
+      #         go-version: '1.22.2'
+
+      # - name: protobuff install
+      #   run: |
+      #     sudo apt update
+      #     sudo apt install protobuf-compiler
+
+      # - name: go_ins_1
+      #   run: go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
+
+      # - name: go_ins_2
+      #   run: go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
+
+      # - name: generate
+      #   run: go generate ./...
+
+      # - name: check version
+      #   run: go version
+
+      # - name: check folder
+      #   run: ls
+
+      # - name: do tests
+      #   run: go test -v ./...
