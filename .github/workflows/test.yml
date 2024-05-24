@@ -15,7 +15,7 @@ jobs:
       - name: install packs
         run: |
           apt update
-          apt install -y libudev-dev libusb-1.0-0-dev curl jq sudo
+          apt install -y libudev-dev libusb-1.0-0-dev curl jq
           apt install -y python3-pip
 
       - name: install ipfs
@@ -34,7 +34,7 @@ jobs:
       - name: Install snet-cli
         run: |
           ./scripts/blockchain install
-          sudo -H pip3 install -e .
+          pip3 install -e . --break-system-packages
           
 
 
