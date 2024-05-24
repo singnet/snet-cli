@@ -58,9 +58,9 @@ jobs:
           sh buildproto.sh
           cd ..
 
-      - name: set up for snet daemon
+      - name: functional tests for cli
         run: | 
-
+          sh -ex /snet-cli/snet/cli/test/utils/run_all_functional.sh
 
 
 
