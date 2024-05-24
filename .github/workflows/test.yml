@@ -56,11 +56,11 @@ jobs:
           pip3 install -r requirements.txt --break-system-packages
           sh buildproto.sh
           
-      # - name: unit tests
-      #   run: |
-      #     pip3 install nose --break-system-packages
-      #     cd ./snet/cli/test
-      #     nosetests -v --with-doctest
+      - name: unit tests
+        run: |
+          pip3 install nose --break-system-packages
+          cd ./snet/cli/test
+          nosetests -v --with-doctest
 
       - name: functional tests for cli
         run: |
