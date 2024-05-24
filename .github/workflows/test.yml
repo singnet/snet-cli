@@ -35,7 +35,7 @@ jobs:
         run: |
           pip3 install -r requirements.txt --break-system-packages
           pip3 install nose --break-system-packages
-          pip3 uninstall pyreadline
+          pip3 uninstall pyreadline --break-system-packages
           pip3 install pyreadline3 --break-system-packages
           
       - name: install snet-cli
