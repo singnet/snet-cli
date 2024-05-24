@@ -58,6 +58,9 @@ jobs:
           sh buildproto.sh
           cd ..
 
+      - name: set up for snet daemon
+        run: | 
+
 
 
 
