@@ -16,7 +16,7 @@ jobs:
         run: |
           apt update
           apt install -y libudev-dev libusb-1.0-0-dev curl jq
-          apt install -y python3-pip
+          apt install -y python3-pip python3.11-venv
 
       - name: install ipfs
         run: |
@@ -27,14 +27,20 @@ jobs:
           node --version
           pwd
           ls
-          
+
       - name: clone repo
         uses: actions/checkout@v3
+
+      - name: create venv
+        run: |
+          python3 -m venv venv
+          source venv/bin/activate
 
       - name: Install snet-cli
         run: |
           ./scripts/blockchain install
-          pip3 install
+          pip3 install argcomplete
+          pip3 install -e . 
           
 
 
