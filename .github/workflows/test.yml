@@ -46,7 +46,17 @@ jobs:
           git clone https://github.com/singnet/platform-contracts.git
           cd platform-contracts
           npm install
+          npm install ganache-cli
+          npm run-script compile
+          cd ..
 
+      - name: build example service
+        run: |
+          git clone https://github.com/singnet/example-service.git
+          cd example-service
+          pip3 install -r requirements.txt --break-system-packages
+          sh buildproto.sh
+          cd ..
 
 
 
