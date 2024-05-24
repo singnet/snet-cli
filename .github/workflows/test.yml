@@ -64,5 +64,4 @@ jobs:
 
       - name: functional tests for cli
         run: |
-          pip3 install web3==5.27.0 --break-system-packages
           sh -ex ./snet/cli/test/utils/run_all_functional.sh
