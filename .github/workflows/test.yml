@@ -34,6 +34,7 @@ jobs:
       - name: install pip packages
         run: |
           pip3 install -r requirements.txt --break-system-packages
+          pip3 install nose --break-system-packages
           
       - name: install snet-cli
         run: |
@@ -58,7 +59,6 @@ jobs:
           
       - name: unit tests
         run: |
-          pip3 install nose --break-system-packages
           cd ./snet/cli/test
           nosetests -v --with-doctest
 
