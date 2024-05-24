@@ -34,7 +34,7 @@ jobs:
       - name: create venv
         run: |
           python3 -m venv venv
-          ./venv/bin/activate
+          . /venv/bin/activate
 
       - name: Install snet-cli
         run: |
