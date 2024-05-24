@@ -48,7 +48,6 @@ jobs:
           npm install
           npm install ganache-cli
           npm run-script compile
-          cd ..
 
       - name: build example service
         run: |
@@ -56,10 +55,8 @@ jobs:
           cd example-service
           pip3 install -r requirements.txt --break-system-packages
           sh buildproto.sh
-          cd ..
 
       - name: functional tests for cli
         run: |
-          ls
-          pwd
+          pip3 install web3==6.11.1 --break-system-packages
           sh -ex ./snet/cli/test/utils/run_all_functional.sh
