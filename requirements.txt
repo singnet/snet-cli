@@ -5,7 +5,7 @@ jsonrpcclient==4.0.3
 eth-hash==0.5.2
 rlp==3.0.0
 eth-rlp==0.3.0
-web3==6.11.1
+web3==5.27.0
 mnemonic==0.20
 pycoin==0.92.20230326
 pyyaml==6.0.1
