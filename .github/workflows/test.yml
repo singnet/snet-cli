@@ -31,13 +31,21 @@ jobs:
       - name: clone repo
         uses: actions/checkout@v3
 
-      - name: Install snet-cli
+      - name: install pip packages
+        run: |
+          pip3 install -r requirements.txt --break-system-packages
+          
+      - name: install snet-cli
         run: |
           ./scripts/blockchain install
-          pip3 install argcomplete --break-system-packages
           pip3 install -e . --break-system-packages
           
-
+      - name: install platform-contracts
+        run: |
+          cd ..
+          git clone https://github.com/singnet/platform-contracts.git
+          cd platform-contracts
+          npm install
 
 
 
