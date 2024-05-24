@@ -34,7 +34,6 @@ jobs:
       - name: Install snet-cli
         run: |
           ./scripts/blockchain install
-          pip3 install .
           
 
 
