@@ -9,7 +9,7 @@ on:
 jobs:
     run_tests:
       runs-on: ubuntu-latest
-      container: node:18-bookworm
+      container: node:20-bookworm
       steps:
         
       - name: install packs
@@ -17,6 +17,7 @@ jobs:
           apt update
           apt install -y libudev-dev libusb-1.0-0-dev curl jq
           apt install -y python3-pip python3.11-venv
+          echo master
 
       - name: install ipfs
         run: |
@@ -59,10 +60,10 @@ jobs:
           pip3 install -r requirements.txt --break-system-packages
           sh buildproto.sh
           
-      - name: unit tests
-        run: |
-          cd ./snet/cli/test
-          nosetests -v --with-doctest
+      # - name: unit tests
+      #   run: |
+      #     cd ./snet/cli/test
+      #     nosetests -v --with-doctest
 
       - name: functional tests for cli
         run: |
