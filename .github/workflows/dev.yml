@@ -9,7 +9,7 @@ on:
 jobs:
     run_tests2:
       runs-on: ubuntu-latest
-      container: node:18-bookworm
+      container: node:20-bookworm
       steps:
         
       - name: install packs
