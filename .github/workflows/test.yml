@@ -19,15 +19,15 @@ jobs:
           apt install -y python3-pip python3.11-venv
           echo master
 
-      # - name: install ipfs
-      #   run: |
-      #     wget https://dist.ipfs.io/go-ipfs/v0.9.0/go-ipfs_v0.9.0_linux-amd64.tar.gz
-      #     tar -xvzf go-ipfs_v0.9.0_linux-amd64.tar.gz
-      #     bash go-ipfs/install.sh
-      #     ipfs --version
-      #     node --version
-      #     pwd
-      #     ls
+      - name: install ipfs
+        run: |
+          wget https://dist.ipfs.io/go-ipfs/v0.9.0/go-ipfs_v0.9.0_linux-amd64.tar.gz
+          tar -xvzf go-ipfs_v0.9.0_linux-amd64.tar.gz
+          bash go-ipfs/install.sh
+          ipfs --version
+          node --version
+          pwd
+          ls
 
       - name: clone repo
         uses: actions/checkout@v3
