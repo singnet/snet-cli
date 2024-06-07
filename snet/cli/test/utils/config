@@ -1,0 +1,23 @@
+[network.mainnet]
+default_eth_rpc_endpoint = https://mainnet.infura.io/v3/09027f4a13e841d48dbfefc67e7685d5
+
+[network.goerli]
+default_eth_rpc_endpoint = https://goerli.infura.io/v3/09027f4a13e841d48dbfefc67e7685d5
+
+[network.sepolia]
+default_eth_rpc_endpoint = https://sepolia.infura.io/v3/09027f4a13e841d48dbfefc67e7685d5
+
+[ipfs]
+default_ipfs_endpoint = /dns/ipfs.singularitynet.io/tcp/80/
+
+[session]
+network = sepolia
+identity = paul_wallet
+
+[identity.paul_wallet]
+identity_type = key
+private_key = 59a9eddfd4d043890ed79a8475a9b7ebda8a76857d88363e01b1b9c5f2ea68c5
+network = sepolia
+default_wallet_index = 0
+
+
