@@ -67,6 +67,6 @@ jobs:
 
       - name: functional tests for cli
         run: |
-          mkdir ~/.snet
-          cp ./snet/cli/test/utils/config ~/.snet/
+          # mkdir ~/.snet
+          # cp ./snet/cli/test/utils/config ~/.snet/
           sh -ex ./snet/cli/test/utils/run_all_functional.sh
