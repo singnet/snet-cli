@@ -55,5 +55,5 @@ killall node || echo "supress an error"
 # snet identity create snet-user rpc --network local
 snet session
 export PYTHONPATH=$cwd
-python3 $cwd"./snet/cli/test/functional_tests/mint/mint.py"
+# python3 $cwd"./snet/cli/test/functional_tests/mint/mint.py"
 snet account balance
