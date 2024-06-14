@@ -49,7 +49,8 @@ grep 9.8.9.8:8080 service_metadata2.json
 echo HERE0
 IPFS_HASH=$(snet service publish-in-ipfs)
 echo $IPFS_HASH
-ipfs cat $IPFS_HASH >service_metadata2.json
+#ipfs cat $IPFS_HASH >service_metadata2.json
+cat $IPFS_HASH >service_metadata2.json
 echo HERE1
 # compare service_metadata.json and service_metadata2.json
 cmp <(jq -S . service_metadata.json) <(jq -S . service_metadata2.json)
