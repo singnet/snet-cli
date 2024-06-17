@@ -58,8 +58,8 @@ snet organization metadata-init org1 testo individual
 grep org1 organization_metadata.json
 snet organization create testo && exit 1 || echo "fail as expected"
 #
-snet --print-traceback organization add-group group1 0x42A605c07EdE0E1f648aB054775D6D4E38496144 5.5.6.7:8089
-snet --print-traceback organization add-group group2 0x42A605c07EdE0E1f648aB054775D6D4E38496144 1.2.1.1:8089
+snet --print-traceback organization add-group group1 0x42A605c07EdE0E1f648aB054775D6D4E38496144 http://5.5.6.7:8089
+snet --print-traceback organization add-group group2 0x42A605c07EdE0E1f648aB054775D6D4E38496144 http://1.2.1.1:8089
 grep 5.5.6.7 organization_metadata.json
 grep 0x42A605c07EdE0E1f648aB054775D6D4E38496144 organization_metadata.json
 grep 5.5.6.7:8089 organization_metadata.json
