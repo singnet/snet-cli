@@ -103,31 +103,31 @@ rm -r _d1 _d2 _d3
 
 # client side
 snet account balance
-snet account deposit 100 -y -q
-snet account transfer 0x4e934Fc82ebd84aBe1C1b2556b9aF3055dBdd43c 42 -y -q
+snet account deposit 10 -y -q
+snet account transfer 0x4e934Fc82ebd84aBe1C1b2556b9aF3055dBdd43c 5 -y -q
 snet account withdraw 1 -y -q
-
 #open channel usig org and group
-snet --print-traceback channel open-init-metadata testo group1 42 1 -y -q
+snet --print-traceback channel open-init-metadata testo group1 5 1 -y -q
 snet channel print-initialized
-snet channel claim-timeout 0 -y -q
+ch=$(snet channel print-initialized | tail -n 1 | awk '{print $3}')
+snet channel claim-timeout $ch -y -q
 snet channel print-initialized
 # we do not send transaction second time
-snet channel claim-timeout 0 -y -q && exit 1 || echo "fail as expected"
+snet channel claim-timeout $ch -y -q && exit 1 || echo "fail as expected"
 
-snet channel extend-add 0 --expiration 10000 --amount 42 -y -q
+snet channel extend-add $ch --expiration 10000 --amount 5 -y -q
 snet channel print-initialized
-snet channel extend-add 0 --amount 42 -y -q
+snet channel extend-add $ch --amount 5 -y -q
 snet channel print-initialized
-snet channel extend-add 0 --expiration +10000blocks -y -q
-snet channel extend-add 0 --expiration +10000days -y -q && exit 1 || echo "fail as expected"
-snet channel extend-add 0 --expiration +10000days --force -y -q
-snet channel extend-add 0 --expiration 57600000 --force -y -q && exit 1 || echo "fail as expected"
+snet channel extend-add $ch --expiration +10000blocks -y -q
+snet channel extend-add $ch --expiration +10000days -y -q && exit 1 || echo "fail as expected"
+snet channel extend-add $ch --expiration +10000days --force -y -q
+snet channel extend-add $ch --expiration 57600000 --force -y -q && exit 1 || echo "fail as expected"
 
 EXPIRATION1=$(($(snet channel block-number) + 57600000))
-snet channel extend-add 0 --expiration $EXPIRATION1 --force --amount 0 -y -q
+snet channel extend-add $ch --expiration $EXPIRATION1 --force --amount 0 -y -q
 
-snet channel open-init testo group1 9712.1234 +14days -y -q
+snet channel open-init testo group1 4 +14days -y -q
 
 # test print_initialized_channels and print_all_channels. We should have channels openned for specific identity
 snet channel print-initialized
@@ -144,24 +144,24 @@ grep "8.8.8.8:2020" service_metadata2.json && exit 1 || echo "fail as expected"
 
 snet service publish testo tests2 -y -q --metadata-file service_metadata2.json
 
-snet channel open-init testo group2 7234.345 1 -y -q --signer 0x3b2b3C2e2E7C93db335E69D827F3CC4bC2A2A2cB
+snet channel open-init testo group2 3 1 -y -q --signer 0x3b2b3C2e2E7C93db335E69D827F3CC4bC2A2A2cB
 
 snet --print-traceback channel print-initialized-filter-org testo group2
-snet channel print-initialized-filter-org testo group2 | grep 7234.345
-snet channel print-initialized-filter-org testo group2 | grep 9712.1234 && exit 1 || echo "fail as expected"
+snet channel print-initialized-filter-org testo group2 | grep 3
+snet channel print-initialized-filter-org testo group2 | grep 4 && exit 1 || echo "fail as expected"
 
 snet channel print-initialized
 snet channel print-initialized | grep 84
-snet channel print-initialized | grep 7234.345
+snet channel print-initialized | grep 3
 
 snet channel print-initialized --only-id
-snet channel print-initialized --only-id | grep 7234.345 && exit 1 || echo "fail as expected"
+snet channel print-initialized --only-id | grep 3 && exit 1 || echo "fail as expected"
 
-snet channel print-initialized --filter-signer | grep 7234.345 && exit 1 || echo "fail as expected"
-snet channel print-initialized --filter-signer --wallet-index 1 | grep 7234.345
+snet channel print-initialized --filter-signer | grep 3 && exit 1 || echo "fail as expected"
+snet channel print-initialized --filter-signer --wallet-index 1 | grep 3
 
 snet channel print-initialized-filter-org testo group2
-snet channel print-initialized-filter-org testo group2 | grep 7234.345
+snet channel print-initialized-filter-org testo group2 | grep 3
 
 rm -rf ~/.snet/mpe_client/
 
@@ -169,14 +169,14 @@ rm -rf ~/.snet/mpe_client/
 snet channel open-init testo group1 0 0 -y -q
 snet channel open-init testo group2 0 0 -y -q
 snet channel open-init testo group2 0 0 --signer 0x3b2b3C2e2E7C93db335E69D827F3CC4bC2A2A2cB -y -q
-snet channel print-initialized | grep 7234.345
+snet channel print-initialized | grep 3
 snet channel print-initialized | grep 84
 snet channel open-init-metadata testo group2 0 0
 
 rm -rf ~/.snet/mpe_client/
 # this should open new channel instead of using old one
 snet channel open-init testo group2 111222 1 --open-new-anyway -yq
-snet channel print-initialized | grep 9712.1234 && exit 1 || echo "fail as expected"
+snet channel print-initialized | grep 4 && exit 1 || echo "fail as expected"
 snet channel print-initialized-filter-org testo group2 | grep 111222
 
 rm -rf ~/.snet/mpe_client/
