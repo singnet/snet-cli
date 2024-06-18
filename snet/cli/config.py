@@ -236,25 +236,33 @@ class Config(ConfigParser):
                 "default_wallet_index": default_wallet_index
             }
         # TODO: logic for other identity_type
+        else:
+            print("\nThe identity_type parameter value you passed is not supported "
+              "by the sdk at this time.\n")
+            print("The available identity types are:\n"
+                  "    - 'key' (uses a required hex-encoded private key for signing)\n\n")
+            exit(1)
         return identity
 
 
 def first_identity_message_and_exit(is_sdk=False):
     if is_sdk:
-        print("\nPlease create your first identity by passing the 'identity_name'"
+        print("\nPlease create your first identity by passing the 'identity_name' "
               "and 'identity_type' parameters in the config.\n")
+        print("The available identity types are:\n"
+              "    - 'key' (uses a required hex-encoded private key for signing)\n\n")
     else:
         print("\nPlease create your first identity by running 'snet identity create'.\n\n")
-    print("The available identity types are:\n"
-          "    - 'rpc' (yields to a required ethereum json-rpc endpoint for signing using a given wallet\n"
-          "          index)\n"
-          "    - 'mnemonic' (uses a required bip39 mnemonic for HDWallet/account derivation and signing\n"
-          "          using a given wallet index)\n"
-          "    - 'key' (uses a required hex-encoded private key for signing)\n"
-          "    - 'ledger' (yields to a required ledger nano s device for signing using a given wallet\n"
-          "          index)\n"
-          "    - 'trezor' (yields to a required trezor device for signing using a given wallet index)\n"
-          "\n")
+        print("The available identity types are:\n"
+              "    - 'rpc' (yields to a required ethereum json-rpc endpoint for signing using a given wallet\n"
+              "          index)\n"
+              "    - 'mnemonic' (uses a required bip39 mnemonic for HDWallet/account derivation and signing\n"
+              "          using a given wallet index)\n"
+              "    - 'key' (uses a required hex-encoded private key for signing)\n"
+              "    - 'ledger' (yields to a required ledger nano s device for signing using a given wallet\n"
+              "          index)\n"
+              "    - 'trezor' (yields to a required trezor device for signing using a given wallet index)\n"
+              "\n")
     exit(1)
 
 
