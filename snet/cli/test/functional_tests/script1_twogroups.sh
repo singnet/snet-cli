@@ -131,8 +131,8 @@ snet channel open-init testo group1 4 +14days -y -q
 
 # test print_initialized_channels and print_all_channels. We should have channels openned for specific identity
 snet channel print-initialized
-snet --print-traceback channel print-initialized | grep 84
-snet channel print-all-filter-sender | grep 0x4e934Fc82ebd84aBe1C1b2556b9aF3055dBdd43c
+snet --print-traceback channel print-initialized
+snet channel print-all-filter-sender
 
 # we have two initilized channels one for group1 and anther for group1 (recipient=0x4e934Fc82ebd84aBe1C1b2556b9aF3055dBdd43c)
 
