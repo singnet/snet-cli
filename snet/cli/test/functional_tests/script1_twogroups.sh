@@ -106,7 +106,7 @@ rm -r _d1 _d2 _d3
 # client side
 snet account balance
 snet account deposit 100 -y -q
-snet account transfer 0x0067b427E299Eb2A4CBafc0B04C723F77c6d8a18 42 -y -q
+snet account transfer 0x4e934Fc82ebd84aBe1C1b2556b9aF3055dBdd43c 42 -y -q
 snet account withdraw 1 -y -q
 
 #open channel usig org and group
@@ -197,7 +197,7 @@ snet channel print-all-filter-recipient
 #snet channel print-all-filter-group testo group2 | grep 0x52653A9091b5d5021bed06c5118D24b23620c529
 #snet channel print-all-filter-group testo group2 | grep 0x4e934Fc82ebd84aBe1C1b2556b9aF3055dBdd43c && exit 1 || echo "fail as expected"
 #
-#snet channel print-all-filter-group testo group2 |grep 0x0067b427E299Eb2A4CBafc0B04C723F77c6d8a18
+#snet channel print-all-filter-group testo group2 |grep 0x4e934Fc82ebd84aBe1C1b2556b9aF3055dBdd43c
 #
 #snet channel print-all-filter-group-sender testo group2 | grep 0x52653A9091b5d5021bed06c5118D24b23620c529
 #snet channel print-all-filter-group-sender testo group2 | grep 0x4e934Fc82ebd84aBe1C1b2556b9aF3055dBdd43c && exit 1 || echo "fail as expected"
