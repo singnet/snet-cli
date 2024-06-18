@@ -58,10 +58,10 @@ snet organization metadata-init org1 testo individual
 grep org1 organization_metadata.json
 snet organization create testo && exit 1 || echo "fail as expected"
 #
-snet --print-traceback organization add-group group1 0x42A605c07EdE0E1f648aB054775D6D4E38496144 http://5.5.6.7:8089
-snet --print-traceback organization add-group group2 0x42A605c07EdE0E1f648aB054775D6D4E38496144 http://1.2.1.1:8089
+snet --print-traceback organization add-group group1 0x4e934Fc82ebd84aBe1C1b2556b9aF3055dBdd43c http://5.5.6.7:8089
+snet --print-traceback organization add-group group2 0x4e934Fc82ebd84aBe1C1b2556b9aF3055dBdd43c http://1.2.1.1:8089
 grep 5.5.6.7 organization_metadata.json
-grep 0x42A605c07EdE0E1f648aB054775D6D4E38496144 organization_metadata.json
+grep 0x4e934Fc82ebd84aBe1C1b2556b9aF3055dBdd43c organization_metadata.json
 grep 5.5.6.7:8089 organization_metadata.json
 snet --print-traceback organization create testo -y
 snet organization print-metadata org1 testo >organization_metadata_print.json
@@ -134,9 +134,9 @@ snet channel open-init testo group1 9712.1234 +14days -y -q
 # test print_initialized_channels and print_all_channels. We should have channels openned for specific identity
 snet channel print-initialized
 snet --print-traceback channel print-initialized | grep 84
-snet channel print-all-filter-sender | grep 0x42A605c07EdE0E1f648aB054775D6D4E38496144
+snet channel print-all-filter-sender | grep 0x4e934Fc82ebd84aBe1C1b2556b9aF3055dBdd43c
 
-# we have two initilized channels one for group1 and anther for group1 (recipient=0x42A605c07EdE0E1f648aB054775D6D4E38496144)
+# we have two initilized channels one for group1 and anther for group1 (recipient=0x4e934Fc82ebd84aBe1C1b2556b9aF3055dBdd43c)
 
 snet --print-traceback service metadata-init ./service_spec1/ ExampleService --group-name group2 --fixed-price 0.0001 --endpoints 8.8.8.8:2020 --metadata-file service_metadata2.json
 grep "8.8.8.8:2020" service_metadata2.json
@@ -188,19 +188,19 @@ snet channel print-all-filter-sender
 snet channel print-all-filter-recipient
 
 #Uncomment this when all testing is done
-#snet channel print-all-filter-sender | grep  0x42A605c07EdE0E1f648aB054775D6D4E38496144
+#snet channel print-all-filter-sender | grep  0x4e934Fc82ebd84aBe1C1b2556b9aF3055dBdd43c
 #
 #snet channel print-all-filter-recipient | grep 0x52653A9091b5d5021bed06c5118D24b23620c529 && exit 1 || echo "fail as expected"
 #snet channel print-all-filter-recipient --wallet-index 9 |grep 0x52653A9091b5d5021bed06c5118D24b23620c529
 #snet channel print-all-filter-recipient --recipient 0x52653A9091b5d5021bed06c5118D24b23620c529 |grep 0x52653A9091b5d5021bed06c5118D24b23620c529
 #
 #snet channel print-all-filter-group testo group2 | grep 0x52653A9091b5d5021bed06c5118D24b23620c529
-#snet channel print-all-filter-group testo group2 | grep 0x42A605c07EdE0E1f648aB054775D6D4E38496144 && exit 1 || echo "fail as expected"
+#snet channel print-all-filter-group testo group2 | grep 0x4e934Fc82ebd84aBe1C1b2556b9aF3055dBdd43c && exit 1 || echo "fail as expected"
 #
 #snet channel print-all-filter-group testo group2 |grep 0x0067b427E299Eb2A4CBafc0B04C723F77c6d8a18
 #
 #snet channel print-all-filter-group-sender testo group2 | grep 0x52653A9091b5d5021bed06c5118D24b23620c529
-#snet channel print-all-filter-group-sender testo group2 | grep 0x42A605c07EdE0E1f648aB054775D6D4E38496144 && exit 1 || echo "fail as expected"
+#snet channel print-all-filter-group-sender testo group2 | grep 0x4e934Fc82ebd84aBe1C1b2556b9aF3055dBdd43c && exit 1 || echo "fail as expected"
 
 # should fail because of wrong groupId
 snet channel init-metadata testo metadata-tests 0 --metadata-file service_metadata2.json && exit 1 || echo "fail as expected"
