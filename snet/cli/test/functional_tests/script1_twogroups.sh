@@ -46,12 +46,10 @@ grep fixed_price service_metadata2.json
 snet service metadata-init ./service_spec1/ ExampleService --encoding json --service-type jsonrpc --group-name group1 --fixed-price 0.0001 --endpoints 8.8.8.8:2020 9.8.9.8:8080 --metadata-file service_metadata2.json
 grep fixed_price service_metadata2.json
 grep 9.8.9.8:8080 service_metadata2.json
-echo HERE0
 IPFS_HASH=$(snet service publish-in-ipfs)
 echo $IPFS_HASH
 #ipfs cat $IPFS_HASH >service_metadata2.json
 echo $IPFS_HASH > service_metadata2.json
-echo HERE1
 # compare service_metadata.json and service_metadata2.json
 #cmp <(jq -S . service_metadata.json) <(jq -S . service_metadata2.json)
 snet organization metadata-init org1 testo individual
