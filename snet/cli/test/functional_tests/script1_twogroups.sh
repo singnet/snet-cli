@@ -64,7 +64,7 @@ grep 5.5.6.7 organization_metadata.json
 grep 0x4e934Fc82ebd84aBe1C1b2556b9aF3055dBdd43c organization_metadata.json
 grep 5.5.6.7:8089 organization_metadata.json
 snet --print-traceback organization create testo -y
-snet organization print-metadata org1 testo >organization_metadata_print.json
+snet organization print-metadata testo >organization_metadata_print.json
 
 snet service metadata-add-tags tag1 tag2 tag3
 grep "tag1" service_metadata.json
@@ -105,7 +105,7 @@ rm -r _d1 _d2 _d3
 
 # client side
 snet account balance
-snet account deposit 123456 -y -q
+snet account deposit 100 -y -q
 snet account transfer 0x0067b427E299Eb2A4CBafc0B04C723F77c6d8a18 42 -y -q
 snet account withdraw 1 -y -q
 
