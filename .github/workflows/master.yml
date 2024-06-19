@@ -65,4 +65,4 @@ jobs:
       - name: functional tests for cli
         run: |
           # sh -ex ./snet/cli/test/utils/run_all_functional.sh
-          python3 ./snet/cli/test/utils/test_entry_point.py
+          python3 ./snet/cli/test/functional_teststest_entry_point.py
