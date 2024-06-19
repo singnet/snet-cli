@@ -18,13 +18,13 @@ jobs:
           apt install -y libudev-dev libusb-1.0-0-dev curl jq
           apt install -y python3-pip python3.11-venv
 
-      - name: install ipfs
-        run: |
-          wget https://dist.ipfs.io/go-ipfs/v0.9.0/go-ipfs_v0.9.0_linux-amd64.tar.gz
-          tar -xvzf go-ipfs_v0.9.0_linux-amd64.tar.gz
-          bash go-ipfs/install.sh
-          ipfs --version
-          node --version
+      # - name: install ipfs
+      #   run: |
+      #     wget https://dist.ipfs.io/go-ipfs/v0.9.0/go-ipfs_v0.9.0_linux-amd64.tar.gz
+      #     tar -xvzf go-ipfs_v0.9.0_linux-amd64.tar.gz
+      #     bash go-ipfs/install.sh
+      #     ipfs --version
+      #     node --version
 
       - name: clone repo
         uses: actions/checkout@v3
@@ -38,7 +38,7 @@ jobs:
           
       - name: install snet-cli
         run: |
-          ./scripts/blockchain install
+          # ./scripts/blockchain install
           pip3 install -e . --break-system-packages
           
       # - name: install platform-contracts
