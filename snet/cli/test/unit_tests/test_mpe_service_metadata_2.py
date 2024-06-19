@@ -6,7 +6,7 @@ mainly add_media, remove_media, remove_all_media, swap_media_order, and change_m
 import unittest
 from unittest.mock import patch
 
-from snet.snet_cli.metadata.service import MPEServiceMetadata
+from snet.cli.metadata.service import MPEServiceMetadata
 
 
 class TestMediaMethods(unittest.TestCase):

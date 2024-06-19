@@ -20,7 +20,7 @@ from snet.cli.utils.config import get_contract_address, get_field_from_args_or_s
     read_default_contract_address
 from snet.cli.utils.ipfs_utils import bytesuri_to_hash, get_from_ipfs_and_checkhash, \
     hash_to_bytesuri, publish_file_in_ipfs
-from snet.cli.utils.utils import DefaultAttributeObject, get_web3, serializable, type_converter, \
+from snet.cli.utils.utils import DefaultAttributeObject, get_web3, is_valid_url, serializable, type_converter, \
     get_cli_version, bytes32_to_str
 
 
@@ -391,6 +391,10 @@ class OrganizationCommand(BlockchainCommand):
             print(
                 "Organization metadata json file not found ,Please check --metadata-file path ")
             raise e
+
+        for endpoint in self.args.endpoints:
+            if not is_valid_url(endpoint):
+                raise Exception(f"Invalid {endpoint} endpoint passed")
 
         payment_storage_client = PaymentStorageClient(self.args.payment_channel_connection_timeout,
                                                       self.args.payment_channel_request_timeout, self.args.endpoints)
