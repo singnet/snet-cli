@@ -17,7 +17,6 @@ jobs:
           apt update
           apt install -y libudev-dev libusb-1.0-0-dev curl jq
           apt install -y python3-pip python3.11-venv
-          echo master
 
       - name: install ipfs
         run: |
@@ -26,8 +25,6 @@ jobs:
           bash go-ipfs/install.sh
           ipfs --version
           node --version
-          pwd
-          ls
 
       - name: clone repo
         uses: actions/checkout@v3
@@ -35,7 +32,7 @@ jobs:
       - name: install pip packages
         run: |
           pip3 install -r requirements.txt --break-system-packages
-          pip3 install nose --break-system-packages
+          # pip3 install nose --break-system-packages
           # pip3 uninstall pyreadline --break-system-packages
           # pip3 install pyreadline3 --break-system-packages
           
@@ -53,12 +50,12 @@ jobs:
       #     npm install ganache-cli
       #     npm run-script compile
 
-      - name: build example service
-        run: |
-          git clone https://github.com/singnet/example-service.git
-          cd example-service
-          pip3 install -r requirements.txt --break-system-packages
-          sh buildproto.sh
+      # - name: build example service
+      #   run: |
+      #     git clone https://github.com/singnet/example-service.git
+      #     cd example-service
+      #     pip3 install -r requirements.txt --break-system-packages
+      #     sh buildproto.sh
           
       # - name: unit tests
       #   run: |
@@ -67,6 +64,5 @@ jobs:
 
       - name: functional tests for cli
         run: |
-          # mkdir ~/.snet
-          # cp ./snet/cli/test/utils/config ~/.snet/
-          sh -ex ./snet/cli/test/utils/run_all_functional.sh
+          # sh -ex ./snet/cli/test/utils/run_all_functional.sh
+          python3 ./snet/cli/test/utils/test_entry_point.py
