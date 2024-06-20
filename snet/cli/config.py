@@ -248,7 +248,7 @@ class Config(ConfigParser):
 def first_identity_message_and_exit(is_sdk=False):
     if is_sdk:
         print("\nPlease create your first identity by passing the 'identity_name' "
-              "and 'identity_type' parameters in the config.\n")
+              "and 'identity_type' parameters in SDK config.\n")
         print("The available identity types are:\n"
               "    - 'key' (uses a required hex-encoded private key for signing)\n\n")
     else:
