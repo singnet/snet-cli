@@ -10,7 +10,7 @@ The package is published in PyPI at the following link:
 
 |Package                                       |Description                                                          |
 |----------------------------------------------|---------------------------------------------------------------------|
-|[snet-cli](https://pypi.org/project/snet.cli/)|Command line interface to interact with the SingularityNET platform  |
+|[snet.cli](https://pypi.org/project/snet.cli/)|Command line interface to interact with the SingularityNET platform  |
 
 ## License  
   

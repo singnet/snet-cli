@@ -1,13 +1,17 @@
 from configparser import ConfigParser, ExtendedInterpolation
 from pathlib import Path
+import sys
 
 default_snet_folder = Path("~").expanduser().joinpath(".snet")
+DEFAULT_NETWORK = "sepolia"
 
 
 class Config(ConfigParser):
-    def __init__(self, _snet_folder=default_snet_folder):
+    def __init__(self, _snet_folder=default_snet_folder, sdk_config=None):
         super(Config, self).__init__(interpolation=ExtendedInterpolation(), delimiters=("=",))
         self._config_file = _snet_folder.joinpath("config")
+        self.sdk_config = sdk_config
+        self.is_sdk = True if sdk_config else False
         if self._config_file.exists():
             with open(self._config_file) as f:
                 self.read_file(f)
@@ -21,7 +25,7 @@ class Config(ConfigParser):
 
     def safe_get_session_identity_network_names(self):
         if "identity" not in self["session"]:
-            first_identity_message_and_exit()
+            first_identity_message_and_exit(is_sdk=self.is_sdk)
 
         session_identity = self["session"]["identity"]
         self._check_section("identity.%s" % session_identity)
@@ -128,7 +132,7 @@ class Config(ConfigParser):
         self._get_network_section(network)[key] = str(value)
         self._persist()
 
-    def add_identity(self, identity_name, identity, out_f):
+    def add_identity(self, identity_name, identity, out_f=sys.stdout):
         identity_section = "identity.%s" % identity_name
         if identity_section in self:
             raise Exception("Identity section %s already exists in config" % identity_section)
@@ -190,7 +194,18 @@ class Config(ConfigParser):
             "default_eth_rpc_endpoint": "https://sepolia.infura.io/v3/09027f4a13e841d48dbfefc67e7685d5",
         }
         self["ipfs"] = {"default_ipfs_endpoint": "/dns/ipfs.singularitynet.io/tcp/80/"}
-        self["session"] = {"network": "sepolia"}
+        network = self.get_param_from_sdk_config("network")
+        if network:
+            if network not in self.get_all_networks_names():
+                raise Exception("Network '%s' is not in config" % network)
+            self["session"] = {"network": network}
+        else:
+            self["session"] = {"network": DEFAULT_NETWORK}
+        identity_name = self.get_param_from_sdk_config("identity_name")
+        identity_type = self.get_param_from_sdk_config("identity_type")
+        if identity_name and identity_type:
+            identity = self.setup_identity()
+            self.add_identity(identity_name, identity)
         self._persist()
         print("We've created configuration file with default values in: %s\n" % str(self._config_file))
 
@@ -203,19 +218,51 @@ class Config(ConfigParser):
             self.write(f)
         self._config_file.chmod(0o600)
 
+    def get_param_from_sdk_config(self, param: str, alternative=None):
+        if self.sdk_config:
+            return self.sdk_config.get(param, alternative)
+        return None
 
-def first_identity_message_and_exit():
-    print("\nPlease create your first identity by running 'snet identity create'.\n\n"
-          "The available identity types are:\n"
-          "    - 'rpc' (yields to a required ethereum json-rpc endpoint for signing using a given wallet\n"
-          "          index)\n"
-          "    - 'mnemonic' (uses a required bip39 mnemonic for HDWallet/account derivation and signing\n"
-          "          using a given wallet index)\n"
-          "    - 'key' (uses a required hex-encoded private key for signing)\n"
-          "    - 'ledger' (yields to a required ledger nano s device for signing using a given wallet\n"
-          "          index)\n"
-          "    - 'trezor' (yields to a required trezor device for signing using a given wallet index)\n"
-          "\n")
+    def setup_identity(self):
+        identity_type = self.get_param_from_sdk_config("identity_type")
+        private_key = self.get_param_from_sdk_config("private_key")
+        default_wallet_index = self.get_param_from_sdk_config("wallet_index", 0)
+        if not identity_type:
+            raise Exception("identity_type not passed")
+        if identity_type == "key":
+            identity = {
+                "identity_type": "key",
+                "private_key": private_key,
+                "default_wallet_index": default_wallet_index
+            }
+        # TODO: logic for other identity_type
+        else:
+            print("\nThe identity_type parameter value you passed is not supported "
+              "by the sdk at this time.\n")
+            print("The available identity types are:\n"
+                  "    - 'key' (uses a required hex-encoded private key for signing)\n\n")
+            exit(1)
+        return identity
+
+
+def first_identity_message_and_exit(is_sdk=False):
+    if is_sdk:
+        print("\nPlease create your first identity by passing the 'identity_name' "
+              "and 'identity_type' parameters in SDK config.\n")
+        print("The available identity types are:\n"
+              "    - 'key' (uses a required hex-encoded private key for signing)\n\n")
+    else:
+        print("\nPlease create your first identity by running 'snet identity create'.\n\n")
+        print("The available identity types are:\n"
+              "    - 'rpc' (yields to a required ethereum json-rpc endpoint for signing using a given wallet\n"
+              "          index)\n"
+              "    - 'mnemonic' (uses a required bip39 mnemonic for HDWallet/account derivation and signing\n"
+              "          using a given wallet index)\n"
+              "    - 'key' (uses a required hex-encoded private key for signing)\n"
+              "    - 'ledger' (yields to a required ledger nano s device for signing using a given wallet\n"
+              "          index)\n"
+              "    - 'trezor' (yields to a required trezor device for signing using a given wallet index)\n"
+              "\n")
     exit(1)
 
 
