@@ -3,7 +3,7 @@ from enum import Enum
 from json import JSONEncoder
 import json
 
-import validators
+from snet.cli.utils.utils import is_valid_url
 
 
 class DefaultEncoder(JSONEncoder):
@@ -34,7 +34,7 @@ class PaymentStorageClient(object):
         endpoints = json_data["endpoints"]
         if endpoints:
             for endpoint in endpoints:
-                if not validators.url(endpoint):
+                if not is_valid_url(endpoint):
                     raise Exception("Invalid endpoint passed in json file")
         return cls(**json_data)
 
