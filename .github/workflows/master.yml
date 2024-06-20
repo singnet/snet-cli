@@ -64,5 +64,8 @@ jobs:
 
       - name: functional tests for cli
         run: |
+          export SNET_TEST_WALLET_PRIVATE_KEY=${{ secrets.PRIV_KEY }}
+          export SNET_TEST_INFURA_KEY=${{ secrets.INF_KEY }}
+          export FORMER_SNET_TEST_INFURA_KEY=${{ secrets.FORM_INF_KEY }}
           # sh -ex ./snet/cli/test/utils/run_all_functional.sh
           python3 ./snet/cli/test/functional_tests/test_entry_point.py
