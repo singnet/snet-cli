@@ -9,14 +9,10 @@ snet service metadata-add-endpoints group2 8.8.8.8:2 1.2.3.4:800
 snet organization metadata-init org1 testo individual
 snet organization add-group group0 0x42A605c07EdE0E1f648aB054775D6D4E38496144 5.5.6.7:8089
 snet organization add-group group1 0x0067b427E299Eb2A4CBafc0B04C723F77c6d8a18 1.2.1.1:8089
-echo HEREEEEEEE000000
 snet organization add-group group2 0x32267d505B1901236508DcDa64C1D0d5B9DF639a 1.2.1.1:8089
-echo HEREEEEEEE111111
 snet organization create testo -y -q
-echo HEREEEEEEE222222
 #snet service metadata-remove-group group0
 snet service publish testo tests -y -q
-echo HEREEEEEEE333333
 
 EXPIRATION0=$(($(snet channel block-number) - 1))
 EXPIRATION1=$(($(snet channel block-number) - 1))
