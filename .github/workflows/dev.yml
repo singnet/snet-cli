@@ -1,0 +1,73 @@
+name: tests_development
+on:
+  # push:
+  #   branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+  workflow_dispatch:
+
+jobs:
+    run_tests_development:
+      runs-on: ubuntu-latest
+      container: node:20-bookworm
+      steps:
+        
+      - name: install packs
+        run: |
+          apt update
+          apt install -y libudev-dev libusb-1.0-0-dev curl jq
+          apt install -y python3-pip python3.11-venv
+
+      # - name: install ipfs
+      #   run: |
+      #     wget https://dist.ipfs.io/go-ipfs/v0.9.0/go-ipfs_v0.9.0_linux-amd64.tar.gz
+      #     tar -xvzf go-ipfs_v0.9.0_linux-amd64.tar.gz
+      #     bash go-ipfs/install.sh
+      #     ipfs --version
+      #     node --version
+
+      - name: clone repo
+        uses: actions/checkout@v3
+
+      - name: install pip packages
+        run: |
+          pip3 install -r requirements.txt --break-system-packages
+          # pip3 install nose --break-system-packages
+          # pip3 uninstall pyreadline --break-system-packages
+          # pip3 install pyreadline3 --break-system-packages
+          
+      - name: install snet-cli
+        run: |
+          # ./scripts/blockchain install
+          pip3 install -e . --break-system-packages
+          
+      # - name: install platform-contracts
+      #   run: |
+      #     cd ..
+      #     git clone https://github.com/singnet/platform-contracts.git
+      #     cd platform-contracts
+      #     npm install
+      #     npm install ganache-cli
+      #     npm run-script compile
+
+      # - name: build example service
+      #   run: |
+      #     git clone https://github.com/singnet/example-service.git
+      #     cd example-service
+      #     pip3 install -r requirements.txt --break-system-packages
+      #     sh buildproto.sh
+          
+      # - name: unit tests
+      #   run: |
+      #     cd ./snet/cli/test
+      #     nosetests -v --with-doctest
+
+      - name: functional tests for cli
+        run: |
+          export SNET_TEST_WALLET_PRIVATE_KEY=${{ secrets.PRIV_KEY }}
+          export SNET_TEST_INFURA_KEY=${{ secrets.INF_KEY }}
+          export FORMER_SNET_TEST_INFURA_KEY=${{ secrets.FORM_INF_KEY }}
+          export PIP_BREAK_SYSTEM_PACKAGES=1
+          export PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python
+          # sh -ex ./snet/cli/test/utils/run_all_functional.sh
+          python3 ./snet/cli/test/functional_tests/test_entry_point.py
