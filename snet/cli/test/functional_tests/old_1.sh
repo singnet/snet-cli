@@ -46,23 +46,24 @@ grep fixed_price service_metadata2.json
 snet service metadata-init ./service_spec1/ ExampleService --encoding json --service-type jsonrpc --group-name group1 --fixed-price 0.0001 --endpoints 8.8.8.8:2020 9.8.9.8:8080 --metadata-file service_metadata2.json
 grep fixed_price service_metadata2.json
 grep 9.8.9.8:8080 service_metadata2.json
+
 IPFS_HASH=$(snet service publish-in-ipfs)
 echo $IPFS_HASH
-#ipfs cat $IPFS_HASH >service_metadata2.json
-echo $IPFS_HASH > service_metadata2.json
+ipfs cat $IPFS_HASH >service_metadata2.json
+
 # compare service_metadata.json and service_metadata2.json
-#cmp <(jq -S . service_metadata.json) <(jq -S . service_metadata2.json)
+cmp <(jq -S . service_metadata.json) <(jq -S . service_metadata2.json)
 snet organization metadata-init org1 testo individual
 grep org1 organization_metadata.json
 snet organization create testo && exit 1 || echo "fail as expected"
 #
-snet --print-traceback organization add-group group1 0x4e934Fc82ebd84aBe1C1b2556b9aF3055dBdd43c http://5.5.6.7:8089
-snet --print-traceback organization add-group group2 0x4e934Fc82ebd84aBe1C1b2556b9aF3055dBdd43c http://1.2.1.1:8089
+snet --print-traceback organization add-group group1 0x42A605c07EdE0E1f648aB054775D6D4E38496144 5.5.6.7:8089
+snet --print-traceback organization add-group group2 0x42A605c07EdE0E1f648aB054775D6D4E38496144 1.2.1.1:8089
 grep 5.5.6.7 organization_metadata.json
-grep 0x4e934Fc82ebd84aBe1C1b2556b9aF3055dBdd43c organization_metadata.json
+grep 0x42A605c07EdE0E1f648aB054775D6D4E38496144 organization_metadata.json
 grep 5.5.6.7:8089 organization_metadata.json
 snet --print-traceback organization create testo -y
-snet organization print-metadata testo >organization_metadata_print.json
+snet organization print-metadata org1 testo >organization_metadata_print.json
 
 snet service metadata-add-tags tag1 tag2 tag3
 grep "tag1" service_metadata.json
@@ -103,38 +104,38 @@ rm -r _d1 _d2 _d3
 
 # client side
 snet account balance
-snet account deposit 10 -y -q
-snet account transfer 0x4e934Fc82ebd84aBe1C1b2556b9aF3055dBdd43c 5 -y -q
+snet account deposit 123456 -y -q
+snet account transfer 0x0067b427E299Eb2A4CBafc0B04C723F77c6d8a18 42 -y -q
 snet account withdraw 1 -y -q
+
 #open channel usig org and group
-snet --print-traceback channel open-init-metadata testo group1 5 1 -y -q
+snet --print-traceback channel open-init-metadata testo group1 42 1 -y -q
 snet channel print-initialized
-ch=$(snet channel print-initialized | tail -n 1 | awk '{print $3}')
-snet channel claim-timeout $ch -y -q
+snet channel claim-timeout 0 -y -q
 snet channel print-initialized
 # we do not send transaction second time
-snet channel claim-timeout $ch -y -q && exit 1 || echo "fail as expected"
+snet channel claim-timeout 0 -y -q && exit 1 || echo "fail as expected"
 
-snet channel extend-add $ch --expiration 10000 --amount 5 -y -q
+snet channel extend-add 0 --expiration 10000 --amount 42 -y -q
 snet channel print-initialized
-snet channel extend-add $ch --amount 5 -y -q
+snet channel extend-add 0 --amount 42 -y -q
 snet channel print-initialized
-snet channel extend-add $ch --expiration +10000blocks -y -q
-snet channel extend-add $ch --expiration +10000days -y -q && exit 1 || echo "fail as expected"
-snet channel extend-add $ch --expiration +10000days --force -y -q
-snet channel extend-add $ch --expiration 57600000 --force -y -q && exit 1 || echo "fail as expected"
+snet channel extend-add 0 --expiration +10000blocks -y -q
+snet channel extend-add 0 --expiration +10000days -y -q && exit 1 || echo "fail as expected"
+snet channel extend-add 0 --expiration +10000days --force -y -q
+snet channel extend-add 0 --expiration 57600000 --force -y -q && exit 1 || echo "fail as expected"
 
 EXPIRATION1=$(($(snet channel block-number) + 57600000))
-snet channel extend-add $ch --expiration $EXPIRATION1 --force --amount 0 -y -q
+snet channel extend-add 0 --expiration $EXPIRATION1 --force --amount 0 -y -q
 
-snet channel open-init testo group1 4 +14days -y -q
+snet channel open-init testo group1 9712.1234 +14days -y -q
 
 # test print_initialized_channels and print_all_channels. We should have channels openned for specific identity
 snet channel print-initialized
-snet --print-traceback channel print-initialized
-snet channel print-all-filter-sender
+snet --print-traceback channel print-initialized | grep 84
+snet channel print-all-filter-sender | grep 0x42A605c07EdE0E1f648aB054775D6D4E38496144
 
-# we have two initilized channels one for group1 and anther for group1 (recipient=0x4e934Fc82ebd84aBe1C1b2556b9aF3055dBdd43c)
+# we have two initilized channels one for group1 and anther for group1 (recipient=0x42A605c07EdE0E1f648aB054775D6D4E38496144)
 
 snet --print-traceback service metadata-init ./service_spec1/ ExampleService --group-name group2 --fixed-price 0.0001 --endpoints 8.8.8.8:2020 --metadata-file service_metadata2.json
 grep "8.8.8.8:2020" service_metadata2.json
@@ -144,24 +145,24 @@ grep "8.8.8.8:2020" service_metadata2.json && exit 1 || echo "fail as expected"
 
 snet service publish testo tests2 -y -q --metadata-file service_metadata2.json
 
-snet channel open-init testo group2 3 1 -y -q --signer 0x3b2b3C2e2E7C93db335E69D827F3CC4bC2A2A2cB
+snet channel open-init testo group2 7234.345 1 -y -q --signer 0x3b2b3C2e2E7C93db335E69D827F3CC4bC2A2A2cB
 
 snet --print-traceback channel print-initialized-filter-org testo group2
-snet channel print-initialized-filter-org testo group2 | grep 3
-snet channel print-initialized-filter-org testo group2 | grep 4 && exit 1 || echo "fail as expected"
+snet channel print-initialized-filter-org testo group2 | grep 7234.345
+snet channel print-initialized-filter-org testo group2 | grep 9712.1234 && exit 1 || echo "fail as expected"
 
 snet channel print-initialized
 snet channel print-initialized | grep 84
-snet channel print-initialized | grep 3
+snet channel print-initialized | grep 7234.345
 
 snet channel print-initialized --only-id
-snet channel print-initialized --only-id | grep 3 && exit 1 || echo "fail as expected"
+snet channel print-initialized --only-id | grep 7234.345 && exit 1 || echo "fail as expected"
 
-snet channel print-initialized --filter-signer | grep 3 && exit 1 || echo "fail as expected"
-snet channel print-initialized --filter-signer --wallet-index 1 | grep 3
+snet channel print-initialized --filter-signer | grep 7234.345 && exit 1 || echo "fail as expected"
+snet channel print-initialized --filter-signer --wallet-index 1 | grep 7234.345
 
 snet channel print-initialized-filter-org testo group2
-snet channel print-initialized-filter-org testo group2 | grep 3
+snet channel print-initialized-filter-org testo group2 | grep 7234.345
 
 rm -rf ~/.snet/mpe_client/
 
@@ -169,14 +170,14 @@ rm -rf ~/.snet/mpe_client/
 snet channel open-init testo group1 0 0 -y -q
 snet channel open-init testo group2 0 0 -y -q
 snet channel open-init testo group2 0 0 --signer 0x3b2b3C2e2E7C93db335E69D827F3CC4bC2A2A2cB -y -q
-snet channel print-initialized | grep 3
+snet channel print-initialized | grep 7234.345
 snet channel print-initialized | grep 84
 snet channel open-init-metadata testo group2 0 0
 
 rm -rf ~/.snet/mpe_client/
 # this should open new channel instead of using old one
 snet channel open-init testo group2 111222 1 --open-new-anyway -yq
-snet channel print-initialized | grep 4 && exit 1 || echo "fail as expected"
+snet channel print-initialized | grep 9712.1234 && exit 1 || echo "fail as expected"
 snet channel print-initialized-filter-org testo group2 | grep 111222
 
 rm -rf ~/.snet/mpe_client/
@@ -186,19 +187,19 @@ snet channel print-all-filter-sender
 snet channel print-all-filter-recipient
 
 #Uncomment this when all testing is done
-#snet channel print-all-filter-sender | grep  0x4e934Fc82ebd84aBe1C1b2556b9aF3055dBdd43c
+#snet channel print-all-filter-sender | grep  0x42A605c07EdE0E1f648aB054775D6D4E38496144
 #
 #snet channel print-all-filter-recipient | grep 0x52653A9091b5d5021bed06c5118D24b23620c529 && exit 1 || echo "fail as expected"
 #snet channel print-all-filter-recipient --wallet-index 9 |grep 0x52653A9091b5d5021bed06c5118D24b23620c529
 #snet channel print-all-filter-recipient --recipient 0x52653A9091b5d5021bed06c5118D24b23620c529 |grep 0x52653A9091b5d5021bed06c5118D24b23620c529
 #
 #snet channel print-all-filter-group testo group2 | grep 0x52653A9091b5d5021bed06c5118D24b23620c529
-#snet channel print-all-filter-group testo group2 | grep 0x4e934Fc82ebd84aBe1C1b2556b9aF3055dBdd43c && exit 1 || echo "fail as expected"
+#snet channel print-all-filter-group testo group2 | grep 0x42A605c07EdE0E1f648aB054775D6D4E38496144 && exit 1 || echo "fail as expected"
 #
-#snet channel print-all-filter-group testo group2 |grep 0x4e934Fc82ebd84aBe1C1b2556b9aF3055dBdd43c
+#snet channel print-all-filter-group testo group2 |grep 0x0067b427E299Eb2A4CBafc0B04C723F77c6d8a18
 #
 #snet channel print-all-filter-group-sender testo group2 | grep 0x52653A9091b5d5021bed06c5118D24b23620c529
-#snet channel print-all-filter-group-sender testo group2 | grep 0x4e934Fc82ebd84aBe1C1b2556b9aF3055dBdd43c && exit 1 || echo "fail as expected"
+#snet channel print-all-filter-group-sender testo group2 | grep 0x42A605c07EdE0E1f648aB054775D6D4E38496144 && exit 1 || echo "fail as expected"
 
 # should fail because of wrong groupId
 snet channel init-metadata testo metadata-tests 0 --metadata-file service_metadata2.json && exit 1 || echo "fail as expected"
