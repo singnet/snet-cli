@@ -57,5 +57,5 @@ snet identity create --private-key "$SNET_TEST_WALLET_PRIVATE_KEY" test key --ne
 sed -i "s/$FORMER_SNET_TEST_INFURA_KEY/$SNET_TEST_INFURA_KEY/g" ~/.snet/config
 snet session
 export PYTHONPATH=$cwd
-# python3 $cwd"./snet/cli/test/functional_tests/mint/mint.py"
+python $cwd"./snet/cli/test/functional_tests/mint/mint.py"
 snet account balance

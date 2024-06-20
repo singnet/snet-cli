@@ -2,10 +2,16 @@
 # PYTHON_ARGCOMPLETE_OK
 
 import sys
+import warnings
 
 import argcomplete
 
-from snet.cli import arguments
+with warnings.catch_warnings():
+    # Suppress the eth-typing package`s warnings related to some new networks
+    warnings.filterwarnings("ignore", "Network .* does not have a valid ChainId. eth-typing should be "
+                                      "updated with the latest networks.", UserWarning)
+    from snet.cli import arguments
+
 from snet.cli.config import Config
 
 

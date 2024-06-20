@@ -12,7 +12,7 @@ from snet.cli.commands.commands import BlockchainCommand
 from snet.cli.metadata.organization import OrganizationMetadata
 from snet.cli.metadata.service import MPEServiceMetadata, load_mpe_service_metadata, mpe_service_metadata_from_json
 from snet.cli.utils import ipfs_utils
-from snet.cli.utils.utils import open_grpc_channel, type_converter
+from snet.cli.utils.utils import is_valid_url, open_grpc_channel, type_converter
 
 
 class MPEServiceCommand(BlockchainCommand):
@@ -120,6 +120,8 @@ class MPEServiceCommand(BlockchainCommand):
             metadata.add_group(self.args.group_name)
             if self.args.endpoints:
                 for endpoint in self.args.endpoints:
+                    if not is_valid_url(endpoint):
+                        raise Exception(f"Invalid {endpoint} endpoint passed")
                     metadata.add_endpoint_to_group(
                         self.args.group_name, endpoint)
             if self.args.fixed_price is not None:
