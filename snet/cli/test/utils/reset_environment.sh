@@ -53,8 +53,8 @@ rm -rf ~/.snet
 # Create First identity (snet-user = first ganache).
 # (snet will automatically swith to this new identity)
 # snet identity create snet-user rpc --network local
-snet identity create --private-key "066f6b7b65102d486b7efea66764b85f36b2c3dbbcf76c55acbae6c9d4b1a1b7" test key --network sepolia
-sed -i "s/09027f4a13e841d48dbfefc67e7685d5/300c8c0bc4f5455392b9006dea55f0ee/g" ~/.snet/config
+snet identity create --private-key "$SNET_TEST_WALLET_PRIVATE_KEY" test key --network sepolia
+sed -i "s/$FORMER_SNET_TEST_INFURA_KEY/$SNET_TEST_INFURA_KEY/g" ~/.snet/config
 snet session
 export PYTHONPATH=$cwd
 # python3 $cwd"./snet/cli/test/functional_tests/mint/mint.py"
