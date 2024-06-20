@@ -1,4 +1,4 @@
-name: tests
+name: tests_master
 on:
   # push:
   #   branches: [ "master" ]
@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 jobs:
-    run_tests:
+    run_tests_master:
       runs-on: ubuntu-latest
       container: node:20-bookworm
       steps:
