@@ -286,7 +286,7 @@ def add_organization_options(parser):
     p.add_argument("endpoints", nargs='*', help="Endpoints for the first group")
     p.add_argument("--payment-expiration-threshold", type=int, default=100, help="Payment Expiration threshold")
     p.add_argument("--payment-channel-storage-type", default="etcd", help="Storage channel for payment")
-    p.add_argument("--payment-channel-connection-timeout", default="100s", help="Payment channel connection timeout ")
+    p.add_argument("--payment-channel-connection-timeout", default="7s", help="Payment channel connection timeout ")
     p.add_argument("--payment-channel-request-timeout", default="5s", help="Payment channel request timeout")
     add_metadatafile_argument_for_org(p)
     add_p_registry_address_opt(p)
