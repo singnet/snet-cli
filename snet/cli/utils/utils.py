@@ -8,13 +8,18 @@ import importlib.resources
 from importlib.metadata import distribution
 from urllib.parse import urlparse
 from pathlib import Path, PurePath
+from lighthouseweb3 import Lighthouse
+import io
+import tarfile
 
 import web3
 import grpc
 from grpc_tools.protoc import main as protoc
+from trezorlib.cli.firmware import download
 
 from snet import cli
 from snet.cli.resources.root_certificate import certificate
+from snet.cli.utils.ipfs_utils import get_from_ipfs_and_checkhash
 
 RESOURCES_PATH = PurePath(os.path.dirname(cli.__file__)).joinpath("resources")
 
@@ -308,3 +313,52 @@ def is_valid_url(url):
         r'(?::\d+)?'
         r'(?:/?|[/?]\S+)$', re.IGNORECASE)
     return re.match(regex, url) is not None
+
+
+def bytesuri_to_hash(s, to_decode=True):
+    if to_decode:
+        s = s.rstrip(b"\0").decode('ascii')
+    if s.startswith("ipfs://"):
+        return "ipfs", s[7:]
+    elif s.startswith("filecoin://"):
+        return "filecoin", s[11:]
+    else:
+        raise Exception("We support only ipfs and filecoin uri in Registry")
+
+
+def get_file_from_filecoin(cid):
+    lighthouse_client = Lighthouse(" ")
+    downloaded_file, _ = lighthouse_client.download(cid)
+    return downloaded_file
+
+
+def download_and_safe_extract_proto(service_api_source, protodir, ipfs_client):
+    """
+    Tar files might be dangerous (see https://bugs.python.org/issue21109,
+    and https://docs.python.org/3/library/tarfile.html, TarFile.extractall warning)
+    we extract only simple files
+    """
+    try:
+        storage_type, service_api_source = bytesuri_to_hash(service_api_source, to_decode=False)
+    except Exception:
+        storage_type = "ipfs"
+
+    if storage_type == "ipfs":
+        spec_tar = get_from_ipfs_and_checkhash(ipfs_client, service_api_source)
+    else:
+        spec_tar = get_file_from_filecoin(service_api_source)
+
+    with tarfile.open(fileobj=io.BytesIO(spec_tar)) as f:
+        for m in f.getmembers():
+            if os.path.dirname(m.name) != "":
+                raise Exception(
+                    "tarball has directories. We do not support it.")
+            if not m.isfile():
+                raise Exception(
+                    "tarball contains %s which is not a files" % m.name)
+            fullname = os.path.join(protodir, m.name)
+            if os.path.exists(fullname):
+                os.remove(fullname)
+                print("%s removed." % fullname)
+        # now it is safe to call extractall
+        f.extractall(protodir)

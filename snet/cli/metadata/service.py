@@ -306,6 +306,9 @@ class MPEServiceMetadata:
     def __getitem__(self, key):
         return self.m[key]
 
+    def get(self, key, default=None):
+        return self.m.get(key, default)
+
     def __contains__(self, key):
         return key in self.m
 

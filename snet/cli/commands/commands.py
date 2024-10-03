@@ -18,10 +18,9 @@ from snet.cli.identity import KeyIdentityProvider, KeyStoreIdentityProvider, Led
 from snet.cli.metadata.organization import OrganizationMetadata, PaymentStorageClient, Payment, Group
 from snet.cli.utils.config import get_contract_address, get_field_from_args_or_session, \
     read_default_contract_address
-from snet.cli.utils.ipfs_utils import bytesuri_to_hash, get_from_ipfs_and_checkhash, \
-    hash_to_bytesuri, publish_file_in_ipfs
+from snet.cli.utils.ipfs_utils import get_from_ipfs_and_checkhash, hash_to_bytesuri, publish_file_in_ipfs
 from snet.cli.utils.utils import DefaultAttributeObject, get_web3, is_valid_url, serializable, type_converter, \
-    get_cli_version, bytes32_to_str
+    get_cli_version, bytes32_to_str, bytesuri_to_hash, get_file_from_filecoin
 
 
 class Command(object):
@@ -489,9 +488,11 @@ class OrganizationCommand(BlockchainCommand):
 
     def _get_organization_metadata_from_registry(self, org_id):
         rez = self._get_organization_registration(org_id)
-        metadata_hash = bytesuri_to_hash(rez["orgMetadataURI"])
-        metadata = get_from_ipfs_and_checkhash(
-            self._get_ipfs_client(), metadata_hash)
+        storage_type, metadata_hash = bytesuri_to_hash(rez["orgMetadataURI"])
+        if storage_type == "ipfs":
+            metadata = get_from_ipfs_and_checkhash(self._get_ipfs_client(), metadata_hash)
+        else:
+            metadata = get_file_from_filecoin(metadata_hash)
         metadata = metadata.decode("utf-8")
         return OrganizationMetadata.from_json(json.loads(metadata))
 
