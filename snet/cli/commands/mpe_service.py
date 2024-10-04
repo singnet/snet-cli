@@ -90,6 +90,7 @@ class MPEServiceCommand(BlockchainCommand):
             mpe_address = self.get_mpe_address()
 
             metadata.set_simple_field('model_ipfs_hash', model_ipfs_hash_base58)
+            # service_api_source ?
             metadata.set_simple_field('mpe_address', mpe_address)
             metadata.set_simple_field('display_name', display_name)
             print('', '', json.dumps(metadata.m, indent=2), sep='\n')
@@ -111,6 +112,7 @@ class MPEServiceCommand(BlockchainCommand):
         metadata = MPEServiceMetadata()
         mpe_address = self.get_mpe_address()
         metadata.set_simple_field("model_ipfs_hash", model_ipfs_hash_base58)
+        # service_api_source ?
         metadata.set_simple_field("mpe_address", mpe_address)
         metadata.set_simple_field("display_name", self.args.display_name)
         metadata.set_simple_field("encoding", self.args.encoding)

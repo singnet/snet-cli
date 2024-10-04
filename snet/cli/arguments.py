@@ -390,6 +390,11 @@ def add_organization_options(parser):
     add_metadatafile_argument_for_org(p)
     p.add_argument("--members", help="List of members to be added to the organization", metavar="ORG_MEMBERS[]")
     add_organization_arguments(p)
+    p.add_argument(
+        "--storage",
+        help="Choose storage for uploading organization metadata",
+        metavar="ipfs(default)/filecoin"
+    )
 
     p = subparsers.add_parser("update-metadata", help="Create an Organization")
     p.add_argument("org_id", help="Unique Organization Id", metavar="ORG_ID")
@@ -399,6 +404,11 @@ def add_organization_options(parser):
         "--members",
         help="List of members to be added to the organization",
         metavar="ORG_MEMBERS[]")
+    p.add_argument(
+        "--storage",
+        help="Choose storage for uploading metadata",
+        metavar="ipfs(default)/filecoin"
+    )
     add_organization_arguments(p)
 
     p = subparsers.add_parser("change-owner", help="Change Organization's owner")
