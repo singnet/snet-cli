@@ -2,6 +2,8 @@ import argparse
 import os
 import re
 import sys
+from email.policy import default
+from random import choices
 
 from snet.contracts import get_all_abi_contract_files, get_contract_def
 
@@ -258,6 +260,15 @@ def add_metadatafile_argument_for_org(p):
                    help="Service metadata json file (default organization_metadata.json)")
 
 
+def add_p_storage_param(_p):
+    _p.add_argument(
+        "--storage",
+        default="ipfs",
+        choices=['ipfs', 'filecoin'],
+        help="Choose storage for uploading organization metadata",
+    )
+
+
 def add_organization_options(parser):
     parser.set_defaults(cmd=OrganizationCommand)
 
@@ -390,8 +401,9 @@ def add_organization_options(parser):
     add_metadatafile_argument_for_org(p)
     p.add_argument("--members", help="List of members to be added to the organization", metavar="ORG_MEMBERS[]")
     add_organization_arguments(p)
+    add_p_storage_param(p)
 
-    p = subparsers.add_parser("update-metadata", help="Create an Organization")
+    p = subparsers.add_parser("update-metadata", help="Update metadata for an Organization")
     p.add_argument("org_id", help="Unique Organization Id", metavar="ORG_ID")
     p.set_defaults(fn="update_metadata")
     add_metadatafile_argument_for_org(p)
@@ -400,6 +412,7 @@ def add_organization_options(parser):
         help="List of members to be added to the organization",
         metavar="ORG_MEMBERS[]")
     add_organization_arguments(p)
+    add_p_storage_param(p)
 
     p = subparsers.add_parser("change-owner", help="Change Organization's owner")
     p.set_defaults(fn="change_owner")
@@ -936,7 +949,7 @@ def add_mpe_service_options(parser):
     add_p_metadata_file_opt(p)
 
     p = subparsers.add_parser("metadata-init",
-                              help="Init metadata file with providing protobuf directory (which we publish in IPFS) and display_name (optionally encoding, service_type and payment_expiration_threshold)")
+                              help="Init metadata file with providing protobuf directory (which we publish in IPFS or FileCoin) and display_name (optionally encoding, service_type and payment_expiration_threshold)")
     p.set_defaults(fn="publish_proto_metadata_init")
     p.add_argument("protodir",
                    help="Directory which contains protobuf files",
@@ -965,14 +978,16 @@ def add_mpe_service_options(parser):
                    default="grpc",
                    choices=['grpc', 'http', 'jsonrpc', 'process'],
                    help="Service type")
+    add_p_storage_param(p)
 
     p = subparsers.add_parser("metadata-set-model",
-                              help="Publish protobuf model in ipfs and update existed metadata file")
+                              help="Publish protobuf model in ipfs or filecoin and update existed metadata file")
     p.set_defaults(fn="publish_proto_metadata_update")
     p.add_argument("protodir",
                    help="Directory which contains protobuf files",
                    metavar="PROTO_DIR")
     add_p_metadata_file_opt(p)
+    add_p_storage_param(p)
 
     p = subparsers.add_parser("metadata-set-fixed-price",
                               help="Set pricing model as fixed price for all methods")
@@ -1199,6 +1214,7 @@ def add_mpe_service_options(parser):
         _p.add_argument("--update-mpe-address",
                         action='store_true',
                         help="Update mpe_address in metadata before publishing them")
+        add_p_storage_param(p)
         add_p_mpe_address_opt(_p)
 
     p = subparsers.add_parser("publish",
@@ -1214,12 +1230,19 @@ def add_mpe_service_options(parser):
     add_p_publish_params(p)
     add_transaction_arguments(p)
 
+    p = subparsers.add_parser("publish-in-filecoin",
+                              help="Publish metadata only in FileCoin, without publishing in Registry")
+    p.set_defaults(fn="publish_metadata_in_filecoin")
+    add_p_publish_params(p)
+    add_transaction_arguments(p)
+
     p = subparsers.add_parser("update-metadata",
-                              help="Publish metadata in IPFS and update existed service")
-    p.set_defaults(fn="publish_metadata_in_ipfs_and_update_registration")
+                              help="Publish metadata in IPFS or FileCoin and update existed service")
+    p.set_defaults(fn="publish_metadata_in_storage_and_update_registration")
     add_p_publish_params(p)
     add_p_service_in_registry(p)
     add_transaction_arguments(p)
+    add_p_storage_param(p)
 
     p = subparsers.add_parser("update-add-tags",
                               help="Add tags to existed service registration")
