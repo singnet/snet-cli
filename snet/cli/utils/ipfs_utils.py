@@ -127,13 +127,20 @@ def get_from_ipfs_and_checkhash(ipfs_client, ipfs_hash_base58, validate=True):
     return data
 
 
-def hash_to_bytesuri(s):
+def hash_to_bytesuri(s, storage_type="ipfs", to_encode=True):
     """
     Convert in and from bytes uri format used in Registry contract
     """
     # TODO: we should pad string with zeros till closest 32 bytes word because of a bug in processReceipt (in snet_cli.contract.process_receipt)
-    s = "ipfs://" + s
-    return s.encode("ascii").ljust(32 * (len(s)//32 + 1), b"\0")
+    if storage_type == "ipfs":
+        s = "ipfs://" + s
+    elif storage_type == "filecoin":
+        s = "filecoin://" + s
+
+    if to_encode:
+        return s.encode("ascii").ljust(32 * (len(s)//32 + 1), b"\0")
+    else:
+        return s # for 'service_api_source' metadata field
 
 
 def bytesuri_to_hash(s):

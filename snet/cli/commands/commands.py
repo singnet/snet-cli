@@ -594,10 +594,17 @@ class OrganizationCommand(BlockchainCommand):
 
         members = self.get_members_from_args()
 
-        ipfs_metadata_uri = publish_file_in_ipfs(
-            self._get_ipfs_client(), metadata_file, False)
-        params = [type_converter("bytes32")(
-            org_id), hash_to_bytesuri(ipfs_metadata_uri), members]
+        storage = self.args.storage
+        if not storage or storage == "ipfs":
+            metadata_uri = publish_file_in_ipfs(self._get_ipfs_client(), metadata_file, False)
+        elif storage == "filecoin":
+            # upload to Filecoin via Lighthouse SDK
+            metadata_uri = publish_file_in_filecoin(self._get_filecoin_client(), metadata_file)
+        else:
+            raise ValueError(f"Unsupported storage option: {storage}. Use --storage <ipfs or filecoin>")
+
+        params = [type_converter("bytes32")(org_id),
+                  hash_to_bytesuri(metadata_uri, storage), members]
         self._printout("Creating transaction to create organization name={} id={}\n".format(
             org_metadata.org_name, org_id))
         self.transact_contract_command(
@@ -649,7 +656,7 @@ class OrganizationCommand(BlockchainCommand):
         else:
             raise ValueError(f"Unsupported storage option: {storage}. Use --storage <ipfs or filecoin>")
 
-        params = [type_converter("bytes32")(org_id), hash_to_bytesuri(metadata_uri)]
+        params = [type_converter("bytes32")(org_id), hash_to_bytesuri(metadata_uri, storage)]
         self._printout(
             "Creating transaction to update organization metadata for org name={} id={}\n".format(org_metadata.org_name,
                                                                                                   org_id))
