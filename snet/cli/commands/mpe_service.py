@@ -13,7 +13,8 @@ from snet.cli.commands.commands import BlockchainCommand
 from snet.cli.metadata.organization import OrganizationMetadata
 from snet.cli.metadata.service import MPEServiceMetadata, load_mpe_service_metadata, mpe_service_metadata_from_json
 from snet.cli.utils import ipfs_utils
-from snet.cli.utils.utils import is_valid_url, open_grpc_channel, type_converter
+from snet.cli.utils.utils import is_valid_url, open_grpc_channel, type_converter, bytesuri_to_hash, \
+    get_file_from_filecoin, download_and_safe_extract_proto
 
 
 class MPEServiceCommand(BlockchainCommand):
@@ -459,14 +460,18 @@ class MPEServiceCommand(BlockchainCommand):
     #    return [type_converter("bytes32")(tag) for tag in self.args.tags]
 
     def _get_organization_metadata_from_registry(self, org_id):
+        # TODO: In fact, it's the same method as in commands.OrganizationCommand...
         rez = self._get_organization_registration(org_id)
-        metadata_hash = ipfs_utils.bytesuri_to_hash(rez["orgMetadataURI"])
-        metadata = ipfs_utils.get_from_ipfs_and_checkhash(
-            self._get_ipfs_client(), metadata_hash)
+        storage_type, metadata_hash = bytesuri_to_hash(rez["orgMetadataURI"])
+        if storage_type == "ipfs":
+            metadata = ipfs_utils.get_from_ipfs_and_checkhash(self._get_ipfs_client(), metadata_hash)
+        else:
+            metadata = get_file_from_filecoin(metadata_hash)
         metadata = metadata.decode("utf-8")
         return OrganizationMetadata.from_json(json.loads(metadata))
 
     def _get_organization_registration(self, org_id):
+        # TODO: In fact, it's the same method as in commands.OrganizationCommand...
         params = [type_converter("bytes32")(org_id)]
         result = self.call_contract_command(
             "Registry", "getOrganizationById", params)
@@ -552,6 +557,7 @@ class MPEServiceCommand(BlockchainCommand):
         self._printout("This command has been deprecated. Please use `snet service metadata-remove-tags` instead")
 
     def _get_service_registration(self):
+        # TODO: In fact, it's the same method as in MPEChannelCommand...
         params = [type_converter("bytes32")(self.args.org_id), type_converter(
             "bytes32")(self.args.service_id)]
         rez = self.call_contract_command(
@@ -562,13 +568,16 @@ class MPEServiceCommand(BlockchainCommand):
         return {"metadataURI": rez[2]}
 
     def _get_service_metadata_from_registry(self):
-        rez = self._get_service_registration()
-        metadata_hash = ipfs_utils.bytesuri_to_hash(rez["metadataURI"])
-        metadata = ipfs_utils.get_from_ipfs_and_checkhash(
-            self._get_ipfs_client(), metadata_hash)
-        metadata = metadata.decode("utf-8")
-        metadata = mpe_service_metadata_from_json(metadata)
-        return metadata
+        # TODO: In fact, it's the same method as in MPEChannelCommand...
+        response = self._get_service_registration()
+        storage_type, metadata_hash = bytesuri_to_hash(response["metadataURI"])
+        if storage_type == "ipfs":
+            service_metadata = ipfs_utils.get_from_ipfs_and_checkhash(self._get_ipfs_client(), metadata_hash)
+        else:
+            service_metadata = get_file_from_filecoin(metadata_hash)
+        service_metadata = service_metadata.decode("utf-8")
+        service_metadata = mpe_service_metadata_from_json(service_metadata)
+        return service_metadata
 
     def print_service_metadata_from_registry(self):
         metadata = self._get_service_metadata_from_registry()
@@ -612,13 +621,14 @@ class MPEServiceCommand(BlockchainCommand):
 
     def extract_service_api_from_metadata(self):
         metadata = load_mpe_service_metadata(self.args.metadata_file)
-        ipfs_utils.safe_extract_proto_from_ipfs(self._get_ipfs_client(
-        ), metadata["model_ipfs_hash"], self.args.protodir)
+        service_api_source = metadata.get("service_api_source") or metadata.get("model_ipfs_hash")
+        download_and_safe_extract_proto(service_api_source, self.args.protodir, self._get_ipfs_client())
+
 
     def extract_service_api_from_registry(self):
         metadata = self._get_service_metadata_from_registry()
-        ipfs_utils.safe_extract_proto_from_ipfs(self._get_ipfs_client(
-        ), metadata["model_ipfs_hash"], self.args.protodir)
+        service_api_source = metadata.get("service_api_source") or metadata.get("model_ipfs_hash")
+        download_and_safe_extract_proto(service_api_source, self.args.protodir, self._get_ipfs_client())
 
     def delete_service_registration(self):
         params = [type_converter("bytes32")(self.args.org_id), type_converter(
