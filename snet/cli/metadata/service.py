@@ -12,7 +12,7 @@ payment_expiration_threshold - Service will reject payments with expiration less
                                 than current_block + payment_expiration_threshold.
                                This field should be used by the client with caution.
                                Client should not accept arbitrary payment_expiration_threshold
-model_ipfs_hash  - IPFS HASH to the .tar archive of protobuf service specification
+service_api_source  - HASH with the storage type prefix to the .tar archive of protobuf service specification
 mpe_address      - Address of MultiPartyEscrow contract.
                    Client should use it exclusively for cross-checking of mpe_address,
                         (because service can attack via mpe_address)
@@ -63,13 +63,12 @@ class AssetType(Enum):
 class MPEServiceMetadata:
 
     def __init__(self):
-        """ init with modelIPFSHash """
         self.m = {"version": 1,
                   "display_name": "",
                   "encoding": "grpc",  # grpc by default
                   "service_type": "grpc",  # grpc by default
                   # one week by default (15 sec block,  24*60*60*7/15)
-                  "model_ipfs_hash": "",
+                  "service_api_source": "",
                   "mpe_address": "",
                   "groups": [],
                   "assets": {},
@@ -78,9 +77,8 @@ class MPEServiceMetadata:
                   }
 
     def set_simple_field(self, f, v):
-        if f != "display_name" and f != "encoding" and f != "model_ipfs_hash" and f != "mpe_address" and \
-                f != "service_type" and f != "payment_expiration_threshold" and f != "service_description" and \
-                f != "service_api_source":
+        if f != "display_name" and f != "encoding" and f != "mpe_address" and f != "service_type" and \
+                f != "payment_expiration_threshold" and f != "service_description" and f != "service_api_source":
             raise Exception("unknown field in MPEServiceMetadata")
         self.m[f] = v
 

@@ -446,11 +446,8 @@ class MPEServiceCommand(BlockchainCommand):
         self._printout(self._publish_metadata_in_ipfs(self.args.metadata_file))
 
     def _publish_metadata_in_filecoin(self, metadata_file):
-        metadata = self._prepare_to_publish_metadata(metadata_file)
-        tmp = tempfile.NamedTemporaryFile()
-        with open(tmp.name, "wb") as f:
-            f.write(metadata.get_json().encode("utf-8"))
-        return self._get_filecoin_client().upload(tmp.name)['data']['Hash']
+        self._prepare_to_publish_metadata(metadata_file)
+        return self._get_filecoin_client().upload(metadata_file)['data']['Hash']
 
     def publish_metadata_in_filecoin(self):
         """ Publish metadata in filecoin and print hash """
