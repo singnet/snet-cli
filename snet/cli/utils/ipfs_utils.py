@@ -23,6 +23,17 @@ def publish_file_in_ipfs(ipfs_client, filepath, wrap_with_directory=True):
         print("File error ", err)
 
 
+def publish_file_in_filecoin(filecoin_client, filepath):
+    """
+    Push a file to Filecoin given its path.
+    """
+    try:
+        response = filecoin_client.upload(filepath)
+        return response['data']['Hash']
+    except Exception as err:
+        print("File upload error: ", err)
+
+
 def publish_proto_in_ipfs(ipfs_client, protodir):
     """
     make tar from protodir/*proto, and publish this tar in ipfs
@@ -48,6 +59,39 @@ def publish_proto_in_ipfs(ipfs_client, protodir):
         tar.add(f, os.path.basename(f))
     tar.close()
     return ipfs_client.add_bytes(tarbytes.getvalue())
+
+
+def publish_proto_in_filecoin(filecoin_client, protodir):
+    """
+    Create a tar archive from protodir/*.proto, and publish this tar archive to Lighthouse.
+    Return the hash (CID) of the uploaded archive.
+    """
+
+    if not os.path.isdir(protodir):
+        raise Exception("Directory %s doesn't exist" % protodir)
+
+    files = glob.glob(os.path.join(protodir, "*.proto"))
+
+    if len(files) == 0:
+        raise Exception("Cannot find any .proto files in %s" % protodir)
+
+    files.sort()
+
+    tarbytes = io.BytesIO()
+
+    with tarfile.open(fileobj=tarbytes, mode="w") as tar:
+        for f in files:
+            tar.add(f, os.path.basename(f))
+    tarbytes.seek(0)
+
+    temp_tar_path = os.path.join(protodir, "proto_files.tar")
+    with open(temp_tar_path, 'wb') as temp_tar_file:
+        temp_tar_file.write(tarbytes.getvalue())
+    response = filecoin_client.upload(source=temp_tar_path, tag="")
+
+    os.remove(temp_tar_path)
+
+    return response['data']['Hash']
 
 
 def get_from_ipfs_and_checkhash(ipfs_client, ipfs_hash_base58, validate=True):
@@ -83,20 +127,30 @@ def get_from_ipfs_and_checkhash(ipfs_client, ipfs_hash_base58, validate=True):
     return data
 
 
-def hash_to_bytesuri(s):
+def hash_to_bytesuri(s, storage_type="ipfs", to_encode=True):
     """
     Convert in and from bytes uri format used in Registry contract
     """
     # TODO: we should pad string with zeros till closest 32 bytes word because of a bug in processReceipt (in snet_cli.contract.process_receipt)
-    s = "ipfs://" + s
-    return s.encode("ascii").ljust(32 * (len(s)//32 + 1), b"\0")
+    if storage_type == "ipfs":
+        s = "ipfs://" + s
+    elif storage_type == "filecoin":
+        s = "filecoin://" + s
+
+    if to_encode:
+        return s.encode("ascii").ljust(32 * (len(s)//32 + 1), b"\0")
+    else:
+        return s # for 'service_api_source' metadata field
 
 
 def bytesuri_to_hash(s):
     s = s.rstrip(b"\0").decode('ascii')
-    if not s.startswith("ipfs://"):
-        raise Exception("We support only ipfs uri in Registry")
-    return s[7:]
+    if s.startswith("ipfs://"):
+        return "ipfs", s[7:]
+    elif s.startswith("filecoin://"):
+        return "filecoin", s[11:]
+    else:
+        raise Exception("We support only ipfs and filecoin uri in Registry")
 
 
 def safe_extract_proto_from_ipfs(ipfs_client, ipfs_hash, protodir):
