@@ -265,7 +265,7 @@ def add_p_storage_param(_p):
         "--storage",
         default="ipfs",
         choices=['ipfs', 'filecoin'],
-        help="Choose storage for uploading organization metadata",
+        help="Choose storage for uploading metadata/protobuf file (defaults to 'ipfs')",
     )
 
 
@@ -1242,7 +1242,6 @@ def add_mpe_service_options(parser):
     add_p_publish_params(p)
     add_p_service_in_registry(p)
     add_transaction_arguments(p)
-    add_p_storage_param(p)
 
     p = subparsers.add_parser("update-add-tags",
                               help="Add tags to existed service registration")
