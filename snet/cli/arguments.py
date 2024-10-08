@@ -980,7 +980,7 @@ def add_mpe_service_options(parser):
                    help="Service type")
     add_p_storage_param(p)
 
-    p = subparsers.add_parser("metadata-set-model",
+    p = subparsers.add_parser("metadata-set-api",
                               help="Publish protobuf model in ipfs or filecoin and update existed metadata file")
     p.set_defaults(fn="publish_proto_metadata_update")
     p.add_argument("protodir",
@@ -1308,7 +1308,7 @@ def add_mpe_service_options(parser):
                         metavar="PROTO_DIR")
 
     p = subparsers.add_parser("get-api-metadata",
-                              help="Extract service api (model) to the given protodir. Get model_ipfs_hash from metadata")
+                              help="Extract service api (model) to the given protodir. Get existed metadata")
     p.set_defaults(fn="extract_service_api_from_metadata")
     add_p_protodir_to_extract(p)
     add_p_metadata_file_opt(p)
