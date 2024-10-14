@@ -4,6 +4,7 @@ import pickle
 import shutil
 import tempfile
 from collections import defaultdict
+from distutils.command.check import check
 from pathlib import Path
 
 from eth_abi.codec import ABICodec
@@ -74,6 +75,68 @@ class MPEChannelCommand(OrganizationCommand):
         with open(self._get_channels_cache_file(), "rb") as f:
             load_dict = pickle.load(f)
         return load_dict["channels"]
+
+    def _event_data_args_to_dict(self, event_data):
+        return {
+            "channel_id": event_data["channelId"],
+            "sender": event_data["sender"],
+            "signer": event_data["signer"],
+            "recipient": event_data["recipient"],
+            "group_id": event_data["groupId"],
+        }
+
+    def _get_all_opened_channels_from_blockchain(self, starting_block_number, to_block_number):
+        mpe_address = self.get_mpe_address()
+        event_topics = [self.ident.w3.keccak(
+            text="ChannelOpen(uint256,uint256,address,address,address,bytes32,uint256,uint256)").hex()]
+        blocks_per_batch = 5000
+        codec: ABICodec = self.ident.w3.codec
+
+        logs = []
+        from_block = starting_block_number
+        while from_block <= to_block_number:
+            to_block = min(from_block + blocks_per_batch, to_block_number)
+            logs += self.ident.w3.eth.get_logs({"fromBlock": from_block,
+                                                  "toBlock": to_block,
+                                                  "address": mpe_address,
+                                                  "topics": event_topics})
+            from_block = to_block + 1
+
+        abi = get_contract_def("MultiPartyEscrow")
+        event_abi = abi_get_element_by_name(abi, "ChannelOpen")
+
+        event_data_list = [get_event_data(codec, event_abi, l)["args"] for l in logs]
+        channels_opened = list(map(self._event_data_args_to_dict, event_data_list))
+
+        return channels_opened
+
+    def _get_filtered_channels(self, return_only_id=False, **kwargs):
+        channels = self._get_channels_from_cache()
+        for key, value in kwargs.items():
+            if key == "group_id":
+                check_ch = lambda c: base64.b64encode(c[key]).decode("utf-8") == value
+            else:
+                check_ch = lambda c: c[key] == value
+            channels = [c for c in channels if check_ch(c)]
+        if return_only_id:
+            return [c["channel_id"] for c in channels]
+        return channels
+
+    def _get_all_filtered_channels(self, topics_without_signature):
+        # TODO: delete
+        """ get all filtered chanels from blockchain logs """
+        mpe_address = self.get_mpe_address()
+        event_signature = self.ident.w3.keccak(
+            text="ChannelOpen(uint256,uint256,address,address,address,bytes32,uint256,uint256)").hex()
+        codec: ABICodec = self.ident.w3.codec
+        topics = [event_signature] + topics_without_signature
+        logs = self.ident.w3.eth.get_logs(
+            {"fromBlock": get_contract_deployment_block(self.ident.w3, "MultiPartyEscrow"), "address": mpe_address, "topics": topics})
+        abi = get_contract_def("MultiPartyEscrow")
+        event_abi = abi_get_element_by_name(abi, "ChannelOpen")
+        channels_ids = [get_event_data(codec, event_abi, l)[
+            "args"]["channelId"] for l in logs]
+        return channels_ids
 
     def _get_service_base_dir(self, org_id, service_id):
         """ get persistent storage for the given service (~/.snet/mpe_client/<mpe_address>_<registry_address>/<org_id>/<service_id>/) """
@@ -322,12 +385,9 @@ class MPEChannelCommand(OrganizationCommand):
 
     def _initialize_already_opened_channel(self, metadata, sender, signer):
 
-        group_id = base64.b64decode(
-            metadata.get_group_id_by_group_name(self.args.group_name))
-        recipient = metadata.get_payment_address_for_group(
-            self.args.group_name)
-        channels_ids = self._get_all_channels_filter_sender_recipient_group(
-            sender, recipient, group_id)
+        group_id = base64.b64decode(metadata.get_group_id_by_group_name(self.args.group_name))
+        recipient = metadata.get_payment_address_for_group(self.args.group_name)
+        channels_ids = self._get_all_channels_filter_sender_recipient_group(sender, recipient, group_id)
         for i in sorted(channels_ids):
             channel = self._get_channel_state_from_blockchain(i)
             if channel["signer"].lower() == signer.lower():
@@ -360,12 +420,12 @@ class MPEChannelCommand(OrganizationCommand):
         self._add_channel_to_initialized(self.args.org_id, channel)
 
     def open_channel_from_metadata(self):
-        # TODO: "channel open-init-metadata" command
+        # TODO: "channel open-metadata" command
         metadata = OrganizationMetadata.from_file(self.args.metadata_file)
         self._open_init_channel_from_metadata(metadata, {})
 
     def open_channel_from_registry(self):
-        # TODO: "channel open-init" command
+        # TODO: "channel open" command
         metadata = self._get_organization_metadata_from_registry(
             self.args.org_id)
         org_registration = self._get_organization_registration(
@@ -481,21 +541,55 @@ class MPEChannelCommand(OrganizationCommand):
                 "Service with org_id=%s is not initialized" % (org_id))
         return OrganizationMetadata.from_file(sdir.joinpath("organization_metadata.json"))
 
-    def _print_channels_from_blockchain(self, channels_ids):
-        channels_ids = sorted(channels_ids)
+    def _convert_channel_dict_to_str(self, channel, filters=None):
+        if filters is None:
+            filters = []
+        for key, value in channel.items():
+            channel[key] = str(value)
+        # converting to string not using " ".join() to always have the same order
+        channel_as_str = ""
+        channel_as_str += channel["channel_id"]
+        channel_as_str += " " + channel["nonce"] if "nonce" in channel else ""
+        channel_as_str += " " + channel["sender"] if "sender" not in filters else ""
+        channel_as_str += " " + channel["signer"]
+        channel_as_str += " " + channel["recipient"] if "recipient" not in filters else ""
+        channel_as_str += " " + channel["group_id"] if "group_id" not in filters else ""
+        channel_as_str += " " + channel["value"] if "value" in channel else ""
+        channel_as_str += " " + channel["expiration"] if "expiration" in channel else ""
+        return channel_as_str
+
+
+    def _print_channels(self, channels, filters: list[str] = None):
+        if filters is None:
+            filters = []
+
         if self.args.only_id:
-            self._printout("#channelId")
-            [self._printout(str(i)) for i in channels_ids]
+            self._printout("#channel_id")
+            [self._printout(ch_id) for ch_id in channels]
             return
-        self._printout(
-            "#channelId nonce recipient groupId(base64) value(AGIX) expiration(blocks)")
-        for i in channels_ids:
-            channel = self._get_channel_state_from_blockchain(i)
-            value_agi = cogs2stragix(channel["value"])
-            group_id_base64 = base64.b64encode(
-                channel["groupId"]).decode("ascii")
-            self._printout("%i %i %s %s %s %i" % (i, channel["nonce"], channel["recipient"], group_id_base64,
-                                                  value_agi, channel["expiration"]))
+
+        titles = ["channel_id", "nonce", "sender", "signer", "recipient", "group_id", "value", "expiration"]
+        for channel_filter in filters:
+            titles.remove(channel_filter)
+
+        if self.args.do_not_sync:
+            titles.remove("nonce")
+            titles.remove("value")
+            titles.remove("expiration")
+            self._printout("#" + " ".join(titles))
+            for channel in channels:
+                channel["group_id"] = base64.b64encode(channel["group_id"]).decode("ascii")
+                self._printout(self._convert_channel_dict_to_str(channel, filters))
+            return
+
+        channels_ids = sorted(channels)
+        self._printout("#" + " ".join(titles))
+        for channel_id in channels_ids:
+            channel = self._get_channel_state_from_blockchain(channel_id)
+            channel["channel_id"] = channel_id
+            channel["value"] = cogs2stragix(channel["value"])
+            channel["group_id"] = base64.b64encode(channel["groupId"]).decode("ascii")
+            self._printout(self._convert_channel_dict_to_str(channel, filters))
 
     def _print_channels_dict_from_blockchain(self, channels_dict):
         # print only caption
@@ -547,62 +641,6 @@ class MPEChannelCommand(OrganizationCommand):
         channels_dict = self._get_all_initialized_channels()
         self._print_channels_dict_from_blockchain(channels_dict)
 
-    def _event_data_args_to_dict(self, event_data):
-        return {
-            "channel_id": event_data["channelId"],
-            "sender": event_data["sender"],
-            "signer": event_data["signer"],
-            "recipient": event_data["recipient"],
-            "group_id": event_data["groupId"],
-        }
-
-    def _get_all_opened_channels_from_blockchain(self, starting_block_number, to_block_number):
-        mpe_address = self.get_mpe_address()
-        event_topics = self.ident.w3.keccak(
-            text="ChannelOpen(uint256,uint256,address,address,address,bytes32,uint256,uint256)").hex()
-        blocks_per_batch = 5000
-        codec: ABICodec = self.ident.w3.codec
-
-        logs = []
-        from_block = starting_block_number
-        while from_block <= to_block_number:
-            to_block = min(from_block + blocks_per_batch, to_block_number)
-            logs += self.ident.w3.eth.get_logs({"fromBlock": from_block,
-                                                  "toBlock": to_block,
-                                                  "address": mpe_address,
-                                                  "topics": event_topics})
-            from_block = to_block + 1
-
-        abi = get_contract_def("MultiPartyEscrow")
-        event_abi = abi_get_element_by_name(abi, "ChannelOpen")
-
-        event_data_list = [get_event_data(codec, event_abi, l)["args"] for l in logs]
-        channels_opened = list(map(self._event_data_args_to_dict, event_data_list))
-
-        return channels_opened
-
-    def _get_filtered_channels(self, **kwargs):
-        channels = self._get_channels_from_cache()
-        for key, value in kwargs.items():
-            channels = [c for c in channels if c[key] == value]
-        return channels
-
-    def _get_all_filtered_channels(self, topics_without_signature):
-        # TODO: delete
-        """ get all filtered chanels from blockchain logs """
-        mpe_address = self.get_mpe_address()
-        event_signature = self.ident.w3.keccak(
-            text="ChannelOpen(uint256,uint256,address,address,address,bytes32,uint256,uint256)").hex()
-        codec: ABICodec = self.ident.w3.codec
-        topics = [event_signature] + topics_without_signature
-        logs = self.ident.w3.eth.get_logs(
-            {"fromBlock": get_contract_deployment_block(self.ident.w3, "MultiPartyEscrow"), "address": mpe_address, "topics": topics})
-        abi = get_contract_def("MultiPartyEscrow")
-        event_abi = abi_get_element_by_name(abi, "ChannelOpen")
-        channels_ids = [get_event_data(codec, event_abi, l)[
-            "args"]["channelId"] for l in logs]
-        return channels_ids
-
     def get_address_from_arg_or_ident(self, arg):
         if arg:
             return arg
@@ -610,45 +648,46 @@ class MPEChannelCommand(OrganizationCommand):
 
     def print_channels_filter_org(self):
         # TODO: "print-initialized-filter-org" command
-        # TODO: change to "print-filter_org"
+        # TODO: delete
         channels = self._get_initialized_channels_for_org(self.args.org_id)
         self._print_channels_dict_from_blockchain({self.args.org_id: channels})
 
     def print_channels_filter_sender(self):
+        # we don't need to return other channel fields if we only need channel_id or if we'll sync channels state
+        return_only_id = self.args.only_id or not self.args.do_not_sync
         address = self.get_address_from_arg_or_ident(self.args.sender)
-        channels_ids = self._get_all_channels_filter_sender(address)
-        self._print_channels_from_blockchain(channels_ids)
+        channels = self._get_filtered_channels(return_only_id=return_only_id, sender=address)
+        self._print_channels(channels, ["sender"])
 
     def print_channels_filter_recipient(self):
+        # we don't need to return other channel fields if we only need channel_id or if we'll sync channels state
+        return_only_id = self.args.only_id or not self.args.do_not_sync
         address = self.get_address_from_arg_or_ident(self.args.recipient)
-        address_padded = pad_hex(address.lower(), 256)
-        channels_ids = self._get_all_filtered_channels([None, address_padded])
-        self._print_channels_from_blockchain(channels_ids)
+        channels = self._get_filtered_channels(return_only_id=return_only_id, recipient=address)
+        self._print_channels(channels, ["recipient"])
 
     def print_channels_filter_group(self):
-        metadata = self._get_organization_metadata_from_registry(
-            self.args.org_id)
-        group_id = base64.b64decode(
-            metadata.get_group_id_by_group_name(self.args.group_name))
-        group_id_hex = "0x" + group_id.hex()
-        channels_ids = self._get_all_filtered_channels(
-            [None, None, group_id_hex])
-        self._print_channels_from_blockchain(channels_ids)
+        # we don't need to return other channel fields if we only need channel_id or if we'll sync channels state
+        return_only_id = self.args.only_id or not self.args.do_not_sync
+        metadata = self._get_organization_metadata_from_registry(self.args.org_id)
+        group_id = metadata.get_group_id_by_group_name(self.args.group_name)
+        channels = self._get_filtered_channels(return_only_id=return_only_id, group_id=group_id)
+        self._print_channels(channels, ["group_id"])
 
     def print_channels_filter_group_sender(self):
+        # we don't need to return other channel fields if we only need channel_id or if we'll sync channels state
+        return_only_id = self.args.only_id or not self.args.do_not_sync
         address = self.get_address_from_arg_or_ident(self.args.sender)
-        address_padded = pad_hex(address.lower(), 256)
-        metadata = self._get_organization_metadata_from_registry(
-            self.args.org_id)
-        group_id = base64.b64decode(
-            metadata.get_group_id_by_group_name(self.args.group_name))
-        group_id_hex = "0x" + group_id.hex()
-        channels_ids = self._get_all_filtered_channels(
-            [address_padded, None, group_id_hex])
-        self._print_channels_from_blockchain(channels_ids)
+        metadata = self._get_organization_metadata_from_registry(self.args.org_id)
+        group_id = metadata.get_group_id_by_group_name(self.args.group_name)
+        channels = self._get_filtered_channels(return_only_id=return_only_id, sender=address, group_id=group_id)
+        self._print_channels(channels, ["sender", "group_id"])
 
     def print_all_channels(self):
-        pass
+        # we don't need to return other channel fields if we only need channel_id or if we'll sync channels state
+        return_only_id = self.args.only_id or not self.args.do_not_sync
+        channels = self._get_filtered_channels(return_only_id=return_only_id)
+        self._print_channels(channels)
 
     def _get_all_channels_filter_sender(self, sender):
         sender_padded = pad_hex(sender.lower(), 256)

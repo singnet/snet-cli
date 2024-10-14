@@ -717,19 +717,8 @@ def add_mpe_channel_options(parser):
     def add_p_only_id(_p):
         _p.add_argument("--only-id",
                         action='store_true',
-                        help="Print only id of channels")
-
-    def add_p_only_sender_signer(_p):
-        pm = _p.add_mutually_exclusive_group(required=False)
-        pm.add_argument("--filter-sender",
-                        action='store_true',
-                        help="Print only channels in which current identity is sender")
-        pm.add_argument("--filter-signer",
-                        action='store_true',
-                        help="Print only channels in which current identity is signer")
-        pm.add_argument("--filter-my",
-                        action='store_true',
-                        help="Print only channels in which current identity is sender or signer")
+                        help="Print only id of channels",
+                        default=False)
 
     def add_p_sender(_p):
         _p.add_argument("--sender",
@@ -739,7 +728,8 @@ def add_mpe_channel_options(parser):
     def add_p_dont_sync_channels(_p):
         _p.add_argument("--do-not-sync", "-ds",
                         action='store_true',
-                        help="Print channels without synchronizing their state")
+                        help="Print channels without synchronizing their state",
+                        default=False)
 
     p = subparsers.add_parser("print-filter-sender",
                               help="Print all channels for the given sender.")
@@ -789,7 +779,6 @@ def add_mpe_channel_options(parser):
     p.set_defaults(fn="print_all_channels")
     add_p_registry_address_opt(p)
     add_p_only_id(p)
-    add_p_only_sender_signer(p)
     add_p_mpe_address_opt(p)
     add_eth_call_arguments(p)
     add_p_dont_sync_channels(p)
