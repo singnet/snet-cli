@@ -1,8 +1,7 @@
 import os
 from pathlib import Path, PurePath
 
-from snet.cli.utils.ipfs_utils import safe_extract_proto_from_ipfs
-from snet.cli.utils.utils import compile_proto
+from snet.cli.utils.utils import compile_proto, download_and_safe_extract_proto
 from snet.cli.commands.mpe_service import MPEServiceCommand
 
 
@@ -25,10 +24,10 @@ class SDKCommand(MPEServiceCommand):
         library_dir_path = client_libraries_base_dir_path.joinpath(library_org_id, library_service_id, library_language)
 
         metadata = self._get_service_metadata_from_registry()
-        model_ipfs_hash = metadata["model_ipfs_hash"]
+        service_api_source = metadata.get("service_api_source") or metadata.get("model_ipfs_hash")
 
         # Receive proto files
-        safe_extract_proto_from_ipfs(self._get_ipfs_client(), model_ipfs_hash, library_dir_path)
+        download_and_safe_extract_proto(service_api_source, library_dir_path, self._get_ipfs_client())
 
         # Compile proto files
         compile_proto(Path(library_dir_path), library_dir_path, target_language=self.args.language)

@@ -92,6 +92,9 @@ class Config(ConfigParser):
         if key == "default_ipfs_endpoint":
             self.set_ipfs_endpoint(value)
             print("set default_ipfs_endpoint=%s" % value, file=out_f)
+        elif key == "filecoin_api_key":
+            self.set_filecoin_key(value)
+            print("set filecoin_api_key=%s" % value, file=out_f)
         elif key in get_session_network_keys():
             session_network = self.get_session_network_name()
             self.set_network_field(session_network, key, value)
@@ -113,7 +116,7 @@ class Config(ConfigParser):
     def session_to_dict(self):
         session_identity, session_network = self.safe_get_session_identity_network_names()
 
-        show = {"session", "network.%s" % session_network, "identity.%s" % session_identity, "ipfs"}
+        show = {"session", "network.%s" % session_network, "identity.%s" % session_identity, "ipfs", "filecoin"}
         response = {f: dict(self[f]) for f in show}
         return response
 
@@ -164,6 +167,16 @@ class Config(ConfigParser):
         self["ipfs"]["default_ipfs_endpoint"] = ipfs_endpoint
         self._persist()
 
+    def get_filecoin_key(self):
+        if not self["filecoin"].get("filecoin_api_key"):
+            raise Exception("Use [snet set filecoin_api_key <YOUR_LIGHTHOUSE_API_KEY>] to set filecoin key")
+        return self["filecoin"]["filecoin_api_key"]
+
+    def set_filecoin_key(self, filecoin_key: str):
+        self["filecoin"]["filecoin_api_key"] = filecoin_key
+        self._persist()
+
+
     def get_all_identities_names(self):
         return [x[len("identity."):] for x in self.sections() if x.startswith("identity.")]
 
@@ -194,6 +207,7 @@ class Config(ConfigParser):
             "default_eth_rpc_endpoint": "https://sepolia.infura.io/v3/09027f4a13e841d48dbfefc67e7685d5",
         }
         self["ipfs"] = {"default_ipfs_endpoint": "/dns/ipfs.singularitynet.io/tcp/80/"}
+        self["filecoin"] = {"filecoin_api_key": ""}
         network = self.get_param_from_sdk_config("network")
         if network:
             if network not in self.get_all_networks_names():
@@ -280,4 +294,4 @@ def get_session_network_keys_removable():
 
 
 def get_session_keys():
-    return get_session_network_keys() + get_session_identity_keys() + ["default_ipfs_endpoint"]
+    return get_session_network_keys() + get_session_identity_keys() + ["default_ipfs_endpoint"] + ["filecoin_api_key"]
