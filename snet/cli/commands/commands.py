@@ -7,6 +7,7 @@ from textwrap import indent
 from urllib.parse import urljoin
 
 import ipfshttpclient
+from lighthouseweb3 import Lighthouse
 import yaml
 from rfc3986 import urlparse
 import web3
@@ -18,10 +19,10 @@ from snet.cli.identity import KeyIdentityProvider, KeyStoreIdentityProvider, Led
 from snet.cli.metadata.organization import OrganizationMetadata, PaymentStorageClient, Payment, Group
 from snet.cli.utils.config import get_contract_address, get_field_from_args_or_session, \
     read_default_contract_address
-from snet.cli.utils.ipfs_utils import bytesuri_to_hash, get_from_ipfs_and_checkhash, \
-    hash_to_bytesuri, publish_file_in_ipfs
+from snet.cli.utils.ipfs_utils import get_from_ipfs_and_checkhash, \
+    hash_to_bytesuri, publish_file_in_ipfs, publish_file_in_filecoin
 from snet.cli.utils.utils import DefaultAttributeObject, get_web3, is_valid_url, serializable, type_converter, \
-    get_cli_version, bytes32_to_str
+    get_cli_version, bytes32_to_str, bytesuri_to_hash, get_file_from_filecoin
 
 
 class Command(object):
@@ -78,6 +79,10 @@ class Command(object):
     def _get_ipfs_client(self):
         ipfs_endpoint = self.config.get_ipfs_endpoint()
         return ipfshttpclient.connect(ipfs_endpoint)
+
+    def _get_filecoin_client(self):
+        lighthouse_token = self.config.get_filecoin_key()
+        return Lighthouse(token=lighthouse_token)
 
 
 class VersionCommand(Command):
@@ -489,9 +494,11 @@ class OrganizationCommand(BlockchainCommand):
 
     def _get_organization_metadata_from_registry(self, org_id):
         rez = self._get_organization_registration(org_id)
-        metadata_hash = bytesuri_to_hash(rez["orgMetadataURI"])
-        metadata = get_from_ipfs_and_checkhash(
-            self._get_ipfs_client(), metadata_hash)
+        storage_type, metadata_hash = bytesuri_to_hash(rez["orgMetadataURI"])
+        if storage_type == "ipfs":
+            metadata = get_from_ipfs_and_checkhash(self._get_ipfs_client(), metadata_hash)
+        else:
+            metadata = get_file_from_filecoin(metadata_hash)
         metadata = metadata.decode("utf-8")
         return OrganizationMetadata.from_json(json.loads(metadata))
 
@@ -589,10 +596,17 @@ class OrganizationCommand(BlockchainCommand):
 
         members = self.get_members_from_args()
 
-        ipfs_metadata_uri = publish_file_in_ipfs(
-            self._get_ipfs_client(), metadata_file, False)
-        params = [type_converter("bytes32")(
-            org_id), hash_to_bytesuri(ipfs_metadata_uri), members]
+        storage = self.args.storage
+        if not storage or storage == "ipfs":
+            metadata_uri = publish_file_in_ipfs(self._get_ipfs_client(), metadata_file, False)
+        elif storage == "filecoin":
+            # upload to Filecoin via Lighthouse SDK
+            metadata_uri = publish_file_in_filecoin(self._get_filecoin_client(), metadata_file)
+        else:
+            raise ValueError(f"Unsupported storage option: {storage}. Use --storage <ipfs or filecoin>")
+
+        params = [type_converter("bytes32")(org_id),
+                  hash_to_bytesuri(metadata_uri, storage), members]
         self._printout("Creating transaction to create organization name={} id={}\n".format(
             org_metadata.org_name, org_id))
         self.transact_contract_command(
@@ -622,31 +636,34 @@ class OrganizationCommand(BlockchainCommand):
             with open(metadata_file, 'r') as f:
                 org_metadata = OrganizationMetadata.from_json(json.load(f))
         except Exception as e:
-            print(
-                "Organization metadata json file not found ,Please check --metadata-file path ")
+            print("Organization metadata JSON file not found. Please check --metadata-file path.")
             raise e
-        # validate the metadata before updating
 
+        # Validate the metadata before updating
         org_id = self.args.org_id
-        existing_registry_org_metadata = self._get_organization_metadata_from_registry(
-            org_id)
+        existing_registry_org_metadata = self._get_organization_metadata_from_registry(org_id)
         org_metadata.validate(existing_registry_org_metadata)
 
         # Check if Organization already exists
         found = self._get_organization_by_id(org_id)[0]
         if not found:
-            raise Exception(
-                "\nOrganization with id={} does not  exists!\n".format(org_id))
+            raise Exception("\nOrganization with id={} does not exist!\n".format(org_id))
 
-        ipfs_metadata_uri = publish_file_in_ipfs(
-            self._get_ipfs_client(), metadata_file, False)
-        params = [type_converter("bytes32")(
-            org_id), hash_to_bytesuri(ipfs_metadata_uri)]
+        storage = self.args.storage
+        if not storage or storage == "ipfs":
+            metadata_uri = publish_file_in_ipfs(self._get_ipfs_client(), metadata_file, False)
+        elif storage == "filecoin":
+            # upload to Filecoin via Lighthouse SDK
+            metadata_uri = publish_file_in_filecoin(self._get_filecoin_client(), metadata_file)
+        else:
+            raise ValueError(f"Unsupported storage option: {storage}. Use --storage <ipfs or filecoin>")
+
+        params = [type_converter("bytes32")(org_id), hash_to_bytesuri(metadata_uri, storage)]
         self._printout(
-            "Creating transaction to create organization name={} id={}\n".format(org_metadata.org_name, org_id))
-        self.transact_contract_command(
-            "Registry", "changeOrganizationMetadataURI", params)
-        self._printout("id:\n%s" % org_id)
+            "Creating transaction to update organization metadata for org name={} id={}\n".format(org_metadata.org_name,
+                                                                                                  org_id))
+        self.transact_contract_command("Registry", "changeOrganizationMetadataURI", params)
+        self._printout("Organization updated successfully with id:\n%s" % org_id)
 
     def list_services(self):
         org_id = self.args.org_id

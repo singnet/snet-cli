@@ -3,6 +3,7 @@ from collections import defaultdict
 from pathlib import Path
 from re import search
 from sys import exit
+import tempfile
 
 from grpc_health.v1 import health_pb2 as heartb_pb2
 from grpc_health.v1 import health_pb2_grpc as heartb_pb2_grpc
@@ -12,7 +13,8 @@ from snet.cli.commands.commands import BlockchainCommand
 from snet.cli.metadata.organization import OrganizationMetadata
 from snet.cli.metadata.service import MPEServiceMetadata, load_mpe_service_metadata, mpe_service_metadata_from_json
 from snet.cli.utils import ipfs_utils
-from snet.cli.utils.utils import is_valid_url, open_grpc_channel, type_converter
+from snet.cli.utils.utils import is_valid_url, open_grpc_channel, type_converter, bytesuri_to_hash, \
+    get_file_from_filecoin, download_and_safe_extract_proto
 
 
 class MPEServiceCommand(BlockchainCommand):
@@ -64,7 +66,7 @@ class MPEServiceCommand(BlockchainCommand):
             while True:
                 org_id = input(f"organization id `{display_name}` service would be linked to: ").strip()
                 while org_id == "":
-                    org_id = input(f"organization id required: ").strip()
+                    org_id = input(f"organization id is required: ").strip()
                 try:
                     org_metadata = self._get_organization_metadata_from_registry(org_id)
                     no_of_groups = len(org_metadata.groups)
@@ -72,9 +74,25 @@ class MPEServiceCommand(BlockchainCommand):
                 except Exception:
                     print(f"`{org_id}` is invalid.")
             while True:
+                storage_type = input("storage type (ipfs or filecoin): ").strip()
+                if storage_type == "":
+                    print("storage type is required.")
+                elif storage_type != "ipfs" and storage_type != "filecoin":
+                    print("storage type must be 'ipfs' or 'filecoin'.")
+                else:
+                    break
+            while True:
                 try:
                     protodir_path = input("protodir path: ")
-                    model_ipfs_hash_base58 = ipfs_utils.publish_proto_in_ipfs(self._get_ipfs_client(), protodir_path)
+                    if storage_type == 'ipfs':
+                        service_api_source = ipfs_utils.publish_proto_in_ipfs(
+                            self._get_ipfs_client(),
+                            protodir_path)
+                    else:
+                        service_api_source = ipfs_utils.publish_proto_in_filecoin(
+                            self._get_filecoin_client(),
+                            protodir_path)
+                    service_api_source = ipfs_utils.hash_to_bytesuri(service_api_source, storage_type, False)
                     break
                 except Exception:
                     print(f'Invalid path: "{protodir_path}"')
@@ -89,13 +107,13 @@ class MPEServiceCommand(BlockchainCommand):
                 metadata.add_contributor(input('Enter contributor name '), input('Enter contributor email: '))
             mpe_address = self.get_mpe_address()
 
-            metadata.set_simple_field('model_ipfs_hash', model_ipfs_hash_base58)
+            metadata.set_simple_field('service_api_source', service_api_source)
             metadata.set_simple_field('mpe_address', mpe_address)
             metadata.set_simple_field('display_name', display_name)
             print('', '', json.dumps(metadata.m, indent=2), sep='\n')
             print("Are you sure you want to create? [y/n] ", end='')
             if input() == 'y':
-                file_name = input(f"Choose file name: (service_metadata) ") or 'service_metadata'
+                file_name = input(f"Choose file name (service_metadata by default): ") or 'service_metadata'
                 file_name += '.json'
                 metadata.save_pretty(file_name)
                 print(f"{file_name} created.")
@@ -105,12 +123,21 @@ class MPEServiceCommand(BlockchainCommand):
             exit("\n`snet service metadata-init-utility` CANCELLED.")
 
     def publish_proto_metadata_init(self):
-        model_ipfs_hash_base58 = ipfs_utils.publish_proto_in_ipfs(
-            self._get_ipfs_client(), self.args.protodir)
+
+        storage = self.args.storage
+        if storage == 'ipfs':
+            service_api_source = ipfs_utils.publish_proto_in_ipfs(
+                self._get_ipfs_client(),
+                self.args.protodir)
+        else:
+            service_api_source = ipfs_utils.publish_proto_in_filecoin(
+                self._get_filecoin_client(),
+                self.args.protodir)
+        service_api_source = ipfs_utils.hash_to_bytesuri(service_api_source, storage, False)
 
         metadata = MPEServiceMetadata()
         mpe_address = self.get_mpe_address()
-        metadata.set_simple_field("model_ipfs_hash", model_ipfs_hash_base58)
+        metadata.set_simple_field("service_api_source", service_api_source)
         metadata.set_simple_field("mpe_address", mpe_address)
         metadata.set_simple_field("display_name", self.args.display_name)
         metadata.set_simple_field("encoding", self.args.encoding)
@@ -133,11 +160,21 @@ class MPEServiceCommand(BlockchainCommand):
         metadata.save_pretty(self.args.metadata_file)
 
     def publish_proto_metadata_update(self):
-        """ Publish protobuf model in ipfs and update existing metadata file """
+        """ Publish protobuf model in storage and update existing metadata file """
         metadata = load_mpe_service_metadata(self.args.metadata_file)
-        ipfs_hash_base58 = ipfs_utils.publish_proto_in_ipfs(
-            self._get_ipfs_client(), self.args.protodir)
-        metadata.set_simple_field("model_ipfs_hash", ipfs_hash_base58)
+
+        storage = self.args.storage
+        if storage == 'ipfs':
+            service_api_source = ipfs_utils.publish_proto_in_ipfs(
+                self._get_ipfs_client(),
+                self.args.protodir)
+        else:
+            service_api_source = ipfs_utils.publish_proto_in_filecoin(
+                self._get_filecoin_client(),
+                self.args.protodir)
+        service_api_source = ipfs_utils.hash_to_bytesuri(service_api_source, storage, False)
+
+        metadata.set_simple_field("service_api_source", service_api_source)
         metadata.save_pretty(self.args.metadata_file)
 
     def metadata_set_fixed_price(self):
@@ -385,7 +422,7 @@ class MPEServiceCommand(BlockchainCommand):
         else:
             exit("OK. Ready to publish.")
 
-    def _publish_metadata_in_ipfs(self, metadata_file):
+    def _prepare_to_publish_metadata(self, metadata_file):
         metadata = load_mpe_service_metadata(metadata_file)
         mpe_address = self.get_mpe_address()
         if self.args.update_mpe_address:
@@ -398,24 +435,40 @@ class MPEServiceCommand(BlockchainCommand):
                 "You have two possibilities:\n" +
                 "1. You can use --multipartyescrow-at to set current mpe address\n" +
                 "2. You can use --update-mpe-address parameter to update mpe_address in metadata before publishing it\n")
+        return metadata
+
+    def _publish_metadata_in_ipfs(self, metadata_file):
+        metadata = self._prepare_to_publish_metadata(metadata_file)
         return self._get_ipfs_client().add_bytes(metadata.get_json().encode("utf-8"))
 
     def publish_metadata_in_ipfs(self):
         """ Publish metadata in ipfs and print hash """
         self._printout(self._publish_metadata_in_ipfs(self.args.metadata_file))
 
+    def _publish_metadata_in_filecoin(self, metadata_file):
+        self._prepare_to_publish_metadata(metadata_file)
+        return self._get_filecoin_client().upload(metadata_file)['data']['Hash']
+
+    def publish_metadata_in_filecoin(self):
+        """ Publish metadata in filecoin and print hash """
+        self._printout(self._publish_metadata_in_filecoin(self.args.metadata_file))
+
     #def _get_converted_tags(self):
     #    return [type_converter("bytes32")(tag) for tag in self.args.tags]
 
     def _get_organization_metadata_from_registry(self, org_id):
+        # TODO: In fact, it's the same method as in commands.OrganizationCommand...
         rez = self._get_organization_registration(org_id)
-        metadata_hash = ipfs_utils.bytesuri_to_hash(rez["orgMetadataURI"])
-        metadata = ipfs_utils.get_from_ipfs_and_checkhash(
-            self._get_ipfs_client(), metadata_hash)
+        storage_type, metadata_hash = bytesuri_to_hash(rez["orgMetadataURI"])
+        if storage_type == "ipfs":
+            metadata = ipfs_utils.get_from_ipfs_and_checkhash(self._get_ipfs_client(), metadata_hash)
+        else:
+            metadata = get_file_from_filecoin(metadata_hash)
         metadata = metadata.decode("utf-8")
         return OrganizationMetadata.from_json(json.loads(metadata))
 
     def _get_organization_registration(self, org_id):
+        # TODO: In fact, it's the same method as in commands.OrganizationCommand...
         params = [type_converter("bytes32")(org_id)]
         result = self.call_contract_command(
             "Registry", "getOrganizationById", params)
@@ -440,22 +493,39 @@ class MPEServiceCommand(BlockchainCommand):
                     "Group name %s does not exist in organization" % group["group_name"])
 
     def publish_service_with_metadata(self):
-        self._validate_service_group_with_org_group_and_update_group_id(
-            self.args.org_id, self.args.metadata_file)
-        metadata_uri = ipfs_utils.hash_to_bytesuri(
-            self._publish_metadata_in_ipfs(self.args.metadata_file))
+        self._validate_service_group_with_org_group_and_update_group_id(self.args.org_id, self.args.metadata_file)
+
+        storage = self.args.storage
+        if not storage or storage == "ipfs":
+            metadata_uri = self._publish_metadata_in_ipfs(self.args.metadata_file)
+        elif storage == "filecoin":
+            # upload to Filecoin via Lighthouse SDK
+            metadata_uri = self._publish_metadata_in_filecoin(self.args.metadata_file)
+        else:
+            raise ValueError(f"Unsupported storage option: {storage}. Use --storage <ipfs or filecoin>")
+
+        metadata_uri = ipfs_utils.hash_to_bytesuri(metadata_uri, storage)
         #tags = self._get_converted_tags()
-        params = [type_converter("bytes32")(self.args.org_id), type_converter(
-            "bytes32")(self.args.service_id), metadata_uri]
+        params = [type_converter("bytes32")(self.args.org_id),
+                  type_converter("bytes32")(self.args.service_id),
+                  metadata_uri]
         self.transact_contract_command(
             "Registry", "createServiceRegistration", params)
 
-    def publish_metadata_in_ipfs_and_update_registration(self):
+    def publish_metadata_in_storage_and_update_registration(self):
         # first we check that we do not change payment_address or group_id in existed payment groups
-        self._validate_service_group_with_org_group_and_update_group_id(
-            self.args.org_id, self.args.metadata_file)
-        metadata_uri = ipfs_utils.hash_to_bytesuri(
-            self._publish_metadata_in_ipfs(self.args.metadata_file))
+        self._validate_service_group_with_org_group_and_update_group_id(self.args.org_id, self.args.metadata_file)
+
+        storage = self.args.storage
+        if not storage or storage == "ipfs":
+            metadata_uri = self._publish_metadata_in_ipfs(self.args.metadata_file)
+        elif storage == "filecoin":
+            # upload to Filecoin via Lighthouse SDK
+            metadata_uri = self._publish_metadata_in_filecoin(self.args.metadata_file)
+        else:
+            raise ValueError(f"Unsupported storage option: {storage}. Use --storage <ipfs or filecoin>")
+
+        metadata_uri = ipfs_utils.hash_to_bytesuri(metadata_uri, storage)
         params = [type_converter("bytes32")(self.args.org_id), type_converter(
             "bytes32")(self.args.service_id), metadata_uri]
         self.transact_contract_command(
@@ -484,6 +554,7 @@ class MPEServiceCommand(BlockchainCommand):
         self._printout("This command has been deprecated. Please use `snet service metadata-remove-tags` instead")
 
     def _get_service_registration(self):
+        # TODO: In fact, it's the same method as in MPEChannelCommand...
         params = [type_converter("bytes32")(self.args.org_id), type_converter(
             "bytes32")(self.args.service_id)]
         rez = self.call_contract_command(
@@ -494,13 +565,16 @@ class MPEServiceCommand(BlockchainCommand):
         return {"metadataURI": rez[2]}
 
     def _get_service_metadata_from_registry(self):
-        rez = self._get_service_registration()
-        metadata_hash = ipfs_utils.bytesuri_to_hash(rez["metadataURI"])
-        metadata = ipfs_utils.get_from_ipfs_and_checkhash(
-            self._get_ipfs_client(), metadata_hash)
-        metadata = metadata.decode("utf-8")
-        metadata = mpe_service_metadata_from_json(metadata)
-        return metadata
+        # TODO: In fact, it's the same method as in MPEChannelCommand...
+        response = self._get_service_registration()
+        storage_type, metadata_hash = bytesuri_to_hash(response["metadataURI"])
+        if storage_type == "ipfs":
+            service_metadata = ipfs_utils.get_from_ipfs_and_checkhash(self._get_ipfs_client(), metadata_hash)
+        else:
+            service_metadata = get_file_from_filecoin(metadata_hash)
+        service_metadata = service_metadata.decode("utf-8")
+        service_metadata = mpe_service_metadata_from_json(service_metadata)
+        return service_metadata
 
     def print_service_metadata_from_registry(self):
         metadata = self._get_service_metadata_from_registry()
@@ -544,13 +618,14 @@ class MPEServiceCommand(BlockchainCommand):
 
     def extract_service_api_from_metadata(self):
         metadata = load_mpe_service_metadata(self.args.metadata_file)
-        ipfs_utils.safe_extract_proto_from_ipfs(self._get_ipfs_client(
-        ), metadata["model_ipfs_hash"], self.args.protodir)
+        service_api_source = metadata.get("service_api_source") or metadata.get("model_ipfs_hash")
+        download_and_safe_extract_proto(service_api_source, self.args.protodir, self._get_ipfs_client())
+
 
     def extract_service_api_from_registry(self):
         metadata = self._get_service_metadata_from_registry()
-        ipfs_utils.safe_extract_proto_from_ipfs(self._get_ipfs_client(
-        ), metadata["model_ipfs_hash"], self.args.protodir)
+        service_api_source = metadata.get("service_api_source") or metadata.get("model_ipfs_hash")
+        download_and_safe_extract_proto(service_api_source, self.args.protodir, self._get_ipfs_client())
 
     def delete_service_registration(self):
         params = [type_converter("bytes32")(self.args.org_id), type_converter(

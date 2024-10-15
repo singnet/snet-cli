@@ -23,6 +23,17 @@ def publish_file_in_ipfs(ipfs_client, filepath, wrap_with_directory=True):
         print("File error ", err)
 
 
+def publish_file_in_filecoin(filecoin_client, filepath):
+    """
+    Push a file to Filecoin given its path.
+    """
+    try:
+        response = filecoin_client.upload(filepath)
+        return response['data']['Hash']
+    except Exception as err:
+        print("File upload error: ", err)
+
+
 def publish_proto_in_ipfs(ipfs_client, protodir):
     """
     make tar from protodir/*proto, and publish this tar in ipfs
@@ -50,73 +61,75 @@ def publish_proto_in_ipfs(ipfs_client, protodir):
     return ipfs_client.add_bytes(tarbytes.getvalue())
 
 
+def publish_proto_in_filecoin(filecoin_client, protodir):
+    """
+    Create a tar archive from protodir/*.proto, and publish this tar archive to Lighthouse.
+    Return the hash (CID) of the uploaded archive.
+    """
+
+    if not os.path.isdir(protodir):
+        raise Exception("Directory %s doesn't exist" % protodir)
+
+    files = glob.glob(os.path.join(protodir, "*.proto"))
+
+    if len(files) == 0:
+        raise Exception("Cannot find any .proto files in %s" % protodir)
+
+    files.sort()
+
+    tarbytes = io.BytesIO()
+
+    with tarfile.open(fileobj=tarbytes, mode="w") as tar:
+        for f in files:
+            tar.add(f, os.path.basename(f))
+    tarbytes.seek(0)
+
+    temp_tar_path = os.path.join(protodir, "proto_files.tar")
+    with open(temp_tar_path, 'wb') as temp_tar_file:
+        temp_tar_file.write(tarbytes.getvalue())
+    response = filecoin_client.upload(source=temp_tar_path, tag="")
+
+    os.remove(temp_tar_path)
+
+    return response['data']['Hash']
+
+
 def get_from_ipfs_and_checkhash(ipfs_client, ipfs_hash_base58, validate=True):
     """
-    Get file from ipfs
-    We must check the hash becasue we cannot believe that ipfs_client wasn't been compromise
+    Get file from IPFS. If validate is True, verify the integrity of the file using its hash.
     """
+
+    data = ipfs_client.cat(ipfs_hash_base58)
+
     if validate:
-        from snet.cli.resources.proto.unixfs_pb2 import Data
-        from snet.cli.resources.proto.merckledag_pb2 import MerkleNode
-
-        # No nice Python library to parse ipfs blocks, so do it ourselves.
         block_data = ipfs_client.block.get(ipfs_hash_base58)
-        mn = MerkleNode()
-        mn.ParseFromString(block_data)
-        unixfs_data = Data()
-        unixfs_data.ParseFromString(mn.Data)
-        assert unixfs_data.Type == unixfs_data.DataType.Value(
-            'File'), "IPFS hash must be a file"
-        data = unixfs_data.Data
 
-        # multihash has a badly registered base58 codec, overwrite it...
-        multihash.CodecReg.register(
-            'base58', base58.b58encode, base58.b58decode)
-        # create a multihash object from our ipfs hash
-        mh = multihash.decode(ipfs_hash_base58.encode('ascii'), 'base58')
+        # print(f"IPFS hash (Base58): {ipfs_hash_base58}")
+        # print(f"Block data length: {len(block_data)}")
 
-        # Convenience method lets us directly use a multihash to verify data
-        if not mh.verify(block_data):
+        # Decode Base58 bash to multihash
+        try:
+            mh = multihash.decode(ipfs_hash_base58.encode('ascii'), "base58")
+        except Exception as e:
+            raise ValueError(f"Invalid multihash for IPFS hash: {ipfs_hash_base58}. Error: {str(e)}") from e
+
+        if not mh.verify(block_data):  # Correctly using mh instance for verification
             raise Exception("IPFS hash mismatch with data")
-    else:
-        data = ipfs_client.cat(ipfs_hash_base58)
+
     return data
 
 
-def hash_to_bytesuri(s):
+def hash_to_bytesuri(s, storage_type="ipfs", to_encode=True):
     """
     Convert in and from bytes uri format used in Registry contract
     """
     # TODO: we should pad string with zeros till closest 32 bytes word because of a bug in processReceipt (in snet_cli.contract.process_receipt)
-    s = "ipfs://" + s
-    return s.encode("ascii").ljust(32 * (len(s)//32 + 1), b"\0")
+    if storage_type == "ipfs":
+        s = "ipfs://" + s
+    elif storage_type == "filecoin":
+        s = "filecoin://" + s
 
-
-def bytesuri_to_hash(s):
-    s = s.rstrip(b"\0").decode('ascii')
-    if not s.startswith("ipfs://"):
-        raise Exception("We support only ipfs uri in Registry")
-    return s[7:]
-
-
-def safe_extract_proto_from_ipfs(ipfs_client, ipfs_hash, protodir):
-    """
-    Tar files might be dangerous (see https://bugs.python.org/issue21109,
-    and https://docs.python.org/3/library/tarfile.html, TarFile.extractall warning)
-    we extract only simple files
-    """
-    spec_tar = get_from_ipfs_and_checkhash(ipfs_client, ipfs_hash)
-    with tarfile.open(fileobj=io.BytesIO(spec_tar)) as f:
-        for m in f.getmembers():
-            if os.path.dirname(m.name) != "":
-                raise Exception(
-                    "tarball has directories. We do not support it.")
-            if not m.isfile():
-                raise Exception(
-                    "tarball contains %s which is not a files" % m.name)
-            fullname = os.path.join(protodir, m.name)
-            if os.path.exists(fullname):
-                os.remove(fullname)
-                print("%s removed." % fullname)
-        # now it is safe to call extractall
-        f.extractall(protodir)
+    if to_encode:
+        return s.encode("ascii").ljust(32 * (len(s)//32 + 1), b"\0")
+    else:
+        return s # for 'service_api_source' metadata field
