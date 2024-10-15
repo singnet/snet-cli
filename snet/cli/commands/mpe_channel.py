@@ -4,6 +4,7 @@ import pickle
 import shutil
 import tempfile
 from collections import defaultdict
+from importlib.metadata import metadata
 from pathlib import Path
 
 from eth_abi.codec import ABICodec
@@ -15,9 +16,9 @@ from snet.cli.commands.commands import OrganizationCommand
 from snet.cli.metadata.service import mpe_service_metadata_from_json, load_mpe_service_metadata
 from snet.cli.metadata.organization import OrganizationMetadata
 from snet.cli.utils.agix2cogs import cogs2stragix
-from snet.cli.utils.ipfs_utils import bytesuri_to_hash, get_from_ipfs_and_checkhash, safe_extract_proto_from_ipfs
+from snet.cli.utils.ipfs_utils import get_from_ipfs_and_checkhash
 from snet.cli.utils.utils import abi_decode_struct_to_dict, abi_get_element_by_name, \
-    compile_proto, type_converter
+    compile_proto, type_converter, bytesuri_to_hash, get_file_from_filecoin, download_and_safe_extract_proto
 
 
 # we inherit MPEServiceCommand because we need _get_service_metadata_from_registry
@@ -577,12 +578,14 @@ class MPEChannelCommand(OrganizationCommand):
 
     def _get_service_metadata_from_registry(self):
         response = self._get_service_registration()
-        metadata_hash = bytesuri_to_hash(response["metadataURI"])
-        metadata = get_from_ipfs_and_checkhash(
-            self._get_ipfs_client(), metadata_hash)
-        metadata = metadata.decode("utf-8")
-        metadata = mpe_service_metadata_from_json(metadata)
-        return metadata
+        storage_type, metadata_hash = bytesuri_to_hash(response["metadataURI"])
+        if storage_type == "ipfs":
+            service_metadata = get_from_ipfs_and_checkhash(self._get_ipfs_client(), metadata_hash)
+        else:
+            service_metadata = get_file_from_filecoin(metadata_hash)
+        service_metadata = service_metadata.decode("utf-8")
+        service_metadata = mpe_service_metadata_from_json(service_metadata)
+        return service_metadata
 
     def _init_or_update_service_if_needed(self, metadata, service_registration):
         # if service was already initialized and metadataURI hasn't changed we do nothing
@@ -609,8 +612,8 @@ class MPEChannelCommand(OrganizationCommand):
         try:
             spec_dir = os.path.join(service_dir, "service_spec")
             os.makedirs(spec_dir, mode=0o700)
-            safe_extract_proto_from_ipfs(
-                self._get_ipfs_client(), metadata["model_ipfs_hash"], spec_dir)
+            service_api_source = metadata.get("service_api_source") or metadata.get("model_ipfs_hash")
+            download_and_safe_extract_proto(service_api_source, spec_dir, self._get_ipfs_client())
 
             # compile .proto files
             if not compile_proto(Path(spec_dir), service_dir):
