@@ -78,18 +78,22 @@ def process_html_files_in_directory(directory, output_dir, markdown_dir):
 
 def main():
     if len(sys.argv) == 4:
-        input_directory: str = sys.argv[1]
-        output_directory: str = sys.argv[2]
-        md_directory: str = sys.argv[3]
+        input_html_directory: str = sys.argv[1]
+        output_html_directory: str = sys.argv[2]
+        output_md_directory: str = sys.argv[3]
     else:
         raise Exception("""
             You can only pass 3 parameters:
-            - input_directory
-            - output_directory
-            - md_directory
+            - input_html_directory
+            - output_html_directory
+            - output_md_directory
         """)
 
-    process_html_files_in_directory(input_directory, output_directory, md_directory)
+    process_html_files_in_directory(
+        input_html_directory,
+        output_html_directory,
+        output_md_directory
+    )
 
 
 if __name__ == "__main__":
