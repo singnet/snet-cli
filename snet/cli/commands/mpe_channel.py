@@ -511,6 +511,7 @@ class MPEChannelCommand(OrganizationCommand):
         return_only_id = self.args.only_id or not self.args.do_not_sync
         address = self.get_address_from_arg_or_ident(self.args.sender)
         channels = self._get_filtered_channels(return_only_id=return_only_id, sender=address)
+        self._printout("Channels for sender: %s" % address)
         self._print_channels(channels, ["sender"])
 
     def print_channels_filter_recipient(self):
@@ -518,24 +519,29 @@ class MPEChannelCommand(OrganizationCommand):
         return_only_id = self.args.only_id or not self.args.do_not_sync
         address = self.get_address_from_arg_or_ident(self.args.recipient)
         channels = self._get_filtered_channels(return_only_id=return_only_id, recipient=address)
+        self._printout("Channels for recipient: %s" % address)
         self._print_channels(channels, ["recipient"])
 
     def print_channels_filter_group(self):
         # we don't need to return other channel fields if we only need channel_id or if we'll sync channels state
         return_only_id = self.args.only_id or not self.args.do_not_sync
         metadata = self._get_organization_metadata_from_registry(self.args.org_id)
+        recipient = metadata.get_payment_address_for_group(self.args.group_name)
         group_id = metadata.get_group_id_by_group_name(self.args.group_name)
         channels = self._get_filtered_channels(return_only_id=return_only_id, group_id=group_id)
-        self._print_channels(channels, ["group_id"])
+        self._printout("Channels for group_id: %s and recipient: %s" % (group_id, recipient))
+        self._print_channels(channels, ["group_id", "recipient"])
 
     def print_channels_filter_group_sender(self):
         # we don't need to return other channel fields if we only need channel_id or if we'll sync channels state
         return_only_id = self.args.only_id or not self.args.do_not_sync
-        address = self.get_address_from_arg_or_ident(self.args.sender)
+        sender = self.get_address_from_arg_or_ident(self.args.sender)
         metadata = self._get_organization_metadata_from_registry(self.args.org_id)
         group_id = metadata.get_group_id_by_group_name(self.args.group_name)
-        channels = self._get_filtered_channels(return_only_id=return_only_id, sender=address, group_id=group_id)
-        self._print_channels(channels, ["sender", "group_id"])
+        recipient = metadata.get_payment_address_for_group(self.args.group_name)
+        channels = self._get_filtered_channels(return_only_id=return_only_id, sender=sender, group_id=group_id)
+        self._printout("Channels for group_id: %s, sender: %s and recipient: %s" % (group_id, sender, recipient))
+        self._print_channels(channels, ["sender", "group_id", "recipient"])
 
     def print_all_channels(self):
         # we don't need to return other channel fields if we only need channel_id or if we'll sync channels state
