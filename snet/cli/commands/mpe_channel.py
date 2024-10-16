@@ -122,22 +122,6 @@ class MPEChannelCommand(OrganizationCommand):
             return [c["channel_id"] for c in channels]
         return channels
 
-    def _get_all_filtered_channels(self, topics_without_signature):
-        # TODO: delete
-        """ get all filtered chanels from blockchain logs """
-        mpe_address = self.get_mpe_address()
-        event_signature = self.ident.w3.keccak(
-            text="ChannelOpen(uint256,uint256,address,address,address,bytes32,uint256,uint256)").hex()
-        codec: ABICodec = self.ident.w3.codec
-        topics = [event_signature] + topics_without_signature
-        logs = self.ident.w3.eth.get_logs(
-            {"fromBlock": get_contract_deployment_block(self.ident.w3, "MultiPartyEscrow"), "address": mpe_address, "topics": topics})
-        abi = get_contract_def("MultiPartyEscrow")
-        event_abi = abi_get_element_by_name(abi, "ChannelOpen")
-        channels_ids = [get_event_data(codec, event_abi, l)[
-            "args"]["channelId"] for l in logs]
-        return channels_ids
-
     def _get_service_base_dir(self, org_id, service_id):
         """ get persistent storage for the given service (~/.snet/mpe_client/<mpe_address>_<registry_address>/<org_id>/<service_id>/) """
         return self._get_persistent_mpe_dir().joinpath(org_id, service_id)
@@ -163,7 +147,6 @@ class MPEChannelCommand(OrganizationCommand):
     def _get_org_base_dir(self, org_id):
         """ get persistent storage for the given service (~/.snet/mpe_client/<mpe_address>_<registry_address>/<org_id>/) """
         return self._get_persistent_mpe_dir().joinpath(org_id)
-    #
 
     def get_org_spec_dir(self, org_id):
         """ get persistent storage for the given service (~/.snet/mpe_client/<mpe_address>/<org_id>/) """
@@ -178,28 +161,6 @@ class MPEChannelCommand(OrganizationCommand):
         service_metadata = load_mpe_service_metadata(
             os.path.join(service_dir, "service_metadata.json"))
         return service_metadata
-
-    def _add_channel_to_initialized(self, org_id, channel):
-        channels_dict = self._get_initialized_channels_dict_for_org(org_id)
-        channels_dict[channel["channelId"]] = channel
-
-        # replace old file atomically (os.rename is more or less atomic)
-        tmp = tempfile.NamedTemporaryFile(delete=False)
-        pickle.dump(channels_dict, open(tmp.name, "wb"))
-        shutil.move(tmp.name, self._get_channels_info_file(org_id))
-
-    def _get_initialized_channels_dict_for_org(self, org_id):
-        '''return {channel_id: channel}'''
-        fn = self._get_channels_info_file(org_id)
-        if os.path.isfile(fn):
-            return pickle.load(open(fn, "rb"))
-        else:
-            return {}
-
-    def _get_initialized_channels_for_org(self, org_id):
-        '''return [channel]'''
-        channels_dict = self._get_initialized_channels_dict_for_org(org_id)
-        return list(channels_dict.values())
 
     def _get_org_info_file(self, org_id):
         return os.path.join(self._get_org_base_dir(org_id), "org_info.pickle")
@@ -290,36 +251,6 @@ class MPEChannelCommand(OrganizationCommand):
             raise Exception("Channel does not correspond to the current Ethereum identity " +
                             "(address=%s sender=%s signer=%s)" % (self.ident.address.lower(), channel["sender"].lower(), channel["signer"].lower()))
 
-    def _init_channel_from_metadata(self, metadata, org_registration):
-        # TODO: delete
-        channel_id = self.args.channel_id
-        channel = self._get_channel_state_from_blockchain(channel_id)
-        self._check_channel_is_mine(channel)
-        group_id = metadata.get_group_id_by_group_name(self.args.group_name)
-        if group_id is None:
-            raise Exception("Channel %i does not correspond to the given metadata.\n" % channel_id +
-                            "We can't find the following group_id in metadata: " + self.args.group_name)
-
-        self._printout("#group_name")
-        # self._printout(group.group_name)
-        self._init_or_update_org_if_needed(metadata, org_registration)
-        self._add_channel_to_initialized(self.args.org_id, channel)
-
-    def init_channel_from_metadata(self):
-        # TODO: "channel init-metadata" command
-        # TODO: delete
-        metadata = OrganizationMetadata.from_file(self.args.metadata_file)
-        self._init_channel_from_metadata(metadata, {})
-
-    def init_channel_from_registry(self):
-        # TODO: "channel init" command
-        # TODO: delete
-        metadata = self._get_organization_metadata_from_registry(
-            self.args.org_id)
-        org_registration = self._get_organization_registration(
-            self.args.org_id)
-        self._init_channel_from_metadata(metadata, org_registration)
-
     def _expiration_str_to_blocks(self, expiration_str, current_block):
         s = expiration_str
         if s.startswith("+") and s.endswith("days"):
@@ -351,7 +282,7 @@ class MPEChannelCommand(OrganizationCommand):
         return rez
 
     def _open_channel_for_org(self, metadata):
-        # TODO: needed
+
         mpe_cogs = self.call_contract_command(
             "MultiPartyEscrow",    "balances",  [self.ident.address])
         if mpe_cogs < self.args.amount:
@@ -381,21 +312,6 @@ class MPEChannelCommand(OrganizationCommand):
         channel_info["channel_id"] = rez[1][0]["args"]["channelId"]
         return channel_info
 
-    def _initialize_already_opened_channel(self, metadata, sender, signer):
-        # TODO: delete
-        group_id = base64.b64decode(metadata.get_group_id_by_group_name(self.args.group_name))
-        recipient = metadata.get_payment_address_for_group(self.args.group_name)
-        channels_ids = self._get_all_channels_filter_sender_recipient_group(sender, recipient, group_id)
-        for i in sorted(channels_ids):
-            channel = self._get_channel_state_from_blockchain(i)
-            if channel["signer"].lower() == signer.lower():
-                self._printerr(
-                    "# Channel with given sender, signer and group_id is already exists we simply initialize it (channel_id = %i)" % channel["channelId"])
-#                self._printerr("# Please run 'snet channel extend-add %i --expiration <EXPIRATION> --amount <AMOUNT>' if necessary"%channel["channelId"])
-                self._add_channel_to_initialized(self.args.org_id, channel)
-                return channel
-        return None
-
     def _check_already_opened_channel(self, metadata, sender, signer):
         group_id = metadata.get_group_id_by_group_name(self.args.group_name)
         recipient = metadata.get_payment_address_for_group(self.args.group_name)
@@ -412,7 +328,6 @@ class MPEChannelCommand(OrganizationCommand):
         return None
 
     def _open_channel_from_metadata(self, metadata, org_registration):
-        # TODO: needed
         self._init_or_update_org_if_needed(metadata, org_registration)
 
         # Before open new channel we try to find already opened channel
@@ -429,12 +344,10 @@ class MPEChannelCommand(OrganizationCommand):
         self._printout(channel["channel_id"])
 
     def open_channel_from_metadata(self):
-        # TODO: "channel open-from-metadata" command
         metadata = OrganizationMetadata.from_file(self.args.metadata_file)
         self._open_channel_from_metadata(metadata, {})
 
     def open_channel_from_registry(self):
-        # TODO: "channel open" command
         metadata = self._get_organization_metadata_from_registry(
             self.args.org_id)
         org_registration = self._get_organization_registration(
@@ -489,7 +402,6 @@ class MPEChannelCommand(OrganizationCommand):
                 new_expiration, channel["expiration"]))
 
     def _smart_get_channel_for_org(self, metadata, filter_by):
-        # TODO: needed
         '''
          - filter_by can be sender or signer
         '''
@@ -522,17 +434,6 @@ class MPEChannelCommand(OrganizationCommand):
         metadata = self._read_metadata_for_org(self.args.org_id)
         channel_id = self._smart_get_channel_for_org(metadata, "sender")["channelId"]
         self._channel_extend_add_funds_with_channel_id(channel_id)
-
-    def _get_all_initialized_channels(self):
-        # TODO: delete
-        """ return dict of lists  rez[(<org_id>, <service_id>)] = [(channel_id, channel_info)] """
-        channels_dict = defaultdict(list)
-        for service_base_dir in self._get_persistent_mpe_dir().glob("*/*"):
-            org_id = service_base_dir.parent.name
-            channels = self._get_initialized_channels_for_org(org_id)
-            if channels:
-                channels_dict[org_id] = channels
-        return channels_dict
 
     def _get_channel_state_from_blockchain(self, channel_id):
         abi = get_contract_def("MultiPartyEscrow")
@@ -600,66 +501,10 @@ class MPEChannelCommand(OrganizationCommand):
             channel["group_id"] = base64.b64encode(channel["groupId"]).decode("ascii")
             self._printout(self._convert_channel_dict_to_str(channel, filters))
 
-    def _print_channels_dict_from_blockchain(self, channels_dict):
-        # print only caption
-        if self.args.only_id:
-            self._printout("#organization_id service_id channelId")
-        else:
-            self._printout(
-                "#organization_id service_id group_name channel_id nonce value(AGIX) expiration(blocks)")
-        for org_id in channels_dict:
-            channels = self._filter_channels_sender_or_signer(
-                channels_dict[org_id])
-            metadata = self._read_metadata_for_org(org_id)
-            for channel in channels:
-                channel_id = channel["channelId"]
-                group_id_base64 = base64.b64encode(
-                    channel["groupId"]).decode('ascii')
-                group = metadata.get_group_by_group_id(group_id_base64)
-                if group is None:
-                    group_name = "UNDEFINED"
-                else:
-                    group_name = group.group_name
-                if self.args.only_id:
-                    self._printout("%s %s %i" %
-                                   (org_id, group_name, channel_id))
-                else:
-                    channel_blockchain = self._get_channel_state_from_blockchain(
-                        channel_id)
-                    value_agi = cogs2stragix(channel_blockchain["value"])
-                    self._printout("%s %s %i %i %s %i" % (org_id, group_name, channel_id,
-                                                          channel_blockchain["nonce"], value_agi, channel_blockchain["expiration"]))
-
-    def _filter_channels_sender_or_signer(self, channels):
-        good_channels = []
-        for channel in channels:
-            not_sender = channel["sender"] != self.ident.address
-            not_signer = channel["signer"] != self.ident.address
-            if self.args.filter_sender and not_sender:
-                continue
-            if self.args.filter_signer and not_signer:
-                continue
-            if self.args.filter_my and not_sender and not_signer:
-                continue
-            good_channels.append(channel)
-        return good_channels
-
-    def print_initialized_channels(self):
-        # TODO: "print-initialized" command
-        # TODO: delete
-        channels_dict = self._get_all_initialized_channels()
-        self._print_channels_dict_from_blockchain(channels_dict)
-
     def get_address_from_arg_or_ident(self, arg):
         if arg:
             return arg
         return self.ident.address
-
-    def print_channels_filter_org(self):
-        # TODO: "print-initialized-filter-org" command
-        # TODO: delete
-        channels = self._get_initialized_channels_for_org(self.args.org_id)
-        self._print_channels_dict_from_blockchain({self.args.org_id: channels})
 
     def print_channels_filter_sender(self):
         # we don't need to return other channel fields if we only need channel_id or if we'll sync channels state
@@ -697,19 +542,6 @@ class MPEChannelCommand(OrganizationCommand):
         return_only_id = self.args.only_id or not self.args.do_not_sync
         channels = self._get_filtered_channels(return_only_id=return_only_id)
         self._print_channels(channels)
-
-    def _get_all_channels_filter_sender(self, sender):
-        # TODO: delete
-        sender_padded = pad_hex(sender.lower(), 256)
-        channels_ids = self._get_filtered_channels(return_only_id=True, sender=sender_padded)
-        return channels_ids
-
-    def _get_all_channels_filter_sender_recipient_group(self, sender, recipient, group_id):
-        # TODO: delete
-        sender_padded = pad_hex(sender.lower(),    256)
-        recipient_padded = pad_hex(recipient.lower(), 256)
-        group_id_hex = "0x" + group_id.hex()
-        return self._get_all_filtered_channels([sender_padded, recipient_padded, group_id_hex])
 
     # Auxilary functions
     def print_block_number(self):
