@@ -10,5 +10,6 @@ snet.cli.egg-info/
 snet/cli/resources/node_modules
 snet/cli/resources/proto/*.py
 build/
+*.rst
 dist/
 *.pyi
