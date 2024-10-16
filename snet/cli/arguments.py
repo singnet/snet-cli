@@ -1162,7 +1162,6 @@ def add_mpe_service_options(parser):
         _p.add_argument("--update-mpe-address",
                         action='store_true',
                         help="Update mpe_address in metadata before publishing them")
-        add_p_storage_param(p)
         add_p_mpe_address_opt(_p)
 
     p = subparsers.add_parser("publish",
@@ -1171,7 +1170,8 @@ def add_mpe_service_options(parser):
     add_p_publish_params(p)
     add_p_service_in_registry(p)
     add_transaction_arguments(p)
- 
+    add_p_storage_param(p)
+
     p = subparsers.add_parser("publish-in-ipfs",
                               help="Publish metadata only in IPFS, without publishing in Registry")
     p.set_defaults(fn="publish_metadata_in_ipfs")
@@ -1190,6 +1190,7 @@ def add_mpe_service_options(parser):
     add_p_publish_params(p)
     add_p_service_in_registry(p)
     add_transaction_arguments(p)
+    add_p_storage_param(p)
 
     p = subparsers.add_parser("update-add-tags",
                               help="Add tags to existed service registration")

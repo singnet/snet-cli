@@ -117,7 +117,7 @@ class MPEChannelCommand(OrganizationCommand):
                 check_ch = lambda c: base64.b64encode(c[key]).decode("utf-8") == value
             else:
                 check_ch = lambda c: c[key] == value
-            channels = [c for c in channels if check_ch(c)]
+            channels = [ch for ch in channels if check_ch(ch)]
         if return_only_id:
             return [c["channel_id"] for c in channels]
         return channels
@@ -351,28 +351,26 @@ class MPEChannelCommand(OrganizationCommand):
         return rez
 
     def _open_channel_for_org(self, metadata):
+        # TODO: needed
         mpe_cogs = self.call_contract_command(
             "MultiPartyEscrow",    "balances",  [self.ident.address])
         if mpe_cogs < self.args.amount:
             raise Exception(
                 "insufficient funds. You MPE balance is %s AGIX " % cogs2stragix(mpe_cogs))
 
-        group_id = base64.b64decode(
-            metadata.get_group_id_by_group_name(self.args.group_name))
+        group_id = base64.b64decode(metadata.get_group_id_by_group_name(self.args.group_name))
         if not group_id:
-            raise Exception(
-                "group  %s is associated with organization", self.args.group_name)
+            raise Exception("group  %s is associated with organization", self.args.group_name)
 
-        recipient = metadata.get_payment_address_for_group(
-            self.args.group_name)
+        recipient = metadata.get_payment_address_for_group(self.args.group_name)
 
         signer = self.get_address_from_arg_or_ident(self.args.signer)
 
         channel_info = {"sender": self.ident.address, "signer": signer,
-                        "recipient": recipient, "groupId": group_id}
+                        "recipient": recipient, "group_id": group_id}
         expiration = self._get_expiration_from_args()
         params = [channel_info["signer"], channel_info["recipient"],
-                  channel_info["groupId"], self.args.amount, expiration]
+                  channel_info["group_id"], self.args.amount, expiration]
         rez = self.transact_contract_command(
             "MultiPartyEscrow", "openChannel", params)
 
@@ -380,11 +378,11 @@ class MPEChannelCommand(OrganizationCommand):
             raise Exception(
                 "We've expected only one ChannelOpen event after openChannel. Make sure that you use correct MultiPartyEscrow address")
 
-        channel_info["channelId"] = rez[1][0]["args"]["channelId"]
+        channel_info["channel_id"] = rez[1][0]["args"]["channelId"]
         return channel_info
 
     def _initialize_already_opened_channel(self, metadata, sender, signer):
-
+        # TODO: delete
         group_id = base64.b64decode(metadata.get_group_id_by_group_name(self.args.group_name))
         recipient = metadata.get_payment_address_for_group(self.args.group_name)
         channels_ids = self._get_all_channels_filter_sender_recipient_group(sender, recipient, group_id)
@@ -398,31 +396,42 @@ class MPEChannelCommand(OrganizationCommand):
                 return channel
         return None
 
-    def _open_init_channel_from_metadata(self, metadata, org_registration):
-        # TODO: change to not init
+    def _check_already_opened_channel(self, metadata, sender, signer):
+        group_id = metadata.get_group_id_by_group_name(self.args.group_name)
+        recipient = metadata.get_payment_address_for_group(self.args.group_name)
+        channels = self._get_filtered_channels(sender=sender, recipient=recipient, group_id=group_id)
+
+        for i in channels:
+            channel = self._get_channel_state_from_blockchain(i)
+            if channel["signer"].lower() == signer.lower():
+                self._printerr(
+                    "# Channel with given sender, signer and group_id is already exists. (channel_id = %i)"
+                    % channel["channel_id"])
+                return channel
+
+        return None
+
+    def _open_channel_from_metadata(self, metadata, org_registration):
+        # TODO: needed
         self._init_or_update_org_if_needed(metadata, org_registration)
 
         # Before open new channel we try to find already opened channel
         if not self.args.open_new_anyway:
             sender = self.ident.address
             signer = self.get_address_from_arg_or_ident(self.args.signer)
-            channel = self._initialize_already_opened_channel(
-                metadata, sender, signer)
+            channel = self._check_already_opened_channel(metadata, sender, signer)
             if channel is not None:
                 return
 
         # open payment channel
         channel = self._open_channel_for_org(metadata)
         self._printout("#channel_id")
-        self._printout(channel["channelId"])
-
-        # initialize channel
-        self._add_channel_to_initialized(self.args.org_id, channel)
+        self._printout(channel["channel_id"])
 
     def open_channel_from_metadata(self):
-        # TODO: "channel open-metadata" command
+        # TODO: "channel open-from-metadata" command
         metadata = OrganizationMetadata.from_file(self.args.metadata_file)
-        self._open_init_channel_from_metadata(metadata, {})
+        self._open_channel_from_metadata(metadata, {})
 
     def open_channel_from_registry(self):
         # TODO: "channel open" command
@@ -430,17 +439,19 @@ class MPEChannelCommand(OrganizationCommand):
             self.args.org_id)
         org_registration = self._get_organization_registration(
             self.args.org_id)
-        self._open_init_channel_from_metadata(metadata, org_registration)
+        self._open_channel_from_metadata(metadata, org_registration)
 
     def channel_claim_timeout(self):
         rez = self._get_channel_state_from_blockchain(self.args.channel_id)
-        if rez["value"] == 0:
+        if rez["expiration"] >= self.ident.w3.eth.block_number:
+            raise Exception("Channel is not expired yet")
+        elif rez["value"] == 0:
             raise Exception("Channel has 0 value. There is nothing to claim")
         self.transact_contract_command(
             "MultiPartyEscrow", "channelClaimTimeout", [self.args.channel_id])
 
     def channel_claim_timeout_all(self):
-        channels_ids = self._get_all_channels_filter_sender(self.ident.address)
+        channels_ids = self._get_filtered_channels(return_only_id=True, sender=self.ident.address)
         for channel_id in channels_ids:
             response = self._get_channel_state_from_blockchain(channel_id)
             if response["value"] > 0 and response["expiration"] < self.ident.w3.eth.block_number:
@@ -457,7 +468,7 @@ class MPEChannelCommand(OrganizationCommand):
             return
 
         expiration = self._get_expiration_from_args()
-        self.check_new_expiration_from_blockchain(channel_id, expiration)
+        self._check_new_expiration_from_blockchain(channel_id, expiration)
         # only extend channel (if --amount hasn't been specified)
         if self.args.amount is None:
             self.transact_contract_command("MultiPartyEscrow", "channelExtend", [
@@ -471,42 +482,40 @@ class MPEChannelCommand(OrganizationCommand):
     def channel_extend_and_add_funds(self):
         self._channel_extend_add_funds_with_channel_id(self.args.channel_id)
 
-    def check_new_expiration_from_blockchain(self, channel_id, new_expiration):
+    def _check_new_expiration_from_blockchain(self, channel_id, new_expiration):
         channel = self._get_channel_state_from_blockchain(channel_id)
         if new_expiration < channel["expiration"]:
             raise Exception("New expiration (%i) is smaller then old one (%i)" % (
                 new_expiration, channel["expiration"]))
 
-    def _smart_get_channel_for_org(self, metadata, filter_by, is_try_initailize=True):
-        # TODO: change to not take from initialized
+    def _smart_get_channel_for_org(self, metadata, filter_by):
+        # TODO: needed
         '''
          - filter_by can be sender or signer
         '''
-        channels = self._get_initialized_channels_for_org(self.args.org_id)
-        group_id = base64.b64decode(metadata.get_group_id_by_group_name(self.args.group_name))
-        channels = [c for c in channels
-                    if c[filter_by].lower() == self.ident.address.lower() and c["groupId"] == group_id]
-
-        if len(channels) == 0 and is_try_initailize:
-            # this will work only in simple case where signer == sender
-            self._initialize_already_opened_channel(
-                metadata, self.ident.address, self.ident.address)
-            return self._smart_get_channel_for_org(metadata, filter_by, is_try_initailize=False)
+        recipient = metadata.get_payment_address_for_group(self.args.group_name)
+        group_id = metadata.get_group_id_by_group_name(self.args.group_name)
+        channels = self._get_filtered_channels(return_only_id=False, recipient=recipient, group_id=group_id)
+        channels = [c for c in channels if c[filter_by].lower() == self.ident.address.lower()]
 
         if len(channels) == 0:
-            raise Exception("Cannot find initialized channel for service with org_id=%s service_id=%s and signer=%s" % (
-                self.args.org_id, self.args.service_id, self.ident.address))
+            if self.args.service_id:
+                raise Exception("Cannot find channel for service with org_id=%s service_id=%s group_name=%s and signer=%s" % (
+                    self.args.org_id, self.args.service_id, self.args.group_name, self.ident.address))
+            else:
+                raise Exception("Cannot find channel for org_id=%s group_name=%s and signer=%s" % (
+                    self.args.org_id, self.args.group_name, self.ident.address))
         if self.args.channel_id is None:
             if len(channels) > 1:
-                channel_ids = [channel["channelId"] for channel in channels]
+                channel_ids = [channel["channel_id"] for channel in channels]
                 raise Exception(
-                    "We have several initialized channel: %s. You should use --channel-id to select one" % str(channel_ids))
+                    "We have several channels: %s. You should use --channel-id to select one" % str(channel_ids))
             return channels[0]
         for channel in channels:
-            if channel["channelId"] == self.args.channel_id:
+            if channel["channel_id"] == self.args.channel_id:
                 return channel
         raise Exception(
-            "Channel %i has not been initialized or your are not the sender/signer of it" % self.args.channel_id)
+            "Channel %i has not been opened or you are not the sender/signer of it" % self.args.channel_id)
 
     def channel_extend_and_add_funds_for_org(self):
         self._init_or_update_registered_org_if_needed()
@@ -690,11 +699,13 @@ class MPEChannelCommand(OrganizationCommand):
         self._print_channels(channels)
 
     def _get_all_channels_filter_sender(self, sender):
+        # TODO: delete
         sender_padded = pad_hex(sender.lower(), 256)
-        channels_ids = self._get_all_filtered_channels([sender_padded])
+        channels_ids = self._get_filtered_channels(return_only_id=True, sender=sender_padded)
         return channels_ids
 
     def _get_all_channels_filter_sender_recipient_group(self, sender, recipient, group_id):
+        # TODO: delete
         sender_padded = pad_hex(sender.lower(),    256)
         recipient_padded = pad_hex(recipient.lower(), 256)
         group_id_hex = "0x" + group_id.hex()
