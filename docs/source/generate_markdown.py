@@ -1,5 +1,6 @@
 import os
 import sys
+import re
 from bs4 import BeautifulSoup
 
 
@@ -51,16 +52,65 @@ def process_html_file(file_path, output_dir, markdown_dir):
 
     os.system(f"html2text --ignore-images {output_path} > {md_output_path}")
 
-    with open(md_output_path, 'r', encoding='utf-8') as file:
-        md_content = file.read()
+    if sys.platform.startswith('win'):
+        with open(md_output_path, 'r') as file:
+            md_content = file.read()
+    else:
+        with open(md_output_path, 'r', encoding='utf-8') as file:
+            md_content = file.read()
 
-    clean_md = md_content.replace("start ", "```sh\n\t") \
-                         .replace("finish", "\n```")
+    clean_md = format_code_elements(md_content)
+    clean_md = clean_md.replace("\n### ", "\n## ")
+    clean_md = clean_md.replace("<", "\<")  # fix tags errors
+    clean_md = clean_md.replace(">", "\>")  # fix tags errors
+    clean_md = clean_md.replace("````", "```")
+    clean_md = delete_beginning(clean_md)
 
     with open(md_output_path, 'w', encoding='utf-8') as file:
         file.write(clean_md)
 
     print(f"Processed: {output_path} -> {md_output_path}\n")
+
+
+def format_code_elements(text: str):
+    substrings = []
+    start_index = 0
+    while True:
+        start_index = text.find("start", start_index)
+        if start_index == -1:
+            break
+
+        end_index = text.find("finish", start_index + 5)
+        if end_index == -1:
+            break
+
+        substrings.append(text[start_index + 5:end_index])
+        start_index = end_index + 6
+
+    results = []
+    for code in substrings:
+        res = re.sub(r'\s+', ' ', code).strip()
+
+        res_split = list(res.split())
+        length = len(res_split[0]) + len(res_split[1]) + len(res_split[2]) + 3
+        ind = ' ' * length
+        res = res.replace('] [', ']\n' + ind + '[')
+
+        results.append(res)
+
+    for i in range(len(results)):
+        text = text.replace("start" + substrings[i] + "finish", "```sh\n" + results[i] + "\n```")
+
+    return text
+
+
+def delete_beginning(text: str):
+    start_index = text.find("## Commands")
+    end_index = text.find("## Sub-commands")
+    if start_index == -1 or end_index == -1:
+        return text
+
+    return text.replace(text[start_index + 11:end_index + 15], "")
 
 
 def process_html_files_in_directory(directory, output_dir, markdown_dir):
