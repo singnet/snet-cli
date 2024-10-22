@@ -185,9 +185,6 @@ def add_network_options(parser, config):
                    help="Name of network to create")
     p.add_argument("eth_rpc_endpoint",
                    help="Ethereum rpc endpoint")
-    p.add_argument("--default-gas-price",
-                   default="medium",
-                   help="Default gas price (in wei) or gas price strategy ('fast' ~1min, 'medium' ~5min or 'slow' ~60min), default is 'medium'")
     p.add_argument("--skip-check",
                    action="store_true",
                    help="Skip check that eth_rpc_endpoint is valid")
@@ -236,6 +233,8 @@ def add_contract_options(parser):
 
     contracts = get_all_abi_contract_files()
     for path in contracts:
+        if "TokenConversionManager" in str(path) or "TokenStake" in str(path):
+            continue
         contract_name = re.search(
             r"([^.]*)\.json", os.path.basename(path)).group(1)
         contract_p = subparsers.add_parser(
@@ -1323,16 +1322,9 @@ def add_sdk_options(parser):
     subparsers = parser.add_subparsers(title="Commands", metavar="COMMAND")
     subparsers.required = True
 
-    supported_languages = ["python", "nodejs"]
-
     p = subparsers.add_parser("generate-client-library",
-                              help="Generate compiled client libraries to call services using your language of choice")
+                              help="Generate compiled client libraries to call services using Python")
     p.set_defaults(fn="generate_client_library")
-    p.add_argument("language",
-                   choices=supported_languages,
-                   help="Choose target language for the generated client library from {}".format(
-                       supported_languages),
-                   metavar="LANGUAGE")
     add_p_service_in_registry(p)
     p.add_argument("protodir",
                    nargs="?",

@@ -17,11 +17,10 @@ class SDKCommand(MPEServiceCommand):
         os.makedirs(client_libraries_base_dir_path, exist_ok=True)
 
         # Create service client libraries path
-        library_language = self.args.language
         library_org_id = self.args.org_id
         library_service_id = self.args.service_id
 
-        library_dir_path = client_libraries_base_dir_path.joinpath(library_org_id, library_service_id, library_language)
+        library_dir_path = client_libraries_base_dir_path.joinpath(library_org_id, library_service_id, "python")
 
         metadata = self._get_service_metadata_from_registry()
         service_api_source = metadata.get("service_api_source") or metadata.get("model_ipfs_hash")
@@ -30,7 +29,7 @@ class SDKCommand(MPEServiceCommand):
         download_and_safe_extract_proto(service_api_source, library_dir_path, self._get_ipfs_client())
 
         # Compile proto files
-        compile_proto(Path(library_dir_path), library_dir_path, target_language=self.args.language)
+        compile_proto(Path(library_dir_path), library_dir_path)
 
         self._printout(
             'client libraries for service with id "{}" in org with id "{}" generated at {}'.format(library_service_id,
