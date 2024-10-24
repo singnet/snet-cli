@@ -200,9 +200,6 @@ class Config(ConfigParser):
         self["network.mainnet"] = {
             "default_eth_rpc_endpoint": "https://mainnet.infura.io/v3/09027f4a13e841d48dbfefc67e7685d5"
         }
-        self["network.goerli"] = {
-            "default_eth_rpc_endpoint": "https://goerli.infura.io/v3/09027f4a13e841d48dbfefc67e7685d5",
-        }
         self["network.sepolia"] = {
             "default_eth_rpc_endpoint": "https://sepolia.infura.io/v3/09027f4a13e841d48dbfefc67e7685d5",
         }

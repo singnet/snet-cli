@@ -146,7 +146,7 @@ def get_cli_version():
     return distribution("snet.cli").version
 
 
-def compile_proto(entry_path, codegen_dir, proto_file=None, target_language="python"):
+def compile_proto(entry_path, codegen_dir, proto_file=None):
     try:
         if not os.path.exists(codegen_dir):
             os.makedirs(codegen_dir)
@@ -157,25 +157,10 @@ def compile_proto(entry_path, codegen_dir, proto_file=None, target_language="pyt
             "-I{}".format(proto_include)
         ]
 
-        if target_language == "python":
-            compiler_args.insert(0, "protoc")
-            compiler_args.append("--python_out={}".format(codegen_dir))
-            compiler_args.append("--grpc_python_out={}".format(codegen_dir))
-            compiler = protoc
-        elif target_language == "nodejs":
-            protoc_node_compiler_path = Path(
-                RESOURCES_PATH.joinpath("node_modules").joinpath("grpc-tools").joinpath("bin").joinpath(
-                    "protoc.js")).absolute()
-            grpc_node_plugin_path = Path(
-                RESOURCES_PATH.joinpath("node_modules").joinpath("grpc-tools").joinpath("bin").joinpath(
-                    "grpc_node_plugin")).resolve()
-            if not os.path.isfile(protoc_node_compiler_path) or not os.path.isfile(grpc_node_plugin_path):
-                print("Missing required node.js protoc compiler. Retrieving from npm...")
-                subprocess.run(["npm", "install"], cwd=RESOURCES_PATH)
-            compiler_args.append("--js_out=import_style=commonjs,binary:{}".format(codegen_dir))
-            compiler_args.append("--grpc_out={}".format(codegen_dir))
-            compiler_args.append("--plugin=protoc-gen-grpc={}".format(grpc_node_plugin_path))
-            compiler = lambda args: subprocess.run([str(protoc_node_compiler_path)] + args)
+        compiler_args.insert(0, "protoc")
+        compiler_args.append("--python_out={}".format(codegen_dir))
+        compiler_args.append("--grpc_python_out={}".format(codegen_dir))
+        compiler = protoc
 
         if proto_file:
             compiler_args.append(str(proto_file))
