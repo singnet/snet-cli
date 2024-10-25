@@ -233,13 +233,12 @@ def add_contract_options(parser):
 
     contracts = get_all_abi_contract_files()
     for path in contracts:
-        if "TokenConversionManager" in str(path) or "TokenStake" in str(path):
-            continue
-        contract_name = re.search(
-            r"([^.]*)\.json", os.path.basename(path)).group(1)
-        contract_p = subparsers.add_parser(
-            contract_name, help="{} contract".format(contract_name))
-        add_contract_function_options(contract_p, contract_name)
+        if "MultiPartyEscrow" in str(path) or "Registry" in str(path) or "SingularityNetToken" in str(path):
+            contract_name = re.search(
+                r"([^.]*)\.json", os.path.basename(path)).group(1)
+            contract_p = subparsers.add_parser(
+                contract_name, help="{} contract".format(contract_name))
+            add_contract_function_options(contract_p, contract_name)
 
 
 def add_organization_arguments(parser):
