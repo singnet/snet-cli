@@ -1,4 +1,4 @@
-SingularityNET CLI
+# SingularityNET CLI
 
 ## Package
 
