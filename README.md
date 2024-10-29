@@ -142,12 +142,8 @@ $ pip3 install -e .
 
 ```bash
 $ git clone https://github.com/singnet/snet-cli.git
-$ cd snet-cli/packages/snet_cli
-$ pip install sphinx
-$ pip install sphinx-argparse
-$ pip install sphinx-rtd-theme
-$ pip install bs4
-$ pip install html2text
+$ cd snet-cli
+$ pip install -r docs/requirements.txt
 ```
 
 #### On Linux
