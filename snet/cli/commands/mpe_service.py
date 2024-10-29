@@ -394,7 +394,7 @@ class MPEServiceCommand(BlockchainCommand):
         """
         # Set path to `service_schema` stored in the `resources` directory from cwd of `mpe_service.py`
         current_path = Path(__file__).parent
-        relative_path = '../../snet/snet_cli/resources/service_schema'
+        relative_path = '../../cli/resources/service_schema'
         path_to_schema = (current_path / relative_path).resolve()
         with open(path_to_schema, 'r') as f:
             schema = json.load(f)
@@ -405,21 +405,24 @@ class MPEServiceCommand(BlockchainCommand):
             docs = "http://snet-cli-docs.singularitynet.io/service.html"
             error_message = f"\nVisit {docs} for more information."
             if e.validator == 'required':
-                raise ValidationError(e.message + error_message)
+                self._printout(e.message + error_message)
             elif e.validator == 'minLength':
-                raise ValidationError(f"`{e.path[-1]}` -> cannot be empty." + error_message)
+                self._printout(f"`{e.path[-1]}` -> cannot be empty." + error_message)
             elif e.validator == 'minItems':
-                raise ValidationError(f"`{e.path[-1]}` -> minimum 1 item required." + error_message)
+                self._printout(f"`{e.path[-1]}` -> minimum 1 item required." + error_message)
             elif e.validator == 'type':
-                raise ValidationError(f"`{e.path[-1]}` -> {e.message}" + error_message)
+                self._printout(f"`{e.path[-1]}` -> {e.message}" + error_message)
             elif e.validator == 'enum':
-                raise ValidationError(f"`{e.path[-1]}` -> {e.message}" + error_message)
+                self._printout(f"`{e.path[-1]}` -> {e.message}" + error_message)
             elif e.validator == 'additionalProperties':
                 if len(e.path) != 0:
-                    raise ValidationError(f"{e.message} in `{e.path[-2]}`." + error_message)
+                    self._printout(f"{e.message} in `{e.path[-2]}`." + error_message)
                 else:
-                    raise ValidationError(f"{e.message} in main object." + error_message)
+                    self._printout(f"{e.message} in main object." + error_message)
+            else:
+                self._printout(e)
         else:
+            self._printout("Service metadata is valid.")
             exit("OK. Ready to publish.")
 
     def _prepare_to_publish_metadata(self, metadata_file):
