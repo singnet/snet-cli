@@ -110,7 +110,10 @@ class Config(ConfigParser):
     def unset_session_field(self, key, out_f):
         if key in get_session_network_keys_removable():
             print("unset %s from network %s" % (key, self["session"]["network"]), file=out_f)
-            del self._get_network_section(self["session"]["network"])[key]
+            if key == "filecoin_api_key":
+                self.unset_filecoin_key()
+            else:
+                del self._get_network_section(self["session"]["network"])[key]
         self._persist()
 
     def session_to_dict(self):
@@ -176,6 +179,9 @@ class Config(ConfigParser):
         self["filecoin"]["filecoin_api_key"] = filecoin_key
         self._persist()
 
+    def unset_filecoin_key(self):
+        del self["filecoin"]["filecoin_api_key"]
+        self._persist()
 
     def get_all_identities_names(self):
         return [x[len("identity."):] for x in self.sections() if x.startswith("identity.")]
@@ -282,12 +288,12 @@ def get_session_identity_keys():
 
 
 def get_session_network_keys():
-    return ["default_gas_price", "current_registry_at", "current_multipartyescrow_at", "current_singularitynettoken_at",
+    return ["current_registry_at", "current_multipartyescrow_at", "current_singularitynettoken_at",
             "default_eth_rpc_endpoint"]
 
 
 def get_session_network_keys_removable():
-    return ["default_gas_price", "current_registry_at", "current_multipartyescrow_at", "current_singularitynettoken_at"]
+    return ["current_registry_at", "current_multipartyescrow_at", "current_singularitynettoken_at", "filecoin_api_key"]
 
 
 def get_session_keys():
