@@ -171,11 +171,13 @@ class Config(ConfigParser):
         self._persist()
 
     def get_filecoin_key(self):
-        if not self["filecoin"].get("filecoin_api_key"):
+        if "filecoin" not in self or not self["filecoin"].get("filecoin_api_key"):
             raise Exception("Use [snet set filecoin_api_key <YOUR_LIGHTHOUSE_API_KEY>] to set filecoin key")
         return self["filecoin"]["filecoin_api_key"]
 
     def set_filecoin_key(self, filecoin_key: str):
+        if "filecoin" not in self:
+            self["filecoin"] = {"filecoin_api_key": ""}
         self["filecoin"]["filecoin_api_key"] = filecoin_key
         self._persist()
 
