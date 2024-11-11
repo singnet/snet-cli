@@ -295,11 +295,8 @@ class MPEClientCommand(MPEChannelCommand):
         grpc_channel = open_grpc_channel(endpoint)
 
         # if channel was not initilized we will try to initailize it (it will work only in simple case of signer == sender)
-        channel = self._smart_get_initialized_channel_for_org(
-            org_metadata,
-            filter_by="signer"
-        )
-        channel_id = channel["channelId"]
+        channel = self._smart_get_channel_for_org(org_metadata, filter_by="signer")
+        channel_id = channel["channel_id"]
         price = self._get_price_from_metadata(service_metadata, group_name)
         server_state = self._get_channel_state_from_server(grpc_channel, channel_id)
 

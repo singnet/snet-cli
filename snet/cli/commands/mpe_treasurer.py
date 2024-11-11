@@ -151,8 +151,7 @@ class MPETreasurerCommand(MPEClientCommand):
 
     def claim_channels(self):
         grpc_channel = open_grpc_channel(self.args.endpoint)
-        self._claim_in_progress_and_claim_channels(
-            grpc_channel, self.args.channels)
+        self._claim_in_progress_and_claim_channels(grpc_channel, self.args.channels)
 
     def claim_all_channels(self):
         grpc_channel = open_grpc_channel(self.args.endpoint)

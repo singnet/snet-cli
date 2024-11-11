@@ -127,28 +127,45 @@ Backward compatibility for other Python versions is not guaranteed.
 $ git clone https://github.com/singnet/snet-cli.git
 $ cd snet-cli/packages/snet_cli
 ```
+
+* 
   
 * Install the package in development/editable mode  
+
 ```bash  
 $ pip3 install -e .
 ```
 
-#### Building the Documentation
+### Building the Documentation in Markdown files
 
-* Install sphinx, sphinx-argparse and the rtd theme
+* Clone repository and install dependencies
+
 ```bash
-$ pip install sphinx
-$ pip install sphinx-argparse
-$ pip install sphinx-rtd-theme
-``` 
+$ git clone https://github.com/singnet/snet-cli.git
+$ cd snet-cli
+$ pip install -r docs/requirements.txt
+```
+
+#### On Linux
 
 * Run the build-docs.sh in the docs directory
+
 ```bash
 $ cd docs
 $ sh build-docs.sh
 ```
 
-The documentation is generated under the docs/build/html folder
+#### On Windows
+
+* Install `make` utility and run the build-docs.ps1 in the docs directory
+
+```powershell
+choco install make # install choco if it is not already installed
+cd docs
+powershell -file build-docs.ps1
+```
+
+The documentation is generated under the docs/build/markdown folder
 
 ### Release  
   

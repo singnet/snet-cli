@@ -65,7 +65,7 @@ class MPEServiceMetadata:
     def __init__(self):
         self.m = {"version": 1,
                   "display_name": "",
-                  "encoding": "grpc",  # grpc by default
+                  "encoding": "proto",  # proto by default
                   "service_type": "grpc",  # grpc by default
                   # one week by default (15 sec block,  24*60*60*7/15)
                   "service_api_source": "",

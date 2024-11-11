@@ -110,7 +110,10 @@ class Config(ConfigParser):
     def unset_session_field(self, key, out_f):
         if key in get_session_network_keys_removable():
             print("unset %s from network %s" % (key, self["session"]["network"]), file=out_f)
-            del self._get_network_section(self["session"]["network"])[key]
+            if key == "filecoin_api_key":
+                self.unset_filecoin_key()
+            else:
+                del self._get_network_section(self["session"]["network"])[key]
         self._persist()
 
     def session_to_dict(self):
@@ -168,14 +171,19 @@ class Config(ConfigParser):
         self._persist()
 
     def get_filecoin_key(self):
-        if not self["filecoin"].get("filecoin_api_key"):
+        if "filecoin" not in self or not self["filecoin"].get("filecoin_api_key"):
             raise Exception("Use [snet set filecoin_api_key <YOUR_LIGHTHOUSE_API_KEY>] to set filecoin key")
         return self["filecoin"]["filecoin_api_key"]
 
     def set_filecoin_key(self, filecoin_key: str):
+        if "filecoin" not in self:
+            self["filecoin"] = {"filecoin_api_key": ""}
         self["filecoin"]["filecoin_api_key"] = filecoin_key
         self._persist()
 
+    def unset_filecoin_key(self):
+        del self["filecoin"]["filecoin_api_key"]
+        self._persist()
 
     def get_all_identities_names(self):
         return [x[len("identity."):] for x in self.sections() if x.startswith("identity.")]
@@ -199,9 +207,6 @@ class Config(ConfigParser):
         self._config_file.parent.mkdir(mode=0o700, exist_ok=True)
         self["network.mainnet"] = {
             "default_eth_rpc_endpoint": "https://mainnet.infura.io/v3/09027f4a13e841d48dbfefc67e7685d5"
-        }
-        self["network.goerli"] = {
-            "default_eth_rpc_endpoint": "https://goerli.infura.io/v3/09027f4a13e841d48dbfefc67e7685d5",
         }
         self["network.sepolia"] = {
             "default_eth_rpc_endpoint": "https://sepolia.infura.io/v3/09027f4a13e841d48dbfefc67e7685d5",
@@ -285,12 +290,12 @@ def get_session_identity_keys():
 
 
 def get_session_network_keys():
-    return ["default_gas_price", "current_registry_at", "current_multipartyescrow_at", "current_singularitynettoken_at",
+    return ["current_registry_at", "current_multipartyescrow_at", "current_singularitynettoken_at",
             "default_eth_rpc_endpoint"]
 
 
 def get_session_network_keys_removable():
-    return ["default_gas_price", "current_registry_at", "current_multipartyescrow_at", "current_singularitynettoken_at"]
+    return ["current_registry_at", "current_multipartyescrow_at", "current_singularitynettoken_at", "filecoin_api_key"]
 
 
 def get_session_keys():
