@@ -56,19 +56,6 @@ class Payment(object):
         return cls(json_data['payment_address'], json_data['payment_expiration_threshold'],
                    json_data['payment_channel_storage_type'], payment_channel_storage_client)
 
-    def validate(self):
-        if self.payment_address is None:
-            raise Exception("Payment address cannot be null")
-        if self.payment_channel_storage_type is None:
-            raise Exception("Payment channel storage type cannot be null")
-        if self.payment_expiration_threshold is None:
-            raise Exception("Payment expiration threshold cannot be null")
-
-        if self.payment_channel_storage_client is None:
-            raise Exception("Payment channel storage client cannot be null")
-        else:
-            self.payment_channel_storage_client.validate()
-
     def update_connection_timeout(self, connection_timeout):
         self.payment_channel_storage_client.connection_timeout = connection_timeout
 
@@ -97,18 +84,6 @@ class Group(object):
         self.group_name = group_name
         self.group_id = group_id
         self.payment = payment
-
-    def validate(self):
-        if self.group_name is None:
-            raise Exception("group name cannot be null")
-        if self.group_id is None:
-            raise Exception("group_id is cannot be null")
-
-        if self.payment is None:
-            raise Exception(
-                "payment details cannot be null for group_name %s", self.group_name)
-        else:
-            self.payment.validate()
 
     def update_payment_expiration_threshold(self, payment_expiration_threshold):
         self.payment.payment_expiration_threshold = payment_expiration_threshold
