@@ -3,16 +3,13 @@ import getpass
 import json
 import secrets
 import sys
-from idlelib.iomenu import errors
 from pathlib import Path
 from textwrap import indent
-from urllib.parse import urljoin
 
 import ipfshttpclient
 import jsonschema
 from lighthouseweb3 import Lighthouse
 import yaml
-from rfc3986 import urlparse
 import web3
 from snet.contracts import get_contract_def
 

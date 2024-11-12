@@ -2,7 +2,6 @@ import base64
 from enum import Enum
 from json import JSONEncoder
 import json
-from tabnanny import check
 
 from snet.cli.utils.utils import is_valid_url
 

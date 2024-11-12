@@ -2,8 +2,6 @@ import argparse
 import os
 import re
 import sys
-from email.policy import default
-from random import choices
 
 from snet.contracts import get_all_abi_contract_files, get_contract_def
 
