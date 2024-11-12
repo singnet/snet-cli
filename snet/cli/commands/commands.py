@@ -621,11 +621,10 @@ class OrganizationCommand(BlockchainCommand):
         else:
             res_msg = validation_res["msg"] + hint_message
 
-        if as_exception:
+        if as_exception and not res_msg.startswith("Organization metadata is valid and ready to publish."):
             raise Exception(res_msg)
-        else:
+        elif not as_exception:
             self._printout(res_msg)
-
 
     def _metadata_validate_with_schema(self):
         current_path = Path(__file__).parent
