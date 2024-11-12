@@ -1,6 +1,5 @@
 {
     "$schema": "https://json-schema.org/draft-07/schema#",
-    "$id": "https://dev.singularitynet.io/docs/ai-developers/service/#metadata-overview",
     "title": "Service Metadata",
     "description": "Schema of a correct service metadata file",
     "type": "object",
