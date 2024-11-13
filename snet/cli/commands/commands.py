@@ -611,7 +611,7 @@ class OrganizationCommand(BlockchainCommand):
             if validation_res["status"] == 0:
                 res_msg = "\nErrors found in the metadata file:\n" + res_msg
             else:
-                res_msg += validation_res["msg"] + res_msg
+                res_msg = validation_res["msg"] + res_msg
             res_msg += hint_message
         elif validation_res["status"] == 0:
             res_msg = validation_res["msg"]
