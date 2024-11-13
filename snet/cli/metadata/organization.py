@@ -30,19 +30,14 @@ class PaymentStorageClient(object):
         self.endpoints = endpoints
 
     @classmethod
-    def from_json(cls, json_data: dict):
-        endpoints = json_data["endpoints"]
-        if endpoints:
-            for endpoint in endpoints:
-                if not is_valid_url(endpoint):
-                    raise Exception("Invalid endpoint passed in json file")
+    def from_json(cls, json_data: dict, check_url=True):
+        if check_url:
+            endpoints = json_data["endpoints"]
+            if endpoints:
+                for endpoint in endpoints:
+                    if not is_valid_url(endpoint):
+                        raise Exception("Invalid endpoint passed in json file")
         return cls(**json_data)
-
-    def validate(self):
-        if len(self.endpoints) < 1:
-            raise Exception(
-                "At least one endpoint is required for payment channel ")
-
 
 class Payment(object):
 
@@ -54,24 +49,11 @@ class Payment(object):
         self.payment_channel_storage_client = payment_channel_storage_client
 
     @classmethod
-    def from_json(cls, json_data: dict):
+    def from_json(cls, json_data: dict, check_url=True):
         payment_channel_storage_client = PaymentStorageClient.from_json(
-            json_data['payment_channel_storage_client'])
+            json_data['payment_channel_storage_client'], check_url)
         return cls(json_data['payment_address'], json_data['payment_expiration_threshold'],
                    json_data['payment_channel_storage_type'], payment_channel_storage_client)
-
-    def validate(self):
-        if self.payment_address is None:
-            raise Exception("Payment address cannot be null")
-        if self.payment_channel_storage_type is None:
-            raise Exception("Payment channel storage type cannot be null")
-        if self.payment_expiration_threshold is None:
-            raise Exception("Payment expiration threshold cannot be null")
-
-        if self.payment_channel_storage_client is None:
-            raise Exception("Payment channel storage client cannot be null")
-        else:
-            self.payment_channel_storage_client.validate()
 
     def update_connection_timeout(self, connection_timeout):
         self.payment_channel_storage_client.connection_timeout = connection_timeout
@@ -91,28 +73,16 @@ class Group(object):
         self.payment = payment
 
     @classmethod
-    def from_json(cls, json_data: dict):
+    def from_json(cls, json_data: dict, check_url=True):
         payment = Payment()
         if 'payment' in json_data:
-            payment = Payment.from_json(json_data['payment'])
+            payment = Payment.from_json(json_data['payment'], check_url)
         return cls(json_data['group_name'], json_data['group_id'], payment)
 
     def add_group_details(self, group_name, group_id, payment):
         self.group_name = group_name
         self.group_id = group_id
         self.payment = payment
-
-    def validate(self):
-        if self.group_name is None:
-            raise Exception("group name cannot be null")
-        if self.group_id is None:
-            raise Exception("group_id is cannot be null")
-
-        if self.payment is None:
-            raise Exception(
-                "payment details cannot be null for group_name %s", self.group_name)
-        else:
-            self.payment.validate()
 
     def update_payment_expiration_threshold(self, payment_expiration_threshold):
         self.payment.payment_expiration_threshold = payment_expiration_threshold
@@ -219,10 +189,10 @@ class OrganizationMetadata(object):
             f.write(self.get_json_pretty())
 
     @classmethod
-    def from_json(cls, json_data: dict):
+    def from_json(cls, json_data: dict, check_url=True):
         groups = []
         if 'groups' in json_data:
-            groups = list(map(Group.from_json, json_data["groups"]))
+            groups = list(map(lambda j_d: Group.from_json(j_d, check_url), json_data["groups"]))
             if "contacts" not in json_data:
                 json_data["contacts"] = []
             if "description" not in json_data:
@@ -252,46 +222,22 @@ class OrganizationMetadata(object):
             raise e
 
     def is_removing_existing_group_from_org(self, current_group_name, existing_registry_metadata_group_names):
-        if len(existing_registry_metadata_group_names-current_group_name) == 0:
+        if len(existing_registry_metadata_group_names - current_group_name) == 0:
             pass
         else:
             removed_groups = existing_registry_metadata_group_names - current_group_name
             raise Exception("Cannot remove existing group from organization as it might be attached"
                             " to services, groups you are removing are  %s" % removed_groups)
 
-    def validate(self, existing_registry_metadata=None):
-
-        if self.org_id is None:
-            raise Exception("Org_id cannot be null")
-        if self.org_name is None:
-            raise Exception("Org_name cannot be null")
-        if self.org_type is None:
-            raise Exception("Org_type cannot be null")
-        if self.contacts is None:
-            raise Exception("contact_details can not be null")
-        if self.description is None:
-            raise Exception("description can not be null")
-        if self.groups:
-            unique_group_names = set()
-            for group in self.groups:
-                unique_group_names.add(group.group_name)
-
-            if len(unique_group_names) < len(self.groups):
-                raise Exception("Cannot create group with duplicate names")
-        if len(self.groups) < 1:
-            raise Exception(
-                "At least One group is required to create an organization")
-        else:
-            for group in self.groups:
-                group.validate()
-
+    def check_remove_groups(self, existing_registry_metadata):
+        unique_group_names = set([group.group_name for group in self.groups])
         existing_registry_metadata_group_names = set()
+
         if existing_registry_metadata:
             for group in existing_registry_metadata.groups:
                 existing_registry_metadata_group_names.add(group.group_name)
 
-        self.is_removing_existing_group_from_org(
-            unique_group_names, existing_registry_metadata_group_names)
+        self.is_removing_existing_group_from_org(unique_group_names, existing_registry_metadata_group_names)
 
     def get_payment_address_for_group(self, group_name):
         for group in self.groups:

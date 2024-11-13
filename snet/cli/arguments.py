@@ -2,8 +2,6 @@ import argparse
 import os
 import re
 import sys
-from email.policy import default
-from random import choices
 
 from snet.contracts import get_all_abi_contract_files, get_contract_def
 
@@ -255,7 +253,7 @@ def add_p_org_id(p):
 def add_metadatafile_argument_for_org(p):
     p.add_argument("--metadata-file",
                    default="organization_metadata.json",
-                   help="Service metadata json file (default organization_metadata.json)")
+                   help="Organization metadata json file (default organization_metadata.json)")
 
 
 def add_p_storage_param(_p):
@@ -434,6 +432,11 @@ def add_organization_options(parser):
     p.set_defaults(fn="delete")
     add_p_org_id(p)
     add_organization_arguments(p)
+
+    p = subparsers.add_parser("validate-metadata",
+                              help="Validates if created metadata is consistent")
+    p.set_defaults(fn="metadata_validate")
+    add_metadatafile_argument_for_org(p)
 
 
 def add_contract_function_options(parser, contract_name):
