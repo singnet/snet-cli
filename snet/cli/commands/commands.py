@@ -585,7 +585,7 @@ class OrganizationCommand(BlockchainCommand):
                 self._printout(validation_res["msg"])
                 exit(1)
         with open(self.args.metadata_file, 'r') as f:
-            org_metadata = OrganizationMetadata.from_json(json.load(f))
+            org_metadata = OrganizationMetadata.from_json(json.load(f), False)
 
         occurred_errors = []
         unique_group_names = set([group.group_name for group in org_metadata.groups])
@@ -656,6 +656,8 @@ class OrganizationCommand(BlockchainCommand):
                     res_msg += f"{get_path(e)} - {e.message}"
                     if e.validator == 'minItems':
                         res_msg += f" (minimum 1 item required)"
+                elif e.validator == 'maxLength':
+                    res_msg += f"{get_path(e)} - string is too long"
                 else:
                     res_msg += e.message
                 res_msg += "\n"
