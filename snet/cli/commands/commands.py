@@ -671,7 +671,6 @@ class OrganizationCommand(BlockchainCommand):
         metadata_file = self.args.metadata_file
         with open(metadata_file, 'r') as f:
             org_metadata = OrganizationMetadata.from_json(json.load(f))
-        org_metadata.check_remove_groups()
 
         org_id = self.args.org_id
 
@@ -723,7 +722,6 @@ class OrganizationCommand(BlockchainCommand):
         metadata_file = self.args.metadata_file
         with open(metadata_file, 'r') as f:
             org_metadata = OrganizationMetadata.from_json(json.load(f))
-        org_metadata.check_remove_groups()
 
         org_id = self.args.org_id
         existing_registry_org_metadata = self._get_organization_metadata_from_registry(org_id)
