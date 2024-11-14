@@ -11,6 +11,7 @@ import jsonschema
 from lighthouseweb3 import Lighthouse
 import yaml
 import web3
+from cryptography.fernet import InvalidToken
 from snet.contracts import get_contract_def
 
 from snet.cli.contract import Contract
@@ -164,15 +165,35 @@ class BlockchainCommand(Command):
         if identity_type == "rpc":
             return RpcIdentityProvider(self.w3, self.get_wallet_index())
         if identity_type == "mnemonic":
-            return MnemonicIdentityProvider(self.w3, self.config.get_session_field("mnemonic"), self.get_wallet_index())
+            res_mnemonic = self.get_decrypted_secret(self.config.get_session_field("mnemonic"))
+            return MnemonicIdentityProvider(self.w3, res_mnemonic, self.get_wallet_index())
         if identity_type == "trezor":
             return TrezorIdentityProvider(self.w3, self.get_wallet_index())
         if identity_type == "ledger":
             return LedgerIdentityProvider(self.w3, self.get_wallet_index())
         if identity_type == "key":
-            return KeyIdentityProvider(self.w3, self.config.get_session_field("private_key"))
+            res_private_key = self.get_decrypted_secret(self.config.get_session_field("private_key"))
+            return KeyIdentityProvider(self.w3, res_private_key)
         if identity_type == "keystore":
             return KeyStoreIdentityProvider(self.w3, self.config.get_session_field("keystore_path"))
+
+    def get_decrypted_secret(self, secret):
+        decrypted_secret = None
+        if not secret.startswith("b'"):
+            return secret
+        try:
+            pwd = getpass.getpass("Password: ")
+            decrypted_secret = self.config.decrypt_secret(secret, pwd)
+        except InvalidToken:
+            self._printout("Wrong password! Try again")
+        if not decrypted_secret:
+            try:
+                pwd = getpass.getpass("Password: ")
+                decrypted_secret = self.config.decrypt_secret(secret, pwd)
+            except InvalidToken:
+                self._printerr("Wrong password! Operation failed.")
+                exit(1)
+        return decrypted_secret
 
     def get_contract_argser(self, contract_address, contract_function, contract_def, **kwargs):
         def f(*positional_inputs, **named_inputs):
@@ -243,7 +264,19 @@ class IdentityCommand(Command):
         if self.args.network:
             identity["network"] = self.args.network
         identity["default_wallet_index"] = self.args.wallet_index
-        self.config.add_identity(identity_name, identity, self.out_f)
+
+        pwd = None
+        if not self.args.do_not_encrypt and get_kws_for_identity_type(identity_type)[0][1]:
+            self._printout("For 'mnemonic' and 'key' identity_type, secret encryption is enabled by default, "
+                           "so you need to come up with a password that you then need to enter on every transaction. "
+                           "To disable encryption, use the '-de' or '--do-not-encrypt' argument.")
+            pwd = getpass.getpass("Password: ")
+            self._ensure(pwd is not None, "Password cannot be empty")
+            pwd_confirm = getpass.getpass("Confirm password: ")
+            self._ensure(pwd == pwd_confirm, "Passwords do not match")
+
+        self.config.add_identity(identity_name, identity, self.out_f, pwd)
+
 
     def list(self):
         for identity_section in filter(lambda x: x.startswith("identity."), self.config.sections()):

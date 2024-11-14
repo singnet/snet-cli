@@ -1,6 +1,13 @@
+import os
 from configparser import ConfigParser, ExtendedInterpolation
 from pathlib import Path
 import sys
+
+from cryptography.fernet import Fernet
+from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives import hashes
+from base64 import urlsafe_b64encode, urlsafe_b64decode
 
 default_snet_folder = Path("~").expanduser().joinpath(".snet")
 DEFAULT_NETWORK = "sepolia"
@@ -138,18 +145,60 @@ class Config(ConfigParser):
         self._get_network_section(network)[key] = str(value)
         self._persist()
 
-    def add_identity(self, identity_name, identity, out_f=sys.stdout):
+    def add_identity(self, identity_name, identity, out_f=sys.stdout, password=None):
         identity_section = "identity.%s" % identity_name
         if identity_section in self:
             raise Exception("Identity section %s already exists in config" % identity_section)
         if "network" in identity and identity["network"] not in self.get_all_networks_names():
             raise Exception("Network %s is not in config" % identity["network"])
+
+        if password:
+            if "mnemonic" in identity:
+                identity["mnemonic"] = self.encrypt_secret(identity["mnemonic"], password)
+            elif "private_key" in identity:
+                identity["private_key"] = self.encrypt_secret(identity["private_key"], password)
+
         self[identity_section] = identity
         self._persist()
         # switch to it, if it was the first identity
         if len(self.get_all_identities_names()) == 1:
             print("You've just added your first identity %s. We will automatically switch to it!" % identity_name)
             self.set_session_identity(identity_name, out_f)
+
+    def encrypt_secret(self, secret, password):
+        salt = os.urandom(16)
+        kdf = PBKDF2HMAC(
+            algorithm=hashes.SHA256(),
+            length=32,
+            salt=salt,
+            iterations=100000,
+            backend=default_backend()
+        )
+        key = urlsafe_b64encode(kdf.derive(password.encode()))
+        cipher_suite = Fernet(key)
+        encrypted_secret = cipher_suite.encrypt(secret.encode()) + salt
+        return urlsafe_b64encode(encrypted_secret)
+
+    def decrypt_secret(self, secret, password):
+        # print(secret)
+        secret = urlsafe_b64decode(secret[2:-1])
+        # secret = bytes(secret[2:-1], "utf-8")
+        # print(secret)
+        salt = secret[-16:]
+        # print(salt)
+        secret = secret[:-16]
+        # print(secret)
+        kdf = PBKDF2HMAC(
+            algorithm=hashes.SHA256(),
+            length=32,
+            salt=salt,
+            iterations=100000,
+            backend=default_backend()
+        )
+        key = urlsafe_b64encode(kdf.derive(password.encode()))
+        cipher_suite = Fernet(key)
+        decrypted_secret = cipher_suite.decrypt(secret).decode()
+        return decrypted_secret
 
     def set_identity_field(self, identity, key, value):
         self._get_identity_section(identity)[key] = str(value)

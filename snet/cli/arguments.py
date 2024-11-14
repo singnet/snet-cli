@@ -125,7 +125,8 @@ def add_identity_options(parser, config):
     p.set_defaults(fn="list")
 
     p = subparsers.add_parser("create",
-                              help="Create a new identity")
+                              help="Create a new identity. For 'mnemonic' and 'key' identity_type, "
+                                   "secret encryption is enabled by default.")
     p.set_defaults(fn="create")
     p.add_argument("identity_name",
                    help="Name of identity to create",
@@ -135,6 +136,10 @@ def add_identity_options(parser, config):
                    help="Type of identity to create from {}".format(
                        get_identity_types()),
                    metavar="IDENTITY_TYPE")
+    p.add_argument("--do-not-encrypt", "-de",
+                   default=False,
+                   action="store_true",
+                   help="Do not encrypt the identity's private key or mnemonic. For 'key' and 'mnemonic' identity_type.")
     p.add_argument("--mnemonic",
                    help="BIP39 mnemonic for 'mnemonic' identity_type")
     p.add_argument("--private-key",
