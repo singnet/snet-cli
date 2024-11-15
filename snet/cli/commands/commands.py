@@ -19,7 +19,7 @@ from snet.cli.identity import KeyIdentityProvider, KeyStoreIdentityProvider, Led
     MnemonicIdentityProvider, RpcIdentityProvider, TrezorIdentityProvider, get_kws_for_identity_type
 from snet.cli.metadata.organization import OrganizationMetadata, PaymentStorageClient, Payment, Group
 from snet.cli.utils.config import get_contract_address, get_field_from_args_or_session, \
-    read_default_contract_address
+    read_default_contract_address, decrypt_secret
 from snet.cli.utils.ipfs_utils import get_from_ipfs_and_checkhash, \
     hash_to_bytesuri, publish_file_in_ipfs, publish_file_in_filecoin
 from snet.cli.utils.utils import DefaultAttributeObject, get_web3, is_valid_url, serializable, type_converter, \
@@ -183,13 +183,13 @@ class BlockchainCommand(Command):
             return secret
         try:
             pwd = getpass.getpass("Password: ")
-            decrypted_secret = self.config.decrypt_secret(secret, pwd)
+            decrypted_secret = decrypt_secret(secret, pwd)
         except InvalidToken:
             self._printout("Wrong password! Try again")
         if not decrypted_secret:
             try:
                 pwd = getpass.getpass("Password: ")
-                decrypted_secret = self.config.decrypt_secret(secret, pwd)
+                decrypted_secret = decrypt_secret(secret, pwd)
             except InvalidToken:
                 self._printerr("Wrong password! Operation failed.")
                 exit(1)
@@ -339,7 +339,6 @@ class SessionShowCommand(BlockchainCommand):
         rez = self.config.session_to_dict()
         key = "network.%s" % rez['session']['network']
         self.populate_contract_address(rez, key)
-
         # we don't want to who private_key and mnemonic
         for d in rez.values():
             d.pop("private_key", None)

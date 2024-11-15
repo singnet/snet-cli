@@ -1,5 +1,12 @@
 from snet.contracts import get_contract_def
 
+from cryptography.fernet import Fernet
+from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives import hashes
+from base64 import urlsafe_b64encode, urlsafe_b64decode
+import os
+
 
 def get_contract_address(cmd, contract_name, error_message=None):
     """
@@ -60,3 +67,34 @@ def get_field_from_args_or_session(config, args, field_name):
         return rez
     raise Exception("Fail to get default_%s from config, should specify %s via --%s parameter" % (
         field_name, field_name, field_name.replace("_", "-")))
+
+
+def encrypt_secret(secret, password):
+    salt = os.urandom(16)
+    kdf = PBKDF2HMAC(
+        algorithm=hashes.SHA256(),
+        length=32,
+        salt=salt,
+        iterations=100000,
+        backend=default_backend()
+    )
+    key = urlsafe_b64encode(kdf.derive(password.encode()))
+    cipher_suite = Fernet(key)
+    encrypted_secret = cipher_suite.encrypt(secret.encode()) + salt
+    return urlsafe_b64encode(encrypted_secret)
+
+def decrypt_secret(secret, password):
+    secret = urlsafe_b64decode(secret[2:-1])
+    salt = secret[-16:]
+    secret = secret[:-16]
+    kdf = PBKDF2HMAC(
+        algorithm=hashes.SHA256(),
+        length=32,
+        salt=salt,
+        iterations=100000,
+        backend=default_backend()
+    )
+    key = urlsafe_b64encode(kdf.derive(password.encode()))
+    cipher_suite = Fernet(key)
+    decrypted_secret = cipher_suite.decrypt(secret).decode()
+    return decrypted_secret
