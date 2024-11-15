@@ -38,6 +38,13 @@ class IdentityProvider(abc.ABC):
 class KeyIdentityProvider(IdentityProvider):
     def __init__(self, w3, private_key):
         self.w3 = w3
+        if private_key.startswith("b'"):
+            self.private_key = None
+            self.address = None
+            return
+        self.set_secret(private_key)
+
+    def set_secret(self, private_key):
         self.private_key = normalize_private_key(private_key)
         self.address = get_address_from_private(self.private_key)
 
@@ -109,8 +116,16 @@ class RpcIdentityProvider(IdentityProvider):
 class MnemonicIdentityProvider(IdentityProvider):
     def __init__(self, w3, mnemonic, index):
         self.w3 = w3
+        self.index = index
+        if mnemonic.startswith("b'"):
+            self.private_key = None
+            self.address = None
+            return
+        self.set_secret(mnemonic)
+
+    def set_secret(self, mnemonic):
         Account.enable_unaudited_hdwallet_features()
-        account = Account.from_mnemonic(mnemonic, account_path=f"m/44'/60'/0'/0/{index}")
+        account = Account.from_mnemonic(mnemonic, account_path=f"m/44'/60'/0'/0/{self.index}")
         self.private_key = account.key.hex()
         self.address = account.address
 

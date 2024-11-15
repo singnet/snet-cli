@@ -504,7 +504,9 @@ class MPEChannelCommand(OrganizationCommand):
     def get_address_from_arg_or_ident(self, arg):
         if arg:
             return arg
+        self.check_ident()
         return self.ident.address
+
 
     def print_channels_filter_sender(self):
         # we don't need to return other channel fields if we only need channel_id or if we'll sync channels state

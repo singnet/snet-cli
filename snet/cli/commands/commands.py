@@ -127,6 +127,8 @@ class BlockchainCommand(Command):
         super(BlockchainCommand, self).__init__(config, args, out_f, err_f)
         self.w3 = w3 or get_web3(self.get_eth_endpoint())
         self.ident = ident or self.get_identity()
+        # if create_ident and not self.ident:
+        #     self.ident = self.get_identity()
 
     def get_eth_endpoint(self):
         # the only one source of eth_rpc_endpoint is the configuration file
@@ -165,22 +167,28 @@ class BlockchainCommand(Command):
         if identity_type == "rpc":
             return RpcIdentityProvider(self.w3, self.get_wallet_index())
         if identity_type == "mnemonic":
-            res_mnemonic = self.get_decrypted_secret(self.config.get_session_field("mnemonic"))
-            return MnemonicIdentityProvider(self.w3, res_mnemonic, self.get_wallet_index())
+            return MnemonicIdentityProvider(self.w3, self.config.get_session_field("mnemonic"), self.get_wallet_index())
         if identity_type == "trezor":
             return TrezorIdentityProvider(self.w3, self.get_wallet_index())
         if identity_type == "ledger":
             return LedgerIdentityProvider(self.w3, self.get_wallet_index())
         if identity_type == "key":
-            res_private_key = self.get_decrypted_secret(self.config.get_session_field("private_key"))
-            return KeyIdentityProvider(self.w3, res_private_key)
+            return KeyIdentityProvider(self.w3, self.config.get_session_field("private_key"))
         if identity_type == "keystore":
             return KeyStoreIdentityProvider(self.w3, self.config.get_session_field("keystore_path"))
 
-    def get_decrypted_secret(self, secret):
+    def check_ident(self):
+        identity_type = self.config.get_session_field("identity_type")
+        if get_kws_for_identity_type(identity_type)[0][1] and not self.ident.private_key:
+            if identity_type == "key":
+                secret = self.config.get_session_field("private_key")
+            else:
+                secret = self.config.get_session_field("mnemonic")
+            decrypted_secret = self._get_decrypted_secret(secret)
+            self.ident.set_secret(decrypted_secret)
+
+    def _get_decrypted_secret(self, secret):
         decrypted_secret = None
-        if not secret.startswith("b'"):
-            return secret
         try:
             pwd = getpass.getpass("Password: ")
             decrypted_secret = decrypt_secret(secret, pwd)
@@ -335,6 +343,9 @@ class SessionSetCommand(Command):
 
 
 class SessionShowCommand(BlockchainCommand):
+    # def __init__(self, config, args, out_f=sys.stdout, err_f=sys.stderr, w3=None, ident=None):
+    #     super(SessionShowCommand, self).__init__(config, args, out_f, err_f, w3, ident, False)
+
     def show(self):
         rez = self.config.session_to_dict()
         key = "network.%s" % rez['session']['network']
@@ -380,6 +391,7 @@ class ContractCommand(BlockchainCommand):
         return result
 
     def transact(self):
+        self.check_ident()
         contract_address = get_contract_address(self, self.args.contract_name,
                                                 "--at is required to specify target contract address")
 
@@ -434,7 +446,8 @@ class OrganizationCommand(BlockchainCommand):
                 raise Exception(f"Invalid {endpoint} endpoint passed")
 
         payment_storage_client = PaymentStorageClient(self.args.payment_channel_connection_timeout,
-                                                      self.args.payment_channel_request_timeout, self.args.endpoints)
+                                                      self.args.payment_channel_request_timeout,
+                                                      self.args.endpoints)
         payment = Payment(self.args.payment_address, self.args.payment_expiration_threshold,
                           self.args.payment_channel_storage_type, payment_storage_client)
         group_id = base64.b64encode(secrets.token_bytes(32))
@@ -456,8 +469,7 @@ class OrganizationCommand(BlockchainCommand):
             raise e
 
         existing_groups = org_metadata.groups
-        updated_groups = [
-            group for group in existing_groups if not group_id == group.group_id]
+        updated_groups = [group for group in existing_groups if not group_id == group.group_id]
         org_metadata.groups = updated_groups
         org_metadata.save_pretty(metadata_file)
 
@@ -469,17 +481,13 @@ class OrganizationCommand(BlockchainCommand):
         if self.args.payment_address:
             group.update_payment_address(self.args.payment_address)
         if self.args.payment_expiration_threshold:
-            group.update_payment_expiration_threshold(
-                self.args.payment_expiration_threshold)
+            group.update_payment_expiration_threshold(self.args.payment_expiration_threshold)
         if self.args.payment_channel_storage_type:
-            group.update_payment_channel_storage_type(
-                self.args.payment_channel_storage_type)
+            group.update_payment_channel_storage_type(self.args.payment_channel_storage_type)
         if self.args.payment_channel_connection_timeout:
-            group.update_connection_timeout(
-                self.args.payment_channel_connection_timeout)
+            group.update_connection_timeout(self.args.payment_channel_connection_timeout)
         if self.args.payment_channel_request_timeout:
-            group.update_request_timeout(
-                self.args.payment_channel_request_timeout)
+            group.update_request_timeout(self.args.payment_channel_request_timeout)
 
     def update_group(self):
         group_id = self.args.group_id
@@ -699,7 +707,6 @@ class OrganizationCommand(BlockchainCommand):
             return {"status": 0, "msg": "Organization metadata is valid and ready to publish."}
 
     def create(self):
-
         self._metadata_validate()
 
         metadata_file = self.args.metadata_file
