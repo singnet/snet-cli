@@ -3,13 +3,13 @@ import getpass
 import json
 import secrets
 import sys
+from pathlib import Path
 from textwrap import indent
-from urllib.parse import urljoin
 
 import ipfshttpclient
+import jsonschema
 from lighthouseweb3 import Lighthouse
 import yaml
-from rfc3986 import urlparse
 import web3
 from snet.contracts import get_contract_def
 
@@ -480,7 +480,7 @@ class OrganizationCommand(BlockchainCommand):
 
     def print_metadata(self):
         org_id = self.args.org_id
-        org_metadata = self._get_organization_metadata_from_registry(org_id)
+        org_metadata = self._get_organization_metadata_from_registry(org_id, False)
         self._printout(org_metadata.get_json_pretty())
 
     def _get_organization_registration(self, org_id):
@@ -492,7 +492,7 @@ class OrganizationCommand(BlockchainCommand):
                 self.args.org_id))
         return {"orgMetadataURI": rez[2]}
 
-    def _get_organization_metadata_from_registry(self, org_id):
+    def _get_organization_metadata_from_registry(self, org_id, check_url=True):
         rez = self._get_organization_registration(org_id)
         storage_type, metadata_hash = bytesuri_to_hash(rez["orgMetadataURI"])
         if storage_type == "ipfs":
@@ -500,7 +500,7 @@ class OrganizationCommand(BlockchainCommand):
         else:
             metadata = get_file_from_filecoin(metadata_hash)
         metadata = metadata.decode("utf-8")
-        return OrganizationMetadata.from_json(json.loads(metadata))
+        return OrganizationMetadata.from_json(json.loads(metadata), check_url)
 
     def _get_organization_by_id(self, org_id):
         org_id_bytes32 = type_converter("bytes32")(org_id)
@@ -573,20 +573,108 @@ class OrganizationCommand(BlockchainCommand):
             for idx, service in enumerate(serviceNames):
                 self._printout(" - {}".format(bytes32_to_str(service)))
 
-    def create(self):
+    def metadata_validate(self):
+        self._metadata_validate(as_exception=False)
+
+    def _metadata_validate(self, as_exception=True):
+        validation_res = self._metadata_validate_with_schema()
+        if validation_res["status"] == 2:
+            if as_exception:
+                raise Exception(validation_res["msg"])
+            else:
+                self._printout(validation_res["msg"])
+                exit(1)
+        with open(self.args.metadata_file, 'r') as f:
+            org_metadata = OrganizationMetadata.from_json(json.load(f), False)
+
+        occurred_errors = []
+        unique_group_names = set([group.group_name for group in org_metadata.groups])
+        if len(unique_group_names) != len(org_metadata.groups):
+            occurred_errors.append("There should be no groups with duplicated names in the metadata file.")
+
+        for group in org_metadata.groups:
+            for i, endpoint in enumerate(group.payment.payment_channel_storage_client.endpoints):
+                if not is_valid_url(endpoint):
+                    occurred_errors.append(f"Invalid endpoint `{endpoint}` at index {i} in group `{group.group_name}`.")
+
+        existing_errors = validation_res.get("n_errors", 0)
+
+        docs = "https://dev.singularitynet.io/docs/products/DecentralizedAIPlatform/CLI/Manual/Organization/"
+        hint_message = f"\nVisit {docs} for more information."
+        hint_message = f"\n{len(occurred_errors) + existing_errors} errors found." + hint_message + "\n"
+
+        res_msg = ""
+        for i in range(len(occurred_errors)):
+            res_msg += str(existing_errors + i + 1) + ". " + occurred_errors[i] + "\n"
+
+        if res_msg:
+            if validation_res["status"] == 0:
+                res_msg = "\nErrors found in the metadata file:\n" + res_msg
+            else:
+                res_msg = validation_res["msg"] + res_msg
+            res_msg += hint_message
+        elif validation_res["status"] == 0:
+            res_msg = validation_res["msg"]
+        else:
+            res_msg = validation_res["msg"] + hint_message
+
+        if as_exception and not res_msg.startswith("Organization metadata is valid and ready to publish."):
+            raise Exception(res_msg)
+        elif not as_exception:
+            self._printout(res_msg)
+
+    def _metadata_validate_with_schema(self):
+        current_path = Path(__file__).parent
+        relative_path = '../resources/org_schema.json'
+        path_to_schema = (current_path / relative_path).resolve()
+        with open(path_to_schema, 'r') as f:
+            schema = json.load(f)
 
         metadata_file = self.args.metadata_file
-
         try:
             with open(metadata_file, 'r') as f:
-                org_metadata = OrganizationMetadata.from_json(json.load(f))
+                metadata_dict = json.load(f)
         except Exception as e:
-            print(
-                "Organization metadata json file not found ,Please check --metadata-file path ")
-            raise e
+                return {"status": 2, "msg": "Organization metadata json file not found, please check --metadata-file path"}
+
+        validator = jsonschema.Draft7Validator(schema)
+        occurred_errors = list(validator.iter_errors(metadata_dict))
+
+        def get_path(err):
+            return " -> ".join(f"`{el}`" for el in err.path)
+
+        if len(occurred_errors) > 0:
+            res_msg = f"\nErrors found in the metadata file:\n"
+            for i, e in enumerate(occurred_errors):
+                res_msg += str(i + 1) + ". "
+                if e.validator == 'additionalProperties':
+                    if len(e.path) != 0:
+                        res_msg += f"{e.message} in {get_path(e)}."
+                    else:
+                        res_msg += f"{e.message} in main object."
+                elif e.validator in ['required', 'type', 'enum', 'pattern', 'minLength', 'minItems']:
+                    res_msg += f"{get_path(e)} - {e.message}"
+                    if e.validator == 'minItems':
+                        res_msg += f" (minimum 1 item required)"
+                elif e.validator == 'maxLength':
+                    res_msg += f"{get_path(e)} - string is too long"
+                else:
+                    res_msg += e.message
+                res_msg += "\n"
+
+            return {"status": 1, "msg": res_msg, "n_errors": len(occurred_errors)}
+        else:
+            return {"status": 0, "msg": "Organization metadata is valid and ready to publish."}
+
+    def create(self):
+
+        self._metadata_validate()
+
+        metadata_file = self.args.metadata_file
+        with open(metadata_file, 'r') as f:
+            org_metadata = OrganizationMetadata.from_json(json.load(f))
+
         org_id = self.args.org_id
-        # validate the metadata before creating
-        org_metadata.validate()
 
         # R Check if Organization already exists
         found = self._get_organization_by_id(org_id)[0]
@@ -630,19 +718,16 @@ class OrganizationCommand(BlockchainCommand):
             raise
 
     def update_metadata(self):
+
+        self._metadata_validate()
+
         metadata_file = self.args.metadata_file
+        with open(metadata_file, 'r') as f:
+            org_metadata = OrganizationMetadata.from_json(json.load(f))
 
-        try:
-            with open(metadata_file, 'r') as f:
-                org_metadata = OrganizationMetadata.from_json(json.load(f))
-        except Exception as e:
-            print("Organization metadata JSON file not found. Please check --metadata-file path.")
-            raise e
-
-        # Validate the metadata before updating
         org_id = self.args.org_id
         existing_registry_org_metadata = self._get_organization_metadata_from_registry(org_id)
-        org_metadata.validate(existing_registry_org_metadata)
+        org_metadata.check_remove_groups(existing_registry_org_metadata)
 
         # Check if Organization already exists
         found = self._get_organization_by_id(org_id)[0]

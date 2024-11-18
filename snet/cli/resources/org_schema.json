@@ -1,0 +1,181 @@
+{
+    "$schema": "https://json-schema.org/draft-07/schema#",
+    "title": "Organization Metadata",
+    "description": "Schema of a correct organization metadata file",
+    "type": "object",
+    "properties": {
+        "org_name": {
+            "description": "Organization name",
+            "type": "string",
+            "minLength": 1
+        },
+        "org_id": {
+            "description": "Organization id",
+            "type": "string",
+            "minLength": 1
+        },
+        "org_type": {
+            "description": "Organization type [organization, individual]",
+            "type": "string",
+            "enum": [ "organization", "individual" ]
+        },
+        "description": {
+            "description": "Organization description",
+            "type": "object",
+            "properties": {
+                "description": {
+                    "description": "Organization full description",
+                    "type": "string",
+                    "minLength": 1
+                },
+                "short_description": {
+                    "description": "Organization short description",
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 160
+                },
+                "url": {
+                    "description": "Organization url",
+                    "type": "string",
+                    "format": "url"
+                }
+            },
+            "additionalProperties": false,
+            "required": ["description", "short_description", "url"]
+        },
+        "assets": {
+            "description": "Organization assets",
+            "type": "object",
+            "properties": {
+                "hero_image": {
+                    "description": "Organization hero image",
+                    "type": "string",
+                    "minLength": 1
+                }
+            },
+            "additionalProperties": true
+        },
+        "contacts": {
+            "description": "Organization contacts",
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "email": {
+                        "description": "Contact email",
+                        "type": "string"
+                    },
+                    "phone": {
+                        "description": "Contact phone",
+                        "type": "string"
+                    },
+                    "contact_type": {
+                        "description": "Contact type [general, support]",
+                        "type": "string",
+                        "enum": [ "general", "support" ]
+                    }
+                },
+                "additionalProperties": false,
+                "required": ["contact_type", "email", "phone"]
+            }
+        },
+        "groups": {
+            "description": "Organization groups",
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "group_name": {
+                        "description": "Group name",
+                        "type": "string",
+                        "minLength": 1
+                    },
+                    "group_id": {
+                        "description": "Group id",
+                        "type": "string",
+                        "minLength": 1
+                    },
+                    "payment": {
+                        "description": "Group payment",
+                        "type": "object",
+                        "properties": {
+                            "payment_address": {
+                                "description": "Payment address",
+                                "type": "string",
+                                "minLength": 1
+                            },
+                            "payment_expiration_threshold": {
+                                "description": "Payment expiration threshold",
+                                "type": "integer",
+                                "minimum": 1
+                            },
+                            "payment_channel_storage_type": {
+                                "description": "Payment channel storage type (only 'etcd' is supported)",
+                                "type": "string",
+                                "minLength": 1,
+                                "enum": [
+                                    "etcd"
+                                ]
+                            },
+                            "payment_channel_storage_client": {
+                                "description": "Payment channel storage client",
+                                "type": "object",
+                                "properties": {
+                                    "connection_timeout": {
+                                        "description": "Payment channel storage connection timeout",
+                                        "type": "string",
+                                        "pattern": "^\\d{1,3}(s|ms)$"
+                                    },
+                                    "request_timeout": {
+                                        "description": "Payment channel storage request timeout",
+                                        "type": "string",
+                                        "pattern": "^\\d{1,3}(s|ms)$"
+                                    },
+                                    "endpoints": {
+                                        "description": "Payment channel storage endpoints",
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "minLength": 1,
+                                            "format": "url"
+                                        },
+                                        "minItems": 1
+                                    }
+                                },
+                                "additionalProperties": false,
+                                "required": [
+                                    "connection_timeout",
+                                    "request_timeout",
+                                    "endpoints"
+                                ]
+                            }
+                        },
+                        "additionalProperties": false,
+                        "required": [
+                            "payment_address",
+                            "payment_expiration_threshold",
+                            "payment_channel_storage_type",
+                            "payment_channel_storage_client"
+                        ]
+                    }
+                },
+                "additionalProperties": false,
+                "required": [
+                    "group_name",
+                    "group_id",
+                    "payment"
+                ]
+            },
+            "minItems": 1
+        }
+    },
+    "additionalProperties": false,
+    "required": [
+        "org_name",
+        "org_type",
+        "description",
+        "assets",
+        "contacts",
+        "groups"
+    ]
+}

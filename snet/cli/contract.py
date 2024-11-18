@@ -1,3 +1,6 @@
+from web3.logs import DISCARD
+
+
 class Contract:
     def __init__(self, w3, address, abi):
         self.w3 = w3
@@ -22,6 +25,6 @@ class Contract:
 
         contract_events = map(lambda e: e["name"], filter(lambda e: e["type"] == "event", self.abi))
         for contract_event in contract_events:
-            events.extend(getattr(self.contract.events, contract_event)().process_receipt(receipt))
+            events.extend(getattr(self.contract.events, contract_event)().process_receipt(receipt, errors=DISCARD))
 
         return events

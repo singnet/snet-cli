@@ -7,7 +7,7 @@ import tempfile
 
 from grpc_health.v1 import health_pb2 as heartb_pb2
 from grpc_health.v1 import health_pb2_grpc as heartb_pb2_grpc
-from jsonschema import validate, ValidationError
+import jsonschema
 
 from snet.cli.commands.commands import BlockchainCommand
 from snet.cli.metadata.organization import OrganizationMetadata
@@ -394,32 +394,43 @@ class MPEServiceCommand(BlockchainCommand):
         """
         # Set path to `service_schema` stored in the `resources` directory from cwd of `mpe_service.py`
         current_path = Path(__file__).parent
-        relative_path = '../../snet/snet_cli/resources/service_schema'
+        relative_path = '../resources/service_schema.json'
         path_to_schema = (current_path / relative_path).resolve()
         with open(path_to_schema, 'r') as f:
             schema = json.load(f)
         metadata = load_mpe_service_metadata(self.args.metadata_file)
-        try:
-            validate(instance=metadata.m, schema=schema)
-        except Exception as e:
-            docs = "http://snet-cli-docs.singularitynet.io/service.html"
-            error_message = f"\nVisit {docs} for more information."
-            if e.validator == 'required':
-                raise ValidationError(e.message + error_message)
-            elif e.validator == 'minLength':
-                raise ValidationError(f"`{e.path[-1]}` -> cannot be empty." + error_message)
-            elif e.validator == 'minItems':
-                raise ValidationError(f"`{e.path[-1]}` -> minimum 1 item required." + error_message)
-            elif e.validator == 'type':
-                raise ValidationError(f"`{e.path[-1]}` -> {e.message}" + error_message)
-            elif e.validator == 'enum':
-                raise ValidationError(f"`{e.path[-1]}` -> {e.message}" + error_message)
-            elif e.validator == 'additionalProperties':
-                if len(e.path) != 0:
-                    raise ValidationError(f"{e.message} in `{e.path[-2]}`." + error_message)
+
+        validator = jsonschema.Draft7Validator(schema)
+        errors = list(validator.iter_errors(metadata.m))
+
+        def get_path(err):
+            return " -> ".join(f"`{el}`" for el in err.path)
+
+        if len(errors) > 0:
+            self._printout("\nErrors found in the metadata file: ")
+            for i, e in enumerate(errors):
+                if e.validator == 'required':
+                    self._printout(str(i + 1) + ". " + e.message)
+                elif e.validator == 'minLength':
+                    self._printout(f"{i + 1}. {get_path(e)} - cannot be empty.")
+                elif e.validator == 'minItems':
+                    self._printout(f"{i + 1}. {get_path(e)} - minimum 1 item required.")
+                elif e.validator == 'type':
+                    self._printout(f"{i + 1}. {get_path(e)} - {e.message}")
+                elif e.validator == 'enum':
+                    self._printout(f"{i + 1}. {get_path(e)} - {e.message}")
+                elif e.validator == 'additionalProperties':
+                    if len(e.path) != 0:
+                        self._printout(f"{i + 1}. {e.message} in `{e.path[-1]}`.")
+                    else:
+                        self._printout(f"{i + 1}. {e.message} in main object.")
                 else:
-                    raise ValidationError(f"{e.message} in main object." + error_message)
+                    self._printout(str(i + 1) + ". " + e.message)
+            docs = "https://dev.singularitynet.io/docs/products/DecentralizedAIPlatform/CLI/Manual/Service/"
+            error_message = f"\nVisit {docs} for more information."
+            self._printout(f"\n{len(errors)} errors found." + error_message + "\n")
         else:
+            self._printout("Service metadata is valid.")
             exit("OK. Ready to publish.")
 
     def _prepare_to_publish_metadata(self, metadata_file):

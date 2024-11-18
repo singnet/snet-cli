@@ -1,6 +1,5 @@
 {
-    "$schema": "http://json-schema.org/draft/2019-09/schema#",
-    "$id": "https://dev.singularitynet.io/docs/ai-developers/service/#metadata-overview",
+    "$schema": "https://json-schema.org/draft-07/schema#",
     "title": "Service Metadata",
     "description": "Schema of a correct service metadata file",
     "type": "object",
@@ -27,8 +26,7 @@
         },
         "model_ipfs_hash": {
             "description": "Hash of directory which contains protobuf files",
-            "type": "string",
-            "minLength": 1
+            "type": "string"
         },
         "mpe_address": {
             "description": "Address of MultiPartyEscrow contract",
@@ -97,10 +95,15 @@
                         "description": "Public key address used for validating signatures requested specially for free call",
                         "type": "string",
                         "minLength": 1
+                    },
+                    "group_id": {
+                        "description": "Group ID",
+                        "type": "string",
+                        "minLength": 1
                     }
                 },
                 "additionalProperties": false,
-                "required": [ "group_name", "pricing", "endpoints", "daemon_addresses" ]
+                "required": [ "group_name", "pricing", "endpoints", "daemon_addresses", "group_id" ]
             },
             "minItems": 1
         },
@@ -119,10 +122,18 @@
                 "short_description": {
                     "description": "Service short description",
                     "type": "string"
+                },
+                "description": {
+                    "description": "Service description",
+                    "type": "string"
                 }
             },
-            "additionalProperties": false,
-            "required": [ "url", "long_description", "short_description" ]
+            "additionalProperties": true,
+            "required": ["url", "short_description"],
+            "anyOf": [
+                {"required": ["long_description"]},
+                {"required": ["description"]}
+            ]
         },
         "media": {
             "description": "Media assets with IPFS hash",
@@ -147,7 +158,11 @@
                     "alt_text": {
                         "description": "Alternate to display if media doesn't load",
                         "type": "string",
-                        "enum": [ "hover_on_the_image_text", "hover_on_the_video_url" ]
+                        "enum": [ "hover_on_the_image_text", "hover_on_the_video_url", ""]
+                    },
+                    "asset_type": {
+                        "description": "Asset type",
+                        "type": "string"
                     }
                 },
                 "additionalProperties": false,
@@ -167,19 +182,38 @@
                     },
                     "email_id": {
                         "description": "Email of contributor",
-                        "type": "string",
-                        "minLength": 1
+                        "type": "string"
                     }
                 },
                 "additionalProperties": false,
-                "required": [ "name", "email_id" ]
+                "required": ["name", "email_id"]
             },
             "minItems": 1
+        },
+        "tags": {
+            "description": "Service tags",
+            "type": "array",
+            "items": {
+                "type": "string",
+                "minLength": 1
+            }
+        },
+        "assets": {
+            "description": "Service assets",
+            "type": "object",
+            "additionalProperties": true
+        },
+        "service_api_source": {
+            "description": "Source of service API",
+            "type": "string",
+            "minLength": 1
         }
     },
     "additionalProperties": false,
     "required": [
         "version", "display_name", "encoding", "service_type",
         "model_ipfs_hash", "mpe_address", "groups", "contributors"
-    ]
+    ],
+    "if": {"properties": {"model_ipfs_hash": {"const": ""}}},
+    "then": {"required": ["service_api_source"]}
 }
