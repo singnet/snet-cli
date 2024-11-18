@@ -456,7 +456,8 @@ def add_contract_function_options(parser, contract_name):
         fns.append({
             "name": fn["name"],
             "named_inputs": [(i["name"], i["type"]) for i in fn["inputs"] if i["name"] != ""],
-            "positional_inputs": [i["type"] for i in fn["inputs"] if i["name"] == ""]
+            "positional_inputs": [i["type"] for i in fn["inputs"] if i["name"] == ""],
+            "stateMutability": fn["stateMutability"]
         })
 
     if len(fns) > 0:
@@ -467,7 +468,10 @@ def add_contract_function_options(parser, contract_name):
         for fn in fns:
             fn_p = subparsers.add_parser(
                 fn["name"], help="{} function".format(fn["name"]))
-            fn_p.set_defaults(fn="call")
+            if fn["stateMutability"] == "view":
+                fn_p.set_defaults(fn="call")
+            else:
+                fn_p.set_defaults(fn="transact")
             fn_p.set_defaults(contract_function=fn["name"])
             for i in fn["positional_inputs"]:
                 fn_p.add_argument(i,
@@ -478,12 +482,8 @@ def add_contract_function_options(parser, contract_name):
                 fn_p.add_argument("contract_named_input_{}".format(i[0]),
                                   type=type_converter(i[1]),
                                   metavar="{}_{}".format(i[0].lstrip("_"), i[1].upper()))
-            fn_p.add_argument("--transact",
-                              action="store_const",
-                              const="transact",
-                              dest="fn",
-                              help="Invoke contract function as transaction")
-            add_transaction_arguments(fn_p)
+            if fn["stateMutability"] != "view":
+                add_transaction_arguments(fn_p)
 
 
 def add_contract_identity_arguments(parser, names_and_destinations=(("", "at"),)):

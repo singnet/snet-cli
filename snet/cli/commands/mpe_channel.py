@@ -8,7 +8,6 @@ from importlib.metadata import metadata
 from pathlib import Path
 
 from eth_abi.codec import ABICodec
-from web3._utils.encoding import pad_hex
 from web3._utils.events import get_event_data
 from snet.contracts import get_contract_def, get_contract_deployment_block
 

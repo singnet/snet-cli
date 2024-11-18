@@ -127,8 +127,6 @@ class BlockchainCommand(Command):
         super(BlockchainCommand, self).__init__(config, args, out_f, err_f)
         self.w3 = w3 or get_web3(self.get_eth_endpoint())
         self.ident = ident or self.get_identity()
-        # if create_ident and not self.ident:
-        #     self.ident = self.get_identity()
 
     def get_eth_endpoint(self):
         # the only one source of eth_rpc_endpoint is the configuration file
@@ -190,14 +188,14 @@ class BlockchainCommand(Command):
     def _get_decrypted_secret(self, secret):
         decrypted_secret = None
         try:
-            pwd = getpass.getpass("Password: ")
-            decrypted_secret = decrypt_secret(secret, pwd)
+            password = getpass.getpass("Password: ")
+            decrypted_secret = decrypt_secret(secret, password)
         except InvalidToken:
             self._printout("Wrong password! Try again")
         if not decrypted_secret:
             try:
-                pwd = getpass.getpass("Password: ")
-                decrypted_secret = decrypt_secret(secret, pwd)
+                password = getpass.getpass("Password: ")
+                decrypted_secret = decrypt_secret(secret, password)
             except InvalidToken:
                 self._printerr("Wrong password! Operation failed.")
                 exit(1)
@@ -273,17 +271,17 @@ class IdentityCommand(Command):
             identity["network"] = self.args.network
         identity["default_wallet_index"] = self.args.wallet_index
 
-        pwd = None
+        password = None
         if not self.args.do_not_encrypt and get_kws_for_identity_type(identity_type)[0][1]:
             self._printout("For 'mnemonic' and 'key' identity_type, secret encryption is enabled by default, "
                            "so you need to come up with a password that you then need to enter on every transaction. "
                            "To disable encryption, use the '-de' or '--do-not-encrypt' argument.")
-            pwd = getpass.getpass("Password: ")
-            self._ensure(pwd is not None, "Password cannot be empty")
+            password = getpass.getpass("Password: ")
+            self._ensure(password is not None, "Password cannot be empty")
             pwd_confirm = getpass.getpass("Confirm password: ")
-            self._ensure(pwd == pwd_confirm, "Passwords do not match")
+            self._ensure(password == pwd_confirm, "Passwords do not match")
 
-        self.config.add_identity(identity_name, identity, self.out_f, pwd)
+        self.config.add_identity(identity_name, identity, self.out_f, password)
 
 
     def list(self):
@@ -343,8 +341,6 @@ class SessionSetCommand(Command):
 
 
 class SessionShowCommand(BlockchainCommand):
-    # def __init__(self, config, args, out_f=sys.stdout, err_f=sys.stderr, w3=None, ident=None):
-    #     super(SessionShowCommand, self).__init__(config, args, out_f, err_f, w3, ident, False)
 
     def show(self):
         rez = self.config.session_to_dict()
