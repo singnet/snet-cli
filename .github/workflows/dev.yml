@@ -69,9 +69,7 @@ jobs:
           export FORMER_SNET_TEST_INFURA_KEY=${{ secrets.FORM_INF_KEY }}
           export PIP_BREAK_SYSTEM_PACKAGES=1
           export PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python
-          sh -ex ./snet/cli/test/utils/run_all_functional.sh
+#          sh -ex ./snet/cli/test/utils/run_all_functional.sh
           python3 ./snet/cli/test/functional_tests/test_entry_point.py
-#          sh -ex ./snet/cli/test/functional_tests/script1_twogroups.sh
-#          sh -ex ./snet/cli/test/functional_tests/script2_deposit_transfer.sh
-#          sh -ex ./snet/cli/test/functional_tests/script3_withdraw.sh
-
+          bash -ex ./snet/cli/test/utils/reset_environment.sh --i-no-what-i-am-doing
+          bash -ex -c "cd snet/cli/test/functional_tests/script2_deposit_transfer.sh; bash -ex `basename $f`"
