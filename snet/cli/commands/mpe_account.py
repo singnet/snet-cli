@@ -5,10 +5,12 @@ from snet.cli.utils.agix2cogs import cogs2stragix
 class MPEAccountCommand(BlockchainCommand):
 
     def print_account(self):
+        self.check_ident()
         self._printout(self.ident.address)
 
     def print_agix_and_mpe_balances(self):
         """ Print balance of ETH, AGIX, and MPE wallet """
+        self.check_ident()
         if self.args.account:
             account = self.args.account
         else:
@@ -24,6 +26,7 @@ class MPEAccountCommand(BlockchainCommand):
         self._printout("    MPE: %s"%cogs2stragix(mpe_cogs))
 
     def deposit_to_mpe(self):
+        self.check_ident()
         amount = self.args.amount
         mpe_address = self.get_mpe_address()
 
@@ -33,7 +36,9 @@ class MPEAccountCommand(BlockchainCommand):
         self.transact_contract_command("MultiPartyEscrow", "deposit", [amount])
 
     def withdraw_from_mpe(self):
+        self.check_ident()
         self.transact_contract_command("MultiPartyEscrow", "withdraw", [self.args.amount])
 
     def transfer_in_mpe(self):
+        self.check_ident()
         self.transact_contract_command("MultiPartyEscrow", "transfer", [self.args.receiver, self.args.amount])

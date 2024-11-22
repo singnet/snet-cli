@@ -160,7 +160,7 @@ class MPEClientCommand(MPEChannelCommand):
         return endpoints[0]
 
     def call_server_lowlevel(self):
-
+        self.check_ident()
 
         self._init_or_update_registered_org_if_needed()
         self._init_or_update_registered_service_if_needed()
@@ -263,6 +263,8 @@ class MPEClientCommand(MPEChannelCommand):
         return server["current_nonce"], server["current_signed_amount"], unspent_amount
 
     def print_channel_state_statelessly(self):
+        self.check_ident()
+
         grpc_channel = open_grpc_channel(self.args.endpoint)
 
         current_nonce, current_amount, unspent_amount = self._get_channel_state_statelessly(
@@ -308,6 +310,7 @@ class MPEClientCommand(MPEChannelCommand):
         return self._call_server_via_grpc_channel(grpc_channel, channel_id, server_state["current_nonce"], server_state["current_signed_amount"] + price, params, service_metadata)
 
     def call_server_statelessly(self):
+        self.check_ident()
         group_name = self.args.group_name
         params = self._get_call_params()
         response = self.call_server_statelessly_with_params(params, group_name)

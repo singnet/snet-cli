@@ -2,6 +2,8 @@ from configparser import ConfigParser, ExtendedInterpolation
 from pathlib import Path
 import sys
 
+from snet.cli.utils.config import encrypt_secret
+
 default_snet_folder = Path("~").expanduser().joinpath(".snet")
 DEFAULT_NETWORK = "sepolia"
 
@@ -138,12 +140,19 @@ class Config(ConfigParser):
         self._get_network_section(network)[key] = str(value)
         self._persist()
 
-    def add_identity(self, identity_name, identity, out_f=sys.stdout):
+    def add_identity(self, identity_name, identity, out_f=sys.stdout, password=None):
         identity_section = "identity.%s" % identity_name
         if identity_section in self:
             raise Exception("Identity section %s already exists in config" % identity_section)
         if "network" in identity and identity["network"] not in self.get_all_networks_names():
             raise Exception("Network %s is not in config" % identity["network"])
+
+        if password:
+            if "mnemonic" in identity:
+                identity["mnemonic"] = encrypt_secret(identity["mnemonic"], password)
+            elif "private_key" in identity:
+                identity["private_key"] = encrypt_secret(identity["private_key"], password)
+
         self[identity_section] = identity
         self._persist()
         # switch to it, if it was the first identity

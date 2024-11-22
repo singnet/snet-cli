@@ -150,10 +150,12 @@ class MPETreasurerCommand(MPEClientCommand):
         self._blockchain_claim(payments)
 
     def claim_channels(self):
+        self.check_ident()
         grpc_channel = open_grpc_channel(self.args.endpoint)
         self._claim_in_progress_and_claim_channels(grpc_channel, self.args.channels)
 
     def claim_all_channels(self):
+        self.check_ident()
         grpc_channel = open_grpc_channel(self.args.endpoint)
         # we take list of all channels
         unclaimed_payments = self._call_GetListUnclaimed(grpc_channel)
@@ -161,6 +163,7 @@ class MPETreasurerCommand(MPEClientCommand):
         self._claim_in_progress_and_claim_channels(grpc_channel, channels)
 
     def claim_almost_expired_channels(self):
+        self.check_ident()
         grpc_channel = open_grpc_channel(self.args.endpoint)
         # we take list of all channels
         unclaimed_payments = self._call_GetListUnclaimed(grpc_channel)
