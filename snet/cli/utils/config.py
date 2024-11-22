@@ -81,10 +81,10 @@ def encrypt_secret(secret, password):
     key = urlsafe_b64encode(kdf.derive(password.encode()))
     cipher_suite = Fernet(key)
     encrypted_secret = cipher_suite.encrypt(secret.encode()) + salt
-    return urlsafe_b64encode(encrypted_secret)
+    return '::' + str(urlsafe_b64encode(encrypted_secret))[2:-1]
 
 def decrypt_secret(secret, password):
-    secret = urlsafe_b64decode(secret[2:-1])
+    secret = urlsafe_b64decode(secret[2:])
     salt = secret[-16:]
     secret = secret[:-16]
     kdf = PBKDF2HMAC(

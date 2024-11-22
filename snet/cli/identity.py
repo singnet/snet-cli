@@ -38,7 +38,7 @@ class IdentityProvider(abc.ABC):
 class KeyIdentityProvider(IdentityProvider):
     def __init__(self, w3, private_key):
         self.w3 = w3
-        if private_key.startswith("b'"):
+        if private_key.startswith("::"):
             self.private_key = None
             self.address = None
             return
@@ -117,7 +117,7 @@ class MnemonicIdentityProvider(IdentityProvider):
     def __init__(self, w3, mnemonic, index):
         self.w3 = w3
         self.index = index
-        if mnemonic.startswith("b'"):
+        if mnemonic.startswith("::"):
             self.private_key = None
             self.address = None
             return

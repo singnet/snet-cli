@@ -136,7 +136,7 @@ def add_identity_options(parser, config):
                    help="Type of identity to create from {}".format(
                        get_identity_types()),
                    metavar="IDENTITY_TYPE")
-    p.add_argument("--do-not-encrypt", "-de",
+    p.add_argument("-de", "--do-not-encrypt",
                    default=False,
                    action="store_true",
                    help="Do not encrypt the identity's private key or mnemonic. For 'key' and 'mnemonic' identity_type.")

@@ -71,5 +71,4 @@ jobs:
           export PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python
 #          sh -ex ./snet/cli/test/utils/run_all_functional.sh
           python3 ./snet/cli/test/functional_tests/test_entry_point.py
-          bash -ex ./snet/cli/test/utils/reset_environment.sh --i-no-what-i-am-doing
-          bash -ex -c "cd snet/cli/test/functional_tests/script2_deposit_transfer.sh; bash -ex `basename $f`"
+          python3 ./snet/cli/test/functional_tests/func_tests.py
