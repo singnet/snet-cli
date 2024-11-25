@@ -51,7 +51,7 @@ class BaseTest(unittest.TestCase):
         argcomplete.autocomplete(self.parser)
 
 
-class TestMainPreparations(BaseTest):
+class TestAAMainPreparations(BaseTest):
     def setUp(self):
         super().setUp()
 
