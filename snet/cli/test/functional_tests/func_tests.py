@@ -129,5 +129,22 @@ class TestEncryptionKey(BaseTest):
             assert self.name not in result
 
 
+class TestOrgMetadata(BaseTest):
+    def setUp(self):
+        super().setUp()
+        self.success_msg = "OK. Ready to publish."
+        self.name = "test_org"
+        self.org_id = "test_org_id"
+        self.org_type = "individual"
+
+    def test_metadata_init(self):
+        execute(["organization", "metadata-init", self.name, self.org_id, self.org_type], self.parser, self.conf)
+        result = execute(["organization", "validate-metadata"], self.parser, self.conf)
+        assert self.success_msg not in result
+
+    def tearDown(self):
+        os.remove(f"./organization_metadata.json")
+
+
 if __name__ == "__main__":
     unittest.main()
