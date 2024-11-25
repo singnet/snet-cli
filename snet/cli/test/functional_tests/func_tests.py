@@ -55,21 +55,20 @@ class TestAAMainPreparations(BaseTest):
     def setUp(self):
         super().setUp()
 
-    def test_1_set_infura(self):
-        execute(["set", "default_eth_rpc_endpoint", INFURA], self.parser, self.conf)
-        result = execute(["session"], self.parser, self.conf)
-        assert INFURA_KEY in result
-
-    def test_2_identity_create(self):
+    def test_1_identity_create(self):
         execute(["identity", "create", IDENTITY, "key", "--private-key", PRIVATE_KEY, "-de"], self.parser, self.conf)
         result = execute(["session"], self.parser, self.conf)
         assert f"identity: {IDENTITY}" in result
 
-    def test_3_set_network(self):
+    def test_2_set_network(self):
         execute(["network", "sepolia"], self.parser, self.conf)
         result = execute(["session"], self.parser, self.conf)
         assert "network: sepolia" in result
 
+    def test_3_set_infura(self):
+        execute(["set", "default_eth_rpc_endpoint", INFURA], self.parser, self.conf)
+        result = execute(["session"], self.parser, self.conf)
+        assert INFURA_KEY in result
 
 class TestCommands(BaseTest):
     def test_balance_output(self):
