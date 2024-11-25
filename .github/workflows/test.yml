@@ -1,30 +1,22 @@
-name: tests_master
+name: tests_development
 on:
-  # push:
-  #   branches: [ "master" ]
-  pull_request:
-    branches: [ "master" ]
+  push:
+    branches: [ "functional-tests-update" ]
+#  pull_request:
+#    branches: [ "development" ]
   workflow_dispatch:
 
 jobs:
-    run_tests_master:
+    run_tests_functional_tests_update:
       runs-on: ubuntu-latest
       container: node:20-bookworm
       steps:
-        
+
       - name: install packs
         run: |
           apt update
           apt install -y libudev-dev libusb-1.0-0-dev curl jq
           apt install -y python3-pip python3.11-venv
-
-      # - name: install ipfs
-      #   run: |
-      #     wget https://dist.ipfs.io/go-ipfs/v0.9.0/go-ipfs_v0.9.0_linux-amd64.tar.gz
-      #     tar -xvzf go-ipfs_v0.9.0_linux-amd64.tar.gz
-      #     bash go-ipfs/install.sh
-      #     ipfs --version
-      #     node --version
 
       - name: clone repo
         uses: actions/checkout@v3
@@ -35,12 +27,12 @@ jobs:
           # pip3 install nose --break-system-packages
           # pip3 uninstall pyreadline --break-system-packages
           # pip3 install pyreadline3 --break-system-packages
-          
+
       - name: install snet-cli
         run: |
           # ./scripts/blockchain install
           pip3 install -e . --break-system-packages
-          
+
       # - name: install platform-contracts
       #   run: |
       #     cd ..
@@ -56,7 +48,7 @@ jobs:
       #     cd example-service
       #     pip3 install -r requirements.txt --break-system-packages
       #     sh buildproto.sh
-          
+
       # - name: unit tests
       #   run: |
       #     cd ./snet/cli/test
@@ -69,6 +61,6 @@ jobs:
           export FORMER_SNET_TEST_INFURA_KEY=${{ secrets.FORM_INF_KEY }}
           export PIP_BREAK_SYSTEM_PACKAGES=1
           export PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python
-          # sh -ex ./snet/cli/test/utils/run_all_functional.sh
+#          sh -ex ./snet/cli/test/utils/run_all_functional.sh
           python3 ./snet/cli/test/functional_tests/test_entry_point.py
           python3 ./snet/cli/test/functional_tests/func_tests.py
