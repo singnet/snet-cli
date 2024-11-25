@@ -15,6 +15,12 @@ with warnings.catch_warnings():
 
 from snet.cli.config import Config
 
+INFURA_KEY = os.environ.get("SNET_TEST_INFURA_KEY")
+PRIVATE_KEY = os.environ.get("SNET_TEST_WALLET_PRIVATE_KEY")
+ADDR = os.environ.get("SNET_TEST_WALLET_ADDRESS")
+INFURA = f"https://sepolia.infura.io/v3/{INFURA_KEY}"
+IDENTITY = "main"
+
 
 class StringOutput:
     def __init__(self):
@@ -37,11 +43,32 @@ def execute(args_list, parser, conf):
     except Exception as e:
         raise
 
+
 class BaseTest(unittest.TestCase):
     def setUp(self):
         self.conf = Config()
         self.parser = arguments.get_root_parser(self.conf)
         argcomplete.autocomplete(self.parser)
+
+
+class TestMainPreparations(BaseTest):
+    def setUp(self):
+        super().setUp()
+
+    def test_1_set_infura(self):
+        execute(["set", "default_eth_rpc_endpoint", INFURA], self.parser, self.conf)
+        result = execute(["session"], self.parser, self.conf)
+        assert INFURA_KEY in result
+
+    def test_2_identity_create(self):
+        execute(["identity", "create", IDENTITY, "key", "--private-key", PRIVATE_KEY, "-de"], self.parser, self.conf)
+        result = execute(["session"], self.parser, self.conf)
+        assert f"identity: {IDENTITY}" in result
+
+    def test_3_set_network(self):
+        execute(["network", "sepolia"], self.parser, self.conf)
+        result = execute(["session"], self.parser, self.conf)
+        assert "network: sepolia" in result
 
 
 class TestCommands(BaseTest):
@@ -51,7 +78,7 @@ class TestCommands(BaseTest):
 
     def test_balance_address(self):
         result = execute(["account", "balance"], self.parser, self.conf)
-        assert result.split("\n")[0].split()[1] == "0xe5D1fA424DE4689F9d2687353b75D7a8987900fD"
+        assert result.split("\n")[0].split()[1] == ADDR
 
 class TestDepositWithdraw(BaseTest):
     def setUp(self):

@@ -58,6 +58,7 @@ jobs:
         run: |
           export SNET_TEST_WALLET_PRIVATE_KEY=${{ secrets.PRIV_KEY }}
           export SNET_TEST_INFURA_KEY=${{ secrets.INF_KEY }}
+          export SNET_TEST_WALLET_ADDRESS=${{ secrets.ADDR }}
           export FORMER_SNET_TEST_INFURA_KEY=${{ secrets.FORM_INF_KEY }}
           export PIP_BREAK_SYSTEM_PACKAGES=1
           export PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python
