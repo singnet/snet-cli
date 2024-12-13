@@ -11,7 +11,7 @@ jobs:
       runs-on: ubuntu-latest
       container: node:20-bookworm
       steps:
-        
+
       - name: install packs
         run: |
           apt update
@@ -35,12 +35,12 @@ jobs:
           # pip3 install nose --break-system-packages
           # pip3 uninstall pyreadline --break-system-packages
           # pip3 install pyreadline3 --break-system-packages
-          
+
       - name: install snet-cli
         run: |
           # ./scripts/blockchain install
           pip3 install -e . --break-system-packages
-          
+
       # - name: install platform-contracts
       #   run: |
       #     cd ..
@@ -56,7 +56,7 @@ jobs:
       #     cd example-service
       #     pip3 install -r requirements.txt --break-system-packages
       #     sh buildproto.sh
-          
+
       # - name: unit tests
       #   run: |
       #     cd ./snet/cli/test
