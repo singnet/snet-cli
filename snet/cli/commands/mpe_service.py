@@ -632,7 +632,6 @@ class MPEServiceCommand(BlockchainCommand):
         service_api_source = metadata.get("service_api_source") or metadata.get("model_ipfs_hash")
         download_and_safe_extract_proto(service_api_source, self.args.protodir, self._get_ipfs_client())
 
-
     def extract_service_api_from_registry(self):
         metadata = self._get_service_metadata_from_registry()
         service_api_source = metadata.get("service_api_source") or metadata.get("model_ipfs_hash")

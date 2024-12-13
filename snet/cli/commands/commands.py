@@ -11,6 +11,7 @@ import jsonschema
 from lighthouseweb3 import Lighthouse
 import yaml
 import web3
+from cryptography.fernet import InvalidToken
 from snet.contracts import get_contract_def
 
 from snet.cli.contract import Contract
@@ -18,7 +19,7 @@ from snet.cli.identity import KeyIdentityProvider, KeyStoreIdentityProvider, Led
     MnemonicIdentityProvider, RpcIdentityProvider, TrezorIdentityProvider, get_kws_for_identity_type
 from snet.cli.metadata.organization import OrganizationMetadata, PaymentStorageClient, Payment, Group
 from snet.cli.utils.config import get_contract_address, get_field_from_args_or_session, \
-    read_default_contract_address
+    read_default_contract_address, decrypt_secret
 from snet.cli.utils.ipfs_utils import get_from_ipfs_and_checkhash, \
     hash_to_bytesuri, publish_file_in_ipfs, publish_file_in_filecoin
 from snet.cli.utils.utils import DefaultAttributeObject, get_web3, is_valid_url, serializable, type_converter, \
@@ -174,6 +175,32 @@ class BlockchainCommand(Command):
         if identity_type == "keystore":
             return KeyStoreIdentityProvider(self.w3, self.config.get_session_field("keystore_path"))
 
+    def check_ident(self):
+        identity_type = self.config.get_session_field("identity_type")
+        if get_kws_for_identity_type(identity_type)[0][1] and not self.ident.private_key:
+            if identity_type == "key":
+                secret = self.config.get_session_field("private_key")
+            else:
+                secret = self.config.get_session_field("mnemonic")
+            decrypted_secret = self._get_decrypted_secret(secret)
+            self.ident.set_secret(decrypted_secret)
+
+    def _get_decrypted_secret(self, secret):
+        decrypted_secret = None
+        try:
+            password = getpass.getpass("Password: ")
+            decrypted_secret = decrypt_secret(secret, password)
+        except InvalidToken:
+            self._printout("Wrong password! Try again")
+        if not decrypted_secret:
+            try:
+                password = getpass.getpass("Password: ")
+                decrypted_secret = decrypt_secret(secret, password)
+            except InvalidToken:
+                self._printerr("Wrong password! Operation failed.")
+                exit(1)
+        return decrypted_secret
+
     def get_contract_argser(self, contract_address, contract_function, contract_def, **kwargs):
         def f(*positional_inputs, **named_inputs):
             args_dict = self.args.__dict__.copy()
@@ -243,7 +270,19 @@ class IdentityCommand(Command):
         if self.args.network:
             identity["network"] = self.args.network
         identity["default_wallet_index"] = self.args.wallet_index
-        self.config.add_identity(identity_name, identity, self.out_f)
+
+        password = None
+        if not self.args.do_not_encrypt and get_kws_for_identity_type(identity_type)[0][1]:
+            self._printout("For 'mnemonic' and 'key' identity_type, secret encryption is enabled by default, "
+                           "so you need to come up with a password that you then need to enter on every transaction. "
+                           "To disable encryption, use the '-de' or '--do-not-encrypt' argument.")
+            password = getpass.getpass("Password: ")
+            self._ensure(password is not None, "Password cannot be empty")
+            pwd_confirm = getpass.getpass("Confirm password: ")
+            self._ensure(password == pwd_confirm, "Passwords do not match")
+
+        self.config.add_identity(identity_name, identity, self.out_f, password)
+
 
     def list(self):
         for identity_section in filter(lambda x: x.startswith("identity."), self.config.sections()):
@@ -302,11 +341,11 @@ class SessionSetCommand(Command):
 
 
 class SessionShowCommand(BlockchainCommand):
+
     def show(self):
         rez = self.config.session_to_dict()
         key = "network.%s" % rez['session']['network']
         self.populate_contract_address(rez, key)
-
         # we don't want to who private_key and mnemonic
         for d in rez.values():
             d.pop("private_key", None)
@@ -348,6 +387,7 @@ class ContractCommand(BlockchainCommand):
         return result
 
     def transact(self):
+        self.check_ident()
         contract_address = get_contract_address(self, self.args.contract_name,
                                                 "--at is required to specify target contract address")
 
@@ -402,7 +442,8 @@ class OrganizationCommand(BlockchainCommand):
                 raise Exception(f"Invalid {endpoint} endpoint passed")
 
         payment_storage_client = PaymentStorageClient(self.args.payment_channel_connection_timeout,
-                                                      self.args.payment_channel_request_timeout, self.args.endpoints)
+                                                      self.args.payment_channel_request_timeout,
+                                                      self.args.endpoints)
         payment = Payment(self.args.payment_address, self.args.payment_expiration_threshold,
                           self.args.payment_channel_storage_type, payment_storage_client)
         group_id = base64.b64encode(secrets.token_bytes(32))
@@ -424,8 +465,7 @@ class OrganizationCommand(BlockchainCommand):
             raise e
 
         existing_groups = org_metadata.groups
-        updated_groups = [
-            group for group in existing_groups if not group_id == group.group_id]
+        updated_groups = [group for group in existing_groups if not group_id == group.group_id]
         org_metadata.groups = updated_groups
         org_metadata.save_pretty(metadata_file)
 
@@ -437,17 +477,13 @@ class OrganizationCommand(BlockchainCommand):
         if self.args.payment_address:
             group.update_payment_address(self.args.payment_address)
         if self.args.payment_expiration_threshold:
-            group.update_payment_expiration_threshold(
-                self.args.payment_expiration_threshold)
+            group.update_payment_expiration_threshold(self.args.payment_expiration_threshold)
         if self.args.payment_channel_storage_type:
-            group.update_payment_channel_storage_type(
-                self.args.payment_channel_storage_type)
+            group.update_payment_channel_storage_type(self.args.payment_channel_storage_type)
         if self.args.payment_channel_connection_timeout:
-            group.update_connection_timeout(
-                self.args.payment_channel_connection_timeout)
+            group.update_connection_timeout(self.args.payment_channel_connection_timeout)
         if self.args.payment_channel_request_timeout:
-            group.update_request_timeout(
-                self.args.payment_channel_request_timeout)
+            group.update_request_timeout(self.args.payment_channel_request_timeout)
 
     def update_group(self):
         group_id = self.args.group_id
@@ -667,7 +703,6 @@ class OrganizationCommand(BlockchainCommand):
             return {"status": 0, "msg": "Organization metadata is valid and ready to publish."}
 
     def create(self):
-
         self._metadata_validate()
 
         metadata_file = self.args.metadata_file

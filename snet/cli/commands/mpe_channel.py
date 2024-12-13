@@ -8,7 +8,6 @@ from importlib.metadata import metadata
 from pathlib import Path
 
 from eth_abi.codec import ABICodec
-from web3._utils.encoding import pad_hex
 from web3._utils.events import get_event_data
 from snet.contracts import get_contract_def, get_contract_deployment_block
 
@@ -504,7 +503,9 @@ class MPEChannelCommand(OrganizationCommand):
     def get_address_from_arg_or_ident(self, arg):
         if arg:
             return arg
+        self.check_ident()
         return self.ident.address
+
 
     def print_channels_filter_sender(self):
         # we don't need to return other channel fields if we only need channel_id or if we'll sync channels state
