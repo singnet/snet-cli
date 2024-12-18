@@ -60,17 +60,30 @@ class TestAAMainPreparations(BaseTest):
         result = execute(["session"], self.parser, self.conf)
         assert f"identity: {IDENTITY}" in result
 
-    def test_2_set_network(self):
+    def test_2_set_network_mainnet(self):
+        execute(["network", "mainnet"], self.parser, self.conf)
+        result = execute(["session"], self.parser, self.conf)
+        assert "network: mainnet" in result
+
+    def test_3_set_network_sepolia(self):
         execute(["network", "sepolia"], self.parser, self.conf)
         result = execute(["session"], self.parser, self.conf)
         assert "network: sepolia" in result
 
-    def test_3_set_infura(self):
+    def test_4_set_infura(self):
         execute(["set", "default_eth_rpc_endpoint", INFURA], self.parser, self.conf)
         result = execute(["session"], self.parser, self.conf)
         assert INFURA_KEY in result
 
+    def test_5_print_account(self):
+        execute(["account", "print"], self.parser, self.conf)
+        result=execute(["session"], self.parser, self.conf)
+        assert ADDR in result
+
 class TestCommands(BaseTest):
+    def setUp(self):
+        super().setUp()
+        self.version='2.2.0'
     def test_balance_output(self):
         result = execute(["account", "balance"], self.parser, self.conf)
         assert len(result.split("\n")) >= 4
@@ -78,6 +91,10 @@ class TestCommands(BaseTest):
     def test_balance_address(self):
         result = execute(["account", "balance"], self.parser, self.conf)
         assert result.split("\n")[0].split()[1] == ADDR
+
+    def test_version(self):
+        result = execute(["version"], self.parser, self.conf)
+        assert f"version: {self.version}" in result
 
 class TestDepositWithdraw(BaseTest):
     def setUp(self):
@@ -117,7 +134,24 @@ class TestGenerateLibrary(BaseTest):
     def tearDown(self):
         shutil.rmtree(self.path)
 
-
+class Unset(BaseTest):
+    def test_unset_filecoin(self):
+        execute(["set", "filecoin_api_key", "1"], self.parser, self.conf)
+        result = execute(["unset", "filecoin_api_key"], self.parser, self.conf)
+        assert "unset" in result
+    def test_unset_current_registry_at(self):
+        execute(["set", "current_registry_at", "1"], self.parser, self.conf)
+        result = execute(["unset", "current_registry_at"], self.parser, self.conf)
+        print(result)
+        assert "unset" in result
+    def test_unset_current_multipartyescrow_at(self):
+        execute(["set", "current_multipartyescrow_at", "1"], self.parser, self.conf)
+        result = execute(["unset", "current_multipartyescrow_at"], self.parser, self.conf)
+        assert "unset" in result
+    def test_unset_current_singularitynettoken_at(self):
+        execute(["set", "current_singularitynettoken_at", "1"], self.parser, self.conf)
+        result = execute(["unset", "current_singularitynettoken_at"], self.parser, self.conf)
+        assert "unset" in result
 class TestEncryptionKey(BaseTest):
     def setUp(self):
         super().setUp()
