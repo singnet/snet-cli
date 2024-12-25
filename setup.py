@@ -7,7 +7,7 @@ from setuptools.command.install import install as _install
 from snet.cli.utils.utils import compile_proto
 from version import __version__
 
-PACKAGE_NAME = 'snet.cli'
+PACKAGE_NAME = 'snet-cli'
 
 
 this_directory = os.path.abspath(os.path.dirname(__file__))
@@ -50,8 +50,7 @@ class install(_install):
 setup(
     name=PACKAGE_NAME,
     version=__version__,
-    packages=find_namespace_packages(include=['snet.*']),
-    namespace_packages=['snet'],
+    packages=find_namespace_packages(include=['snet*']),
     url='https://github.com/singnet/snet-cli',
     author="SingularityNET Foundation",
     author_email="info@singularitynet.io",
