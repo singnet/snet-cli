@@ -19,7 +19,7 @@ INFURA_KEY = os.environ.get("SNET_TEST_INFURA_KEY")
 PRIVATE_KEY = os.environ.get("SNET_TEST_WALLET_PRIVATE_KEY")
 ADDR = os.environ.get("SNET_TEST_WALLET_ADDRESS")
 INFURA = f"https://sepolia.infura.io/v3/{INFURA_KEY}"
-IDENTITY = "main"
+IDENTITY = "sepolia"
 
 
 class StringOutput:
@@ -83,7 +83,7 @@ class TestAAMainPreparations(BaseTest):
 class TestCommands(BaseTest):
     def setUp(self):
         super().setUp()
-        self.version='2.2.0'
+        self.version='2.4.0'
     def test_balance_output(self):
         result = execute(["account", "balance"], self.parser, self.conf)
         assert len(result.split("\n")) >= 4
@@ -142,7 +142,6 @@ class Unset(BaseTest):
     def test_unset_current_registry_at(self):
         execute(["set", "current_registry_at", "1"], self.parser, self.conf)
         result = execute(["unset", "current_registry_at"], self.parser, self.conf)
-        print(result)
         assert "unset" in result
     def test_unset_current_multipartyescrow_at(self):
         execute(["set", "current_multipartyescrow_at", "1"], self.parser, self.conf)
@@ -204,6 +203,81 @@ class TestOrgMetadata(BaseTest):
 
     def tearDown(self):
         os.remove(f"./organization_metadata.json")
+
+
+class TestChannels(BaseTest):
+    def setUp(self):
+        super().setUp()
+        self.ID_flag="--only-id"
+        self.ID="1"
+        self.amount="0.00000001"
+        self.password="12345"
+    def test_channel_open(self):
+        result=execute(["channel", "print-all", self.ID_flag], self.parser, self.conf)
+        maximum_first = max(int(x) for x in result.split() if x.isdigit())
+    def test_channel_extend(self):
+        with mock.patch('getpass.getpass', return_value=self.password):
+            result=execute(["channel", "extend-add", self.ID, "--amount", self.amount, "-y"], self.parser, self.conf)
+            assert "channelId: ", self.ID in result
+
+
+class TestClient(BaseTest):
+    def setUp(self):
+        super().setUp()
+        self.org_id="26072b8b6a0e448180f8c0e702ab6d2f"
+        self.service_id="Exampleservice"
+        self.group="default_group"
+        self.method="add"
+        self.params=('{'
+                     '"a": 10,'
+                     '"b": 32'
+                     '}')
+    def test_service_call(self):
+        result=execute(["client", "call", self.org_id, self.service_id, self.group, self.method, self.params], self.parser, self.conf)
+        assert "42" in result
+
+class TestOrganization(BaseTest):
+    def setUp(self):
+        super().setUp()
+        self.org_id="singularitynet"
+        self.correct_msg="List of "+self.org_id+"'s Services:"
+    def test_list_of_services(self):
+        result=execute(["organization", "list-services", self.org_id], self.parser, self.conf)
+        assert self.correct_msg in result
+    def test_org_info(self):
+        result=execute(["organization", "info", self.org_id], self.parser, self.conf)
+        assert "Organization Name" in result
+
+
+class TestOnboardingOrg(BaseTest):
+    def setUp(self):
+        super().setUp()
+        self.org_name="auto_test"
+        self.org_id="auto_test"
+        self.org_type="individual"
+        self.org_description="--description"
+        self.org_short_description="--short-description"
+        self.org_url="--url"
+        self.group_name= "default_group"
+        self.endpoint="https://node1.naint.tech:62400"
+        self.password="12345"
+        self.addr="0x4DD0668f583c92b006A81743c9704Bd40c876fDE"
+    def test_1_metadata_init(self):
+        execute(["organization", "metadata-init", self.org_id, self.org_name, self.org_type], self.parser, self.conf)
+        execute(["organization", "metadata-add-description", self.org_description, "DESCRIPTION", self.org_short_description, "SHORT_DESCRIPTION", self.org_url, "URL"],
+                self.parser,
+                self.conf)
+        execute(["organization", "add-group", self.group_name, self.addr, self.endpoint], self.parser, self.conf)
+        assert os.path.exists("./organization_metadata.json"), "File organization_metadata.json was not created!"
+    def test_2_create_organization(self):
+        with mock.patch('getpass.getpass', return_value=self.password):
+            result=execute(["organization", "create", self.org_id, "-y"], self.parser, self.conf)
+            assert "id:\n",self.org_id in result
+    def test_3_delete_organization(self):
+        with mock.patch('getpass.getpass', return_value=self.password):
+            result=execute(["organization", "delete", self.org_id, "-y"], self.parser, self.conf)
+            os.remove(f"./organization_metadata.json")
+            assert "id:\n",self.org_id in result
 
 
 if __name__ == "__main__":
