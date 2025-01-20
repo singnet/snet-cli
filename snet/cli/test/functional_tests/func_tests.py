@@ -79,10 +79,12 @@ class TestAAMainPreparations(BaseTest):
         result=execute(["account", "print"], self.parser, self.conf)
         assert ADDR in result
 
+
 class TestCommands(BaseTest):
     def setUp(self):
         super().setUp()
         self.version='2.3.0'
+
     def test_balance_output(self):
         result = execute(["account", "balance"], self.parser, self.conf)
         assert len(result.split("\n")) >= 4
@@ -94,6 +96,7 @@ class TestCommands(BaseTest):
     def test_version(self):
         result = execute(["version"], self.parser, self.conf)
         assert f"version: {self.version}" in result
+
 
 class TestDepositWithdraw(BaseTest):
     def setUp(self):
@@ -133,23 +136,29 @@ class TestGenerateLibrary(BaseTest):
     def tearDown(self):
         shutil.rmtree(self.path)
 
+
 class Unset(BaseTest):
     def test_unset_filecoin(self):
         execute(["set", "filecoin_api_key", "1"], self.parser, self.conf)
         result = execute(["unset", "filecoin_api_key"], self.parser, self.conf)
         assert "unset" in result
+
     def test_unset_current_registry_at(self):
         execute(["set", "current_registry_at", "1"], self.parser, self.conf)
         result = execute(["unset", "current_registry_at"], self.parser, self.conf)
         assert "unset" in result
+
     def test_unset_current_multipartyescrow_at(self):
         execute(["set", "current_multipartyescrow_at", "1"], self.parser, self.conf)
         result = execute(["unset", "current_multipartyescrow_at"], self.parser, self.conf)
         assert "unset" in result
+
     def test_unset_current_singularitynettoken_at(self):
         execute(["set", "current_singularitynettoken_at", "1"], self.parser, self.conf)
         result = execute(["unset", "current_singularitynettoken_at"], self.parser, self.conf)
         assert "unset" in result
+
+
 class TestEncryptionKey(BaseTest):
     def setUp(self):
         super().setUp()
@@ -190,14 +199,24 @@ class TestEncryptionKey(BaseTest):
 class TestOrgMetadata(BaseTest):
     def setUp(self):
         super().setUp()
-        self.success_msg = "OK. Ready to publish."
+        self.success_msg = "Organization metadata is valid and ready to publish."
         self.name = "test_org"
         self.org_id = "test_org_id"
         self.org_type = "individual"
+        self.org_description="--description"
+        self.org_short_description="--short-description"
+        self.org_url="--url"
+        self.group_name= "default_group"
+        self.endpoint="https://node1.naint.tech:62400"
 
     def test_metadata_init(self):
         execute(["organization", "metadata-init", self.name, self.org_id, self.org_type], self.parser, self.conf)
+        execute(["organization", "metadata-add-description", self.org_description, "DESCRIPTION", self.org_short_description, "SHORT_DESCRIPTION", self.org_url, "URL"],
+                self.parser,
+                self.conf)
+        execute(["organization", "add-group", self.group_name, "0x111111111111111111111", self.endpoint], self.parser, self.conf)
         result = execute(["organization", "validate-metadata"], self.parser, self.conf)
+        print(result)
         assert self.success_msg in result
 
     def tearDown(self):
@@ -211,9 +230,11 @@ class TestChannels(BaseTest):
         self.ID="1"
         self.amount="1"
         self.password="12345"
+
     def test_channel_open(self):
         result=execute(["channel", "print-all", self.ID_flag], self.parser, self.conf)
         maximum_first = max(int(x) for x in result.split() if x.isdigit())
+
     def test_channel_extend(self):
         with mock.patch('getpass.getpass', return_value=self.password):
             result=execute(["channel", "extend-add", self.ID, "--amount", self.amount, "-y"], self.parser, self.conf)
@@ -231,18 +252,22 @@ class TestClient(BaseTest):
                      '"a": 10,'
                      '"b": 32'
                      '}')
+
     def test_service_call(self):
         result=execute(["client", "call", self.org_id, self.service_id, self.group, self.method, self.params], self.parser, self.conf)
         assert "42" in result
+
 
 class TestOrganization(BaseTest):
     def setUp(self):
         super().setUp()
         self.org_id="singularitynet"
         self.correct_msg=f"List of {self.org_id}'s Services:"
+
     def test_list_of_services(self):
         result=execute(["organization", "list-services", self.org_id], self.parser, self.conf)
         assert self.correct_msg in result
+
     def test_org_info(self):
         result=execute(["organization", "info", self.org_id], self.parser, self.conf)
         assert "Organization Name" in result
@@ -261,6 +286,7 @@ class TestOnboardingOrg(BaseTest):
         self.group_name= "default_group"
         self.endpoint="https://node1.naint.tech:62400"
         self.password="12345"
+
     def test_0_preparation(self):
         identity_list=execute(["identity", "list"], self.parser, self.conf)
         if self.identity_name not in identity_list:
@@ -268,6 +294,7 @@ class TestOnboardingOrg(BaseTest):
         execute(["network", "sepolia"], self.parser, self.conf)
         result = execute(["session"], self.parser, self.conf)
         assert "network: sepolia" in result
+
     def test_1_metadata_init(self):
         execute(["organization", "metadata-init", self.org_id, self.org_name, self.org_type], self.parser, self.conf)
         execute(["organization", "metadata-add-description", self.org_description, "DESCRIPTION", self.org_short_description, "SHORT_DESCRIPTION", self.org_url, "URL"],
@@ -275,10 +302,12 @@ class TestOnboardingOrg(BaseTest):
                 self.conf)
         execute(["organization", "add-group", self.group_name, ADDR, self.endpoint], self.parser, self.conf)
         assert os.path.exists("./organization_metadata.json"), "File organization_metadata.json was not created!"
+
     def test_2_create_organization(self):
         with mock.patch('getpass.getpass', return_value=self.password):
             result=execute(["organization", "create", self.org_id, "-y"], self.parser, self.conf)
             assert "event: OrganizationCreated" in result
+
     def test_3_delete_organization(self):
         with mock.patch('getpass.getpass', return_value=self.password):
             result=execute(["organization", "delete", self.org_id, "-y"], self.parser, self.conf)
