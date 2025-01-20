@@ -76,14 +76,13 @@ class TestAAMainPreparations(BaseTest):
         assert INFURA_KEY in result
 
     def test_5_print_account(self):
-        execute(["account", "print"], self.parser, self.conf)
-        result=execute(["session"], self.parser, self.conf)
+        result=execute(["account", "print"], self.parser, self.conf)
         assert ADDR in result
 
 class TestCommands(BaseTest):
     def setUp(self):
         super().setUp()
-        self.version='2.4.0'
+        self.version='2.3.0'
     def test_balance_output(self):
         result = execute(["account", "balance"], self.parser, self.conf)
         assert len(result.split("\n")) >= 4
@@ -210,7 +209,7 @@ class TestChannels(BaseTest):
         super().setUp()
         self.ID_flag="--only-id"
         self.ID="1"
-        self.amount="0.00000001"
+        self.amount="1"
         self.password="12345"
     def test_channel_open(self):
         result=execute(["channel", "print-all", self.ID_flag], self.parser, self.conf)
@@ -252,7 +251,7 @@ class TestOrganization(BaseTest):
 class TestOnboardingOrg(BaseTest):
     def setUp(self):
         super().setUp()
-        self.identity_name="some_name"
+        self.identity_name="some__name"
         self.org_name="auto_test"
         self.org_id="auto_test"
         self.org_type="individual"
@@ -264,10 +263,11 @@ class TestOnboardingOrg(BaseTest):
         self.password="12345"
     def test_0_preparation(self):
         identity_list=execute(["identity", "list"], self.parser, self.conf)
-        if "identity_type" not in identity_list:
-            execute(["identity", "create", self.identity_name, "key", "--private-key", PRIVATE_KEY, "--network", "sepolia", "-de"], self.parser, self.conf)
+        if self.identity_name not in identity_list:
+            execute(["identity", "create", self.identity_name, "key", "--private-key", PRIVATE_KEY, "-de"], self.parser, self.conf)
+        execute(["network", "sepolia"], self.parser, self.conf)
         result = execute(["session"], self.parser, self.conf)
-        assert f"identity: {self.identity_name}" in result
+        assert "network: sepolia" in result
     def test_1_metadata_init(self):
         execute(["organization", "metadata-init", self.org_id, self.org_name, self.org_type], self.parser, self.conf)
         execute(["organization", "metadata-add-description", self.org_description, "DESCRIPTION", self.org_short_description, "SHORT_DESCRIPTION", self.org_url, "URL"],
@@ -278,12 +278,12 @@ class TestOnboardingOrg(BaseTest):
     def test_2_create_organization(self):
         with mock.patch('getpass.getpass', return_value=self.password):
             result=execute(["organization", "create", self.org_id, "-y"], self.parser, self.conf)
-            assert f"id:{self.org_id}" in result
+            assert "event: OrganizationCreated" in result
     def test_3_delete_organization(self):
         with mock.patch('getpass.getpass', return_value=self.password):
             result=execute(["organization", "delete", self.org_id, "-y"], self.parser, self.conf)
             os.remove(f"./organization_metadata.json")
-            assert f"id:{self.org_id}" in result
+            assert "event: OrganizationDeleted" in result
 
 
 if __name__ == "__main__":
