@@ -228,10 +228,10 @@ class TestChannels(BaseTest):
         super().setUp()
         self.ID_flag="--only-id"
         self.ID="1"
-        self.amount="1"
+        self.amount="0.001"
         self.password="12345"
 
-    def test_channel_open(self):
+    def test_channel_print_all(self):
         result=execute(["channel", "print-all", self.ID_flag], self.parser, self.conf)
         maximum_first = max(int(x) for x in result.split() if x.isdigit())
 
@@ -244,17 +244,37 @@ class TestChannels(BaseTest):
 class TestClient(BaseTest):
     def setUp(self):
         super().setUp()
-        self.org_id="26072b8b6a0e448180f8c0e702ab6d2f"
-        self.service_id="Exampleservice"
+        self.org_id="SNet"
+        self.service_id="example-service-constructor"
         self.group="default_group"
+        self.identity_name="some_name"
         self.method="add"
         self.params=('{'
                      '"a": 10,'
                      '"b": 32'
                      '}')
 
-    def test_service_call(self):
-        result=execute(["client", "call", self.org_id, self.service_id, self.group, self.method, self.params], self.parser, self.conf)
+    def test_0_preparations(self):
+        identity_list=execute(["identity", "list"], self.parser, self.conf)
+        if self.identity_name not in identity_list:
+            execute(["identity", "create", self.identity_name, "key", "--private-key", PRIVATE_KEY, "-de"], self.parser, self.conf)
+        execute(["network", "sepolia"], self.parser, self.conf)
+        result = execute(["session"], self.parser, self.conf)
+        assert "network: sepolia" in result
+
+    def test_1_channel_open(self):
+        execute(["set", "default_eth_rpc_endpoint", INFURA_KEY], self.parser, self.conf)
+        result=execute(["channel", "open", self.org_id, "default_group", "0.0001", "+5days", "-y"], self.parser, self.conf)
+        print(result)
+        for line in result.splitlines():
+            if "channelId" in line:
+                self.channel_id = int(line.split(":")[1].strip())
+                break
+        print(self.channel_id)
+        assert "#channel_id" in result
+
+    def test_2_service_call(self):
+        result=execute(["client", "call", self.org_id, self.service_id, self.group, self.method, self.params, "--channel-id", self.channel_id], self.parser, self.conf)
         assert "42" in result
 
 
@@ -276,7 +296,7 @@ class TestOrganization(BaseTest):
 class TestOnboardingOrg(BaseTest):
     def setUp(self):
         super().setUp()
-        self.identity_name="some__name"
+        self.identity_name="some_name"
         self.org_name="auto_test"
         self.org_id="auto_test"
         self.org_type="individual"
