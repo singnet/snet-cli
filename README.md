@@ -4,9 +4,9 @@
 
 The package is published in PyPI at the following link:
 
-|Package                                       |Description                                                          |
-|----------------------------------------------|---------------------------------------------------------------------|
-|[snet.cli](https://pypi.org/project/snet.cli/)|Command line interface to interact with the SingularityNET platform  |
+| Package                                        |Description                                                          |
+|------------------------------------------------|---------------------------------------------------------------------|
+| [snet-cli](https://pypi.org/project/snet-cli/) |Command line interface to interact with the SingularityNET platform  |
 
 ## License  
   
@@ -16,7 +16,7 @@ This project is licensed under the MIT License - see the
 ## Getting Started  
   
 The instruction down below describes the installation of the SingularityNET CLI.
-Please check our full [Documentation](http://snet-cli-docs.singularitynet.io/).
+Please check our full [Documentation](https://dev.singularitynet.io/docs/products/DecentralizedAIPlatform/CLI/).
 
 ### Prerequisites
 
@@ -36,7 +36,7 @@ sudo apt-get install libudev-dev libusb-1.0-0-dev
 ### Install snet-cli using pip
 
 ```bash
-$ pip3 install snet.cli
+$ pip3 install snet-cli
 ```
 
 
