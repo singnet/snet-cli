@@ -4,6 +4,7 @@ import unittest
 import unittest.mock as mock
 import shutil
 import os
+import importlib.util
 
 from snet.cli.commands.commands import BlockchainCommand
 
@@ -83,7 +84,11 @@ class TestAAMainPreparations(BaseTest):
 class TestCommands(BaseTest):
     def setUp(self):
         super().setUp()
-        self.version='2.3.0'
+        file_path = '../../../../version.py'
+        spec = importlib.util.spec_from_file_location("version", file_path)
+        version_module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(version_module)
+        self.version = version_module.__version__
 
     def test_balance_output(self):
         result = execute(["account", "balance"], self.parser, self.conf)
@@ -95,6 +100,7 @@ class TestCommands(BaseTest):
 
     def test_version(self):
         result = execute(["version"], self.parser, self.conf)
+        print("Version of CLI: ", self.version)
         assert f"version: {self.version}" in result
 
 
@@ -211,7 +217,7 @@ class TestOrgMetadata(BaseTest):
 
     def test_metadata_init(self):
         execute(["organization", "metadata-init", self.name, self.org_id, self.org_type], self.parser, self.conf)
-        execute(["organization", "metadata-add-description", self.org_description, "DESCRIPTION", self.org_short_description, "SHORT_DESCRIPTION", self.org_url, "URL"],
+        execute(["organization", "metadata-add-description", self.org_description, "DESCRIPTION", self.org_short_description, "SHORT_DESCRIPTION", self.org_url, "https://URL"],
                 self.parser,
                 self.conf)
         execute(["organization", "add-group", self.group_name, ADDR, self.endpoint], self.parser, self.conf)
@@ -263,12 +269,13 @@ class TestClient(BaseTest):
         assert "network: sepolia" in result
 
     def test_1_channel_open(self):
-        execute(["set", "default_eth_rpc_endpoint", INFURA_KEY], self.parser, self.conf)
-        result=execute(["channel", "open", self.org_id, "default_group", "0.0001", "+5days", "-y"], self.parser, self.conf)
-        print(result)
+        print(execute(["set", "default_eth_rpc_endpoint", INFURA_KEY], self.parser, self.conf))
+        result=execute(["channel", "open", self.org_id, "default_group", "0.1", "+15days", "-y"], self.parser, self.conf)
+        print("res "+result)
         for line in result.splitlines():
             if "channelId" in line:
                 self.channel_id = int(line.split(":")[1].strip())
+                print(self.channel_id)
                 break
         print(self.channel_id)
         assert "#channel_id" in result
@@ -317,7 +324,7 @@ class TestOnboardingOrg(BaseTest):
 
     def test_1_metadata_init(self):
         execute(["organization", "metadata-init", self.org_id, self.org_name, self.org_type], self.parser, self.conf)
-        execute(["organization", "metadata-add-description", self.org_description, "DESCRIPTION", self.org_short_description, "SHORT_DESCRIPTION", self.org_url, "URL"],
+        execute(["organization", "metadata-add-description", self.org_description, "DESCRIPTION", self.org_short_description, "SHORT_DESCRIPTION", self.org_url, "https://URL"],
                 self.parser,
                 self.conf)
         execute(["organization", "add-group", self.group_name, ADDR, self.endpoint], self.parser, self.conf)
