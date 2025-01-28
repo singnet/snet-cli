@@ -39,7 +39,7 @@ jobs:
       - name: install snet-cli
         run: |
           # ./scripts/blockchain install
-          pip3 install -e . --break-system-packages
+          pip3 install . --break-system-packages
 
       # - name: install platform-contracts
       #   run: |

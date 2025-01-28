@@ -1,5 +1,4 @@
-include snet/cli/resources/proto/*
-include snet/cli/resources/package.json
+include snet/cli/resources/*
 
 recursive-exclude * .git
 recursive-exclude * node_modules
