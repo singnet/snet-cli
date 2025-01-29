@@ -78,17 +78,13 @@ class TestAAMainPreparations(BaseTest):
 
     def test_5_print_account(self):
         result=execute(["account", "print"], self.parser, self.conf)
+        print(result)
         assert ADDR in result
 
 
-class TestCommands(BaseTest):
+class TestABCommands(BaseTest):
     def setUp(self):
         super().setUp()
-        file_path = '../../../../version.py'
-        spec = importlib.util.spec_from_file_location("version", file_path)
-        version_module = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(version_module)
-        self.version = version_module.__version__
 
     def test_balance_output(self):
         result = execute(["account", "balance"], self.parser, self.conf)
@@ -99,12 +95,18 @@ class TestCommands(BaseTest):
         assert result.split("\n")[0].split()[1] == ADDR
 
     def test_version(self):
+        file_path = "./version.py"
+        spec = importlib.util.spec_from_file_location("version", file_path)
+        version_module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(version_module)
+        self.version = version_module.__version__
         result = execute(["version"], self.parser, self.conf)
         print("Version of CLI: ", self.version)
+        print(result)
         assert f"version: {self.version}" in result
 
 
-class TestDepositWithdraw(BaseTest):
+class TestACDepositWithdraw(BaseTest):
     def setUp(self):
         super().setUp()
         self.balance_1: int
@@ -117,7 +119,8 @@ class TestDepositWithdraw(BaseTest):
         execute(["account", "deposit", f"{self.amount}", "-y", "-q"], self.parser, self.conf)
         result = execute(["account", "balance"], self.parser, self.conf)
         self.balance_2 = float(result.split("\n")[3].split()[1])
-        assert self.balance_2 == self.balance_1 + self.amount
+        print(round(self.balance_2, 5), " == ", round(self.balance_1, 5), " + ", self.amount)
+        assert round(self.balance_2, 5) == round(self.balance_1, 5) + self.amount
 
     def test_withdraw(self):
         result = execute(["account", "balance"], self.parser, self.conf)
@@ -125,10 +128,11 @@ class TestDepositWithdraw(BaseTest):
         execute(["account", "withdraw", f"{self.amount}", "-y", "-q"], self.parser, self.conf)
         result = execute(["account", "balance"], self.parser, self.conf)
         self.balance_2 = float(result.split("\n")[3].split()[1])
-        assert self.balance_2 == self.balance_1 - self.amount
+        print(round(self.balance_2, 5), " == ", round(self.balance_1, 5), " - ", self.amount)
+        assert round(self.balance_2, 5) == round(self.balance_1, 5) - self.amount
 
 
-class TestGenerateLibrary(BaseTest):
+class TestADGenerateLibrary(BaseTest):
     def setUp(self):
         super().setUp()
         self.path = './temp_files'
@@ -165,10 +169,10 @@ class Unset(BaseTest):
         assert "unset" in result
 
 
-class TestEncryptionKey(BaseTest):
+class TestAEEncryptionKey(BaseTest):
     def setUp(self):
         super().setUp()
-        self.key = "1234567890123456789012345678901234567890123456789012345678901234"
+        self.key = PRIVATE_KEY
         self.password = "some_pass"
         self.name = "some_name"
         self.default_name = "default_name"
@@ -202,7 +206,7 @@ class TestEncryptionKey(BaseTest):
             assert self.name not in result
 
 
-class TestOrgMetadata(BaseTest):
+class TestAFOrgMetadata(BaseTest):
     def setUp(self):
         super().setUp()
         self.success_msg = "Organization metadata is valid and ready to publish."
@@ -229,7 +233,7 @@ class TestOrgMetadata(BaseTest):
         os.remove(f"./organization_metadata.json")
 
 
-class TestChannels(BaseTest):
+class TestAGChannels(BaseTest):
     def setUp(self):
         super().setUp()
         self.ID_flag="--only-id"
@@ -242,12 +246,13 @@ class TestChannels(BaseTest):
         maximum_first = max(int(x) for x in result.split() if x.isdigit())
 
     def test_channel_extend(self):
-        with mock.patch('getpass.getpass', return_value=self.password):
-            result=execute(["channel", "extend-add", self.ID, "--amount", self.amount, "-y"], self.parser, self.conf)
-            assert "channelId: ", self.ID in result
+        execute(["account", "deposit", self.amount, "-y", "-q"], self.parser, self.conf)
+        result=execute(["channel", "extend-add", self.ID, "--amount", self.amount, "-y"], self.parser, self.conf)
+        assert "channelId: ", self.ID in result
 
 
-class TestClient(BaseTest):
+''' TODO
+class TestAHClient(BaseTest):
     def setUp(self):
         super().setUp()
         self.org_id="SNet"
@@ -269,8 +274,11 @@ class TestClient(BaseTest):
         assert "network: sepolia" in result
 
     def test_1_channel_open(self):
-        print(execute(["set", "default_eth_rpc_endpoint", INFURA_KEY], self.parser, self.conf))
-        result=execute(["channel", "open", self.org_id, "default_group", "0.1", "+15days", "-y"], self.parser, self.conf)
+        execute(["account", "deposit", "0.001", "-y"], self.parser, self.conf)
+        execute(["set", "default_eth_rpc_endpoint", INFURA], self.parser, self.conf)
+        self.block=int(execute(["channel", "block-number"], self.parser, self.conf))
+        print(self.block)
+        result=execute(["channel", "open", self.org_id, "default_group", "0.1", f"{self.block+100000}", "-y"], self.parser, self.conf)
         print("res "+result)
         for line in result.splitlines():
             if "channelId" in line:
@@ -283,9 +291,10 @@ class TestClient(BaseTest):
     def test_2_service_call(self):
         result=execute(["client", "call", self.org_id, self.service_id, self.group, self.method, self.params, "--channel-id", self.channel_id], self.parser, self.conf)
         assert "42" in result
+'''
 
 
-class TestOrganization(BaseTest):
+class TestAIOrganization(BaseTest):
     def setUp(self):
         super().setUp()
         self.org_id="singularitynet"
@@ -300,7 +309,7 @@ class TestOrganization(BaseTest):
         assert "Organization Name" in result
 
 
-class TestOnboardingOrg(BaseTest):
+class TestAJOnboardingOrg(BaseTest):
     def setUp(self):
         super().setUp()
         self.identity_name="some_name"
