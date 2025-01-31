@@ -101,8 +101,6 @@ class TestABCommands(BaseTest):
         spec.loader.exec_module(version_module)
         self.version = version_module.__version__
         result = execute(["version"], self.parser, self.conf)
-        print("Version of CLI: ", self.version)
-        print(result)
         assert f"version: {self.version}" in result
 
 
@@ -119,7 +117,6 @@ class TestACDepositWithdrawTransfer(BaseTest):
         execute(["account", "deposit", f"{self.amount}", "-y", "-q"], self.parser, self.conf)
         result = execute(["account", "balance"], self.parser, self.conf)
         self.balance_2 = float(result.split("\n")[3].split()[1])
-        print(round(self.balance_2, 5), " == ", round(self.balance_1, 5), " + ", self.amount)
         assert round(self.balance_2, 5) == round(self.balance_1, 5) + self.amount
 
     def test_withdraw(self):
@@ -128,7 +125,6 @@ class TestACDepositWithdrawTransfer(BaseTest):
         execute(["account", "withdraw", f"{self.amount}", "-y", "-q"], self.parser, self.conf)
         result = execute(["account", "balance"], self.parser, self.conf)
         self.balance_2 = float(result.split("\n")[3].split()[1])
-        print(round(self.balance_2, 5), " == ", round(self.balance_1, 5), " - ", self.amount)
         assert round(self.balance_2, 5) == round(self.balance_1, 5) - self.amount
 
     def test_transfer(self):
@@ -230,7 +226,6 @@ class TestAFOrgMetadata(BaseTest):
                 self.conf)
         execute(["organization", "add-group", self.group_name, ADDR, self.endpoint], self.parser, self.conf)
         result = execute(["organization", "validate-metadata"], self.parser, self.conf)
-        print(result)
         assert self.success_msg in result
 
     def tearDown(self):
@@ -245,14 +240,12 @@ class TestAGChannels(BaseTest):
         self.password="12345"
         self.group="default_group"
         data=execute(["channel", "print-filter-group", self.org_id, "default_group"], self.parser, self.conf)
-        print("data:", data)
         first_column = []
         for line in data.splitlines()[2:]:
             parts = line.split()
             if parts and parts[0].lstrip("#").isdigit():
                 first_column.append(int(parts[0]))
         self.max_id=str(max(first_column))
-        print(self.max_id)
 
     def test_channel_1_extend(self):
         execute(["account", "deposit", self.amount, "-y", "-q"], self.parser, self.conf)
@@ -260,16 +253,17 @@ class TestAGChannels(BaseTest):
         """ TODO KeyError: 'channelId'
         result2 = execute(["channel", "extend-add-for-org", self.org_id, "default_group", "--channel-id", f"{self.max_id}", "-y"], self.parser, self.conf)
         print(result2)"""
-        print(self.max_id)
         assert f"channelId: ", self.max_id in result1
 
     def test_channel_2_print_filter_sender(self):
         result = execute(["channel", "print-filter-sender"], self.parser, self.conf)
-        """TODO
-        result3 = execute(["channel", "print-filter-group-sender", self.org_id, self.group], self.parser, self.conf)
-        print("res3: ", result3)"""
-        assert self.max_id in result
-        """and self.max_id in result3"""
+        print(result)
+        assert "Channels for sender: ", ADDR in result
+
+    def test_channel_3_print_filter_group_sender(self):
+        result = execute(["channel", "print-filter-group-sender", self.org_id, self.group], self.parser, self.conf)
+        assert "Channels for sender: ", ADDR in result
+
 
     def test_channel_3_print_filter_group(self):
         result = execute(["channel", "print-filter-group", self.org_id, self.group], self.parser, self.conf)
