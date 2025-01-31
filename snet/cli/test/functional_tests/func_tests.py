@@ -106,7 +106,7 @@ class TestABCommands(BaseTest):
         assert f"version: {self.version}" in result
 
 
-class TestACDepositWithdraw(BaseTest):
+class TestACDepositWithdrawTransfer(BaseTest):
     def setUp(self):
         super().setUp()
         self.balance_1: int
@@ -130,6 +130,10 @@ class TestACDepositWithdraw(BaseTest):
         self.balance_2 = float(result.split("\n")[3].split()[1])
         print(round(self.balance_2, 5), " == ", round(self.balance_1, 5), " - ", self.amount)
         assert round(self.balance_2, 5) == round(self.balance_1, 5) - self.amount
+
+    def test_transfer(self):
+        result=execute(["account", "transfer", ADDR, f"{self.amount}", "-y"], self.parser, self.conf)
+        assert "TransferFunds" in result
 
 
 class TestADGenerateLibrary(BaseTest):
@@ -236,20 +240,35 @@ class TestAFOrgMetadata(BaseTest):
 class TestAGChannels(BaseTest):
     def setUp(self):
         super().setUp()
-        self.ID_flag="--only-id"
-        self.ID="1"
+        self.org_id="SNet"
         self.amount="0.001"
         self.password="12345"
+        self.group="default_group"
+        data=execute(["channel", "print-filter-group", self.org_id,"default_group"], self.parser, self.conf)
+        first_column = [int(line.split()[0]) for line in data.splitlines()[2:]]
+        self.max_id=str(max(first_column))
 
-    def test_channel_print_all(self):
-        result=execute(["channel", "print-all", self.ID_flag], self.parser, self.conf)
-        maximum_first = max(int(x) for x in result.split() if x.isdigit())
-
-    def test_channel_extend(self):
+    def test_channel_1_extend(self):
         execute(["account", "deposit", self.amount, "-y", "-q"], self.parser, self.conf)
-        result=execute(["channel", "extend-add", self.ID, "--amount", self.amount, "-y"], self.parser, self.conf)
-        assert "channelId: ", self.ID in result
+        result1=execute(["channel", "extend-add", self.max_id, "--amount", self.amount, "-y"], self.parser, self.conf)
+        """ TODO KeyError: 'channelId'
+        result2 = execute(["channel", "extend-add-for-org", self.org_id, "default_group", "--channel-id", f"{self.max_id}", "-y"], self.parser, self.conf)
+        print(result2)"""
+        assert f"channelId: ", self.max_id in result1
 
+    def test_channel_2_print(self):
+        result1=execute(["channel", "print-filter-sender"], self.parser, self.conf)
+        result2= execute(["channel", "print-filter-group", self.org_id, self.group], self.parser, self.conf)
+        result3=execute(["channel", "print-filter-group-sender", self.org_id, self.group], self.parser, self.conf)
+        assert self.max_id in result1 and result2 and result3
+
+
+    def test_channel_3_claim(self):
+        execute(["channel", "extend-add", self.max_id, "--amount", self.amount, "-y"], self.parser, self.conf)
+        result1=execute(["channel", "claim-timeout", f"{self.max_id}", "-y"], self.parser, self.conf)
+        execute(["channel", "extend-add", self.max_id, "--amount", self.amount, "-y"], self.parser, self.conf)
+        result2=execute(["channel", "claim-timeout-all", "-y"], self.parser, self.conf)
+        assert ("event: ChannelSenderClaim" in result1) and ("event: ChannelSenderClaim" in result2)
 
 ''' TODO
 class TestAHClient(BaseTest):
@@ -309,10 +328,11 @@ class TestAIOrganization(BaseTest):
         assert "Organization Name" in result
 
 
-class TestAJOnboardingOrg(BaseTest):
+class TestAJOnboardingOrgAndServ(BaseTest):
     def setUp(self):
         super().setUp()
         self.identity_name="some_name"
+        self.proto="./"
         self.org_name="auto_test"
         self.org_id="auto_test"
         self.org_type="individual"
@@ -322,12 +342,34 @@ class TestAJOnboardingOrg(BaseTest):
         self.group_name= "default_group"
         self.endpoint="https://node1.naint.tech:62400"
         self.password="12345"
+        self.service_id="auto_test_service"
 
     def test_0_preparation(self):
         identity_list=execute(["identity", "list"], self.parser, self.conf)
         if self.identity_name not in identity_list:
             execute(["identity", "create", self.identity_name, "key", "--private-key", PRIVATE_KEY, "-de"], self.parser, self.conf)
         execute(["network", "sepolia"], self.parser, self.conf)
+        proto_file = open("ExampleService.proto", "w+")
+        proto_file.write("""syntax = "proto3";
+
+package example_service;
+
+message Numbers {
+    float a = 1;
+    float b = 2;
+}
+
+message Result {
+    float value = 1;
+}
+
+service Calculator {
+    rpc add(Numbers) returns (Result) {}
+    rpc sub(Numbers) returns (Result) {}
+    rpc mul(Numbers) returns (Result) {}
+    rpc div(Numbers) returns (Result) {}
+}""")
+        proto_file.close()
         result = execute(["session"], self.parser, self.conf)
         assert "network: sepolia" in result
 
@@ -337,18 +379,34 @@ class TestAJOnboardingOrg(BaseTest):
                 self.parser,
                 self.conf)
         execute(["organization", "add-group", self.group_name, ADDR, self.endpoint], self.parser, self.conf)
+        execute(["service", "metadata-init", self.proto, self.service_id], self.parser, self.conf)
         assert os.path.exists("./organization_metadata.json"), "File organization_metadata.json was not created!"
 
     def test_2_create_organization(self):
-        with mock.patch('getpass.getpass', return_value=self.password):
-            result=execute(["organization", "create", self.org_id, "-y"], self.parser, self.conf)
-            assert "event: OrganizationCreated" in result
+        result=execute(["organization", "create", self.org_id, "-y"], self.parser, self.conf)
+        assert "event: OrganizationCreated" in result
 
-    def test_3_delete_organization(self):
-        with mock.patch('getpass.getpass', return_value=self.password):
-            result=execute(["organization", "delete", self.org_id, "-y"], self.parser, self.conf)
-            os.remove(f"./organization_metadata.json")
-            assert "event: OrganizationDeleted" in result
+    def test_3_create_service(self):
+        result=execute(["service", "publish", self.org_id, self.service_id, "-y"], self.parser, self.conf)
+        assert "event: ServiceCreated" in result
+
+    def test_4_lists(self):
+        result1=execute(["organization", "list"], self.parser, self.conf)
+        result2=execute(["organization", "list-org-names"], self.parser, self.conf)
+        result3=execute(["organization", "list-my"], self.parser, self.conf)
+        result4=execute(["organization", "list-services", self.org_id], self.parser, self.conf)
+        assert (self.org_id in result1) and (self.org_name in result2) and (self.org_id in result3) and (self.service_id in result4)
+
+    def test_5_delete_service(self):
+        result=execute(["service", "delete", self.org_id, self.service_id, "-y"], self.parser, self.conf)
+        os.remove(f"./service_metadata.json")
+        os.remove(f"./ExampleService.proto")
+        assert "event: ServiceDeleted" in result
+
+    def test_6_delete_organization(self):
+        result=execute(["organization", "delete", self.org_id, "-y"], self.parser, self.conf)
+        os.remove(f"./organization_metadata.json")
+        assert "event: OrganizationDeleted" in result
 
 
 if __name__ == "__main__":

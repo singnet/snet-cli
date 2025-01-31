@@ -1153,7 +1153,7 @@ def add_mpe_service_options(parser):
     p.add_argument("name", help="Name of the contributor")
     p.add_argument("email_id", help="Email of the contributor")
 
-    p = subparsers.add_parser("metadata-remove-contributor", help="Add contributor")
+    p = subparsers.add_parser("metadata-remove-contributor", help="Remove contributor")
     p.set_defaults(fn="metadata_remove_contributor")
     add_p_metadata_file_opt(p)
     p.add_argument("email_id", help="Email of the contributor")
