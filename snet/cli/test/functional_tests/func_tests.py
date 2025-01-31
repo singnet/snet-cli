@@ -263,17 +263,20 @@ class TestAGChannels(BaseTest):
         print(self.max_id)
         assert f"channelId: ", self.max_id in result1
 
-    def test_channel_2_print(self):
-        result1 = execute(["channel", "print-filter-sender"], self.parser, self.conf)
-        result2 = execute(["channel", "print-filter-group", self.org_id, self.group], self.parser, self.conf)
+    def test_channel_2_print_filter_sender(self):
+        result = execute(["channel", "print-filter-sender"], self.parser, self.conf)
         """TODO
         result3 = execute(["channel", "print-filter-group-sender", self.org_id, self.group], self.parser, self.conf)
         print("res3: ", result3)"""
-        assert self.max_id in result1 and self.max_id in result2
+        assert self.max_id in result
         """and self.max_id in result3"""
 
+    def test_channel_3_print_filter_group(self):
+        result = execute(["channel", "print-filter-group", self.org_id, self.group], self.parser, self.conf)
+        assert self.max_id in result
+
     """ TODO   
-    def test_channel_3_claim(self):
+    def test_channel_4_claim(self):
         execute(["account", "deposit", self.amount, "-y", "-q"], self.parser, self.conf)
         execute(["channel", "extend-add", self.max_id, "--amount", self.amount, "-y"], self.parser, self.conf)
         result1 = execute(["channel", "claim-timeout", f"{self.max_id}", "-y"], self.parser, self.conf)
