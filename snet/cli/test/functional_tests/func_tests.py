@@ -244,28 +244,31 @@ class TestAGChannels(BaseTest):
         self.amount="0.001"
         self.password="12345"
         self.group="default_group"
-        data=execute(["channel", "print-filter-group", self.org_id,"default_group"], self.parser, self.conf)
+        data=execute(["channel", "print-filter-group", self.org_id, "default_group"], self.parser, self.conf)
+        print("data:", data)
         first_column = [int(line.split()[0]) for line in data.splitlines()[2:]]
+        print(first_column)
         self.max_id=str(max(first_column))
 
     def test_channel_1_extend(self):
-        execute(["account", "deposit", self.amount, "-y", "-q"], self.parser, self.conf)
         result1=execute(["channel", "extend-add", self.max_id, "--amount", self.amount, "-y"], self.parser, self.conf)
         """ TODO KeyError: 'channelId'
         result2 = execute(["channel", "extend-add-for-org", self.org_id, "default_group", "--channel-id", f"{self.max_id}", "-y"], self.parser, self.conf)
         print(result2)"""
+        print(self.max_id)
         assert f"channelId: ", self.max_id in result1
 
     def test_channel_2_print(self):
         result1=execute(["channel", "print-filter-sender"], self.parser, self.conf)
         result2= execute(["channel", "print-filter-group", self.org_id, self.group], self.parser, self.conf)
         result3=execute(["channel", "print-filter-group-sender", self.org_id, self.group], self.parser, self.conf)
-        assert self.max_id in result1 and result2 and result3
-
+        assert self.max_id in result1 and self.max_id in result2 and self.max_id in result3
 
     def test_channel_3_claim(self):
+        execute(["account", "deposit", self.amount, "-y", "-q"], self.parser, self.conf)
         execute(["channel", "extend-add", self.max_id, "--amount", self.amount, "-y"], self.parser, self.conf)
         result1=execute(["channel", "claim-timeout", f"{self.max_id}", "-y"], self.parser, self.conf)
+        execute(["account", "deposit", self.amount, "-y", "-q"], self.parser, self.conf)
         execute(["channel", "extend-add", self.max_id, "--amount", self.amount, "-y"], self.parser, self.conf)
         result2=execute(["channel", "claim-timeout-all", "-y"], self.parser, self.conf)
         assert ("event: ChannelSenderClaim" in result1) and ("event: ChannelSenderClaim" in result2)
