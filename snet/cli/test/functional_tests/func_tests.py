@@ -246,9 +246,13 @@ class TestAGChannels(BaseTest):
         self.group="default_group"
         data=execute(["channel", "print-filter-group", self.org_id, "default_group"], self.parser, self.conf)
         print("data:", data)
-        first_column = [int(line.split()[0]) for line in data.splitlines()[2:]]
-        print(first_column)
+        first_column = []
+        for line in data.splitlines()[2:]:
+            parts = line.split()
+            if parts and parts[0].lstrip("#").isdigit():
+                first_column.append(int(parts[0]))
         self.max_id=str(max(first_column))
+        print(self.max_id)
 
     def test_channel_1_extend(self):
         result1=execute(["channel", "extend-add", self.max_id, "--amount", self.amount, "-y"], self.parser, self.conf)
@@ -259,18 +263,22 @@ class TestAGChannels(BaseTest):
         assert f"channelId: ", self.max_id in result1
 
     def test_channel_2_print(self):
-        result1=execute(["channel", "print-filter-sender"], self.parser, self.conf)
-        result2= execute(["channel", "print-filter-group", self.org_id, self.group], self.parser, self.conf)
-        result3=execute(["channel", "print-filter-group-sender", self.org_id, self.group], self.parser, self.conf)
+        result1 = execute(["channel", "print-filter-sender"], self.parser, self.conf)
+        print("res1: ", result1)
+        result2 = execute(["channel", "print-filter-group", self.org_id, self.group], self.parser, self.conf)
+        print("res2: ", result2)
+        result3 = execute(["channel", "print-filter-group-sender", self.org_id, self.group], self.parser, self.conf)
+        print("res3: ", result3)
+        print("id: ", self.max_id)
         assert self.max_id in result1 and self.max_id in result2 and self.max_id in result3
 
     def test_channel_3_claim(self):
         execute(["account", "deposit", self.amount, "-y", "-q"], self.parser, self.conf)
         execute(["channel", "extend-add", self.max_id, "--amount", self.amount, "-y"], self.parser, self.conf)
-        result1=execute(["channel", "claim-timeout", f"{self.max_id}", "-y"], self.parser, self.conf)
+        result1 = execute(["channel", "claim-timeout", f"{self.max_id}", "-y"], self.parser, self.conf)
         execute(["account", "deposit", self.amount, "-y", "-q"], self.parser, self.conf)
         execute(["channel", "extend-add", self.max_id, "--amount", self.amount, "-y"], self.parser, self.conf)
-        result2=execute(["channel", "claim-timeout-all", "-y"], self.parser, self.conf)
+        result2 = execute(["channel", "claim-timeout-all", "-y"], self.parser, self.conf)
         assert ("event: ChannelSenderClaim" in result1) and ("event: ChannelSenderClaim" in result2)
 
 ''' TODO
