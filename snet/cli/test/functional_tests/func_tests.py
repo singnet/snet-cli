@@ -39,7 +39,7 @@ def execute(args_list, parser, conf):
         except TypeError:
             args = parser.parse_args(argv + ["-h"])
         f = StringOutput()
-        getattr(args.cmd(conf, args, out_f = f), args.fn)()
+        getattr(args.cmd(conf, args, out_f=f), args.fn)()
         return f.text
     except Exception as e:
         raise
@@ -77,7 +77,7 @@ class TestAAMainPreparations(BaseTest):
         assert INFURA_KEY in result
 
     def test_5_print_account(self):
-        result=execute(["account", "print"], self.parser, self.conf)
+        result = execute(["account", "print"], self.parser, self.conf)
         print(result)
         assert ADDR in result
 
@@ -128,7 +128,7 @@ class TestACDepositWithdrawTransfer(BaseTest):
         assert round(self.balance_2, 5) == round(self.balance_1, 5) - self.amount
 
     def test_transfer(self):
-        result=execute(["account", "transfer", ADDR, f"{self.amount}", "-y"], self.parser, self.conf)
+        result = execute(["account", "transfer", ADDR, f"{self.amount}", "-y"], self.parser, self.conf)
         assert "TransferFunds" in result
 
 
@@ -213,11 +213,11 @@ class TestAFOrgMetadata(BaseTest):
         self.name = "test_org"
         self.org_id = "test_org_id"
         self.org_type = "individual"
-        self.org_description="--description"
-        self.org_short_description="--short-description"
-        self.org_url="--url"
-        self.group_name= "default_group"
-        self.endpoint="https://node1.naint.tech:62400"
+        self.org_description = "--description"
+        self.org_short_description = "--short-description"
+        self.org_url = "--url"
+        self.group_name = "default_group"
+        self.endpoint = "https://node1.naint.tech:62400"
 
     def test_metadata_init(self):
         execute(["organization", "metadata-init", self.name, self.org_id, self.org_type], self.parser, self.conf)
@@ -235,21 +235,21 @@ class TestAFOrgMetadata(BaseTest):
 class TestAGChannels(BaseTest):
     def setUp(self):
         super().setUp()
-        self.org_id="SNet"
-        self.amount="0.001"
-        self.password="12345"
-        self.group="default_group"
-        data=execute(["channel", "print-filter-group", self.org_id, "default_group"], self.parser, self.conf)
+        self.org_id = "SNet"
+        self.amount = "0.001"
+        self.password = "12345"
+        self.group = "default_group"
+        data = execute(["channel", "print-filter-group", self.org_id, "default_group"], self.parser, self.conf)
         first_column = []
         for line in data.splitlines()[2:]:
             parts = line.split()
             if parts and parts[0].lstrip("#").isdigit():
                 first_column.append(int(parts[0]))
-        self.max_id=str(max(first_column))
+        self.max_id = str(max(first_column))
 
     def test_channel_1_extend(self):
         execute(["account", "deposit", self.amount, "-y", "-q"], self.parser, self.conf)
-        result1=execute(["channel", "extend-add", self.max_id, "--amount", self.amount, "-y"], self.parser, self.conf)
+        result1 = execute(["channel", "extend-add", self.max_id, "--amount", self.amount, "-y"], self.parser, self.conf)
         """ TODO KeyError: 'channelId'
         result2 = execute(["channel", "extend-add-for-org", self.org_id, "default_group", "--channel-id", f"{self.max_id}", "-y"], self.parser, self.conf)
         print(result2)"""
@@ -263,7 +263,6 @@ class TestAGChannels(BaseTest):
     def test_channel_3_print_filter_group_sender(self):
         result = execute(["channel", "print-filter-group-sender", self.org_id, self.group], self.parser, self.conf)
         assert "Channels for sender: ", ADDR in result
-
 
     def test_channel_3_print_filter_group(self):
         result = execute(["channel", "print-filter-group", self.org_id, self.group], self.parser, self.conf)
@@ -280,19 +279,16 @@ class TestAGChannels(BaseTest):
         assert ("event: ChannelSenderClaim" in result1) and ("event: ChannelSenderClaim" in result2)"""
 
 
-''' TODO
+
 class TestAHClient(BaseTest):
     def setUp(self):
         super().setUp()
-        self.org_id="SNet"
-        self.service_id="example-service-constructor"
+        self.org_id="egor-sing-test"
+        self.service_id="hate-detection"
         self.group="default_group"
         self.identity_name="some_name"
-        self.method="add"
-        self.params=('{'
-                     '"a": 10,'
-                     '"b": 32'
-                     '}')
+        self.method="detection"
+        self.params=("./detection.json")
 
     def test_0_preparations(self):
         identity_list=execute(["identity", "list"], self.parser, self.conf)
@@ -303,59 +299,57 @@ class TestAHClient(BaseTest):
         assert "network: sepolia" in result
 
     def test_1_channel_open(self):
-        execute(["account", "deposit", "0.001", "-y"], self.parser, self.conf)
         execute(["set", "default_eth_rpc_endpoint", INFURA], self.parser, self.conf)
+        execute(["account", "deposit", "0.001", "-y"], self.parser, self.conf)
         self.block=int(execute(["channel", "block-number"], self.parser, self.conf))
         print(self.block)
         result=execute(["channel", "open", self.org_id, "default_group", "0.1", f"{self.block+100000}", "-y"], self.parser, self.conf)
-        print("res "+result)
-        for line in result.splitlines():
-            if "channelId" in line:
-                self.channel_id = int(line.split(":")[1].strip())
-                print(self.channel_id)
-                break
-        print(self.channel_id)
         assert "#channel_id" in result
 
     def test_2_service_call(self):
-        result=execute(["client", "call", self.org_id, self.service_id, self.group, self.method, self.params, "--channel-id", self.channel_id], self.parser, self.conf)
-        assert "42" in result
-'''
+        result=execute(["client", "call", self.org_id, self.service_id, self.group, self.method, self.params, "-y"], self.parser, self.conf)
+        assert "spam" in result
+
 
 
 class TestAIOrganization(BaseTest):
     def setUp(self):
         super().setUp()
-        self.org_id="singularitynet"
-        self.correct_msg=f"List of {self.org_id}'s Services:"
+        self.org_id = "singularitynet"
+        self.correct_msg = f"List of {self.org_id}'s Services:"
 
     def test_list_of_services(self):
-        result=execute(["organization", "list-services", self.org_id], self.parser, self.conf)
+        result = execute(["organization", "list-services", self.org_id], self.parser, self.conf)
         assert self.correct_msg in result
 
     def test_org_info(self):
-        result=execute(["organization", "info", self.org_id], self.parser, self.conf)
+        result = execute(["organization", "info", self.org_id], self.parser, self.conf)
         assert "Organization Name" in result
 
 
 class TestAJOnboardingOrgAndServ(BaseTest):
     def setUp(self):
         super().setUp()
-        self.identity_name="some_name"
-        self.proto="./"
-        self.org_name="auto_test"
-        self.org_id="auto_test"
-        self.org_type="individual"
-        self.org_description="--description"
-        self.org_short_description="--short-description"
-        self.org_url="--url"
-        self.group_name= "default_group"
-        self.endpoint="https://node1.naint.tech:62400"
-        self.password="12345"
-        self.service_id="auto_test_service"
+        self.identity_name = "some_name"
+        self.proto = "./"
+        self.org_name = "auto_test"
+        self.org_id = "auto_test"
+        self.org_type = "individual"
+        self.description = "DESCRIPTION"
+        self.short_description = "SHORT DESCRIPTION"
+        self.url = "https://URL.com"
+        self.group_name = "default_group"
+        self.endpoint = "https://node1.naint.tech:62400"
+        self.password = "12345"
+        self.service_id = "auto_test_service"
+        self.new_description = "NEW DESCRIPTION"
+        self.free_calls = "100"
+        self.contributor = "Stasy"
+        self.contributor_mail = "stasy@hotmail.com"
+        self.tags = "new", "text2text", "t2t", "punctuality"
 
     def test_0_preparation(self):
-        identity_list=execute(["identity", "list"], self.parser, self.conf)
+        identity_list = execute(["identity", "list"], self.parser, self.conf)
         if self.identity_name not in identity_list:
             execute(["identity", "create", self.identity_name, "key", "--private-key", PRIVATE_KEY, "-de"], self.parser, self.conf)
         execute(["network", "sepolia"], self.parser, self.conf)
@@ -385,7 +379,7 @@ service Calculator {
 
     def test_1_metadata_init(self):
         execute(["organization", "metadata-init", self.org_id, self.org_name, self.org_type], self.parser, self.conf)
-        execute(["organization", "metadata-add-description", self.org_description, "DESCRIPTION", self.org_short_description, "SHORT_DESCRIPTION", self.org_url, "https://URL"],
+        execute(["organization", "metadata-add-description", "--description", self.description, "--short-description", self.short_description, "--url", self.url],
                 self.parser,
                 self.conf)
         execute(["organization", "add-group", self.group_name, ADDR, self.endpoint], self.parser, self.conf)
@@ -393,27 +387,58 @@ service Calculator {
         assert os.path.exists("./organization_metadata.json"), "File organization_metadata.json was not created!"
 
     def test_2_create_organization(self):
-        result=execute(["organization", "create", self.org_id, "-y"], self.parser, self.conf)
+        result = execute(["organization", "create", self.org_id, "-y"], self.parser, self.conf)
         assert "event: OrganizationCreated" in result
 
     def test_3_create_service(self):
-        result=execute(["service", "publish", self.org_id, self.service_id, "-y"], self.parser, self.conf)
+        result = execute(["service", "publish", self.org_id, self.service_id, "-y"], self.parser, self.conf)
         assert "event: ServiceCreated" in result
 
     def test_4_lists(self):
-        result1=execute(["organization", "list"], self.parser, self.conf)
-        result2=execute(["organization", "list-org-names"], self.parser, self.conf)
-        result3=execute(["organization", "list-my"], self.parser, self.conf)
-        result4=execute(["organization", "list-services", self.org_id], self.parser, self.conf)
+        result1 = execute(["organization", "list"], self.parser, self.conf)
+        result2 = execute(["organization", "list-org-names"], self.parser, self.conf)
+        result3 = execute(["organization", "list-my"], self.parser, self.conf)
+        result4 = execute(["organization", "list-services", self.org_id], self.parser, self.conf)
         assert (self.org_id in result1) and (self.org_name in result2) and (self.org_id in result3) and (self.service_id in result4)
 
-    def test_5_delete_service(self):
-        result=execute(["service", "delete", self.org_id, self.service_id, "-y"], self.parser, self.conf)
+    def test_5_change_members(self):
+        result_add = execute(["organization", "add-members", self.org_id, ADDR, "-y"], self.parser, self.conf)
+        result_rem = execute(["organization", "rem-members", self.org_id, ADDR, "-y"], self.parser, self.conf)
+        # result_change_owner = execute(["organization", "change-owner", self.org_id, ADDR], self.parser, self.conf)
+        assert "event: OrganizationModified" in result_rem
+
+    def test_6_change_org_metadata(self):
+        execute(["organization", "metadata-add-description", "--description", self.new_description], self.parser, self.conf)
+        execute(["organization", "update-metadata", self.org_id, "-y"], self.parser, self.conf)
+        result = execute(["organization", "print-metadata", self.org_id], self.parser, self.conf)
+        assert self.new_description in result
+
+
+    def test_7_change_service_metadata(self):
+        execute(["service", "metadata-remove-group", self.group_name], self.parser, self.conf)
+        execute(["service", "metadata-add-group", self.group_name], self.parser, self.conf)
+        execute(["service", "metadata-set-free-calls", self.group_name, self.free_calls], self.parser, self.conf)
+        execute(["service", "metadata-set-freecall-signer-address", self.group_name, ADDR], self.parser, self.conf)
+        execute(["service", "metadata-add-description", "--description", self.new_description, "--short-description", self.short_description, "--url", self.url],
+                self.parser,
+                self.conf)
+        execute(["service", "metadata-add-contributor", self.contributor, self.contributor_mail], self.parser, self.conf)
+        execute(["service", "metadata-remove-contributor", self.contributor_mail], self.parser, self.conf)
+        execute(["service", "metadata-add-tags", self.tags], self.parser, self.conf)
+        execute(["service", "update-metadata", self.org_id, self.service_id, "-y"], self.parser, self.conf)
+        result = execute(["service", "print-metadata", self.org_id, self.service_id], self.parser, self.conf)
+        print(execute(["service", "print-metadata", self.org_id, self.service_id], self.parser, self.conf))
+        print(execute(["service", "print-service-status", self.org_id, self.service_id], self.parser, self.conf))
+        assert self.contributor in result
+
+
+    def test_8_delete_service(self):
+        result = execute(["service", "delete", self.org_id, self.service_id, "-y"], self.parser, self.conf)
         os.remove(f"./service_metadata.json")
         os.remove(f"./ExampleService.proto")
         assert "event: ServiceDeleted" in result
 
-    def test_6_delete_organization(self):
+    def test_9_delete_organization(self):
         result=execute(["organization", "delete", self.org_id, "-y"], self.parser, self.conf)
         os.remove(f"./organization_metadata.json")
         assert "event: OrganizationDeleted" in result
