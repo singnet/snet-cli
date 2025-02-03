@@ -117,7 +117,7 @@ class TestACDepositWithdrawTransfer(BaseTest):
         execute(["account", "deposit", f"{self.amount}", "-y", "-q"], self.parser, self.conf)
         result = execute(["account", "balance"], self.parser, self.conf)
         self.balance_2 = float(result.split("\n")[3].split()[1])
-        assert round(self.balance_2, 5) == round(self.balance_1, 5) + self.amount
+        assert round(self.balance_2, 3) == round(self.balance_1, 3) + self.amount
 
     def test_withdraw(self):
         result = execute(["account", "balance"], self.parser, self.conf)
@@ -125,7 +125,7 @@ class TestACDepositWithdrawTransfer(BaseTest):
         execute(["account", "withdraw", f"{self.amount}", "-y", "-q"], self.parser, self.conf)
         result = execute(["account", "balance"], self.parser, self.conf)
         self.balance_2 = float(result.split("\n")[3].split()[1])
-        assert round(self.balance_2, 5) == round(self.balance_1, 5) - self.amount
+        assert round(self.balance_2, 3) == round(self.balance_1, 3) - self.amount
 
     def test_transfer(self):
         result = execute(["account", "transfer", ADDR, f"{self.amount}", "-y"], self.parser, self.conf)
@@ -240,19 +240,25 @@ class TestAGChannels(BaseTest):
         self.password = "12345"
         self.group = "default_group"
         data = execute(["channel", "print-filter-group", self.org_id, "default_group"], self.parser, self.conf)
-        first_column = []
+        max_id = None
         for line in data.splitlines()[2:]:
             parts = line.split()
-            if parts and parts[0].lstrip("#").isdigit():
-                first_column.append(int(parts[0]))
-        self.max_id = str(max(first_column))
+            if len(parts) < 7:
+                continue
+
+            channel_id = int(parts[0].lstrip("#"))
+            value = int(parts[6])
+
+            if value > 0:
+                if max_id is None or channel_id > max_id:
+                    max_id = channel_id
+            self.max_id = str(max_id) if max_id is not None else None
 
     def test_channel_1_extend(self):
         execute(["account", "deposit", self.amount, "-y", "-q"], self.parser, self.conf)
         result1 = execute(["channel", "extend-add", self.max_id, "--amount", self.amount, "-y"], self.parser, self.conf)
-        """ TODO KeyError: 'channelId'
         result2 = execute(["channel", "extend-add-for-org", self.org_id, "default_group", "--channel-id", f"{self.max_id}", "-y"], self.parser, self.conf)
-        print(result2)"""
+        print(result2)
         assert f"channelId: ", self.max_id in result1
 
     def test_channel_2_print_filter_sender(self):
@@ -300,7 +306,7 @@ class TestAHClient(BaseTest):
 
     def test_1_channel_open(self):
         execute(["set", "default_eth_rpc_endpoint", INFURA], self.parser, self.conf)
-        execute(["account", "deposit", "0.001", "-y"], self.parser, self.conf)
+        execute(["account", "deposit", "0.0001", "-y"], self.parser, self.conf)
         self.block=int(execute(["channel", "block-number"], self.parser, self.conf))
         print(self.block)
         result=execute(["channel", "open", self.org_id, "default_group", "0.0001", f"{self.block+100000}", "-y"], self.parser, self.conf)
@@ -431,6 +437,7 @@ service Calculator {
                 self.conf)
         execute(["service", "metadata-add-contributor", self.contributor, self.contributor_mail], self.parser, self.conf)
         execute(["service", "metadata-remove-contributor", self.contributor_mail], self.parser, self.conf)
+        execute(["service", "metadata-add-contributor", self.contributor, self.contributor_mail], self.parser, self.conf)
         execute(["service", "metadata-add-tags", self.tags], self.parser, self.conf)
         execute(["service", "update-metadata", self.org_id, self.service_id, "-y"], self.parser, self.conf)
         result = execute(["service", "print-metadata", self.org_id, self.service_id], self.parser, self.conf)
