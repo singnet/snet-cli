@@ -268,7 +268,7 @@ class TestAGChannels(BaseTest):
         result = execute(["channel", "print-filter-group", self.org_id, self.group], self.parser, self.conf)
         assert self.max_id in result
 
-    """ TODO   
+
     def test_channel_4_claim(self):
         execute(["account", "deposit", self.amount, "-y", "-q"], self.parser, self.conf)
         execute(["channel", "extend-add", self.max_id, "--amount", self.amount, "-y"], self.parser, self.conf)
@@ -276,7 +276,7 @@ class TestAGChannels(BaseTest):
         execute(["account", "deposit", self.amount, "-y", "-q"], self.parser, self.conf)
         execute(["channel", "extend-add", self.max_id, "--amount", self.amount, "-y"], self.parser, self.conf)
         result2 = execute(["channel", "claim-timeout-all", "-y"], self.parser, self.conf)
-        assert ("event: ChannelSenderClaim" in result1) and ("event: ChannelSenderClaim" in result2)"""
+        assert ("event: ChannelSenderClaim" in result1) and ("event: ChannelSenderClaim" in result2)
 
 
 
@@ -303,10 +303,17 @@ class TestAHClient(BaseTest):
         execute(["account", "deposit", "0.001", "-y"], self.parser, self.conf)
         self.block=int(execute(["channel", "block-number"], self.parser, self.conf))
         print(self.block)
-        result=execute(["channel", "open", self.org_id, "default_group", "0.1", f"{self.block+100000}", "-y"], self.parser, self.conf)
+        result=execute(["channel", "open", self.org_id, "default_group", "0.0001", f"{self.block+100000}", "-y"], self.parser, self.conf)
         assert "#channel_id" in result
 
     def test_2_service_call(self):
+        params_file = open("detection.json", "w+")
+        params_file.write("""
+{
+    "text": "Hello man try to answer me soon"
+}
+        """)
+        params_file.close()
         result=execute(["client", "call", self.org_id, self.service_id, self.group, self.method, self.params, "-y"], self.parser, self.conf)
         assert "spam" in result
 
