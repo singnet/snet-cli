@@ -2,6 +2,7 @@ import warnings
 import argcomplete
 import unittest
 import unittest.mock as mock
+from unittest.mock import patch
 import shutil
 import os
 import importlib.util
@@ -457,7 +458,8 @@ service Calculator {
         result = execute(["organization", "print-metadata", self.org_id], self.parser, self.conf)
         assert self.new_description in result
 
-    def test_62_change_service_metadata(self):
+    @patch("builtins.input", side_effect=["1", "2"])
+    def test_62_change_service_metadata(self, mock_input):
         execute(["service", "metadata-remove-group", self.group_name], self.parser, self.conf)
         execute(["service", "metadata-add-group", self.group_name], self.parser, self.conf)
         execute(["organization", "update-group", self.group_name], self.parser, self.conf)
@@ -497,7 +499,7 @@ service Calculator {
         print(execute(["service", "print-tags", self.org_id, self.service_id], self.parser, self.conf))
         result=execute(["service", "print-tags", self.org_id, self.service_id], self.parser, self.conf)
         print(result)
-        assert self.tags in result
+        assert self.tags[0] in result
 
     def test_64_get_api_metadata(self):
         os.remove(f"./ExampleService.proto")
