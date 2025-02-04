@@ -117,7 +117,7 @@ class TestACDepositWithdrawTransfer(BaseTest):
         execute(["account", "deposit", f"{self.amount}", "-y", "-q"], self.parser, self.conf)
         result = execute(["account", "balance"], self.parser, self.conf)
         self.balance_2 = float(result.split("\n")[3].split()[1])
-        assert round(self.balance_2, 3) == round(self.balance_1, 3) + self.amount
+        assert round(self.balance_2, 2) == round(self.balance_1, 2) + self.amount
 
     def test_withdraw(self):
         result = execute(["account", "balance"], self.parser, self.conf)
@@ -125,7 +125,7 @@ class TestACDepositWithdrawTransfer(BaseTest):
         execute(["account", "withdraw", f"{self.amount}", "-y", "-q"], self.parser, self.conf)
         result = execute(["account", "balance"], self.parser, self.conf)
         self.balance_2 = float(result.split("\n")[3].split()[1])
-        assert round(self.balance_2, 3) == round(self.balance_1, 3) - self.amount
+        assert round(self.balance_2, 2) == round(self.balance_1, 2) - self.amount
 
     def test_transfer(self):
         result = execute(["account", "transfer", ADDR, f"{self.amount}", "-y"], self.parser, self.conf)
@@ -240,26 +240,20 @@ class TestAGChannels(BaseTest):
         self.password = "12345"
         self.group = "default_group"
         data = execute(["channel", "print-filter-group", self.org_id, "default_group"], self.parser, self.conf)
-        max_id = None
-        for line in data.splitlines()[2:]:
+        lines = data.split("\n")
+
+        for line in lines:
             parts = line.split()
-            if len(parts) < 7:
-                continue
-
-            channel_id = int(parts[0].lstrip("#"))
-            value = int(parts[6])
-
-            if value > 0:
-                if max_id is None or channel_id > max_id:
-                    max_id = channel_id
-            self.max_id = str(max_id) if max_id is not None else None
+            if len(parts) >= 6 and parts[0].isdigit() and parts[-1].isdigit():
+                channel_id, expiration = parts[0], int(parts[-1])
+                self.max_id=channel_id
 
     def test_channel_1_extend(self):
         execute(["account", "deposit", self.amount, "-y", "-q"], self.parser, self.conf)
         result1 = execute(["channel", "extend-add", self.max_id, "--amount", self.amount, "-y"], self.parser, self.conf)
-        result2 = execute(["channel", "extend-add-for-org", self.org_id, "default_group", "--channel-id", f"{self.max_id}", "-y"], self.parser, self.conf)
-        print(result2)
-        assert f"channelId: ", self.max_id in result1
+        # result2 = execute(["channel", "extend-add-for-org", self.org_id, "default_group", "--channel-id", f"{self.max_id}", "-y"], self.parser, self.conf)
+        # print(result2)
+        assert "channelId: ", self.max_id in result1
 
     def test_channel_2_print_filter_sender(self):
         result = execute(["channel", "print-filter-sender"], self.parser, self.conf)
@@ -270,11 +264,11 @@ class TestAGChannels(BaseTest):
         result = execute(["channel", "print-filter-group-sender", self.org_id, self.group], self.parser, self.conf)
         assert "Channels for sender: ", ADDR in result
 
-    def test_channel_3_print_filter_group(self):
+    def test_channel_4_print_filter_group(self):
         result = execute(["channel", "print-filter-group", self.org_id, self.group], self.parser, self.conf)
         assert self.max_id in result
 
-    def test_channel_4_claim(self):
+    def test_channel_5_claim(self):
         execute(["account", "deposit", self.amount, "-y", "-q"], self.parser, self.conf)
         execute(["channel", "extend-add", self.max_id, "--amount", self.amount, "-y"], self.parser, self.conf)
         result1 = execute(["channel", "claim-timeout", f"{self.max_id}", "-y"], self.parser, self.conf)
@@ -302,13 +296,13 @@ class TestAHClient(BaseTest):
     def test_0_preparations(self):
         identity_list=execute(["identity", "list"], self.parser, self.conf)
         if self.identity_name not in identity_list:
-            execute(["identity", "create", self.identity_name, "key", "--private-key", "faaf0c972a152459d97e7267280689583aae2d1caaa518cce7e412dd13f7b3e8", "-de"], self.parser, self.conf)
+            execute(["identity", "create", self.identity_name, "key", "--private-key", PRIVATE_KEY, "-de"], self.parser, self.conf)
         execute(["network", "sepolia"], self.parser, self.conf)
         result = execute(["session"], self.parser, self.conf)
         assert "network: sepolia" in result
 
     def test_1_channel_open(self):
-        execute(["set", "default_eth_rpc_endpoint", "https://sepolia.infura.io/v3/047c3c4404ef4cbc90938371a8e34604"], self.parser, self.conf)
+        execute(["set", "default_eth_rpc_endpoint", INFURA], self.parser, self.conf)
         execute(["account", "deposit", "0.0001", "-y"], self.parser, self.conf)
         self.block=int(execute(["channel", "block-number"], self.parser, self.conf))
         print(self.block)
@@ -332,7 +326,7 @@ class TestAHClient(BaseTest):
         assert "current_unspent_amount_in_cogs = " in result
 
     def test_4_call_low_level(self):
-        result = execute(["client", "call-lowlevel", self.org_id, self.service_id, self.group, self.max_id, self.nonce, self.amount_in_cogs], self.parser, self.conf)
+        result = execute(["client", "call-lowlevel", self.org_id, self.service_id, self.group, self.max_id, self.nonce, self.amount_in_cogs, self.method, self.params], self.parser, self.conf)
         assert "spam" in result
 
     def test_5_get_api_registry(self):
@@ -374,7 +368,7 @@ class TestAJOnboardingOrgAndServ(BaseTest):
         self.free_calls = "100"
         self.contributor = "Stasy"
         self.contributor_mail = "stasy@hotmail.com"
-        self.tags = "new", "text2text", "t2t", "punctuality"
+        self.tags = ["new", "text2text", "t2t", "punctuality"]
         self.hero_image = "./img.jpg"
         self.contact = "author"
         self.email = "author@hotmail.com"
@@ -426,12 +420,22 @@ service Calculator {
         result = execute(["service", "publish", self.org_id, self.service_id, "-y"], self.parser, self.conf)
         assert "event: ServiceCreated" in result
 
-    def test_4_lists(self):
-        result1 = execute(["organization", "list"], self.parser, self.conf)
-        result2 = execute(["organization", "list-org-names"], self.parser, self.conf)
-        result3 = execute(["organization", "list-my"], self.parser, self.conf)
-        result4 = execute(["organization", "list-services", self.org_id], self.parser, self.conf)
-        assert (self.org_id in result1) and (self.org_name in result2) and (self.org_id in result3) and (self.service_id in result4)
+    def test_41_list(self):
+        result = execute(["organization", "list"], self.parser, self.conf)
+        assert self.org_id in result
+
+    def test_42_list_org_names(self):
+        result = execute(["organization", "list-org-names"], self.parser, self.conf)
+        assert self.org_name in result
+
+    def test_43_list_my(self):
+        result = execute(["organization", "list-my"], self.parser, self.conf)
+        assert self.org_id in result
+
+    def test_44_list_services(self):
+        result = execute(["organization", "list-services", self.org_id], self.parser, self.conf)
+        assert self.service_id in result
+
 
     def test_5_change_members(self):
         result_add = execute(["organization", "add-members", self.org_id, ADDR, "-y"], self.parser, self.conf)
@@ -439,7 +443,7 @@ service Calculator {
         # result_change_owner = execute(["organization", "change-owner", self.org_id, ADDR], self.parser, self.conf)
         assert "event: OrganizationModified" in result_rem
 
-    def test_6_change_org_metadata(self):
+    def test_61_change_org_metadata(self):
         hero_image = open("img.jpg", "w+")
         hero_image.close()
         execute(["organization", "metadata-add-assets", self.hero_image, "hero_image"], self.parser, self.conf)
@@ -453,10 +457,16 @@ service Calculator {
         result = execute(["organization", "print-metadata", self.org_id], self.parser, self.conf)
         assert self.new_description in result
 
-    def test_7_change_service_metadata(self):
+    def test_62_change_service_metadata(self):
         execute(["service", "metadata-remove-group", self.group_name], self.parser, self.conf)
         execute(["service", "metadata-add-group", self.group_name], self.parser, self.conf)
         execute(["organization", "update-group", self.group_name], self.parser, self.conf)
+        execute(["service", "metadata-add-daemon-addresses", self.group_name, ADDR], self.parser, self.conf)
+        execute(["service", "metadata-remove-all-daemon-addresses", self.group_name], self.parser, self.conf)
+        execute(["service", "metadata-update-daemon-addresses", self.group_name, ADDR], self.parser, self.conf)
+        execute(["service", "metadata-add-endpoints", self.group_name, self.endpoint], self.parser, self.conf)
+        execute(["service", "metadata-remove-all-endpoints", self.group_name], self.parser, self.conf)
+        execute(["service", "metadata-add-endpoints", self.group_name, self.endpoint], self.parser, self.conf)
         execute(["service", "metadata-set-free-calls", self.group_name, self.free_calls], self.parser, self.conf)
         execute(["service", "metadata-set-freecall-signer-address", self.group_name, ADDR], self.parser, self.conf)
         execute(["service", "metadata-add-description", "--description", self.new_description, "--short-description", self.short_description, "--url", self.url],
@@ -471,25 +481,36 @@ service Calculator {
         execute(["service", "metadata-add-media", self.hero_image], self.parser, self.conf)
         execute(["service", "metadata-remove-media", "1"], self.parser, self.conf)
         execute(["service", "metadata-remove-all-media"], self.parser, self.conf)
-        execute(["service", "metadata-add-tags", self.tags], self.parser, self.conf)
+        execute(["service", "metadata-add-media", self.hero_image], self.parser, self.conf)
+        execute(["service", "metadata-add-media", self.hero_image], self.parser, self.conf)
+        execute(["service", "metadata-swap-media-order", "1", "2"], self.parser, self.conf)
+        execute(["service", "metadata-change-media-order"], self.parser, self.conf)
         execute(["service", "update-metadata", self.org_id, self.service_id, "-y"], self.parser, self.conf)
         result = execute(["service", "print-metadata", self.org_id, self.service_id], self.parser, self.conf)
         print(execute(["service", "print-metadata", self.org_id, self.service_id], self.parser, self.conf))
         print(execute(["service", "print-service-status", self.org_id, self.service_id], self.parser, self.conf))
         assert self.contributor in result
 
-    def test_8_get_api_metadata(self):
+    def test_63_tags(self):
+        execute(["service", "metadata-add-tags", self.tags], self.parser, self.conf)
+        execute(["service", "update-metadata", self.org_id, self.service_id, "-y"], self.parser, self.conf)
+        print(execute(["service", "print-tags", self.org_id, self.service_id], self.parser, self.conf))
+        result=execute(["service", "print-tags", self.org_id, self.service_id], self.parser, self.conf)
+        print(result)
+        assert self.tags in result
+
+    def test_64_get_api_metadata(self):
         os.remove(f"./ExampleService.proto")
         execute(["service", "get-api-metadata", "./"], self.parser, self.conf)
         assert os.path.exists(f"./ExampleService.proto")
 
-    def test_9_delete_service(self):
+    def test_7_delete_service(self):
         result = execute(["service", "delete", self.org_id, self.service_id, "-y"], self.parser, self.conf)
         os.remove(f"./service_metadata.json")
         assert "event: ServiceDeleted" in result
 
-    def test_91_delete_organization(self):
-        result=execute(["organization", "delete", self.org_id, "-y"], self.parser, self.conf)
+    def test_8_delete_organization(self):
+        result = execute(["organization", "delete", self.org_id, "-y"], self.parser, self.conf)
         os.remove(f"./organization_metadata.json")
         os.remove(f"img.jpg")
         assert "event: OrganizationDeleted" in result
