@@ -274,7 +274,6 @@ class TestAGChannels(BaseTest):
         result = execute(["channel", "print-filter-group", self.org_id, self.group], self.parser, self.conf)
         assert self.max_id in result
 
-
     def test_channel_4_claim(self):
         execute(["account", "deposit", self.amount, "-y", "-q"], self.parser, self.conf)
         execute(["channel", "extend-add", self.max_id, "--amount", self.amount, "-y"], self.parser, self.conf)
@@ -289,23 +288,27 @@ class TestAGChannels(BaseTest):
 class TestAHClient(BaseTest):
     def setUp(self):
         super().setUp()
-        self.org_id="egor-sing-test"
-        self.service_id="hate-detection"
-        self.group="default_group"
-        self.identity_name="some_name"
-        self.method="detection"
-        self.params=("./detection.json")
+        self.org_id = "egor-sing-test"
+        self.service_id = "hate-detection"
+        self.group = "default_group"
+        self.identity_name = "some_name"
+        self.method = "runsync"
+        self.params = "./detection.json"
+        self.endpoint = "https://ai-ui-service.singularitynet.io:8001"
+        self.max_id = "357"
+        self.nonce = "1"
+        self.amount_in_cogs = "1"
 
     def test_0_preparations(self):
         identity_list=execute(["identity", "list"], self.parser, self.conf)
         if self.identity_name not in identity_list:
-            execute(["identity", "create", self.identity_name, "key", "--private-key", PRIVATE_KEY, "-de"], self.parser, self.conf)
+            execute(["identity", "create", self.identity_name, "key", "--private-key", "faaf0c972a152459d97e7267280689583aae2d1caaa518cce7e412dd13f7b3e8", "-de"], self.parser, self.conf)
         execute(["network", "sepolia"], self.parser, self.conf)
         result = execute(["session"], self.parser, self.conf)
         assert "network: sepolia" in result
 
     def test_1_channel_open(self):
-        execute(["set", "default_eth_rpc_endpoint", INFURA], self.parser, self.conf)
+        execute(["set", "default_eth_rpc_endpoint", "https://sepolia.infura.io/v3/047c3c4404ef4cbc90938371a8e34604"], self.parser, self.conf)
         execute(["account", "deposit", "0.0001", "-y"], self.parser, self.conf)
         self.block=int(execute(["channel", "block-number"], self.parser, self.conf))
         print(self.block)
@@ -314,15 +317,27 @@ class TestAHClient(BaseTest):
 
     def test_2_service_call(self):
         params_file = open("detection.json", "w+")
-        params_file.write("""
-{
-    "text": "Hello man try to answer me soon"
+        params_file.write("""{
+    "input": {
+        "text": "Hello man answer me soon"
+    }
 }
         """)
         params_file.close()
         result=execute(["client", "call", self.org_id, self.service_id, self.group, self.method, self.params, "-y"], self.parser, self.conf)
         assert "spam" in result
 
+    def test_3_service_get_channel_state(self):
+        result=execute(["client", "get-channel-state", self.max_id, self.endpoint], self.parser, self.conf)
+        assert "current_unspent_amount_in_cogs = " in result
+
+    def test_4_call_low_level(self):
+        result = execute(["client", "call-lowlevel", self.org_id, self.service_id, self.group, self.max_id, self.nonce, self.amount_in_cogs], self.parser, self.conf)
+        assert "spam" in result
+
+    def test_5_get_api_registry(self):
+        execute(["service", "get-api-registry", self.org_id, self.service_id, "./"], self.parser, self.conf)
+        assert os.path.exists("./hate.proto")
 
 
 class TestAIOrganization(BaseTest):
@@ -360,6 +375,10 @@ class TestAJOnboardingOrgAndServ(BaseTest):
         self.contributor = "Stasy"
         self.contributor_mail = "stasy@hotmail.com"
         self.tags = "new", "text2text", "t2t", "punctuality"
+        self.hero_image = "./img.jpg"
+        self.contact = "author"
+        self.email = "author@hotmail.com"
+        self.phone = "+1234567890"
 
     def test_0_preparation(self):
         identity_list = execute(["identity", "list"], self.parser, self.conf)
@@ -421,15 +440,23 @@ service Calculator {
         assert "event: OrganizationModified" in result_rem
 
     def test_6_change_org_metadata(self):
+        hero_image = open("img.jpg", "w+")
+        hero_image.close()
+        execute(["organization", "metadata-add-assets", self.hero_image, "hero_image"], self.parser, self.conf)
+        execute(["organization", "metadata-remove-assets", "hero_image"], self.parser, self.conf)
+        execute(["organization", "metadata-remove-all-assets"], self.parser, self.conf)
+        execute(["organization", "metadata-add-contact", self.contact, "--email", self.email, "--phone", self.phone], self.parser, self.conf)
+        execute(["organization", "metadata-remove-contacts", self.contact], self.parser, self.conf)
+        execute(["organization", "metadata-remove-all-contacts"], self.parser, self.conf)
         execute(["organization", "metadata-add-description", "--description", self.new_description], self.parser, self.conf)
         execute(["organization", "update-metadata", self.org_id, "-y"], self.parser, self.conf)
         result = execute(["organization", "print-metadata", self.org_id], self.parser, self.conf)
         assert self.new_description in result
 
-
     def test_7_change_service_metadata(self):
         execute(["service", "metadata-remove-group", self.group_name], self.parser, self.conf)
         execute(["service", "metadata-add-group", self.group_name], self.parser, self.conf)
+        execute(["organization", "update-group", self.group_name], self.parser, self.conf)
         execute(["service", "metadata-set-free-calls", self.group_name, self.free_calls], self.parser, self.conf)
         execute(["service", "metadata-set-freecall-signer-address", self.group_name, ADDR], self.parser, self.conf)
         execute(["service", "metadata-add-description", "--description", self.new_description, "--short-description", self.short_description, "--url", self.url],
@@ -438,6 +465,12 @@ service Calculator {
         execute(["service", "metadata-add-contributor", self.contributor, self.contributor_mail], self.parser, self.conf)
         execute(["service", "metadata-remove-contributor", self.contributor_mail], self.parser, self.conf)
         execute(["service", "metadata-add-contributor", self.contributor, self.contributor_mail], self.parser, self.conf)
+        execute(["service", "metadata-add-assets", self.hero_image, "hero_image"], self.parser, self.conf)
+        execute(["service", "metadata-remove-assets", "hero_image"], self.parser, self.conf)
+        execute(["service", "metadata-remove-all-assets"], self.parser, self.conf)
+        execute(["service", "metadata-add-media", self.hero_image], self.parser, self.conf)
+        execute(["service", "metadata-remove-media", "1"], self.parser, self.conf)
+        execute(["service", "metadata-remove-all-media"], self.parser, self.conf)
         execute(["service", "metadata-add-tags", self.tags], self.parser, self.conf)
         execute(["service", "update-metadata", self.org_id, self.service_id, "-y"], self.parser, self.conf)
         result = execute(["service", "print-metadata", self.org_id, self.service_id], self.parser, self.conf)
@@ -445,17 +478,22 @@ service Calculator {
         print(execute(["service", "print-service-status", self.org_id, self.service_id], self.parser, self.conf))
         assert self.contributor in result
 
+    def test_8_get_api_metadata(self):
+        os.remove(f"./ExampleService.proto")
+        execute(["service", "get-api-metadata", "./"], self.parser, self.conf)
+        assert os.path.exists(f"./ExampleService.proto")
 
-    def test_8_delete_service(self):
+    def test_9_delete_service(self):
         result = execute(["service", "delete", self.org_id, self.service_id, "-y"], self.parser, self.conf)
         os.remove(f"./service_metadata.json")
-        os.remove(f"./ExampleService.proto")
         assert "event: ServiceDeleted" in result
 
-    def test_9_delete_organization(self):
+    def test_91_delete_organization(self):
         result=execute(["organization", "delete", self.org_id, "-y"], self.parser, self.conf)
         os.remove(f"./organization_metadata.json")
+        os.remove(f"img.jpg")
         assert "event: OrganizationDeleted" in result
+
 
 
 if __name__ == "__main__":
