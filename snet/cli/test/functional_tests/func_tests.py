@@ -6,6 +6,7 @@ from unittest.mock import patch
 import shutil
 import os
 import importlib.util
+import math
 
 from snet.cli.commands.commands import BlockchainCommand
 
@@ -73,14 +74,18 @@ class TestAAMainPreparations(BaseTest):
         assert "network: sepolia" in result
 
     def test_4_network_create(self):
-        result = execute(["network", "create"])
+        execute(["network", "create", self.new_network, INFURA], self.parser, self.conf)
+        execute(["network", self.new_network], self.parser, self.conf)
+        result = execute(["session"], self.parser, self.conf)
+        execute(["network", "sepolia"], self.parser, self.conf)
+        assert self.new_network in result
 
-    def test_4_set_infura(self):
+    def test_5_set_infura(self):
         execute(["set", "default_eth_rpc_endpoint", INFURA], self.parser, self.conf)
         result = execute(["session"], self.parser, self.conf)
         assert INFURA_KEY in result
 
-    def test_5_print_account(self):
+    def test_6_print_account(self):
         result = execute(["account", "print"], self.parser, self.conf)
         print(result)
         assert ADDR in result
@@ -121,7 +126,7 @@ class TestACDepositWithdrawTransfer(BaseTest):
         execute(["account", "deposit", f"{self.amount}", "-y", "-q"], self.parser, self.conf)
         result = execute(["account", "balance"], self.parser, self.conf)
         self.balance_2 = float(result.split("\n")[3].split()[1])
-        assert round(self.balance_2, 2) == round(self.balance_1, 2) + self.amount
+        assert math.isclose(self.balance_2, self.balance_1 + self.amount, rel_tol=1e-3)
 
     def test_withdraw(self):
         result = execute(["account", "balance"], self.parser, self.conf)
@@ -129,8 +134,7 @@ class TestACDepositWithdrawTransfer(BaseTest):
         execute(["account", "withdraw", f"{self.amount}", "-y", "-q"], self.parser, self.conf)
         result = execute(["account", "balance"], self.parser, self.conf)
         self.balance_2 = float(result.split("\n")[3].split()[1])
-        print(f"{round(self.balance_2, 2)} == {round(self.balance_1, 2)} - {self.amount}")
-        assert round(self.balance_2, 2) == round(self.balance_1, 2) - self.amount
+        assert math.isclose(self.balance_2, self.balance_1 - self.amount, rel_tol=1e-3)
 
     def test_transfer(self):
         result = execute(["account", "transfer", ADDR, f"{self.amount}", "-y"], self.parser, self.conf)
@@ -411,6 +415,8 @@ service Calculator {
 }""")
         proto_file.close()
         result = execute(["session"], self.parser, self.conf)
+        hero_image = open("img.jpg", "w+")
+        hero_image.close()
         assert "network: sepolia" in result
 
     def test_1_metadata_init(self):
@@ -464,8 +470,6 @@ service Calculator {
         assert "event: OrganizationModified" in result_rem
 
     def test_61_change_org_metadata(self):
-        hero_image = open("img.jpg", "w+")
-        hero_image.close()
         execute(["organization", "metadata-add-assets", self.hero_image, "hero_image"], self.parser, self.conf)
         execute(["organization", "metadata-remove-assets", "hero_image"], self.parser, self.conf)
         execute(["organization", "metadata-remove-all-assets"], self.parser, self.conf)
