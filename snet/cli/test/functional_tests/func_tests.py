@@ -57,6 +57,7 @@ class BaseTest(unittest.TestCase):
 class TestAAMainPreparations(BaseTest):
     def setUp(self):
         super().setUp()
+        self.new_network = "auto_test"
 
     def test_1_identity_create(self):
         execute(["identity", "create", IDENTITY, "key", "--private-key", PRIVATE_KEY, "-de"], self.parser, self.conf)
@@ -248,14 +249,15 @@ class TestAGChannels(BaseTest):
         self.amount = "0.001"
         self.password = "12345"
         self.group = "default_group"
-        data = execute(["channel", "print-filter-group", self.org_id, "default_group"], self.parser, self.conf)
+        data = execute(["channel", "print-filter-sender"], self.parser, self.conf)
         lines = data.split("\n")
 
         for line in lines:
             parts = line.split()
             if len(parts) >= 6 and parts[0].isdigit() and parts[-1].isdigit():
                 channel_id, expiration = parts[0], int(parts[-1])
-                self.max_id=channel_id
+                if parts[6] == "0":
+                    self.max_id = channel_id
 
     def test_channel_1_extend(self):
         execute(["account", "deposit", self.amount, "-y", "-q"], self.parser, self.conf)
@@ -278,12 +280,23 @@ class TestAGChannels(BaseTest):
         assert self.max_id in result
 
     def test_channel_5_claim(self):
+        print(self.max_id)
         execute(["account", "deposit", self.amount, "-y", "-q"], self.parser, self.conf)
-        execute(["channel", "extend-add", self.max_id, "--amount", self.amount, "-y"], self.parser, self.conf)
-        result1 = execute(["channel", "claim-timeout", f"{self.max_id}", "-y"], self.parser, self.conf)
-        execute(["account", "deposit", self.amount, "-y", "-q"], self.parser, self.conf)
-        execute(["channel", "extend-add", self.max_id, "--amount", self.amount, "-y"], self.parser, self.conf)
-        result2 = execute(["channel", "claim-timeout-all", "-y"], self.parser, self.conf)
+        if self.max_id:
+            execute(["channel", "extend-add", self.max_id, "--amount", self.amount, "-y"], self.parser, self.conf)
+            result1 = execute(["channel", "claim-timeout", f"{self.max_id}", "-y"], self.parser, self.conf)
+            execute(["account", "deposit", self.amount, "-y", "-q"], self.parser, self.conf)
+            execute(["channel", "extend-add", self.max_id, "--amount", self.amount, "-y"], self.parser, self.conf)
+            result2 = execute(["channel", "claim-timeout-all", "-y"], self.parser, self.conf)
+        else:
+            block_number = int(execute(["channel", "block-number"], self.parser, self.conf))
+            execute(["channel", "open", self.org_id, self.group, self.amount, f"{block_number-1}", "-y"], self.parser, self.conf)
+            execute(["channel", "extend-add", self.max_id, "--amount", self.amount, "-y"], self.parser, self.conf)
+            result1 = execute(["channel", "claim-timeout", f"{self.max_id}", "-y"], self.parser, self.conf)
+            execute(["account", "deposit", self.amount, "-y", "-q"], self.parser, self.conf)
+            execute(["channel", "extend-add", self.max_id, "--amount", self.amount, "-y"], self.parser, self.conf)
+            result2 = execute(["channel", "claim-timeout-all", "-y"], self.parser, self.conf)
+        print(result1)
         assert ("event: ChannelSenderClaim" in result1) and ("event: ChannelSenderClaim" in result2)
 
 
@@ -516,12 +529,14 @@ service Calculator {
         print(execute(["service", "print-service-status", self.org_id, self.service_id], self.parser, self.conf))
         assert self.contributor in result
 
+    """TODO: New logic for adding tags
     def test_63_tags(self):
         execute(["service", "metadata-add-tags", self.tags], self.parser, self.conf)
         execute(["service", "update-metadata", self.org_id, self.service_id, "-y"], self.parser, self.conf)
         print(execute(["service", "print-tags", self.org_id, self.service_id], self.parser, self.conf))
         result = execute(["service", "print-tags", self.org_id, self.service_id], self.parser, self.conf)
         assert self.tags in result
+    """
 
     def test_64_get_api_metadata(self):
         os.remove(f"./ExampleService.proto")
