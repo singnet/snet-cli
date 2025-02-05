@@ -72,6 +72,9 @@ class TestAAMainPreparations(BaseTest):
         result = execute(["session"], self.parser, self.conf)
         assert "network: sepolia" in result
 
+    def test_4_network_create(self):
+        result = execute(["network", "create"])
+
     def test_4_set_infura(self):
         execute(["set", "default_eth_rpc_endpoint", INFURA], self.parser, self.conf)
         result = execute(["session"], self.parser, self.conf)
@@ -126,6 +129,7 @@ class TestACDepositWithdrawTransfer(BaseTest):
         execute(["account", "withdraw", f"{self.amount}", "-y", "-q"], self.parser, self.conf)
         result = execute(["account", "balance"], self.parser, self.conf)
         self.balance_2 = float(result.split("\n")[3].split()[1])
+        print(f"{round(self.balance_2, 2)} == {round(self.balance_1, 2)} - {self.amount}")
         assert round(self.balance_2, 2) == round(self.balance_1, 2) - self.amount
 
     def test_transfer(self):
@@ -304,10 +308,15 @@ class TestAHClient(BaseTest):
 
     def test_1_channel_open(self):
         execute(["set", "default_eth_rpc_endpoint", INFURA], self.parser, self.conf)
-        execute(["account", "deposit", "0.0001", "-y"], self.parser, self.conf)
+        execute(["account", "deposit", "0.1", "-y"], self.parser, self.conf)
         self.block=int(execute(["channel", "block-number"], self.parser, self.conf))
         print(self.block)
-        result=execute(["channel", "open", self.org_id, "default_group", "0.0001", f"{self.block+100000}", "-y"], self.parser, self.conf)
+        result = execute(["channel", "print-filter-group-sender", self.org_id, self.group], self.parser, self.conf)
+        if ADDR not in result[13:]:
+            result=execute(["channel", "open", self.org_id, "default_group", "0.0001", f"{self.block+100}", "-y"], self.parser, self.conf)
+        else:
+            pass
+        print(result)
         assert "#channel_id" in result
 
     def test_2_service_call(self):
@@ -369,7 +378,7 @@ class TestAJOnboardingOrgAndServ(BaseTest):
         self.free_calls = "100"
         self.contributor = "Stasy"
         self.contributor_mail = "stasy@hotmail.com"
-        self.tags = ["new", "text2text", "t2t", "punctuality"]
+        self.tags = "new", "text2text", "t2t", "punctuality"
         self.hero_image = "./img.jpg"
         self.contact = "author"
         self.email = "author@hotmail.com"
@@ -417,9 +426,19 @@ service Calculator {
         result = execute(["organization", "create", self.org_id, "-y"], self.parser, self.conf)
         assert "event: OrganizationCreated" in result
 
-    def test_3_create_service(self):
+    def test_31_create_service(self):
         result = execute(["service", "publish", self.org_id, self.service_id, "-y"], self.parser, self.conf)
         assert "event: ServiceCreated" in result
+
+    def test_32_publish_in_ipfs(self):
+        result = execute(["service", "publish-in-ipfs", "-y"], self.parser, self.conf)
+        assert len(result) > 45
+
+    def test_33_publish_in_filecoin(self):
+        execute(["set", "filecoin_api_key", "8dcbe8a5.0e1595c6c556430dad42ef13abc00e2f"], self.parser, self.conf)
+        result = execute(["service", "publish-in-filecoin", "-y"], self.parser, self.conf)
+        print(result)
+        assert "Ok" in result
 
     def test_41_list(self):
         result = execute(["organization", "list"], self.parser, self.conf)
@@ -497,9 +516,8 @@ service Calculator {
         execute(["service", "metadata-add-tags", self.tags], self.parser, self.conf)
         execute(["service", "update-metadata", self.org_id, self.service_id, "-y"], self.parser, self.conf)
         print(execute(["service", "print-tags", self.org_id, self.service_id], self.parser, self.conf))
-        result=execute(["service", "print-tags", self.org_id, self.service_id], self.parser, self.conf)
-        print(result)
-        assert self.tags[0] in result
+        result = execute(["service", "print-tags", self.org_id, self.service_id], self.parser, self.conf)
+        assert self.tags in result
 
     def test_64_get_api_metadata(self):
         os.remove(f"./ExampleService.proto")
