@@ -7,6 +7,7 @@ import shutil
 import os
 import importlib.util
 import math
+import re
 
 from snet.cli.commands.commands import BlockchainCommand
 
@@ -79,7 +80,7 @@ class TestAAMainPreparations(BaseTest):
         execute(["network", self.new_network], self.parser, self.conf)
         result = execute(["session"], self.parser, self.conf)
         execute(["network", "sepolia"], self.parser, self.conf)
-        assert self.new_network in result
+        assert "network: ", self.new_network in result
 
     def test_5_set_infura(self):
         execute(["set", "default_eth_rpc_endpoint", INFURA], self.parser, self.conf)
@@ -261,10 +262,18 @@ class TestAGChannels(BaseTest):
 
     def test_channel_1_extend(self):
         execute(["account", "deposit", self.amount, "-y", "-q"], self.parser, self.conf)
-        result1 = execute(["channel", "extend-add", self.max_id, "--amount", self.amount, "-y"], self.parser, self.conf)
+        if self.max_id:
+            result1 = execute(["channel", "extend-add", self.max_id, "--amount", self.amount, "-y"], self.parser, self.conf)
+        else:
+            block_number = int(execute(["channel", "block-number"], self.parser, self.conf))
+            channel_open_output = execute(["channel", "open", self.org_id, self.group, self.amount, f"{block_number-1}", "-y"], self.parser, self.conf)
+            self.max_id = re.search(r"#channel_id\s+(\d+)", channel_open_output)
+            execute(["channel", "extend-add", self.max_id, "--amount", self.amount, "-y"], self.parser, self.conf)
+            result1 = execute(["channel", "extend-add", self.max_id, "--amount", self.amount, "-y"], self.parser,
+                              self.conf)
         # result2 = execute(["channel", "extend-add-for-org", self.org_id, "default_group", "--channel-id", f"{self.max_id}", "-y"], self.parser, self.conf)
         # print(result2)
-        assert "channelId: ", self.max_id in result1
+        assert "event: ChannelExtend" in result1
 
     def test_channel_2_print_filter_sender(self):
         result = execute(["channel", "print-filter-sender"], self.parser, self.conf)
