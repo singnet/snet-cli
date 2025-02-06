@@ -276,8 +276,8 @@ class TestAGChannels(BaseTest):
             result1 = execute(["channel", "extend-add", self.max_id, "--amount", self.amount, "-y"], self.parser,
                               self.conf)
         # result2 = execute(["channel", "extend-add-for-org", self.org_id, "default_group", "--channel-id", f"{self.max_id}", "-y"], self.parser, self.conf)
-        # print(result2)
-        assert "event: ChannelExtend" in result1
+        print(result1)
+        assert "event: ChannelAddFunds" in result1
 
     def test_channel_2_print_filter_sender(self):
         result = execute(["channel", "print-filter-sender"], self.parser, self.conf)
@@ -571,7 +571,7 @@ service Calculator {
         assert metadata["service_api_source"].startswith("ipfs://")
 
     @patch("builtins.input", side_effect=["auto_test", "1", "ipfs", "./", "y", "default_group", "1", ADDR, ADDR, "y", "150", ADDR, "n", "google.com", "long description", "short", "Stasy", "stasy@hotmail.com", "n", "y", "service_metadata"])
-    def test_channel_66_metadata_init_utility(self, mock_input):
+    def test_66_metadata_init_utility(self, mock_input):
         os.remove(f"./service_metadata.json")
         execute(["service", "metadata-init-utility"], self.parser, self.conf)
         assert os.path.exists(f"./service_metadata.json")
