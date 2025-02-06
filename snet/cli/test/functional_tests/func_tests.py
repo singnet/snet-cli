@@ -251,6 +251,7 @@ class TestAGChannels(BaseTest):
     def setUp(self):
         super().setUp()
         self.org_id = "SNet"
+        self.org_2_id = "singularitynet"
         self.amount = "0.001"
         self.password = "12345"
         self.group = "default_group"
@@ -260,9 +261,7 @@ class TestAGChannels(BaseTest):
         for line in lines:
             parts = line.split()
             if len(parts) >= 6 and parts[0].isdigit() and parts[-1].isdigit():
-                channel_id, expiration = parts[0], int(parts[-1])
-                if parts[6] == "0":
-                    self.max_id = channel_id
+                self.max_id = parts[0]
 
     def test_channel_1_extend(self):
         execute(["account", "deposit", self.amount, "-y", "-q"], self.parser, self.conf)
@@ -270,8 +269,9 @@ class TestAGChannels(BaseTest):
             result1 = execute(["channel", "extend-add", self.max_id, "--amount", self.amount, "-y"], self.parser, self.conf)
         else:
             block_number = int(execute(["channel", "block-number"], self.parser, self.conf))
-            channel_open_output = execute(["channel", "open", self.org_id, self.group, self.amount, f"{block_number-1}", "-y", "--open-new-anyway"], self.parser, self.conf)
-            self.max_id = str(re.search(r"#channel_id\s+(\d+)", channel_open_output))
+            channel_open_output = execute(["channel", "open", self.org_id, self.group, self.amount, f"{block_number+10000}", "-y", "--open-new-anyway"], self.parser, self.conf)
+            match = re.search(r"#channel_id\s+(\d+)", channel_open_output)
+            self.max_id = match.group(1)
             execute(["channel", "extend-add", self.max_id, "--amount", self.amount, "-y"], self.parser, self.conf)
             result1 = execute(["channel", "extend-add", self.max_id, "--amount", self.amount, "-y"], self.parser,
                               self.conf)
@@ -297,7 +297,6 @@ class TestAGChannels(BaseTest):
         assert "Channels for recipient:", ADDR in result
 
     def test_channel_5_claim(self):
-        print(self.max_id)
         execute(["account", "deposit", self.amount, "-y", "-q"], self.parser, self.conf)
         if self.max_id:
             execute(["channel", "extend-add", self.max_id, "--amount", self.amount, "-y"], self.parser, self.conf)
