@@ -256,7 +256,7 @@ class TestAGChannels(BaseTest):
         self.group = "default_group"
         data = execute(["channel", "print-filter-sender"], self.parser, self.conf)
         lines = data.split("\n")
-        self.max_id = "_some_text_"
+        self.max_id = ""
         for line in lines:
             parts = line.split()
             if len(parts) >= 6 and parts[0].isdigit() and parts[-1].isdigit():
