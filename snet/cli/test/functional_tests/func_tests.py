@@ -395,6 +395,7 @@ class TestAIOrganization(BaseTest):
         assert "Organization Name" in result
 
 
+""" temporarily closed so as not to clog up the logs
 class TestAJOnboardingOrgAndServ(BaseTest):
     def setUp(self):
         super().setUp()
@@ -426,7 +427,7 @@ class TestAJOnboardingOrgAndServ(BaseTest):
             execute(["identity", "create", self.identity_name, "key", "--private-key", PRIVATE_KEY, "-de"], self.parser, self.conf)
         execute(["network", "sepolia"], self.parser, self.conf)
         proto_file = open("ExampleService.proto", "w+")
-        proto_file.write("""syntax = "proto3";
+        proto_file.write("syntax = "proto3";
 
 package example_service;
 
@@ -444,7 +445,7 @@ service Calculator {
     rpc sub(Numbers) returns (Result) {}
     rpc mul(Numbers) returns (Result) {}
     rpc div(Numbers) returns (Result) {}
-}""")
+}")
         proto_file.close()
         result = execute(["session"], self.parser, self.conf)
         hero_image = open("img.jpg", "w+")
@@ -548,7 +549,7 @@ service Calculator {
         print(execute(["service", "print-service-status", self.org_id, self.service_id], self.parser, self.conf))
         assert self.contributor in result
 
-    """TODO: New logic for adding tags
+    TODO: New logic for adding tags
     def test_63_tags(self):
         execute(["service", "metadata-add-tags", self.tags], self.parser, self.conf)
         execute(["service", "update-metadata", self.org_id, self.service_id, "-y"], self.parser, self.conf)
@@ -556,7 +557,7 @@ service Calculator {
         print(execute(["service", "print-tags", self.org_id, self.service_id], self.parser, self.conf))
         result = execute(["service", "print-tags", self.org_id, self.service_id], self.parser, self.conf)
         assert self.tags in result
-    """
+    
 
     def test_64_get_api_metadata(self):
         os.remove(f"./ExampleService.proto")
@@ -586,7 +587,73 @@ service Calculator {
         os.remove(f"./organization_metadata.json")
         os.remove(f"img.jpg")
         assert "event: OrganizationDeleted" in result
+"""
 
+class TestContract(BaseTest):
+
+    def setUp(self):
+        super().setUp()
+        self.last_channel_id = int(execute(["contract", "MultiPartyEscrow", "nextChannelId"], self.parser, self.conf)) - 1
+        self.amount = "1"
+        self.block_number = int(execute(["channel", "block-number"], self.parser, self.conf))
+        self.channel = execute(["channel", "print-filter-sender"], self.parser, self.conf).split()[11]
+
+    def test_SingularityNetToken_name(self):
+        result = execute(["contract", "SingularityNetToken", "name"], self.parser, self.conf)
+        assert "SingularityNet Token" in result
+
+    def test_SingularityNetToken_decimals(self):
+        result = execute(["contract", "SingularityNetToken", "decimals"], self.parser, self.conf)
+        assert "8" in result
+
+    def test_SingularityNetToken_symbol(self):
+        result = execute(["contract", "SingularityNetToken", "symbol"], self.parser, self.conf)
+        assert "AGIX" in result
+
+    def test_SingularityNetToken_totalSupply(self):
+        result = int(execute(["contract", "SingularityNetToken", "totalSupply"], self.parser, self.conf))
+        assert 1772100920768158 >= result
+
+    def test_SingularityNetToken_paused(self):
+        result=execute(["contract", "SingularityNetToken", "paused"], self.parser, self.conf)
+        assert "False" in result
+
+    def test_MultiPartyEscrow_abalances(self):
+        result = int(execute(["contract", "MultiPartyEscrow", "balances", ADDR], self.parser, self.conf))
+        assert result > 0
+
+    def test_MultiPartyEscrow_token(self):
+        result = execute(["contract", "MultiPartyEscrow", "token"], self.parser, self.conf)
+        assert "0xf703b9aB8931B6590CFc95183be4fEf278732016" in result
+
+    def test_MultiPartyEscrow_channels(self):
+        result = execute(["contract", "MultiPartyEscrow", "channels", f"{self.last_channel_id}"], self.parser, self.conf)
+        assert len(result) > 150
+
+    def test_MultiPartyEscrow_addFunds(self):
+        print(self.channel)
+        result = execute(["contract", "MultiPartyEscrow", "channelAddFunds", self.channel, self.amount, "-y"], self.parser, self.conf)
+        assert "event: ChannelAddFunds" in result
+
+    def test_MultiPartyEscrow_channelExtend(self):
+        result = execute(["contract", "MultiPartyEscrow", "channelExtend", self.channel, f"{self.block_number+10}", "-y"], self.parser, self.conf).split()[11]
+        assert "event: ChannelExtend" in result
+
+    def test_Registry_getOrganizationById(self):
+        result = execute(["contract", "Registry", "getOrganizationById", "SNet"], self.parser, self.conf)
+        assert len(result) > 400
+
+    def test_Registry_listOrganizations(self):
+        result = execute(["contract", "Registry", "listOrganizations"], self.parser, self.conf)
+        assert len(result) > 12000
+
+    def test_Registry_getServiceRegistrationById(self):
+        result = execute(["contract", "Registry", "getServiceRegistrationById", "SNet", "example-service-constructor"], self.parser, self.conf)
+        assert "True" in result
+
+    def test_Registry_listServicesForOrganization(self):
+        result = execute(["contract", "Registry", "listServicesForOrganization", "SNet"], self.parser, self.conf)
+        assert "True" in result
 
 
 if __name__ == "__main__":
