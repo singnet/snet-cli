@@ -8,7 +8,7 @@ import os
 import importlib.util
 import math
 import re
-import time
+import json
 
 from snet.cli.commands.commands import BlockchainCommand
 
@@ -256,7 +256,7 @@ class TestAGChannels(BaseTest):
         self.group = "default_group"
         data = execute(["channel", "print-filter-sender"], self.parser, self.conf)
         lines = data.split("\n")
-        self.max_id = ""
+        self.max_id = "_some_text_"
         for line in lines:
             parts = line.split()
             if len(parts) >= 6 and parts[0].isdigit() and parts[-1].isdigit():
@@ -270,8 +270,8 @@ class TestAGChannels(BaseTest):
             result1 = execute(["channel", "extend-add", self.max_id, "--amount", self.amount, "-y"], self.parser, self.conf)
         else:
             block_number = int(execute(["channel", "block-number"], self.parser, self.conf))
-            channel_open_output = execute(["channel", "open", self.org_id, self.group, self.amount, f"{block_number-1}", "-y"], self.parser, self.conf)
-            self.max_id = re.search(r"#channel_id\s+(\d+)", channel_open_output)
+            channel_open_output = execute(["channel", "open", self.org_id, self.group, self.amount, f"{block_number-1}", "-y", "--open-new-anyway"], self.parser, self.conf)
+            self.max_id = str(re.search(r"#channel_id\s+(\d+)", channel_open_output))
             execute(["channel", "extend-add", self.max_id, "--amount", self.amount, "-y"], self.parser, self.conf)
             result1 = execute(["channel", "extend-add", self.max_id, "--amount", self.amount, "-y"], self.parser,
                               self.conf)
@@ -291,6 +291,10 @@ class TestAGChannels(BaseTest):
     def test_channel_4_print_filter_group(self):
         result = execute(["channel", "print-filter-group", self.org_id, self.group], self.parser, self.conf)
         assert self.max_id in result
+
+    def test_channel_5_print_filter_recipient(self):
+        result = execute(["channel", "print-filter-recipient"], self.parser, self.conf)
+        assert "Channels for recipient:", ADDR in result
 
     def test_channel_5_claim(self):
         print(self.max_id)
@@ -312,6 +316,9 @@ class TestAGChannels(BaseTest):
         print(result1)
         assert ("event: ChannelSenderClaim" in result1) and ("event: ChannelSenderClaim" in result2)
 
+    def test_channel_6_print_all(self):
+        result = execute(["channel", "print-all", "-ds"], self.parser, self.conf)
+        assert self.max_id in result
 
 
 class TestAHClient(BaseTest):
@@ -546,6 +553,7 @@ service Calculator {
     def test_63_tags(self):
         execute(["service", "metadata-add-tags", self.tags], self.parser, self.conf)
         execute(["service", "update-metadata", self.org_id, self.service_id, "-y"], self.parser, self.conf)
+        execute(["service", "metadata-remove-tags", self.tags], self.parser, self.conf)
         print(execute(["service", "print-tags", self.org_id, self.service_id], self.parser, self.conf))
         result = execute(["service", "print-tags", self.org_id, self.service_id], self.parser, self.conf)
         assert self.tags in result
@@ -555,6 +563,19 @@ service Calculator {
         os.remove(f"./ExampleService.proto")
         execute(["service", "get-api-metadata", "./"], self.parser, self.conf)
         assert os.path.exists(f"./ExampleService.proto")
+
+    def test_65_metadata_set_api(self):
+        res = execute(["service", "metadata-set-api", "./", "--storage", "ipfs"], self.parser, self.conf)
+        print(res)
+        with open("service_metadata.json", "r", encoding="utf-8") as f:
+            metadata = json.load(f)
+        assert metadata["service_api_source"].startswith("ipfs://")
+
+    @patch("builtins.input", side_effect=["auto_test", "1", "ipfs", "./", "y", "default_group", "1", ADDR, ADDR, "y", "150", ADDR, "n", "google.com", "long description", "short", "Stasy", "stasy@hotmail.com", "n", "y", "service_metadata"])
+    def test_channel_66_metadata_init_utility(self, mock_input):
+        os.remove(f"./service_metadata.json")
+        execute(["service", "metadata-init-utility"], self.parser, self.conf)
+        assert os.path.exists(f"./service_metadata.json")
 
     def test_7_delete_service(self):
         result = execute(["service", "delete", self.org_id, self.service_id, "-y"], self.parser, self.conf)
