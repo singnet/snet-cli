@@ -97,7 +97,7 @@ class TestAAMainPreparations(BaseTest):
         assert ADDR in result
 
 
-class TestABCommands(BaseTest):
+class TestCommands(BaseTest):
     def setUp(self):
         super().setUp()
 
@@ -119,7 +119,7 @@ class TestABCommands(BaseTest):
         assert f"version: {self.version}" in result
 
 
-class TestACDepositWithdrawTransfer(BaseTest):
+class TestDepositWithdrawTransfer(BaseTest):
     def setUp(self):
         super().setUp()
         self.balance_1: int
@@ -147,7 +147,7 @@ class TestACDepositWithdrawTransfer(BaseTest):
         assert "TransferFunds" in result
 
 
-class TestADGenerateLibrary(BaseTest):
+class TestGenerateLibrary(BaseTest):
     def setUp(self):
         super().setUp()
         self.path = './temp_files'
@@ -184,7 +184,7 @@ class Unset(BaseTest):
         assert "unset" in result
 
 
-class TestAEEncryptionKey(BaseTest):
+class TestEncryptionKey(BaseTest):
     def setUp(self):
         super().setUp()
         self.key = PRIVATE_KEY
@@ -221,7 +221,7 @@ class TestAEEncryptionKey(BaseTest):
             assert self.name not in result
 
 
-class TestAFOrgMetadata(BaseTest):
+class TestOrgMetadata(BaseTest):
     def setUp(self):
         super().setUp()
         self.success_msg = "Organization metadata is valid and ready to publish."
@@ -247,7 +247,7 @@ class TestAFOrgMetadata(BaseTest):
         os.remove(f"./organization_metadata.json")
 
 
-class TestAGChannels(BaseTest):
+class TestChannels(BaseTest):
     def setUp(self):
         super().setUp()
         self.org_id = "SNet"
@@ -320,7 +320,7 @@ class TestAGChannels(BaseTest):
         assert self.max_id in result
 
 
-class TestAHClient(BaseTest):
+class TestClient(BaseTest):
     def setUp(self):
         super().setUp()
         self.org_id = "egor-sing-test"
@@ -380,7 +380,7 @@ class TestAHClient(BaseTest):
         assert os.path.exists("./hate.proto")
 
 
-class TestAIOrganization(BaseTest):
+class TestOrganization(BaseTest):
     def setUp(self):
         super().setUp()
         self.org_id = "singularitynet"
@@ -396,7 +396,7 @@ class TestAIOrganization(BaseTest):
 
 
 """ temporarily closed so as not to clog up the logs
-class TestAJOnboardingOrgAndServ(BaseTest):
+class TestOnboardingOrgAndServ(BaseTest):
     def setUp(self):
         super().setUp()
         self.identity_name = "some_name"
@@ -590,7 +590,6 @@ service Calculator {
 """
 
 class TestContract(BaseTest):
-
     def setUp(self):
         super().setUp()
         self.last_channel_id = int(execute(["contract", "MultiPartyEscrow", "nextChannelId"], self.parser, self.conf)) - 1
@@ -618,7 +617,7 @@ class TestContract(BaseTest):
         result=execute(["contract", "SingularityNetToken", "paused"], self.parser, self.conf)
         assert "False" in result
 
-    def test_MultiPartyEscrow_abalances(self):
+    def test_MultiPartyEscrow_1_balances(self):
         result = int(execute(["contract", "MultiPartyEscrow", "balances", ADDR], self.parser, self.conf))
         assert result > 0
 
