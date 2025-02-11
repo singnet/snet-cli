@@ -20,4 +20,4 @@ trezor==0.13.8
 ledgerblue==0.1.48
 snet-contracts==0.2.1
 lighthouseweb3==0.1.4
-cryptography==43.0.3
+cryptography==44.0.1
