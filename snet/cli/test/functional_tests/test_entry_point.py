@@ -65,4 +65,7 @@ class TestEntryPoint(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    unittest.main()
+    cli_tests = unittest.TestLoader().loadTestsFromTestCase(TestEntryPoint)
+    functional_tests = unittest.TestLoader().discover("./snet/cli/test/functional_tests", pattern="test_*.py")
+    all_tests = unittest.TestSuite([cli_tests, functional_tests])
+    unittest.TextTestRunner().run(all_tests)
