@@ -122,9 +122,7 @@ Backward compatibility for other Python versions is not guaranteed.
 
 ---
 
-* 
-  
-* Install the package in development mode
+## Install the package in development mode
 
 ### Clone the git repository  
 
