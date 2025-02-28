@@ -325,8 +325,8 @@ def get_kws_for_identity_type(identity_type):
         return [("mnemonic", SECRET)]
     elif identity_type == "key":
         return [("private_key", SECRET)]
-    elif identity_type == "trezor":
-        return []
+    # elif identity_type == "trezor":
+    #     return []
     elif identity_type == "ledger":
         return []
     elif identity_type == "keystore":
@@ -337,7 +337,8 @@ def get_kws_for_identity_type(identity_type):
 
 
 def get_identity_types():
-    return ["rpc", "mnemonic", "key", "trezor", "ledger", "keystore"]
+    # temporary fully removed: trezor
+    return ["rpc", "mnemonic", "key", "ledger", "keystore"]
 
 
 def sign_transaction_with_private_key(w3, private_key, transaction):

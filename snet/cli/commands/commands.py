@@ -166,8 +166,8 @@ class BlockchainCommand(Command):
             return RpcIdentityProvider(self.w3, self.get_wallet_index())
         if identity_type == "mnemonic":
             return MnemonicIdentityProvider(self.w3, self.config.get_session_field("mnemonic"), self.get_wallet_index())
-        if identity_type == "trezor":
-            return TrezorIdentityProvider(self.w3, self.get_wallet_index())
+        # if identity_type == "trezor":
+        #     return TrezorIdentityProvider(self.w3, self.get_wallet_index())
         if identity_type == "ledger":
             return LedgerIdentityProvider(self.w3, self.get_wallet_index())
         if identity_type == "key":
@@ -358,8 +358,8 @@ class SessionShowCommand(BlockchainCommand):
                 w3=self.w3, contract_name="Registry")
             rez[key]['default_multipartyescrow_at'] = read_default_contract_address(
                 w3=self.w3, contract_name="MultiPartyEscrow")
-            rez[key]['default_singularitynettoken_at'] = read_default_contract_address(
-                w3=self.w3, contract_name="SingularityNetToken")
+            rez[key]['default_fetchtoken_at'] = read_default_contract_address(
+                w3=self.w3, contract_name="FetchToken")
         except Exception as e:
             pass
         return

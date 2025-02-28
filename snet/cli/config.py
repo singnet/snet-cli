@@ -289,8 +289,8 @@ def first_identity_message_and_exit(is_sdk=False):
               "    - 'key' (uses a required hex-encoded private key for signing)\n"
               "    - 'ledger' (yields to a required ledger nano s device for signing using a given wallet\n"
               "          index)\n"
-              "    - 'trezor' (yields to a required trezor device for signing using a given wallet index)\n"
               "\n")
+            # "    - 'trezor' (yields to a required trezor device for signing using a given wallet index)\n"
     exit(1)
 
 

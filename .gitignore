@@ -5,8 +5,8 @@ venv/
 .idea/
 __pycache__
 blockchain/node_modules
-snet.egg-info/
-snet.cli.egg-info/
+snet_egg-info/
+snet_cli.egg-info/
 snet/cli/resources/node_modules
 snet/cli/resources/proto/*.py
 build/

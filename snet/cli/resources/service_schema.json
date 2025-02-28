@@ -56,7 +56,7 @@
                                     "enum": [ "fixed_price", "method_price" ]
                                 },
                                 "price_in_cogs": {
-                                    "description": "Price in AGIX tokens for all methods",
+                                    "description": "Price in ASI(FET) tokens for all methods",
                                     "type": "number"
                                 },
                                 "default": {
