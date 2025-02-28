@@ -67,7 +67,7 @@ setup(
     },
     entry_points={
         'console_scripts': [
-            'snet = snet.cli:main',
+            'snet = snet.cli:main'
         ],
     }
 )

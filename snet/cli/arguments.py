@@ -14,7 +14,7 @@ from snet.cli.commands.mpe_treasurer import MPETreasurerCommand
 from snet.cli.commands.sdk_command import SDKCommand
 from snet.cli.config import Config, get_session_keys, get_session_network_keys_removable
 from snet.cli.identity import get_identity_types
-from snet.cli.utils.agix2cogs import stragix2cogs
+from snet.cli.utils.token2cogs import strtoken2cogs
 from snet.cli.utils.utils import type_converter
 
 
@@ -62,7 +62,7 @@ def add_root_options(parser, config):
         title="snet commands", metavar="COMMAND")
     subparsers.required = True
 
-    p = subparsers.add_parser("account", help="AGIX account")
+    p = subparsers.add_parser("account", help="ASI(FET) account")
     add_mpe_account_options(p)
 
     p = subparsers.add_parser("channel", help="Interact with SingularityNET payment channels")
@@ -236,7 +236,7 @@ def add_contract_options(parser):
 
     contracts = get_all_abi_contract_files()
     for path in contracts:
-        if "MultiPartyEscrow" in str(path) or "Registry" in str(path) or "SingularityNetToken" in str(path):
+        if "MultiPartyEscrow" in str(path) or "Registry" in str(path) or "FetchToken" in str(path):
             contract_name = re.search(
                 r"([^.]*)\.json", os.path.basename(path)).group(1)
             contract_p = subparsers.add_parser(
@@ -584,32 +584,32 @@ def add_mpe_account_options(parser):
     p.set_defaults(fn="print_account")
     add_eth_call_arguments(p)
 
-    p = subparsers.add_parser("balance", help="Print balance of AGIX tokens and balance of MPE wallet")
-    p.set_defaults(fn="print_agix_and_mpe_balances")
+    p = subparsers.add_parser("balance", help="Print balance of ASI(FET) tokens and balance of MPE wallet")
+    p.set_defaults(fn="print_token_and_mpe_balances")
     p.add_argument("--account", default=None, help="Account to print balance for (default is the current identity)")
     add_p_snt_address_opt(p)
     add_p_mpe_address_opt(p)
     add_eth_call_arguments(p)
 
-    p = subparsers.add_parser("deposit", help="Deposit AGIX tokens to MPE wallet")
+    p = subparsers.add_parser("deposit", help="Deposit ASI(FET) tokens to MPE wallet")
     p.set_defaults(fn="deposit_to_mpe")
-    p.add_argument("amount", type=stragix2cogs, help="Amount of AGIX tokens to deposit in MPE wallet", metavar="AMOUNT")
+    p.add_argument("amount", type=strtoken2cogs, help="Amount of ASI(FET) tokens to deposit in MPE wallet", metavar="AMOUNT")
     add_p_snt_address_opt(p)
     add_p_mpe_address_opt(p)
     add_transaction_arguments(p)
 
-    p = subparsers.add_parser("withdraw", help="Withdraw AGIX tokens from MPE wallet")
+    p = subparsers.add_parser("withdraw", help="Withdraw ASI(FET) tokens from MPE wallet")
     p.set_defaults(fn="withdraw_from_mpe")
-    p.add_argument("amount", type=stragix2cogs, help="Amount of AGIX tokens to withdraw from MPE wallet", metavar="AMOUNT")
+    p.add_argument("amount", type=strtoken2cogs, help="Amount of ASI(FET) tokens to withdraw from MPE wallet", metavar="AMOUNT")
     add_p_mpe_address_opt(p)
     add_transaction_arguments(p)
 
-    p = subparsers.add_parser("transfer", help="Transfer AGIX tokens inside MPE wallet")
+    p = subparsers.add_parser("transfer", help="Transfer ASI(FET) tokens inside MPE wallet")
     p.set_defaults(fn="transfer_in_mpe")
     p.add_argument("receiver", help="Address of the receiver", metavar="RECEIVER")
     p.add_argument("amount",
-                   type=stragix2cogs,
-                   help="Amount of AGIX tokens to be transferred to another account inside MPE wallet",
+                   type=strtoken2cogs,
+                   help="Amount of ASI(FET) tokens to be transferred to another account inside MPE wallet",
                    metavar="AMOUNT")
     add_p_mpe_address_opt(p)
     add_transaction_arguments(p)
@@ -664,8 +664,8 @@ def add_p_open_channel_basic(p):
     add_group_name(p)
 
     p.add_argument("amount",
-                   type=stragix2cogs,
-                   help="Amount of AGIX tokens to put in the new channel",
+                   type=strtoken2cogs,
+                   help="Amount of ASI(FET) tokens to put in the new channel",
                    metavar="AMOUNT")
     # p.add_argument("group_name",
     #                default=None,
@@ -709,8 +709,8 @@ def add_mpe_channel_options(parser):
             title="Expiration and amount")
         add_p_expiration(expiration_amount_g, is_optional=True)
         expiration_amount_g.add_argument("--amount",
-                                         type=stragix2cogs,
-                                         help="Amount of AGIX tokens to add to the channel")
+                                         type=strtoken2cogs,
+                                         help="Amount of ASI(FET) tokens to add to the channel")
         add_p_mpe_address_opt(p)
         add_transaction_arguments(p)
 
@@ -920,8 +920,8 @@ def add_mpe_service_options(parser):
                    nargs='*',
                    help="Endpoints for the first group")
     p.add_argument("--fixed-price",
-                   type=stragix2cogs,
-                   help="Set fixed price in AGIX token for all methods")
+                   type=strtoken2cogs,
+                   help="Set fixed price in ASI(FET) token for all methods")
 
     p.add_argument("--encoding",
                    default="proto",
@@ -950,8 +950,8 @@ def add_mpe_service_options(parser):
     p.add_argument("group_name",
                    help="group name for fixed price method")
     p.add_argument("price",
-                   type=stragix2cogs,
-                   help="Set fixed price in AGIX token for all methods",
+                   type=strtoken2cogs,
+                   help="Set fixed price in ASI(FET) token for all methods",
                    metavar="PRICE")
     add_p_metadata_file_opt(p)
 
@@ -970,8 +970,8 @@ def add_mpe_service_options(parser):
                    )
 
     p.add_argument("price",
-                   type=stragix2cogs,
-                   help="Set fixed price in AGIX token for all methods",
+                   type=strtoken2cogs,
+                   help="Set fixed price in ASI(FET) token for all methods",
                    metavar="PRICE")
     add_p_metadata_file_opt(p)
 

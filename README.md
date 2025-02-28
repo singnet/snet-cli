@@ -122,18 +122,27 @@ Backward compatibility for other Python versions is not guaranteed.
 
 ---
 
-* Clone the git repository  
-```bash  
-$ git clone https://github.com/singnet/snet-cli.git
-$ cd snet-cli/packages/snet_cli
-```
-
 * 
   
-* Install the package in development/editable mode  
+* Install the package in development mode
+
+### Clone the git repository  
 
 ```bash  
-$ pip3 install -e .
+git clone https://github.com/singnet/snet-cli.git
+cd snet-cli
+```
+
+```bash  
+pip install -r requirements.txt
+```
+
+```bash  
+pip3 install .
+```
+
+```bash  
+snet -h
 ```
 
 ### Building the Documentation in Markdown files

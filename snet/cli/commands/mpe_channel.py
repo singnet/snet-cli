@@ -14,7 +14,7 @@ from snet.contracts import get_contract_def, get_contract_deployment_block
 from snet.cli.commands.commands import OrganizationCommand
 from snet.cli.metadata.service import mpe_service_metadata_from_json, load_mpe_service_metadata
 from snet.cli.metadata.organization import OrganizationMetadata
-from snet.cli.utils.agix2cogs import cogs2stragix
+from snet.cli.utils.token2cogs import cogs2strtoken
 from snet.cli.utils.ipfs_utils import get_from_ipfs_and_checkhash
 from snet.cli.utils.utils import abi_decode_struct_to_dict, abi_get_element_by_name, \
     compile_proto, type_converter, bytesuri_to_hash, get_file_from_filecoin, download_and_safe_extract_proto
@@ -286,7 +286,7 @@ class MPEChannelCommand(OrganizationCommand):
             "MultiPartyEscrow",    "balances",  [self.ident.address])
         if mpe_cogs < self.args.amount:
             raise Exception(
-                "insufficient funds. You MPE balance is %s AGIX " % cogs2stragix(mpe_cogs))
+                "insufficient funds. You MPE balance is %s ASI(FET) " % cogs2strtoken(mpe_cogs))
 
         group_id = base64.b64decode(metadata.get_group_id_by_group_name(self.args.group_name))
         if not group_id:
@@ -496,7 +496,7 @@ class MPEChannelCommand(OrganizationCommand):
         for channel_id in channels_ids:
             channel = self._get_channel_state_from_blockchain(channel_id)
             channel["channel_id"] = channel_id
-            channel["value"] = cogs2stragix(channel["value"])
+            channel["value"] = cogs2strtoken(channel["value"])
             channel["group_id"] = base64.b64encode(channel["groupId"]).decode("ascii")
             self._printout(self._convert_channel_dict_to_str(channel, filters))
 

@@ -6,7 +6,7 @@ from pathlib import Path
 from eth_account.messages import encode_defunct
 
 from snet.cli.commands.mpe_channel import MPEChannelCommand
-from snet.cli.utils.agix2cogs import cogs2stragix
+from snet.cli.utils.token2cogs import cogs2strtoken
 from snet.cli.utils.proto_utils import import_protobuf_from_dir, switch_to_json_payload_encoding
 from snet.cli.utils.utils import open_grpc_channel, rgetattr, RESOURCES_PATH
 
@@ -303,7 +303,7 @@ class MPEClientCommand(MPEChannelCommand):
         server_state = self._get_channel_state_from_server(grpc_channel, channel_id)
 
         proceed = self.args.yes or input(
-            "Price for this call will be %s AGIX (use -y to remove this warning). Proceed? (y/n): " % (cogs2stragix(price))) == "y"
+            "Price for this call will be %s ASI(FET) (use -y to remove this warning). Proceed? (y/n): " % (cogs2strtoken(price))) == "y"
         if not proceed:
             self._error("Cancelled")
 
