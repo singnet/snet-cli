@@ -99,7 +99,7 @@ class MPETreasurerCommand(MPEClientCommand):
             self._printout("%i   %i   %s" % (
                 p["channel_id"], p["nonce"], cogs2strtoken(p["amount"])))
             total += p["amount"]
-        self._printout("# total_unclaimed_in_AGIX = %s" % cogs2strtoken(total))
+        self._printout("# total_unclaimed_in_ASI(FET) = %s" % cogs2strtoken(total))
 
     def _blockchain_claim(self, payments):
         for payment in payments:
