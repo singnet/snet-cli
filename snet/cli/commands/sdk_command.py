@@ -1,7 +1,7 @@
 import os
 from pathlib import Path, PurePath
 
-from snet.cli.utils.utils import compile_proto, download_and_safe_extract_proto
+from snet.cli.utils.utils import compile_proto, download_and_safe_extract_proto, check_training_in_proto
 from snet.cli.commands.mpe_service import MPEServiceCommand
 
 
@@ -28,8 +28,10 @@ class SDKCommand(MPEServiceCommand):
         # Receive proto files
         download_and_safe_extract_proto(service_api_source, library_dir_path, self._get_ipfs_client())
 
+        training_added = check_training_in_proto(library_dir_path)
+
         # Compile proto files
-        compile_proto(Path(library_dir_path), library_dir_path)
+        compile_proto(Path(library_dir_path), library_dir_path, add_training = training_added)
 
         self._printout(
             'client libraries for service with id "{}" in org with id "{}" generated at {}'.format(library_service_id,

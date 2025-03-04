@@ -1,4 +1,4 @@
-include snet/cli/resources/*
+recursive-include snet/cli/resources *
 
 recursive-exclude * .git
 recursive-exclude * node_modules

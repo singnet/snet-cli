@@ -17,7 +17,8 @@ from snet.cli.metadata.organization import OrganizationMetadata
 from snet.cli.utils.token2cogs import cogs2strtoken
 from snet.cli.utils.ipfs_utils import get_from_ipfs_and_checkhash
 from snet.cli.utils.utils import abi_decode_struct_to_dict, abi_get_element_by_name, \
-    compile_proto, type_converter, bytesuri_to_hash, get_file_from_filecoin, download_and_safe_extract_proto
+    compile_proto, type_converter, bytesuri_to_hash, get_file_from_filecoin, download_and_safe_extract_proto, \
+    check_training_in_proto
 
 
 # we inherit MPEServiceCommand because we need _get_service_metadata_from_registry
@@ -602,9 +603,10 @@ class MPEChannelCommand(OrganizationCommand):
             os.makedirs(spec_dir, mode=0o700)
             service_api_source = metadata.get("service_api_source") or metadata.get("model_ipfs_hash")
             download_and_safe_extract_proto(service_api_source, spec_dir, self._get_ipfs_client())
+            training_added = check_training_in_proto(spec_dir)
 
             # compile .proto files
-            if not compile_proto(Path(spec_dir), service_dir):
+            if not compile_proto(Path(spec_dir), service_dir, add_training = training_added):
                 raise Exception("Fail to compile %s/*.proto" % spec_dir)
 
             # save service_metadata.json in channel_dir

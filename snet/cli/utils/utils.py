@@ -146,7 +146,7 @@ def get_cli_version():
     return distribution("snet.cli").version
 
 
-def compile_proto(entry_path, codegen_dir, proto_file=None):
+def compile_proto(entry_path, codegen_dir, proto_file=None, add_training=False):
     try:
         if not os.path.exists(codegen_dir):
             os.makedirs(codegen_dir)
@@ -157,6 +157,10 @@ def compile_proto(entry_path, codegen_dir, proto_file=None):
             "-I{}".format(proto_include)
         ]
 
+        if add_training:
+            training_include = RESOURCES_PATH.joinpath("proto", "training")
+            compiler_args.append("-I{}".format(training_include))
+
         compiler_args.insert(0, "protoc")
         compiler_args.append("--python_out={}".format(codegen_dir))
         compiler_args.append("--grpc_python_out={}".format(codegen_dir))
@@ -166,6 +170,9 @@ def compile_proto(entry_path, codegen_dir, proto_file=None):
             compiler_args.append(str(proto_file))
         else:
             compiler_args.extend([str(p) for p in entry_path.glob("**/*.proto")])
+
+        if add_training:
+            compiler_args.append(str(training_include.joinpath("training.proto")))
 
         if not compiler(compiler_args):
             return True
@@ -347,3 +354,15 @@ def download_and_safe_extract_proto(service_api_source, protodir, ipfs_client):
                 print("%s removed." % fullname)
         # now it is safe to call extractall
         f.extractall(protodir)
+
+
+def check_training_in_proto(protodir) -> bool:
+    files = os.listdir(protodir)
+    for file in files:
+        if ".proto" not in file:
+            continue
+        with open(protodir.joinpath(file), "r") as f:
+            proto_text = f.read()
+        if 'import "training.proto";' in proto_text:
+            return True
+    return False
