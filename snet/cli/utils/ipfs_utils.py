@@ -54,7 +54,7 @@ def publish_proto_in_ipfs(ipfs_client, protodir):
     files.sort()
 
     tarbytes = io.BytesIO()
-    tar = tarfile.open(fileobj=tarbytes, mode="w")
+    tar = tarfile.open(fileobj=tarbytes, mode="w:gz")
     for f in files:
         tar.add(f, os.path.basename(f))
     tar.close()
@@ -79,7 +79,7 @@ def publish_proto_in_filecoin(filecoin_client, protodir):
 
     tarbytes = io.BytesIO()
 
-    with tarfile.open(fileobj=tarbytes, mode="w") as tar:
+    with tarfile.open(fileobj=tarbytes, mode="w:gz") as tar:
         for f in files:
             tar.add(f, os.path.basename(f))
     tarbytes.seek(0)
