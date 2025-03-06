@@ -38,7 +38,7 @@ class MPEChannelCommand(OrganizationCommand):
 
     def _update_channels_cache(self):
         channels = []
-        last_read_block = get_contract_deployment_block(self.ident.w3, "MultiPartyEscrow")
+        last_read_block = get_contract_deployment_block(self.ident.w3, "MultiPartyEscrow") - 1
         channels_file = self._get_channels_cache_file()
 
         if not channels_file.exists():
@@ -59,7 +59,7 @@ class MPEChannelCommand(OrganizationCommand):
         current_block_number = self.ident.w3.eth.block_number
 
         if last_read_block < current_block_number:
-            new_channels = self._get_all_opened_channels_from_blockchain(last_read_block, current_block_number)
+            new_channels = self._get_all_opened_channels_from_blockchain(last_read_block + 1, current_block_number)
             channels = channels + new_channels
             last_read_block = current_block_number
 
