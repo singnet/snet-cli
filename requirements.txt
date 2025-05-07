@@ -18,6 +18,6 @@ jsonschema==4.0.0
 eth-account==0.9.0
 trezor==0.13.8
 ledgerblue==0.1.48
-snet-contracts==0.2.1
+snet-contracts==1.0.0
 lighthouseweb3==0.1.4
-cryptography==43.0.3
+cryptography==44.0.1

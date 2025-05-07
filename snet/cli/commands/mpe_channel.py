@@ -14,10 +14,11 @@ from snet.contracts import get_contract_def, get_contract_deployment_block
 from snet.cli.commands.commands import OrganizationCommand
 from snet.cli.metadata.service import mpe_service_metadata_from_json, load_mpe_service_metadata
 from snet.cli.metadata.organization import OrganizationMetadata
-from snet.cli.utils.agix2cogs import cogs2stragix
+from snet.cli.utils.token2cogs import cogs2strtoken
 from snet.cli.utils.ipfs_utils import get_from_ipfs_and_checkhash
 from snet.cli.utils.utils import abi_decode_struct_to_dict, abi_get_element_by_name, \
-    compile_proto, type_converter, bytesuri_to_hash, get_file_from_filecoin, download_and_safe_extract_proto
+    compile_proto, type_converter, bytesuri_to_hash, get_file_from_filecoin, download_and_safe_extract_proto, \
+    check_training_in_proto
 
 
 # we inherit MPEServiceCommand because we need _get_service_metadata_from_registry
@@ -37,7 +38,7 @@ class MPEChannelCommand(OrganizationCommand):
 
     def _update_channels_cache(self):
         channels = []
-        last_read_block = get_contract_deployment_block(self.ident.w3, "MultiPartyEscrow")
+        last_read_block = get_contract_deployment_block(self.ident.w3, "MultiPartyEscrow") - 1
         channels_file = self._get_channels_cache_file()
 
         if not channels_file.exists():
@@ -58,7 +59,7 @@ class MPEChannelCommand(OrganizationCommand):
         current_block_number = self.ident.w3.eth.block_number
 
         if last_read_block < current_block_number:
-            new_channels = self._get_all_opened_channels_from_blockchain(last_read_block, current_block_number)
+            new_channels = self._get_all_opened_channels_from_blockchain(last_read_block + 1, current_block_number)
             channels = channels + new_channels
             last_read_block = current_block_number
 
@@ -286,7 +287,7 @@ class MPEChannelCommand(OrganizationCommand):
             "MultiPartyEscrow",    "balances",  [self.ident.address])
         if mpe_cogs < self.args.amount:
             raise Exception(
-                "insufficient funds. You MPE balance is %s AGIX " % cogs2stragix(mpe_cogs))
+                "insufficient funds. You MPE balance is %s ASI(FET) " % cogs2strtoken(mpe_cogs))
 
         group_id = base64.b64decode(metadata.get_group_id_by_group_name(self.args.group_name))
         if not group_id:
@@ -496,7 +497,7 @@ class MPEChannelCommand(OrganizationCommand):
         for channel_id in channels_ids:
             channel = self._get_channel_state_from_blockchain(channel_id)
             channel["channel_id"] = channel_id
-            channel["value"] = cogs2stragix(channel["value"])
+            channel["value"] = cogs2strtoken(channel["value"])
             channel["group_id"] = base64.b64encode(channel["groupId"]).decode("ascii")
             self._printout(self._convert_channel_dict_to_str(channel, filters))
 
@@ -602,9 +603,10 @@ class MPEChannelCommand(OrganizationCommand):
             os.makedirs(spec_dir, mode=0o700)
             service_api_source = metadata.get("service_api_source") or metadata.get("model_ipfs_hash")
             download_and_safe_extract_proto(service_api_source, spec_dir, self._get_ipfs_client())
+            training_added = check_training_in_proto(spec_dir)
 
             # compile .proto files
-            if not compile_proto(Path(spec_dir), service_dir):
+            if not compile_proto(Path(spec_dir), service_dir, add_training = training_added):
                 raise Exception("Fail to compile %s/*.proto" % spec_dir)
 
             # save service_metadata.json in channel_dir
