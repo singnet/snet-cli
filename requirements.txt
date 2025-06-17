@@ -1,4 +1,4 @@
-protobuf==4.21.6
+protobuf==4.25.8
 grpcio-tools==1.59.0
 wheel==0.41.2
 jsonrpcclient==4.0.3
