@@ -106,7 +106,7 @@ class Config(ConfigParser):
             self.set_identity_field(session_identity, key, value)
             print("set {}={} for identity={}".format(key, value, session_identity), file=out_f)
         else:
-            all_keys = get_session_network_keys() + get_session_identity_keys() + ["default_ipfs_endpoint"]
+            all_keys = get_session_keys()
             raise Exception("key {} not in {}".format(key, all_keys))
 
     def unset_session_field(self, key, out_f):
