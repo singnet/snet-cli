@@ -361,7 +361,7 @@ def check_training_in_proto(protodir) -> bool:
     for file in files:
         if ".proto" not in file:
             continue
-        with open(protodir.joinpath(file), "r") as f:
+        with open(os.path.join(protodir, file), "r") as f:
             proto_text = f.read()
         if 'import "training.proto";' in proto_text:
             return True
