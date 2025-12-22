@@ -3,7 +3,6 @@ from collections import defaultdict
 from pathlib import Path
 from re import search
 from sys import exit
-import tempfile
 
 from grpc_health.v1 import health_pb2 as heartb_pb2
 from grpc_health.v1 import health_pb2_grpc as heartb_pb2_grpc
@@ -384,10 +383,6 @@ class MPEServiceCommand(BlockchainCommand):
         Validates whether service metadata (`service_metadata.json` if not provided as argument) is consistent
         with the schema provided in `service_schema` present in `snet_cli/snet/snet_cli/resources.`
 
-        Args:
-            metadata_file: Option provided through the command line. (default: service_metadata.json)
-            service_schema: Schema of a consistent service metadata file.
-
         Raises:
             ValidationError: Inconsistent service metadata structure or missing values.
                 docs -> Handling ValidationErrors (https://python-jsonschema.readthedocs.io/en/stable/errors/)
@@ -483,7 +478,7 @@ class MPEServiceCommand(BlockchainCommand):
         params = [type_converter("bytes32")(org_id)]
         result = self.call_contract_command(
             "Registry", "getOrganizationById", params)
-        if result[0] == False:
+        if not result[0]:
             raise Exception("Cannot find  Organization with id=%s" % (
                 self.args.org_id))
         return {"orgMetadataURI": result[2]}
@@ -570,7 +565,7 @@ class MPEServiceCommand(BlockchainCommand):
             "bytes32")(self.args.service_id)]
         rez = self.call_contract_command(
             "Registry", "getServiceRegistrationById", params)
-        if rez[0] == False:
+        if not rez[0]:
             raise Exception("Cannot find Service with id=%s in Organization with id=%s" % (
                 self.args.service_id, self.args.org_id))
         return {"metadataURI": rez[2]}
@@ -591,21 +586,21 @@ class MPEServiceCommand(BlockchainCommand):
         metadata = self._get_service_metadata_from_registry()
         self._printout(metadata.get_json_pretty())
 
-    def _service_status(self, url, secure=True):
+    def _service_status(self, url):
         try:
             channel = open_grpc_channel(endpoint=url)
             stub = heartb_pb2_grpc.HealthStub(channel)
             response = stub.Check(
                 heartb_pb2.HealthCheckRequest(service=""), timeout=10)
-            if response != None and response.status == 1:
+            if response is not None and response.status == 1:
                 return True
             return False
-        except Exception as e:
+        except Exception:
             return False
 
     def print_service_status(self):
         metadata = self._get_service_metadata_from_registry()
-        if self.args.group_name != None:
+        if self.args.group_name is not None:
             groups = {self.args.group_name: metadata.get_all_endpoints_for_group(
                 self.args.group_name)}
         else:

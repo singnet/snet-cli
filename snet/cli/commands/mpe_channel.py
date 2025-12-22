@@ -2,13 +2,8 @@ import base64
 import os
 import pickle
 import shutil
-import tempfile
-from collections import defaultdict
-from importlib.metadata import metadata
 from pathlib import Path
 
-from eth_abi.codec import ABICodec
-from web3._utils.events import get_event_data
 from snet.contracts import get_contract_def, get_contract_deployment_block
 
 from snet.cli.commands.commands import OrganizationCommand
@@ -85,30 +80,26 @@ class MPEChannelCommand(OrganizationCommand):
             "group_id": event_data["groupId"],
         }
 
-    def _get_all_opened_channels_from_blockchain(self, starting_block_number, to_block_number):
-        mpe_address = self.get_mpe_address()
-        event_topics = [self.ident.w3.keccak(
-            text="ChannelOpen(uint256,uint256,address,address,address,bytes32,uint256,uint256)").hex()]
-        blocks_per_batch = 5000
-        codec: ABICodec = self.ident.w3.codec
+    def _get_all_opened_channels_from_blockchain(self, from_block, to_block):
+        from_block = int(from_block)
+        to_block = int(to_block)
+        mpe_address = self.ident.w3.to_checksum_address(self.get_mpe_address())
+
+        raw_topic = self.ident.w3.keccak(
+            text = "ChannelOpen(uint256,uint256,address,address,address,bytes32,uint256,uint256)")
+        event_topics = [self.ident.w3.to_hex(raw_topic)]
 
         logs = []
-        from_block = starting_block_number
-        while from_block <= to_block_number:
-            to_block = min(from_block + blocks_per_batch, to_block_number)
-            logs += self.ident.w3.eth.get_logs({"fromBlock": from_block,
-                                                  "toBlock": to_block,
-                                                  "address": mpe_address,
-                                                  "topics": event_topics})
-            from_block = to_block + 1
 
-        abi = get_contract_def("MultiPartyEscrow")
-        event_abi = abi_get_element_by_name(abi, "ChannelOpen")
+        if from_block <= to_block:
+            logs = self.ident.w3.eth.get_logs({
+                "fromBlock": from_block,
+                "toBlock": to_block,
+                "address": mpe_address,
+                "topics": event_topics
+            })
 
-        event_data_list = [get_event_data(codec, event_abi, l)["args"] for l in logs]
-        channels_opened = list(map(self._event_data_args_to_dict, event_data_list))
-
-        return channels_opened
+        return logs
 
     def _get_filtered_channels(self, return_only_id=False, **kwargs):
         channels = self._get_channels_from_cache()
@@ -186,15 +177,15 @@ class MPEChannelCommand(OrganizationCommand):
     def _init_or_update_org_if_needed(self, metadata, org_registration):
         # if service was already initialized and metadataURI hasn't changed we do nothing
         if self.is_org_initialized():
-            if self.is_metadataURI_has_changed(org_registration):
+            if self.is_metadata_uri_has_changed(org_registration):
                 self._printerr("# Organization with org_id=%s " %
-                               (self.args.org_id))
+                               self.args.org_id)
                 self._printerr(
                     "# ATTENTION!!! price or other paramaters might have been changed!\n")
             else:
                 return  # we do nothing
         self._printerr("# Initilize service with org_id=%s" %
-                       (self.args.org_id))
+                       self.args.org_id)
         # self._check_mpe_address_metadata(metadata)
         org_dir = self.get_org_spec_dir(self.args.org_id)
 
@@ -226,7 +217,7 @@ class MPEChannelCommand(OrganizationCommand):
             org_registration = self._get_organization_registration(
                 self.args.org_id)
             # if metadataURI hasn't been changed we do nothing
-            if not self.is_metadataURI_has_changed(org_registration):
+            if not self.is_metadata_uri_has_changed(org_registration):
                 return
         else:
             org_registration = self._get_organization_registration(
@@ -236,11 +227,11 @@ class MPEChannelCommand(OrganizationCommand):
             self.args.org_id)
         self._init_or_update_org_if_needed(org_metadata, org_registration)
 
-    def is_metadataURI_has_changed(self, new_reg):
+    def is_metadata_uri_has_changed(self, new_reg):
         old_reg = self._read_org_info(self.args.org_id)
         return new_reg.get("orgMetadataURI") != old_reg.get("orgMetadataURI")
 
-    def is_service_metadataURI_has_changed(self, new_reg):
+    def is_service_metadata_uri_has_changed(self, new_reg):
         old_reg = self._read_service_info(
             self.args.org_id, self.args.service_id)
         return new_reg.get("metadataURI") != old_reg.get("metadataURI")
@@ -448,7 +439,7 @@ class MPEChannelCommand(OrganizationCommand):
         sdir = self.get_org_spec_dir(org_id)
         if not os.path.exists(sdir):
             raise Exception(
-                "Service with org_id=%s is not initialized" % (org_id))
+                "Service with org_id=%s is not initialized" % org_id)
         return OrganizationMetadata.from_file(sdir.joinpath("organization_metadata.json"))
 
     def _convert_channel_dict_to_str(self, channel, filters=None):
@@ -560,7 +551,7 @@ class MPEChannelCommand(OrganizationCommand):
             "bytes32")(self.args.service_id)]
         response = self.call_contract_command(
             "Registry", "getServiceRegistrationById", params)
-        if response[0] == False:
+        if not response[0]:
             raise Exception("Cannot find Service with id=%s in Organization with id=%s" % (
                 self.args.service_id, self.args.org_id))
         return {"metadataURI": response[2]}
@@ -579,7 +570,7 @@ class MPEChannelCommand(OrganizationCommand):
     def _init_or_update_service_if_needed(self, metadata, service_registration):
         # if service was already initialized and metadataURI hasn't changed we do nothing
         if self.is_service_initialized():
-            if self.is_service_metadataURI_has_changed(service_registration):
+            if self.is_service_metadata_uri_has_changed(service_registration):
                 self._printerr("# Service with org_id=%s and service_id=%s was updated" % (
                     self.args.org_id, self.args.service_id))
                 self._printerr(
@@ -636,7 +627,7 @@ class MPEChannelCommand(OrganizationCommand):
 
             service_registration = self._get_service_registration()
             # if metadataURI hasn't been changed we do nothing
-            if not self.is_service_metadataURI_has_changed(service_registration):
+            if not self.is_service_metadata_uri_has_changed(service_registration):
                 return
         else:
             service_registration = self._get_service_registration()

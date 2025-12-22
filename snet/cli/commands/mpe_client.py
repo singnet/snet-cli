@@ -68,7 +68,7 @@ class MPEClientCommand(MPEChannelCommand):
 
         try:
             params = self._transform_call_params(params)
-        except Exception as e:
+        except Exception:
             self._printerr('Fail to "transform" call params')
             raise
 

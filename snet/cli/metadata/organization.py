@@ -88,7 +88,7 @@ class Group(object):
         self.payment.payment_expiration_threshold = payment_expiration_threshold
 
     def update_payment_channel_storage_type(self, payment_channel_storage_type):
-        self.update_payment_channel_storage_type = payment_channel_storage_type
+        self.payment.payment_channel_storage_type = payment_channel_storage_type
 
     def update_payment_address(self, payment_address):
         self.payment.payment_address = payment_address
@@ -101,9 +101,6 @@ class Group(object):
 
     def update_endpoints(self, endpoints):
         self.payment.update_endpoints(endpoints)
-
-    def get_group_id(self, group_name=None):
-        return base64.b64decode(self.get_group_id_base64(group_name))
 
     def get_payment_address(self):
         return self.payment.payment_address

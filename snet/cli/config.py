@@ -69,7 +69,7 @@ class Config(ConfigParser):
             print(
                 'Identity "%s" is not bind to any network. You should switch network manually if you need.' % identity,
                 file=out_f)
-        print("Switch to identity: %s" % (identity), file=out_f)
+        print("Switch to identity: %s" % identity, file=out_f)
         self["session"]["identity"] = identity
         self._persist()
 
