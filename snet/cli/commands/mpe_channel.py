@@ -80,26 +80,37 @@ class MPEChannelCommand(OrganizationCommand):
             "group_id": event_data["groupId"],
         }
 
-    def _get_all_opened_channels_from_blockchain(self, from_block, to_block):
-        from_block = int(from_block)
-        to_block = int(to_block)
+    def _get_all_opened_channels_from_blockchain(self, start_block, end_block):
+        start_block = int(start_block)
+        end_block = int(end_block)
         mpe_address = self.ident.w3.to_checksum_address(self.get_mpe_address())
+
+        abi = get_contract_def("MultiPartyEscrow")["abi"]
+        contract = self.ident.w3.eth.contract(address = mpe_address, abi = abi)
 
         raw_topic = self.ident.w3.keccak(
             text = "ChannelOpen(uint256,uint256,address,address,address,bytes32,uint256,uint256)")
         event_topics = [self.ident.w3.to_hex(raw_topic)]
 
+        blocks_per_batch = 5000
+
         logs = []
 
-        if from_block <= to_block:
-            logs = self.ident.w3.eth.get_logs({
-                "fromBlock": from_block,
-                "toBlock": to_block,
-                "address": mpe_address,
-                "topics": event_topics
-            })
+        from_block = start_block
+        while from_block <= end_block:
+            to_block = min(from_block + blocks_per_batch, end_block)
+            logs += self.ident.w3.eth.get_logs({"fromBlock": from_block,
+                                                "toBlock": to_block,
+                                                "address": mpe_address,
+                                                "topics": event_topics})
+            from_block = to_block + 1
 
-        return logs
+        channel_open_event = contract.events.ChannelOpen()
+        event_data_list = [channel_open_event.process_log(l)["args"] for l in logs]
+
+        channels_opened = list(map(self._event_data_args_to_dict, event_data_list))
+
+        return channels_opened
 
     def _get_filtered_channels(self, return_only_id=False, **kwargs):
         channels = self._get_channels_from_cache()
