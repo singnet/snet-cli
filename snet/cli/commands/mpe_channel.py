@@ -434,7 +434,7 @@ class MPEChannelCommand(OrganizationCommand):
     def channel_extend_and_add_funds_for_org(self):
         self._init_or_update_registered_org_if_needed()
         metadata = self._read_metadata_for_org(self.args.org_id)
-        channel_id = self._smart_get_channel_for_org(metadata, "sender")["channelId"]
+        channel_id = self._smart_get_channel_for_org(metadata, "sender")["channel_id"]
         self._channel_extend_add_funds_with_channel_id(channel_id)
 
     def _get_channel_state_from_blockchain(self, channel_id):

@@ -177,7 +177,7 @@ class BlockchainCommand(Command):
 
     def check_ident(self):
         identity_type = self.config.get_session_field("identity_type")
-        if get_kws_for_identity_type(identity_type)[0][1] and not self.ident.private_key:
+        if all(get_kws_for_identity_type(identity_type).values()) and not self.ident.private_key:
             if identity_type == "key":
                 secret = self.config.get_session_field("private_key")
             else:
@@ -258,7 +258,9 @@ class IdentityCommand(Command):
         identity_type = self.args.identity_type
         identity["identity_type"] = identity_type
 
-        for kw, is_secret in get_kws_for_identity_type(identity_type):
+        kws = get_kws_for_identity_type(identity_type)
+
+        for kw, is_secret in kws:
             value = getattr(self.args, kw)
             if value is None and is_secret:
                 kw_prompt = "{}: ".format(" ".join(kw.capitalize().split("_")))
@@ -272,7 +274,8 @@ class IdentityCommand(Command):
         identity["default_wallet_index"] = self.args.wallet_index
 
         password = None
-        if not self.args.do_not_encrypt and get_kws_for_identity_type(identity_type)[0][1]:
+
+        if not self.args.do_not_encrypt and any(kws.values()):
             self._printout("For 'mnemonic' and 'key' identity_type, secret encryption is enabled by default, "
                            "so you need to come up with a password that you then need to enter on every transaction. "
                            "To disable encryption, use the '-de' or '--do-not-encrypt' argument.")
@@ -287,15 +290,13 @@ class IdentityCommand(Command):
     def list(self):
         for identity_section in filter(lambda x: x.startswith("identity."), self.config.sections()):
             identity = self.config[identity_section]
-            key_is_secret_lookup = {}
 
             identity_type = self.config.get(identity_section, 'identity_type')
-            for kw, is_secret in get_kws_for_identity_type(identity_type):
-                key_is_secret_lookup[kw] = is_secret
+            kws = get_kws_for_identity_type(identity_type)
 
             self._pprint({
                 identity_section[len("identity."):]: {
-                    k: (v if not key_is_secret_lookup.get(k, False) else "xxxxxx") for k, v in identity.items()
+                    k: (v if not kws.get(k, False) else "xxxxxx") for k, v in identity.items()
                 }
             })
 

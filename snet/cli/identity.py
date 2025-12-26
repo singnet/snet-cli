@@ -211,7 +211,6 @@ class TrezorIdentityProvider(IdentityProvider):
             s = s
         )
 
-        # 4. Serialize
         raw_transaction = rlp.encode(signed_tx)
 
         return send_and_wait_for_transaction(raw_transaction, self.w3, out_f)
@@ -373,26 +372,28 @@ def parse_bip32_path(path):
     return result
 
 
-def get_kws_for_identity_type(identity_type):
+def get_kws_for_identity_type(identity_type: str) -> dict:
     secret = True
     plaintext = False
 
+    result = {}
+
     if identity_type == "rpc":
-        return [("network", plaintext)]
+        result["network"] = plaintext
     elif identity_type == "mnemonic":
-        return [("mnemonic", secret)]
+        result["mnemonic"] = secret
     elif identity_type == "key":
-        return [("private_key", secret)]
-    elif identity_type == "trezor":
-        return []
-    elif identity_type == "ledger":
-        return []
+        result["private_key"] = secret
     elif identity_type == "keystore":
-        return [("keystore_path", plaintext)]
+        result["keystore_path"] = plaintext
+    elif identity_type in ["trezor", "ledger"]:
+        # empty dict
+        pass
     else:
         raise RuntimeError(
             "unrecognized identity_type {}".format(identity_type))
 
+    return result
 
 def get_identity_types():
     # temporary fully removed: trezor
