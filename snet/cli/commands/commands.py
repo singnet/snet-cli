@@ -177,7 +177,8 @@ class BlockchainCommand(Command):
 
     def check_ident(self):
         identity_type = self.config.get_session_field("identity_type")
-        if all(get_kws_for_identity_type(identity_type).values()) and not self.ident.private_key:
+        kws = get_kws_for_identity_type(identity_type)
+        if kws and all(kws.values()) and not self.ident.private_key:
             if identity_type == "key":
                 secret = self.config.get_session_field("private_key")
             else:
