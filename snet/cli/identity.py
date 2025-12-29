@@ -198,6 +198,8 @@ class TrezorIdentityProvider(IdentityProvider):
             data = tx_data,
             chain_id = chain_id
         )
+        r = int.from_bytes(r)
+        s = int.from_bytes(s)
 
         signed_tx = Transaction(
             nonce = int(transaction["nonce"]),
