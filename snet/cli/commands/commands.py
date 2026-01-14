@@ -261,7 +261,7 @@ class IdentityCommand(Command):
 
         kws = get_kws_for_identity_type(identity_type)
 
-        for kw, is_secret in kws:
+        for kw, is_secret in kws.items():
             value = getattr(self.args, kw)
             if value is None and is_secret:
                 kw_prompt = "{}: ".format(" ".join(kw.capitalize().split("_")))
