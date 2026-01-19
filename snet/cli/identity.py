@@ -198,8 +198,8 @@ class TrezorIdentityProvider(IdentityProvider):
             data = tx_data,
             chain_id = chain_id
         )
-        r = int.from_bytes(r)
-        s = int.from_bytes(s)
+        r = int.from_bytes(r, byteorder = "big")
+        s = int.from_bytes(s, byteorder = "big")
 
         signed_tx = Transaction(
             nonce = int(transaction["nonce"]),
@@ -305,7 +305,13 @@ class LedgerIdentityProvider(IdentityProvider):
                 raise RuntimeError("Transaction denied from Ledger by user")
             raise RuntimeError(f"Ledger error: {e.sw:x}")
 
-        v_parity = result[0]
+        v_raw = result[0]
+
+        if v_raw <= 1:
+            v_parity = v_raw
+        else:
+            v_parity = 1 - (v_raw % 2)
+
         v = (chain_id * 2 + 35) + v_parity
 
         r = int.from_bytes(result[1:33], byteorder = "big")
