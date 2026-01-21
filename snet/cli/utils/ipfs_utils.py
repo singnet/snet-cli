@@ -109,7 +109,8 @@ def get_from_ipfs_and_checkhash(ipfs_client, ipfs_hash_base58, validate=True):
 
         # Decode Base58 bash to multihash
         try:
-            mh = multihash.decode(ipfs_hash_base58.encode('ascii'), "base58")
+            decoded_hash_bytes = base58.b58decode(ipfs_hash_base58)
+            mh = multihash.decode(decoded_hash_bytes)
         except Exception as e:
             raise ValueError(f"Invalid multihash for IPFS hash: {ipfs_hash_base58}. Error: {str(e)}") from e
 

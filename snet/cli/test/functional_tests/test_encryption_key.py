@@ -31,7 +31,7 @@ class TestEncryptionKey(BaseTest):
             cmd = BlockchainCommand(self.conf, self.parser.parse_args(['session']))
             enc_key = cmd.config.get_session_field("private_key")
             res_key = cmd._get_decrypted_secret(enc_key)
-            assert res_key == self.key
+            assert res_key == self.password
 
     def test_3_delete_identity(self):
         with mock.patch('getpass.getpass', return_value=self.password):
