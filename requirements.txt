@@ -1,6 +1,6 @@
 protobuf==4.21.6
 grpcio-tools==1.59.0
-wheel==0.41.2
+wheel==0.46.2
 jsonrpcclient==4.0.3
 eth-hash==0.5.2
 rlp==3.0.0
