@@ -24,18 +24,24 @@ class CustomParser(argparse.ArgumentParser):
         super().__init__(*args, **kwargs)
 
     def error(self, message):
-        sys.stderr.write("error: {}\n\n".format(message))
+        sys.stderr.write(f"error: {message}\n\n")
         self.print_help(sys.stderr)
         sys.exit(2)
 
     def _parse_known_args(self, arg_strings, *args, **kwargs):
-        if self.default_choice and not len(list(filter(lambda option: option in arg_strings, {'-h', '--help'}))):
-            for action in list(filter(
-                    lambda subparser_action: isinstance(
-                        subparser_action, argparse._SubParsersAction),
-                    self._subparsers._actions
-            )):
-                if not len(list(filter(lambda arg: arg in action._name_parser_map.keys(), arg_strings))):
+        if self.default_choice and not any(arg in arg_strings for arg in {'-h', '--help'}):
+
+            subparser_action = next(
+                (a for a in self._actions if isinstance(a, argparse._SubParsersAction)),
+                None
+            )
+
+            if subparser_action:
+                is_subcommand_present = any(
+                    arg in subparser_action.choices for arg in arg_strings
+                )
+
+                if not is_subcommand_present:
                     arg_strings = [self.default_choice] + arg_strings
 
         return super()._parse_known_args(
@@ -575,8 +581,8 @@ def add_mpe_account_options(parser):
     subparsers = parser.add_subparsers(title="Commands", metavar="COMMAND")
     subparsers.required = True
 
-    def add_p_snt_address_opt(p):
-        p.add_argument(
+    def add_p_snt_address_opt(_p):
+        _p.add_argument(
             "--singularitynettoken-at", "--snt", default=None,
             help="Address of SingularityNetToken contract, if not specified we read address from \"networks\"")
 
@@ -1153,7 +1159,7 @@ def add_mpe_service_options(parser):
     p.add_argument("name", help="Name of the contributor")
     p.add_argument("email_id", help="Email of the contributor")
 
-    p = subparsers.add_parser("metadata-remove-contributor", help="Add contributor")
+    p = subparsers.add_parser("metadata-remove-contributor", help="Remove contributor")
     p.set_defaults(fn="metadata_remove_contributor")
     add_p_metadata_file_opt(p)
     p.add_argument("email_id", help="Email of the contributor")

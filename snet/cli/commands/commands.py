@@ -144,9 +144,9 @@ class BlockchainCommand(Command):
         gas_price = self.w3.eth.gas_price
         if gas_price <= 15000000000:
             gas_price += gas_price * 1 / 3
-        elif gas_price > 15000000000 and gas_price <= 50000000000:
+        elif 15000000000 < gas_price <= 50000000000:
             gas_price += gas_price * 1 / 5
-        elif gas_price > 50000000000 and gas_price <= 150000000000:
+        elif 50000000000 < gas_price <= 150000000000:
             gas_price += 7000000000
         elif gas_price > 150000000000:
             gas_price += gas_price * 1 / 10
@@ -166,8 +166,8 @@ class BlockchainCommand(Command):
             return RpcIdentityProvider(self.w3, self.get_wallet_index())
         if identity_type == "mnemonic":
             return MnemonicIdentityProvider(self.w3, self.config.get_session_field("mnemonic"), self.get_wallet_index())
-        # if identity_type == "trezor":
-        #     return TrezorIdentityProvider(self.w3, self.get_wallet_index())
+        if identity_type == "trezor":
+            return TrezorIdentityProvider(self.w3, self.get_wallet_index())
         if identity_type == "ledger":
             return LedgerIdentityProvider(self.w3, self.get_wallet_index())
         if identity_type == "key":
@@ -177,7 +177,8 @@ class BlockchainCommand(Command):
 
     def check_ident(self):
         identity_type = self.config.get_session_field("identity_type")
-        if get_kws_for_identity_type(identity_type)[0][1] and not self.ident.private_key:
+        kws = get_kws_for_identity_type(identity_type)
+        if kws and all(kws.values()) and not self.ident.private_key:
             if identity_type == "key":
                 secret = self.config.get_session_field("private_key")
             else:
@@ -258,7 +259,9 @@ class IdentityCommand(Command):
         identity_type = self.args.identity_type
         identity["identity_type"] = identity_type
 
-        for kw, is_secret in get_kws_for_identity_type(identity_type):
+        kws = get_kws_for_identity_type(identity_type)
+
+        for kw, is_secret in kws.items():
             value = getattr(self.args, kw)
             if value is None and is_secret:
                 kw_prompt = "{}: ".format(" ".join(kw.capitalize().split("_")))
@@ -272,7 +275,8 @@ class IdentityCommand(Command):
         identity["default_wallet_index"] = self.args.wallet_index
 
         password = None
-        if not self.args.do_not_encrypt and get_kws_for_identity_type(identity_type)[0][1]:
+
+        if not self.args.do_not_encrypt and any(kws.values()):
             self._printout("For 'mnemonic' and 'key' identity_type, secret encryption is enabled by default, "
                            "so you need to come up with a password that you then need to enter on every transaction. "
                            "To disable encryption, use the '-de' or '--do-not-encrypt' argument.")
@@ -287,15 +291,13 @@ class IdentityCommand(Command):
     def list(self):
         for identity_section in filter(lambda x: x.startswith("identity."), self.config.sections()):
             identity = self.config[identity_section]
-            key_is_secret_lookup = {}
 
             identity_type = self.config.get(identity_section, 'identity_type')
-            for kw, is_secret in get_kws_for_identity_type(identity_type):
-                key_is_secret_lookup[kw] = is_secret
+            kws = get_kws_for_identity_type(identity_type)
 
             self._pprint({
                 identity_section[len("identity."):]: {
-                    k: (v if not key_is_secret_lookup.get(k, False) else "xxxxxx") for k, v in identity.items()
+                    k: (v if not kws.get(k, False) else "xxxxxx") for k, v in identity.items()
                 }
             })
 
@@ -360,7 +362,7 @@ class SessionShowCommand(BlockchainCommand):
                 w3=self.w3, contract_name="MultiPartyEscrow")
             rez[key]['default_fetchtoken_at'] = read_default_contract_address(
                 w3=self.w3, contract_name="FetchToken")
-        except Exception as e:
+        except Exception:
             pass
         return
 
@@ -587,7 +589,7 @@ class OrganizationCommand(BlockchainCommand):
 
     def info(self):
         org_id = self.args.org_id
-        (found, org_id, org_name, owner, members, serviceNames) = self._get_organization_by_id(org_id)
+        (found, org_id, org_name, owner, members, service_names) = self._get_organization_by_id(org_id)
         self.error_organization_not_found(self.args.org_id, found)
 
         org_m = self._get_organization_metadata_from_registry(web3.Web3.to_text(org_id))
@@ -604,9 +606,9 @@ class OrganizationCommand(BlockchainCommand):
             self._printout("\nMembers:")
             for idx, member in enumerate(members):
                 self._printout(" - {}".format(member))
-        if serviceNames:
+        if service_names:
             self._printout("\nServices:")
-            for idx, service in enumerate(serviceNames):
+            for idx, service in enumerate(service_names):
                 self._printout(" - {}".format(bytes32_to_str(service)))
 
     def metadata_validate(self):
@@ -670,7 +672,7 @@ class OrganizationCommand(BlockchainCommand):
         try:
             with open(metadata_file, 'r') as f:
                 metadata_dict = json.load(f)
-        except Exception as e:
+        except Exception:
                 return {"status": 2, "msg": "Organization metadata json file not found, please check --metadata-file path"}
 
         validator = jsonschema.Draft7Validator(schema)
@@ -747,7 +749,7 @@ class OrganizationCommand(BlockchainCommand):
         try:
             self.transact_contract_command("Registry", "deleteOrganization", [
                 type_converter("bytes32")(org_id)])
-        except Exception as e:
+        except Exception:
             self._printerr(
                 "\nTransaction error!\nHINT: Check if you are the owner of organization with id={}\n".format(org_id))
             raise
@@ -818,7 +820,7 @@ class OrganizationCommand(BlockchainCommand):
         try:
             self.transact_contract_command("Registry", "changeOrganizationOwner",
                                            [type_converter("bytes32")(org_id), self.args.owner])
-        except Exception as e:
+        except Exception:
             self._printerr(
                 "\nTransaction error!\nHINT: Check if you are the owner of {}\n".format(org_id))
             raise
@@ -848,7 +850,7 @@ class OrganizationCommand(BlockchainCommand):
         try:
             self.transact_contract_command(
                 "Registry", "addOrganizationMembers", params)
-        except Exception as e:
+        except Exception:
             self._printerr(
                 "\nTransaction error!\nHINT: Check if you are the owner of {}\n".format(org_id))
             raise
@@ -879,7 +881,7 @@ class OrganizationCommand(BlockchainCommand):
         try:
             self.transact_contract_command(
                 "Registry", "removeOrganizationMembers", params)
-        except Exception as e:
+        except Exception:
             self._printerr(
                 "\nTransaction error!\nHINT: Check if you are the owner of {}\n".format(org_id))
             raise
@@ -892,7 +894,7 @@ class OrganizationCommand(BlockchainCommand):
         rez_owner = []
         rez_member = []
         for idx, org_id in enumerate(org_list):
-            (found, org_id, org_name, owner, members, serviceNames) = self.call_contract_command(
+            (found, org_id, org_name, owner, members, service_names) = self.call_contract_command(
                 "Registry", "getOrganizationById", [org_id])
             if not found:
                 raise Exception(

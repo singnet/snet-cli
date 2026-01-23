@@ -41,10 +41,10 @@ class MPETreasurerCommand(MPEClientCommand):
             codegen_dir, service_name)
         return stub_class, request_class
 
-    def _decode_PaymentReply(self, p):
+    def _decode__payment_reply(self, p):
         return {"channel_id":  int4bytes_big(p.channel_id), "nonce": int4bytes_big(p.channel_nonce), "amount": int4bytes_big(p.signed_amount), "signature": p.signature}
 
-    def _call_GetListUnclaimed(self, grpc_channel):
+    def _call_get_list_unclaimed(self, grpc_channel):
         stub_class, request_class = self._get_stub_and_request_classes(
             "GetListUnclaimed")
         stub = stub_class(grpc_channel)
@@ -62,9 +62,9 @@ class MPETreasurerCommand(MPEClientCommand):
                 raise Exception(
                     "Signature was set in GetListUnclaimed. Response is invalid")
 
-        return [self._decode_PaymentReply(p) for p in response.payments]
+        return [self._decode__payment_reply(p) for p in response.payments]
 
-    def _call_GetListInProgress(self, grpc_channel):
+    def _call_get_list_in_progress(self, grpc_channel):
         stub_class, request_class = self._get_stub_and_request_classes(
             "GetListInProgress")
         stub = stub_class(grpc_channel)
@@ -76,9 +76,9 @@ class MPETreasurerCommand(MPEClientCommand):
         request = request_class(
             mpe_address=mpe_address, current_block=current_block, signature=bytes(signature))
         response = getattr(stub, "GetListInProgress")(request)
-        return [self._decode_PaymentReply(p) for p in response.payments]
+        return [self._decode__payment_reply(p) for p in response.payments]
 
-    def _call_StartClaim(self, grpc_channel, channel_id, channel_nonce):
+    def _call_start_claim(self, grpc_channel, channel_id, channel_nonce):
         stub_class, request_class = self._get_stub_and_request_classes(
             "StartClaim")
         stub = stub_class(grpc_channel)
@@ -88,11 +88,11 @@ class MPETreasurerCommand(MPEClientCommand):
         request = request_class(mpe_address=mpe_address, channel_id=web3.Web3.to_bytes(
             channel_id), signature=bytes(signature))
         response = getattr(stub, "StartClaim")(request)
-        return self._decode_PaymentReply(response)
+        return self._decode__payment_reply(response)
 
     def print_unclaimed(self):
         grpc_channel = open_grpc_channel(self.args.endpoint)
-        payments = self._call_GetListUnclaimed(grpc_channel)
+        payments = self._call_get_list_unclaimed(grpc_channel)
         self._printout("# channel_id  channel_nonce  signed_amount (ASI(FET))")
         total = 0
         for p in payments:
@@ -117,7 +117,7 @@ class MPETreasurerCommand(MPEClientCommand):
 
     def _start_claim_channels(self, grpc_channel, channels_ids):
         """ Safely run StartClaim for given channels """
-        unclaimed_payments = self._call_GetListUnclaimed(grpc_channel)
+        unclaimed_payments = self._call_get_list_unclaimed(grpc_channel)
         unclaimed_payments_dict = {
             p["channel_id"]: p for p in unclaimed_payments}
 
@@ -134,14 +134,14 @@ class MPETreasurerCommand(MPEClientCommand):
                 continue
             to_claim.append((channel_id,  blockchain["nonce"]))
 
-        payments = [self._call_StartClaim(
+        payments = [self._call_start_claim(
             grpc_channel, channel_id, nonce) for channel_id, nonce in to_claim]
         return payments
 
     def _claim_in_progress_and_claim_channels(self, grpc_channel, channels):
         """ Claim all 'pending' payments in progress and after we claim given channels """
         # first we get the list of all 'payments in progress' in case we 'lost' some payments.
-        payments = self._call_GetListInProgress(grpc_channel)
+        payments = self._call_get_list_in_progress(grpc_channel)
         if len(payments) > 0:
             self._printout(
                 "There are %i payments in 'progress' (they haven't been claimed in blockchain). We will claim them." % len(payments))
@@ -158,7 +158,7 @@ class MPETreasurerCommand(MPEClientCommand):
         self.check_ident()
         grpc_channel = open_grpc_channel(self.args.endpoint)
         # we take list of all channels
-        unclaimed_payments = self._call_GetListUnclaimed(grpc_channel)
+        unclaimed_payments = self._call_get_list_unclaimed(grpc_channel)
         channels = [p["channel_id"] for p in unclaimed_payments]
         self._claim_in_progress_and_claim_channels(grpc_channel, channels)
 
@@ -166,7 +166,7 @@ class MPETreasurerCommand(MPEClientCommand):
         self.check_ident()
         grpc_channel = open_grpc_channel(self.args.endpoint)
         # we take list of all channels
-        unclaimed_payments = self._call_GetListUnclaimed(grpc_channel)
+        unclaimed_payments = self._call_get_list_unclaimed(grpc_channel)
 
         channels = []
         for p in unclaimed_payments:

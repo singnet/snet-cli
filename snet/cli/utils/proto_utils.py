@@ -79,11 +79,11 @@ def switch_to_json_payload_encoding(call_fn, response_class):
     """ Switch payload encoding to JSON for GRPC call """
 
     def json_serializer(*args, **kwargs):
-        return bytes(json_format.MessageToJson(args[0], True, preserving_proto_field_name=True), "utf-8")
+        return bytes(json_format.MessageToJson(args[0], preserving_proto_field_name=True), "utf-8")
 
     def json_deserializer(*args, **kwargs):
         resp = response_class()
-        json_format.Parse(args[0], resp, True)
+        json_format.Parse(args[0], resp, ignore_unknown_fields=True)
         return resp
 
     call_fn._request_serializer = json_serializer

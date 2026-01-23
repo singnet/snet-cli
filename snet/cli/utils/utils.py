@@ -1,6 +1,5 @@
 import json
 import os
-import subprocess
 import functools
 import re
 import sys
@@ -15,7 +14,6 @@ import tarfile
 import web3
 import grpc
 from grpc_tools.protoc import main as protoc
-from trezorlib.cli.firmware import download
 
 from snet import cli
 from snet.cli.resources.root_certificate import certificate
@@ -63,7 +61,7 @@ class DefaultAttributeObject(object):
 
 def get_web3(rpc_endpoint):
     if rpc_endpoint.startswith("ws:"):
-        provider = web3.WebsocketProvider(rpc_endpoint)
+        provider = web3.LegacyWebSocketProvider(rpc_endpoint)
     else:
         provider = web3.HTTPProvider(rpc_endpoint)
 
@@ -274,7 +272,7 @@ def get_address_from_private(private_key):
     return web3.Account.from_key(private_key).address
 
 
-class add_to_path():
+class add_to_path:
     def __init__(self, path):
         self.path = path
 
@@ -361,7 +359,7 @@ def check_training_in_proto(protodir) -> bool:
     for file in files:
         if ".proto" not in file:
             continue
-        with open(protodir.joinpath(file), "r") as f:
+        with open(os.path.join(protodir, file), "r") as f:
             proto_text = f.read()
         if 'import "training.proto";' in proto_text:
             return True

@@ -1,0 +1,50 @@
+[build-system]
+requires = [
+    "setuptools>=61.0",
+    "wheel",
+    "protobuf~=6.30",
+    "grpcio-tools~=1.59"
+]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "snet-cli"
+version = "3.1.0"
+description = "SingularityNET CLI"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+authors = [
+    {name = "SingularityNET Foundation", email = "info@singularitynet.io"}
+]
+urls = {Homepage = "https://github.com/singnet/snet-cli"}
+
+# Cleaned dependencies list
+dependencies = [
+    "protobuf~=6.30",
+    "grpcio~=1.59",
+    "grpcio-tools~=1.59",
+    "wheel~=0.45",
+    "rlp~=4.0",
+    "web3~=7.0",
+    "mnemonic==0.21",
+    "pyyaml~=6.0.1",
+    "ipfshttpclient==0.4.13.2",
+    "pymultihash==0.8.2",
+    "base58==2.1.1",
+    "argcomplete~=3.1",
+    "grpcio-health-checking~=1.59",
+    "jsonschema~=4.1",
+    "eth-account~=0.9",
+    "trezor~=0.13.8",
+    "ledgerblue~=0.1.48",
+    "snet-contracts==1.0.1",
+    "lighthouseweb3~=0.1.4",
+    "cryptography~=46.0"
+]
+
+[project.scripts]
+snet = "snet.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["snet*"]
