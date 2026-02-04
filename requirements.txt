@@ -2,17 +2,12 @@ protobuf~=6.30
 grpcio~=1.59
 grpcio-tools~=1.59
 wheel~=0.45
-# jsonrpcclient~=4.0
-# eth-hash~=0.5
 rlp~=4.0
-# eth-rlp~=2.0
 web3~=7.0
 mnemonic==0.21
-# pycoin==0.92.20241201
 pyyaml~=6.0.1
 ipfshttpclient==0.4.13.2
-pymultihash==0.8.2
-base58==2.1.1
+py-multihash~=3.0
 argcomplete~=3.1
 grpcio-health-checking~=1.59
 jsonschema~=4.1
