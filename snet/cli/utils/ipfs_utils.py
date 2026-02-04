@@ -4,8 +4,8 @@ import glob
 import io
 import os
 
-import base58
 import multihash
+import hashlib
 
 
 def publish_file_in_ipfs(ipfs_client, filepath, wrap_with_directory=True):
@@ -96,26 +96,33 @@ def publish_proto_in_filecoin(filecoin_client, protodir):
 
 def get_from_ipfs_and_checkhash(ipfs_client, ipfs_hash_base58, validate=True):
     """
-    Get file from IPFS. If validate is True, verify the integrity of the file using its hash.
+    Get file from IPFS and validate hash
     """
-
     data = ipfs_client.cat(ipfs_hash_base58)
 
     if validate:
         block_data = ipfs_client.block.get(ipfs_hash_base58)
 
-        # print(f"IPFS hash (Base58): {ipfs_hash_base58}")
-        # print(f"Block data length: {len(block_data)}")
-
-        # Decode Base58 bash to multihash
         try:
-            decoded_hash_bytes = base58.b58decode(ipfs_hash_base58)
-            mh = multihash.decode(decoded_hash_bytes)
-        except Exception as e:
-            raise ValueError(f"Invalid multihash for IPFS hash: {ipfs_hash_base58}. Error: {str(e)}") from e
+            mh_bytes = multihash.from_b58_string(ipfs_hash_base58)
+            decoded = multihash.decode(mh_bytes)
 
-        if not mh.verify(block_data):  # Correctly using mh instance for verification
-            raise Exception("IPFS hash mismatch with data")
+            hash_func_name = decoded.name
+            expected_digest = decoded.digest
+
+            if hash_func_name == 'sha2-256': # Standard for IPFS (CIDv0)
+                actual_digest = hashlib.sha256(block_data).digest()
+            else:
+                # Handle other algorithms supported by hashlib if necessary
+                h = hashlib.new(hash_func_name.replace('-', ''))
+                h.update(block_data)
+                actual_digest = h.digest()
+
+            if actual_digest != expected_digest:
+                raise Exception("IPFS hash mismatch with data")
+
+        except Exception as e:
+            raise ValueError(f"Integrity check failed: {str(e)}") from e
 
     return data
 
